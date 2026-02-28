@@ -1,0 +1,9 @@
+{
+  "name": "venue-rivals",
+  "version": "1.0.0",
+  "description": "Competitive venue management game prototype",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve . -l 3000 --no-clipboard"
+  }
+}
