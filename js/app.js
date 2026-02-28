@@ -126,6 +126,29 @@
         showActions();
     }
 
+    function renderGuestCard(guest, label) {
+        if (!guest) return '<div class="guest-card empty">No guest at door</div>';
+        const ability = guest.ability === 'none' ? 'No ability' : guest.ability;
+        return `
+            <div class="guest-card">
+                <div class="guest-label">${label}</div>
+                <div class="guest-name">${guest.name}</div>
+                <div class="guest-meta">Pressure +${guest.pressure}</div>
+                <div class="guest-meta">Ability: ${ability}</div>
+            </div>
+        `;
+    }
+
+    function renderAdmittedList(admitted) {
+        if (!admitted.length) return '<div class="guest-card empty">No admitted guests yet</div>';
+        return admitted.map(g => `
+            <div class="guest-chip">
+                <span>${g.name}</span>
+                <span>+${g.pressure}</span>
+            </div>
+        `).join('');
+    }
+
     function renderLiveState() {
         const p = gameState.player.current;
         const r = gameState.rival.current;
@@ -134,6 +157,32 @@
             <p><span class="highlight-player">You</span>: ${p.occupancy}/${p.limit} pressure ${p.closed ? '(Closed)' : ''} ${p.busted ? ' - BUSTED' : ''}</p>
             <p><span class="highlight-rival">${gameState.rival.name}</span>: ${r.occupancy}/${r.limit} pressure ${r.closed ? '(Closed)' : ''} ${r.busted ? ' - BUSTED' : ''}</p>
             <p>Last scored round: You ${gameState.lastRoundPlayerCustomers} - Rival ${gameState.lastRoundRivalCustomers}</p>
+
+            <div class="guest-zone-grid">
+                <div class="guest-zone">
+                    <h4>Your Door Guest</h4>
+                    ${renderGuestCard(p.doorGuest, 'At Door')}
+                </div>
+                <div class="guest-zone">
+                    <h4>${gameState.rival.name} Door Guest</h4>
+                    ${renderGuestCard(r.doorGuest, 'At Door')}
+                </div>
+            </div>
+
+            <div class="guest-zone-grid">
+                <div class="guest-zone">
+                    <h4>Your Admitted Guests</h4>
+                    <div class="guest-chip-list">
+                        ${renderAdmittedList(p.admitted)}
+                    </div>
+                </div>
+                <div class="guest-zone">
+                    <h4>${gameState.rival.name} Admitted Guests</h4>
+                    <div class="guest-chip-list">
+                        ${renderAdmittedList(r.admitted)}
+                    </div>
+                </div>
+            </div>
         `;
         updateHUD();
 

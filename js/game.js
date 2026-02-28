@@ -43,6 +43,7 @@ const Game = (() => {
                 busted: false,
                 admitted: [],
                 pendingAbilities: [],
+                doorGuest: null,
                 banked: 0,
             },
         };
@@ -50,7 +51,7 @@ const Game = (() => {
 
     function createGameState(playerName, playerType) {
         const rivalNames = ['Neon Pulse', 'Velvet Edge', 'The Crimson Fox', 'Shadow & Tonic'];
-        return {
+        const state = {
             round: 1,
             phase: 'live',
             player: createVenue(playerName, playerType),
@@ -61,6 +62,10 @@ const Game = (() => {
             winner: null,
             lastActionFrame: 0,
         };
+
+        dealDoorGuest(state.player);
+        dealDoorGuest(state.rival);
+        return state;
     }
 
     function drawGuest(venue) {
@@ -70,6 +75,13 @@ const Game = (() => {
         const guest = venue.deck[venue.drawIndex];
         venue.drawIndex += 1;
         return { ...guest };
+    }
+
+
+    function dealDoorGuest(venue) {
+        if (venue.current.closed || venue.current.busted) return null;
+        venue.current.doorGuest = drawGuest(venue);
+        return venue.current.doorGuest;
     }
 
     function maybeBust(venue) {
@@ -84,13 +96,22 @@ const Game = (() => {
 
     function admitGuest(venue) {
         if (venue.current.closed) return null;
-        const guest = drawGuest(venue);
+        const guest = venue.current.doorGuest || dealDoorGuest(venue);
+        if (!guest) return null;
+
         venue.current.admitted.push(guest);
         venue.current.occupancy += guest.pressure;
+        venue.current.doorGuest = null;
+
         if (guest.ability !== 'none') {
             venue.current.pendingAbilities.push(guest);
         }
+
         maybeBust(venue);
+        if (!venue.current.closed) {
+            dealDoorGuest(venue);
+        }
+
         return guest;
     }
 
@@ -120,6 +141,7 @@ const Game = (() => {
 
     function closeDoor(venue) {
         venue.current.closed = true;
+        venue.current.doorGuest = null;
         if (!venue.current.busted) {
             venue.current.banked = venue.current.occupancy;
         }
@@ -181,6 +203,8 @@ const Game = (() => {
         state.round += 1;
         resetRoundState(state.player);
         resetRoundState(state.rival);
+        dealDoorGuest(state.player);
+        dealDoorGuest(state.rival);
     }
 
     function resetRoundState(venue) {
@@ -191,6 +215,7 @@ const Game = (() => {
             busted: false,
             admitted: [],
             pendingAbilities: [],
+            doorGuest: null,
             banked: 0,
         };
     }
@@ -200,7 +225,13 @@ const Game = (() => {
         if (state.phase === 'gameover' || c.closed) return [];
 
         return [
-            { id: 'admit', name: 'Admit Guest', icon: '🚪', description: 'Draw from your deck and add pressure.', enabled: true },
+            {
+                id: 'admit',
+                name: 'Admit Guest',
+                icon: '🚪',
+                description: c.doorGuest ? `Let in ${c.doorGuest.name} (+${c.doorGuest.pressure})` : 'Draw from your deck and add pressure.',
+                enabled: true,
+            },
             { id: 'ability', name: 'Activate Ability', icon: '⚡', description: 'Use one admitted guest effect.', enabled: c.pendingAbilities.length > 0 },
             { id: 'close', name: 'Close Door', icon: '🔒', description: 'Bank this round safely.', enabled: true },
         ];
