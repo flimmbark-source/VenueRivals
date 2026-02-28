@@ -1,35 +1,36 @@
 /* ============================================
-   VENUE RIVALS - AI Opponent
-   Picks one simultaneous guest action per round
+   VENUE RIVALS - Rival Simulation (fake multiplayer)
    ============================================ */
 
 const AI = (() => {
-    function chooseRoundAction(state) {
-        const rival = state.rival;
-        const guest = rival.currentGuest;
-        if (!guest) return 'close';
+    let thinkTimer = 0;
 
-        const behind = rival.totalEarnings < state.player.totalEarnings;
-        const overcrowded = rival.houseOccupancy >= rival.maxOccupancy;
+    function tick(state, dt) {
+        if (state.phase !== 'live') return;
+        thinkTimer += dt;
+        if (thinkTimer < 1) return;
+        thinkTimer = 0;
 
-        if (guest.ability.type === 'forceClose' || guest.ability.type === 'disruptAttraction') {
-            return 'ability';
+        const p = state.players.rival;
+        if (p.activeCooldownLeft <= 0 && Math.random() < 0.2) {
+            Game.useActive(state, 'rival');
         }
 
-        if (overcrowded && Math.random() < 0.6) {
-            return 'close';
-        }
+        const affordable = p.offer
+            .map((id, i) => ({ id, i, card: Game.GUESTS[id] }))
+            .filter((x) => x.card && x.card.cost <= p.capacity);
 
-        if (behind && (guest.ability.type === 'revBonus' || guest.ability.type === 'attraction' || guest.ability.type === 'bonusCustomers')) {
-            return 'ability';
-        }
+        if (!affordable.length) return;
 
-        if (guest.admitRep >= 1 && rival.houseOccupancy < rival.maxOccupancy + 1) {
-            return 'admit';
-        }
+        affordable.sort((a, b) => {
+            const av = a.card.pulseScore + (a.card.role === 'disruptor' ? 3 : 0) + (a.card.role === 'score' ? 2 : 0);
+            const bv = b.card.pulseScore + (b.card.role === 'disruptor' ? 3 : 0) + (b.card.role === 'score' ? 2 : 0);
+            return bv - av;
+        });
 
-        return Math.random() < 0.5 ? 'ability' : 'admit';
+        const pick = affordable[0];
+        Game.admitFromOffer(state, 'rival', pick.i);
     }
 
-    return { chooseRoundAction };
+    return { tick };
 })();
