@@ -1,216 +1,81 @@
 /* ============================================
    VENUE RIVALS - Core Game Engine
-   Turns, resources, customers, upgrades,
-   events, win/loss conditions
+   Deck-based simultaneous round system
    ============================================ */
 
 const Game = (() => {
-
-    // === Game Constants ===
     const WIN_EARNINGS = 10000;
     const STARTING_MONEY = 500;
     const STARTING_REP = 10;
     const BASE_CUSTOMERS_PER_TURN = 10;
-    const MAX_TURNS = 50;
-    const STAFF_WAGE = 15; // per staff per turn
+    const MAX_TURNS = 3;
+    const STAFF_WAGE = 15;
     const BASE_REVENUE_PER_CUSTOMER = 12;
-    const PROMO_COST = 80;
-    const PROMO_BOOST = 15; // temporary reputation boost
 
-    // === Venue Type Bonuses ===
     const VENUE_TYPES = {
-        bar: {
-            name: 'Bar',
-            repBonus: 5,        // starts with +5 rep
-            revenueMod: 0.9,    // slightly less revenue per customer
-            costMod: 0.8,       // lower operating costs
-            customerMod: 1.05,  // slightly more loyal customers
-        },
-        club: {
-            name: 'Club',
-            repBonus: 0,
-            revenueMod: 1.2,    // high revenue per customer
-            costMod: 1.2,       // high operating costs
-            customerMod: 0.95,
-        },
-        lounge: {
-            name: 'Lounge',
-            repBonus: 3,
-            revenueMod: 1.1,
-            costMod: 1.0,
-            customerMod: 1.0,
-        },
+        bar: { name: 'Bar', repBonus: 5, revenueMod: 0.9, costMod: 0.8, customerMod: 1.05, maxOccupancy: 6 },
+        club: { name: 'Club', repBonus: 0, revenueMod: 1.2, costMod: 1.2, customerMod: 0.95, maxOccupancy: 7 },
+        lounge: { name: 'Lounge', repBonus: 3, revenueMod: 1.1, costMod: 1.0, customerMod: 1.0, maxOccupancy: 9 },
     };
 
-    // === Upgrade Definitions ===
-    const UPGRADES = {
-        better_decor: {
-            name: 'Better Decor',
-            icon: '\uD83C\uDFA8',
-            description: 'Stylish interior, +8 reputation',
-            cost: 200,
-            effect: { reputation: 8, quality: 1 },
-        },
-        live_music: {
-            name: 'Live Music',
-            icon: '\uD83C\uDFB5',
-            description: 'Live performances, +12 rep, +$3/customer',
-            cost: 350,
-            effect: { reputation: 12, revenuePerCustomer: 3 },
-            requires: [],
-        },
-        premium_drinks: {
-            name: 'Premium Drinks',
-            icon: '\uD83C\uDF79',
-            description: 'Top-shelf selection, +$5/customer',
-            cost: 250,
-            effect: { revenuePerCustomer: 5 },
-        },
-        outdoor_seating: {
-            name: 'Outdoor Seating',
-            icon: '\u2602\uFE0F',
-            description: 'Patio area, +5 rep, +15% customers',
-            cost: 300,
-            effect: { reputation: 5, customerAttraction: 0.15 },
-        },
-        vip_section: {
-            name: 'VIP Section',
-            icon: '\u2B50',
-            description: 'Exclusive area, +$8/customer, +10 rep',
-            cost: 500,
-            effect: { revenuePerCustomer: 8, reputation: 10 },
-            requires: ['better_decor'],
-        },
-        sound_system: {
-            name: 'Sound System',
-            icon: '\uD83D\uDD0A',
-            description: 'Professional audio, +7 rep, +$2/customer',
-            cost: 200,
-            effect: { reputation: 7, revenuePerCustomer: 2 },
-        },
-        kitchen: {
-            name: 'Kitchen',
-            icon: '\uD83C\uDF73',
-            description: 'Food menu, +20% customers, +$4/customer',
-            cost: 400,
-            effect: { customerAttraction: 0.2, revenuePerCustomer: 4 },
-        },
-        neon_sign: {
-            name: 'Neon Sign',
-            icon: '\uD83D\uDCA1',
-            description: 'Eye-catching signage, +10 rep',
-            cost: 150,
-            effect: { reputation: 10 },
-        },
-    };
+    const UPGRADES = {};
 
-    // === Random Event Pool ===
+    const GUEST_POOL = [
+        { id: 'performer', name: 'Performer', icon: '🎤', admitRep: 2, abilityName: 'Headline Show', abilityText: '+8 attraction this round', ability: { type: 'attraction', amount: 8 } },
+        { id: 'vip', name: 'VIP', icon: '⭐', admitRep: 1, abilityName: 'Bottle Service', abilityText: '+6 revenue per customer this round', ability: { type: 'revBonus', amount: 6 } },
+        { id: 'instigator', name: 'Instigator', icon: '🔥', admitRep: 0, abilityName: 'Cause a Scene', abilityText: 'Rival -7 attraction this round', ability: { type: 'disruptAttraction', amount: 7 } },
+        { id: 'gatecrasher', name: 'Gatecrasher', icon: '🚨', admitRep: -1, abilityName: 'Bounce to Rival', abilityText: 'Rival loses 2 reputation', ability: { type: 'repDamage', amount: 2 } },
+        { id: 'promoter', name: 'Promoter', icon: '📣', admitRep: 1, abilityName: 'Street Flyering', abilityText: '+5 attraction and +1 reputation', ability: { type: 'combo', attraction: 5, rep: 1 } },
+        { id: 'inspector', name: 'Inspector', icon: '🕵️', admitRep: 0, abilityName: 'Spot Check', abilityText: 'Rival closes house this round', ability: { type: 'forceClose' } },
+        { id: 'socialite', name: 'Socialite', icon: '💎', admitRep: 2, abilityName: 'Network Buzz', abilityText: '+3 attraction and +$40', ability: { type: 'attractionCash', attraction: 3, cash: 40 } },
+        { id: 'regular', name: 'Regular', icon: '🙂', admitRep: 1, abilityName: 'Loyal Crowd', abilityText: '+4 attraction', ability: { type: 'attraction', amount: 4 } },
+        { id: 'critic', name: 'Critic', icon: '📝', admitRep: 0, abilityName: 'Glowing Review', abilityText: '+4 reputation', ability: { type: 'repBoost', amount: 4 } },
+        { id: 'tourists', name: 'Tourists', icon: '🧳', admitRep: 1, abilityName: 'Group Booking', abilityText: '+3 customers this round', ability: { type: 'bonusCustomers', amount: 3 } },
+        { id: 'bartender', name: 'Star Bartender', icon: '🍸', admitRep: 1, abilityName: 'Premium Menu', abilityText: '+4 revenue per customer', ability: { type: 'revBonus', amount: 4 } },
+        { id: 'bouncer', name: 'Bouncer', icon: '🛡️', admitRep: 0, abilityName: 'Control the Door', abilityText: 'No overcrowd penalty this round', ability: { type: 'preventOvercrowd' } },
+    ];
+
     const EVENTS = [
-        {
-            name: 'Health Inspection',
-            description: 'A surprise health inspection! Venues with Kitchen upgrade pass easily.',
-            effect: (state) => {
-                const msgs = [];
-                [state.player, state.rival].forEach((v, i) => {
-                    const label = i === 0 ? 'player' : 'rival';
-                    if (v.upgrades.includes('kitchen')) {
-                        v.reputation += 5;
-                        msgs.push({ who: label, text: `${v.name} passed with flying colors! +5 rep` });
-                    } else {
-                        v.reputation = Math.max(0, v.reputation - 8);
-                        msgs.push({ who: label, text: `${v.name} got cited for violations. -8 rep` });
-                    }
-                });
-                return msgs;
-            },
-        },
         {
             name: 'Local Festival',
             description: 'A street festival brings extra foot traffic!',
             effect: (state) => {
-                state.bonusCustomers = (state.bonusCustomers || 0) + 8;
-                return [{ who: 'neutral', text: '+8 bonus customers tonight!' }];
-            },
-        },
-        {
-            name: 'Celebrity Visit',
-            description: 'A local celebrity is looking for a night out!',
-            effect: (state) => {
-                const msgs = [];
-                const pScore = state.player.reputation + (state.player.upgrades.includes('vip_section') ? 20 : 0);
-                const rScore = state.rival.reputation + (state.rival.upgrades.includes('vip_section') ? 20 : 0);
-                if (pScore >= rScore) {
-                    state.player.reputation += 15;
-                    state.player.money += 100;
-                    msgs.push({ who: 'player', text: `${state.player.name} hosted the celebrity! +15 rep, +$100` });
-                } else {
-                    state.rival.reputation += 15;
-                    state.rival.money += 100;
-                    msgs.push({ who: 'rival', text: `${state.rival.name} hosted the celebrity! +15 rep, +$100` });
-                }
-                return msgs;
+                state.bonusCustomers = (state.bonusCustomers || 0) + 5;
+                return [{ who: 'neutral', text: '+5 bonus customers tonight!' }];
             },
         },
         {
             name: 'Bad Weather',
-            description: 'Rain keeps customers away tonight.',
+            description: 'Rain keeps some guests at home.',
             effect: (state) => {
-                state.bonusCustomers = (state.bonusCustomers || 0) - 4;
-                const msgs = [{ who: 'neutral', text: '-4 customers tonight due to rain.' }];
-                // Outdoor seating penalty
-                [state.player, state.rival].forEach((v, i) => {
-                    if (v.upgrades.includes('outdoor_seating')) {
-                        v.reputation = Math.max(0, v.reputation - 3);
-                        msgs.push({ who: i === 0 ? 'player' : 'rival', text: `${v.name}'s outdoor seating is unusable. -3 rep` });
-                    }
-                });
-                return msgs;
-            },
-        },
-        {
-            name: 'Food Critic Review',
-            description: 'A famous food critic visits the block!',
-            effect: (state) => {
-                const msgs = [];
-                [state.player, state.rival].forEach((v, i) => {
-                    const label = i === 0 ? 'player' : 'rival';
-                    const qualityScore = v.reputation + (v.upgrades.includes('premium_drinks') ? 10 : 0) + (v.upgrades.includes('kitchen') ? 15 : 0);
-                    if (qualityScore > 30) {
-                        v.reputation += 10;
-                        msgs.push({ who: label, text: `${v.name} got a glowing review! +10 rep` });
-                    } else {
-                        v.reputation = Math.max(0, v.reputation - 5);
-                        msgs.push({ who: label, text: `${v.name} got a lukewarm review. -5 rep` });
-                    }
-                });
-                return msgs;
-            },
-        },
-        {
-            name: 'Power Outage',
-            description: 'A brief power outage hits the block!',
-            effect: (state) => {
-                const msgs = [];
-                [state.player, state.rival].forEach((v, i) => {
-                    const label = i === 0 ? 'player' : 'rival';
-                    if (v.upgrades.includes('sound_system') || v.upgrades.includes('live_music')) {
-                        v.reputation = Math.max(0, v.reputation - 5);
-                        msgs.push({ who: label, text: `${v.name}'s equipment was disrupted. -5 rep` });
-                    } else {
-                        msgs.push({ who: label, text: `${v.name} was mostly unaffected.` });
-                    }
-                });
-                return msgs;
+                state.bonusCustomers = (state.bonusCustomers || 0) - 3;
+                return [{ who: 'neutral', text: '-3 customers tonight due to rain.' }];
             },
         },
     ];
 
-    // === Game State Factory ===
+    function shuffle(list) {
+        const deck = [...list];
+        for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
+        return deck;
+    }
+
+    function drawGuest(venue) {
+        if (!venue.guestDeck.length) {
+            venue.guestDeck = shuffle(venue.guestDiscard);
+            venue.guestDiscard = [];
+        }
+        venue.currentGuest = venue.guestDeck.shift() || null;
+    }
+
     function createVenue(name, type) {
         const typeData = VENUE_TYPES[type] || VENUE_TYPES.bar;
         return {
-            name: name,
-            type: type,
+            name,
+            type,
             money: STARTING_MONEY,
             reputation: STARTING_REP + typeData.repBonus,
             totalEarnings: 0,
@@ -218,85 +83,53 @@ const Game = (() => {
             upgrades: [],
             promoActive: false,
             promoTurnsLeft: 0,
+            maxOccupancy: typeData.maxOccupancy,
+            houseOccupancy: 0,
+            guestDeck: shuffle(GUEST_POOL),
+            guestDiscard: [],
+            currentGuest: null,
+            houseClosed: false,
+            roundAttractionBonus: 0,
+            roundRevenueBonus: 0,
+            ignoreOvercrowdPenalty: false,
         };
     }
 
     function createGameState(playerName, playerType) {
-        // AI picks a random different type
         const types = ['bar', 'club', 'lounge'];
         const rivalType = types.filter(t => t !== playerType)[Math.floor(Math.random() * 2)];
-
-        const rivalNames = [
-            'The Crimson Fox', 'Midnight Ember', 'Velvet Edge',
-            'Neon Pulse', 'The Gilded Owl', 'Shadow & Tonic',
-        ];
-        const rivalName = rivalNames[Math.floor(Math.random() * rivalNames.length)];
-
-        return {
+        const rivalNames = ['The Crimson Fox', 'Midnight Ember', 'Velvet Edge', 'Neon Pulse'];
+        const state = {
             turn: 1,
-            phase: 'action', // 'action', 'resolution', 'event', 'gameover'
+            phase: 'action',
             player: createVenue(playerName, playerType),
-            rival: createVenue(rivalName, rivalType),
+            rival: createVenue(rivalNames[Math.floor(Math.random() * rivalNames.length)], rivalType),
             bonusCustomers: 0,
             lastRoundPlayerCustomers: 0,
             lastRoundRivalCustomers: 0,
             lastActionFrame: 0,
-            log: [],
             winner: null,
         };
+        drawGuest(state.player);
+        drawGuest(state.rival);
+        return state;
     }
 
-    // === Turn Resolution ===
     function getCustomerPool(state) {
-        const base = BASE_CUSTOMERS_PER_TURN + Math.floor(state.turn / 5) * 2;
-        return Math.max(2, base + (state.bonusCustomers || 0));
+        return Math.max(4, BASE_CUSTOMERS_PER_TURN + (state.bonusCustomers || 0));
     }
 
     function getAttractionScore(venue) {
+        if (venue.houseClosed) return 0;
         const typeData = VENUE_TYPES[venue.type];
-        let score = venue.reputation * typeData.customerMod;
-
-        // Upgrade bonuses
-        venue.upgrades.forEach(id => {
-            const upg = UPGRADES[id];
-            if (upg && upg.effect.customerAttraction) {
-                score *= (1 + upg.effect.customerAttraction);
-            }
-        });
-
-        // Staff bonus
-        score += (venue.staff - 1) * 3;
-
-        // Promo bonus
-        if (venue.promoActive) {
-            score += PROMO_BOOST;
-        }
-
-        // Happy hour: +20% customer attraction
-        if (venue._happyHourActive) {
-            score *= 1.2;
-        }
-
-        return Math.max(1, score);
+        let score = venue.reputation * typeData.customerMod + venue.roundAttractionBonus;
+        score += Math.min(venue.houseOccupancy, venue.maxOccupancy);
+        return Math.max(0, score);
     }
 
     function getRevenuePerCustomer(venue) {
         const typeData = VENUE_TYPES[venue.type];
-        let rev = BASE_REVENUE_PER_CUSTOMER * typeData.revenueMod;
-
-        venue.upgrades.forEach(id => {
-            const upg = UPGRADES[id];
-            if (upg && upg.effect.revenuePerCustomer) {
-                rev += upg.effect.revenuePerCustomer;
-            }
-        });
-
-        // Happy hour reduces revenue by 30%
-        if (venue._happyHourActive) {
-            rev *= 0.7;
-        }
-
-        return rev;
+        return BASE_REVENUE_PER_CUSTOMER * typeData.revenueMod + venue.roundRevenueBonus;
     }
 
     function getOperatingCosts(venue) {
@@ -304,78 +137,135 @@ const Game = (() => {
         return Math.round(venue.staff * STAFF_WAGE * typeData.costMod);
     }
 
+    function resetRoundModifiers(venue) {
+        venue.houseClosed = false;
+        venue.roundAttractionBonus = 0;
+        venue.roundRevenueBonus = 0;
+        venue.ignoreOvercrowdPenalty = false;
+    }
+
+    function applyGuestAbility(state, actor, target, guest, log) {
+        const ability = guest.ability;
+        switch (ability.type) {
+            case 'attraction':
+                actor.roundAttractionBonus += ability.amount;
+                log.push(`${actor.name} used ${guest.abilityName}: +${ability.amount} attraction.`);
+                break;
+            case 'revBonus':
+                actor.roundRevenueBonus += ability.amount;
+                log.push(`${actor.name} used ${guest.abilityName}: +$${ability.amount}/customer.`);
+                break;
+            case 'disruptAttraction':
+                target.roundAttractionBonus -= ability.amount;
+                log.push(`${actor.name} used ${guest.abilityName}: ${target.name} -${ability.amount} attraction.`);
+                break;
+            case 'repDamage':
+                target.reputation = Math.max(1, target.reputation - ability.amount);
+                log.push(`${actor.name} sent trouble to ${target.name}: -${ability.amount} reputation.`);
+                break;
+            case 'combo':
+                actor.roundAttractionBonus += ability.attraction;
+                actor.reputation += ability.rep;
+                log.push(`${actor.name} built buzz: +${ability.attraction} attraction, +${ability.rep} reputation.`);
+                break;
+            case 'forceClose':
+                target.houseClosed = true;
+                log.push(`${actor.name} triggered inspections. ${target.name} closed for the round.`);
+                break;
+            case 'attractionCash':
+                actor.roundAttractionBonus += ability.attraction;
+                actor.money += ability.cash;
+                log.push(`${actor.name} cashed in: +${ability.attraction} attraction and +$${ability.cash}.`);
+                break;
+            case 'repBoost':
+                actor.reputation += ability.amount;
+                log.push(`${actor.name} gained +${ability.amount} reputation.`);
+                break;
+            case 'bonusCustomers':
+                state.bonusCustomers += ability.amount;
+                log.push(`${actor.name} secured a group booking (+${ability.amount} customers this round).`);
+                break;
+            case 'preventOvercrowd':
+                actor.ignoreOvercrowdPenalty = true;
+                log.push(`${actor.name} is protected from overcrowd penalties this round.`);
+                break;
+        }
+    }
+
+    function executeRoundAction(state, side, actionId) {
+        const actor = state[side];
+        const target = side === 'player' ? state.rival : state.player;
+        const guest = actor.currentGuest;
+        const msg = [];
+        if (!guest) return msg;
+
+        if (actionId === 'admit') {
+            actor.houseOccupancy = Math.min(actor.maxOccupancy + 2, actor.houseOccupancy + 1);
+            actor.reputation = Math.max(1, actor.reputation + guest.admitRep);
+            msg.push(`${actor.name} admitted ${guest.name}. Occupancy ${actor.houseOccupancy}/${actor.maxOccupancy}.`);
+        } else if (actionId === 'ability') {
+            applyGuestAbility(state, actor, target, guest, msg);
+        } else if (actionId === 'close') {
+            actor.houseClosed = true;
+            actor.houseOccupancy = Math.max(0, actor.houseOccupancy - 1);
+            actor.reputation += 1;
+            msg.push(`${actor.name} closed the house this round to reset pressure.`);
+        }
+
+        actor.guestDiscard.push(guest);
+        actor.currentGuest = null;
+        return msg;
+    }
+
     function resolveCustomers(state) {
         const pool = getCustomerPool(state);
         const pScore = getAttractionScore(state.player);
         const rScore = getAttractionScore(state.rival);
-        const total = pScore + rScore;
-
-        // Distribute customers proportionally with some randomness
-        const pRatio = pScore / total;
-        let pCustomers = 0;
-        for (let i = 0; i < pool; i++) {
-            const roll = Math.random();
-            // Add some noise (±10%) so it's not purely deterministic
-            const threshold = pRatio + (Math.random() - 0.5) * 0.1;
-            if (roll < threshold) {
-                pCustomers++;
-            }
-        }
+        const total = Math.max(1, pScore + rScore);
+        let pCustomers = Math.round((pScore / total) * pool);
+        pCustomers = Math.max(0, Math.min(pool, pCustomers));
         const rCustomers = pool - pCustomers;
-
         return { playerCustomers: pCustomers, rivalCustomers: rCustomers, totalPool: pool };
     }
 
-    function resolveTurn(state) {
-        const results = { messages: [], event: null };
+    function applyOvercrowd(venue) {
+        if (venue.ignoreOvercrowdPenalty) return;
+        if (venue.houseOccupancy > venue.maxOccupancy) {
+            venue.reputation = Math.max(1, venue.reputation - 3);
+        }
+    }
 
-        // Random event (30% chance after turn 3)
+    function resolveTurn(state) {
+        const results = { messages: [] };
         state.bonusCustomers = 0;
-        if (state.turn > 3 && Math.random() < 0.3) {
+
+        if (state.turn > 1 && Math.random() < 0.25) {
             const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
-            results.event = event;
-            const eventMsgs = event.effect(state);
-            results.messages.push({ type: 'event', title: event.name, desc: event.description, details: eventMsgs });
+            const details = event.effect(state);
+            results.messages.push({ type: 'event', title: event.name, desc: event.description, details });
         }
 
-        // Customer distribution
         const cust = resolveCustomers(state);
         state.lastRoundPlayerCustomers = cust.playerCustomers;
         state.lastRoundRivalCustomers = cust.rivalCustomers;
 
-        // Player revenue
-        const pRevPerCust = getRevenuePerCustomer(state.player);
-        const pRevenue = Math.round(cust.playerCustomers * pRevPerCust);
+        const pRevenue = Math.round(cust.playerCustomers * getRevenuePerCustomer(state.player));
+        const rRevenue = Math.round(cust.rivalCustomers * getRevenuePerCustomer(state.rival));
         const pCosts = getOperatingCosts(state.player);
-        const pProfit = pRevenue - pCosts;
-        state.player.money += pProfit;
-        state.player.totalEarnings += Math.max(0, pRevenue);
-
-        // Reputation drift (+1 per 3 customers)
-        state.player.reputation += Math.floor(cust.playerCustomers / 3);
-        // Natural reputation decay
-        state.player.reputation = Math.max(1, state.player.reputation - 1);
-
-        // Rival revenue
-        const rRevPerCust = getRevenuePerCustomer(state.rival);
-        const rRevenue = Math.round(cust.rivalCustomers * rRevPerCust);
         const rCosts = getOperatingCosts(state.rival);
+        const pProfit = pRevenue - pCosts;
         const rProfit = rRevenue - rCosts;
+
+        state.player.money += pProfit;
         state.rival.money += rProfit;
+        state.player.totalEarnings += Math.max(0, pRevenue);
         state.rival.totalEarnings += Math.max(0, rRevenue);
 
-        state.rival.reputation += Math.floor(cust.rivalCustomers / 3);
-        state.rival.reputation = Math.max(1, state.rival.reputation - 1);
+        state.player.reputation = Math.max(1, state.player.reputation + Math.floor(cust.playerCustomers / 3) - 1);
+        state.rival.reputation = Math.max(1, state.rival.reputation + Math.floor(cust.rivalCustomers / 3) - 1);
 
-        // Handle promos
-        [state.player, state.rival].forEach(v => {
-            if (v.promoActive) {
-                v.promoTurnsLeft--;
-                if (v.promoTurnsLeft <= 0) {
-                    v.promoActive = false;
-                }
-            }
-        });
+        applyOvercrowd(state.player);
+        applyOvercrowd(state.rival);
 
         results.messages.push({
             type: 'resolution',
@@ -390,188 +280,54 @@ const Game = (() => {
             rivalProfit: rProfit,
         });
 
-        // Check win/loss
-        if (state.player.totalEarnings >= WIN_EARNINGS) {
-            state.winner = 'player';
+        if (state.turn >= MAX_TURNS || state.player.money < -100 || state.rival.money < -100) {
             state.phase = 'gameover';
-        } else if (state.rival.totalEarnings >= WIN_EARNINGS) {
-            state.winner = 'rival';
-            state.phase = 'gameover';
-        } else if (state.player.money < -100) {
-            state.winner = 'rival';
-            state.phase = 'gameover';
-        } else if (state.rival.money < -100) {
-            state.winner = 'player';
-            state.phase = 'gameover';
-        } else if (state.turn >= MAX_TURNS) {
-            // Whoever has more total earnings wins
             state.winner = state.player.totalEarnings >= state.rival.totalEarnings ? 'player' : 'rival';
-            state.phase = 'gameover';
         }
 
         return results;
     }
 
-    // === Actions ===
-    function getAvailableActions(state) {
-        const v = state.player;
-        const actions = [];
+    function playRound(state, playerAction, rivalAction) {
+        resetRoundModifiers(state.player);
+        resetRoundModifiers(state.rival);
 
-        // 1. Upgrade venue
-        actions.push({
-            id: 'upgrade',
-            name: 'Upgrade',
-            icon: '\uD83D\uDD27',
-            description: 'Invest in your venue',
-            cost: null, // varies
-            enabled: Object.keys(UPGRADES).some(id =>
-                !v.upgrades.includes(id) && v.money >= UPGRADES[id].cost &&
-                (!UPGRADES[id].requires || UPGRADES[id].requires.every(r => v.upgrades.includes(r)))
-            ),
-        });
-
-        // 2. Hire staff
-        const hireCost = 50 + v.staff * 25;
-        actions.push({
-            id: 'hire',
-            name: 'Hire Staff',
-            icon: '\uD83D\uDC64',
-            description: `Improve service quality (+3 attraction)`,
-            cost: hireCost,
-            enabled: v.money >= hireCost && v.staff < 6,
-        });
-
-        // 3. Run promotion
-        actions.push({
-            id: 'promo',
-            name: 'Promotion',
-            icon: '\uD83D\uDCE3',
-            description: `Marketing blitz (+${PROMO_BOOST} rep for 2 turns)`,
-            cost: PROMO_COST,
-            enabled: v.money >= PROMO_COST && !v.promoActive,
-        });
-
-        // 4. Lower prices (sacrifice revenue for more customers)
-        actions.push({
-            id: 'happy_hour',
-            name: 'Happy Hour',
-            icon: '\uD83C\uDF7B',
-            description: 'Discount night: +20% customers, -30% revenue this turn',
-            cost: 0,
-            enabled: true,
-            special: true,
-        });
-
-        // 5. Save / do nothing
-        actions.push({
-            id: 'save',
-            name: 'Save Cash',
-            icon: '\uD83D\uDCB0',
-            description: 'Conserve resources, slight rep boost',
-            cost: 0,
-            enabled: true,
-        });
-
-        return actions;
-    }
-
-    function getAvailableUpgrades(state) {
-        const v = state.player;
-        return Object.entries(UPGRADES).map(([id, upg]) => {
-            const owned = v.upgrades.includes(id);
-            const canAfford = v.money >= upg.cost;
-            const reqsMet = !upg.requires || upg.requires.every(r => v.upgrades.includes(r));
-            return {
-                id,
-                ...upg,
-                owned,
-                enabled: !owned && canAfford && reqsMet,
-            };
-        });
-    }
-
-    function executeAction(state, actionId, upgradeId) {
-        const v = state.player;
-        const msg = [];
-
-        switch (actionId) {
-            case 'upgrade':
-                if (upgradeId && UPGRADES[upgradeId]) {
-                    const upg = UPGRADES[upgradeId];
-                    v.money -= upg.cost;
-                    v.upgrades.push(upgradeId);
-                    if (upg.effect.reputation) {
-                        v.reputation += upg.effect.reputation;
-                    }
-                    msg.push(`Installed ${upg.name} (-$${upg.cost})`);
-                }
-                break;
-
-            case 'hire':
-                const cost = 50 + v.staff * 25;
-                v.money -= cost;
-                v.staff++;
-                msg.push(`Hired new staff member (-$${cost}). Staff: ${v.staff}`);
-                break;
-
-            case 'promo':
-                v.money -= PROMO_COST;
-                v.promoActive = true;
-                v.promoTurnsLeft = 2;
-                msg.push(`Launched promotion campaign (-$${PROMO_COST})`);
-                break;
-
-            case 'happy_hour':
-                // Temporary effect applied during resolution
-                v._happyHour = true;
-                msg.push('Happy Hour announced! Discounts tonight.');
-                break;
-
-            case 'save':
-                v.reputation += 2;
-                msg.push('Saved cash and focused on service. +2 reputation.');
-                break;
-        }
-
-        return msg;
-    }
-
-    function advanceTurn(state) {
-        // Apply happy hour effects before resolution (both player and rival)
-        [state.player, state.rival].forEach(v => {
-            if (v._happyHour) {
-                v._happyHourActive = true;
-            }
-        });
+        const actionLog = [
+            ...executeRoundAction(state, 'player', playerAction),
+            ...executeRoundAction(state, 'rival', rivalAction),
+        ];
 
         const results = resolveTurn(state);
-
-        // Remove happy hour effects after resolution
-        [state.player, state.rival].forEach(v => {
-            if (v._happyHourActive) {
-                delete v._happyHourActive;
-                delete v._happyHour;
-            }
-        });
+        results.messages.unshift({ type: 'actionSummary', details: actionLog });
 
         if (state.phase !== 'gameover') {
-            state.turn++;
+            state.turn += 1;
+            drawGuest(state.player);
+            drawGuest(state.rival);
         }
 
         return results;
+    }
+
+    function getRoundActions(state) {
+        const g = state.player.currentGuest;
+        if (!g) return [];
+        return [
+            { id: 'ability', name: `Use Ability: ${g.abilityName}`, icon: '✨', description: g.abilityText, enabled: true },
+            { id: 'admit', name: `Admit ${g.name}`, icon: '🚪', description: `Increase occupancy by 1 and adjust reputation by ${g.admitRep >= 0 ? '+' : ''}${g.admitRep}.`, enabled: true },
+            { id: 'close', name: 'Close House', icon: '🔒', description: 'Take no guest this round. Reduce occupancy by 1 and gain +1 reputation.', enabled: true },
+        ];
     }
 
     return {
         createGameState,
         getCustomerPool,
-        getAvailableActions,
-        getAvailableUpgrades,
-        executeAction,
-        advanceTurn,
-        resolveTurn,
         getAttractionScore,
         getRevenuePerCustomer,
         getOperatingCosts,
+        getRoundActions,
+        playRound,
+        resolveTurn,
         UPGRADES,
         VENUE_TYPES,
         WIN_EARNINGS,

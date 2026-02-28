@@ -12,7 +12,6 @@
     let selectedVenueType = null;
     let currentScreen = 'title';
     let animLoopId = null;
-    let showingUpgrades = false;
 
     // === DOM References ===
     const screens = {
@@ -131,12 +130,24 @@
 
     // === Action Panel ===
     function showActions() {
-        showingUpgrades = false;
         actionPanel.style.display = '';
         eventPanel.style.display = 'none';
 
-        const actions = Game.getAvailableActions(gameState);
+        const guest = gameState.player.currentGuest;
+        const actions = Game.getRoundActions(gameState);
         actionGrid.innerHTML = '';
+
+        if (guest) {
+            const guestCard = document.createElement('div');
+            guestCard.className = 'action-card';
+            guestCard.innerHTML = `
+                <span class="action-card-icon">${guest.icon}</span>
+                <div class="action-card-name">Round Guest: ${guest.name}</div>
+                <div class="action-card-desc">Admit bonus: ${guest.admitRep >= 0 ? '+' : ''}${guest.admitRep} reputation</div>
+                <div class="action-card-desc">Ability: ${guest.abilityName} — ${guest.abilityText}</div>
+            `;
+            actionGrid.appendChild(guestCard);
+        }
 
         actions.forEach(action => {
             const card = document.createElement('div');
@@ -145,82 +156,23 @@
                 <span class="action-card-icon">${action.icon}</span>
                 <div class="action-card-name">${action.name}</div>
                 <div class="action-card-desc">${action.description}</div>
-                ${action.cost !== null ? `<div class="action-card-cost">$${action.cost}</div>` : ''}
             `;
 
             if (action.enabled) {
-                card.addEventListener('click', () => {
-                    if (action.id === 'upgrade') {
-                        showUpgradePanel();
-                    } else {
-                        executePlayerAction(action.id);
-                    }
-                });
+                card.addEventListener('click', () => executeRound(action.id));
             }
 
             actionGrid.appendChild(card);
         });
     }
 
-    function showUpgradePanel() {
-        showingUpgrades = true;
-        const upgrades = Game.getAvailableUpgrades(gameState);
-        actionGrid.innerHTML = '';
+    // === Execute Round ===
+    function executeRound(playerActionId) {
+        const rivalAction = AI.chooseRoundAction(gameState);
 
-        // Back button
-        const backCard = document.createElement('div');
-        backCard.className = 'action-card';
-        backCard.innerHTML = `
-            <span class="action-card-icon">\u2B05\uFE0F</span>
-            <div class="action-card-name">Back</div>
-            <div class="action-card-desc">Return to actions</div>
-        `;
-        backCard.addEventListener('click', showActions);
-        actionGrid.appendChild(backCard);
+        gameState.lastActionFrame = Renderer.getAnimFrame();
+        const results = Game.playRound(gameState, playerActionId, rivalAction);
 
-        upgrades.forEach(upg => {
-            const card = document.createElement('div');
-            card.className = 'upgrade-card' +
-                (upg.owned ? ' owned' : (upg.enabled ? '' : ' disabled'));
-            card.innerHTML = `
-                <div class="upgrade-icon">${upg.icon}</div>
-                <div class="upgrade-name">${upg.name}</div>
-                <div class="upgrade-effect">${upg.description}</div>
-                ${!upg.owned ? `<div class="upgrade-cost">$${upg.cost}</div>` : ''}
-            `;
-
-            if (upg.enabled && !upg.owned) {
-                card.addEventListener('click', () => {
-                    executePlayerAction('upgrade', upg.id);
-                });
-            }
-
-            actionGrid.appendChild(card);
-        });
-    }
-
-    // === Execute Player Action ===
-    function executePlayerAction(actionId, upgradeId) {
-        // Execute player action
-        const msgs = Game.executeAction(gameState, actionId, upgradeId);
-        msgs.forEach(m => addLogEntry(`<span class="highlight-player">[You]</span> ${m}`));
-
-        // Spawn particles for upgrades/purchases
-        if (actionId === 'upgrade' || actionId === 'hire') {
-            for (let i = 0; i < 5; i++) {
-                Renderer.spawnParticle(200, 250, 'star');
-            }
-        }
-
-        // AI takes its turn
-        const aiMsgs = AI.takeTurn(gameState);
-        aiMsgs.forEach(m => addLogEntry(`<span class="highlight-rival">[Rival]</span> ${m}`));
-
-        // Resolve the turn
-        gameState.lastActionFrame = Renderer.getAnimFrame(); // Sync animation timer
-        const results = Game.advanceTurn(gameState);
-
-        // Show resolution
         showResolution(results);
     }
 
@@ -231,8 +183,17 @@
 
         let html = '';
 
-        // Show event if any
+        // Show round actions, events, and resolution
         results.messages.forEach(msg => {
+            if (msg.type === 'actionSummary') {
+                html += `<h3>Simultaneous Actions</h3>`;
+                msg.details.forEach(d => {
+                    const cls = d.includes(gameState.player.name) ? 'highlight-player' : 'highlight-rival';
+                    html += `<p class="${cls}">${d}</p>`;
+                    addLogEntry(d);
+                });
+                html += '<hr style="border-color: #333; margin: 12px 0;">';
+            }
             if (msg.type === 'event') {
                 html += `<h3>\u26A1 ${msg.title}</h3>`;
                 html += `<p>${msg.desc}</p>`;
@@ -380,6 +341,7 @@
         gameState = Game.createGameState(name, type);
         logEntries.innerHTML = '';
         addLogEntry(`Welcome to ${gameState.player.name}! Your rival: ${gameState.rival.name}`);
+        addLogEntry('Each round both venues reveal one guest card and choose simultaneously.');
 
         switchScreen('game');
         updateHUD();
