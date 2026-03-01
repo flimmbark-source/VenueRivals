@@ -6,7 +6,7 @@
 
 const Game = (() => {
 
-    const TOTAL_ROUNDS = 3;
+    const DEFAULT_TOTAL_ROUNDS = 3;
     const BUST_PENALTY = 0.25; // keep 25% of earnings when busted
 
     // === Guest Definitions ===
@@ -47,7 +47,7 @@ const Game = (() => {
             name: 'The Underground',
             emoji: '\u{1F37A}',
             gridSize: 5,
-            bustThreshold: 21,
+            bustThreshold: 6,
             desc: 'Gritty bar. Larger grid, money-focused.',
             style: 'money',
             color: '#c9884c',
@@ -58,7 +58,7 @@ const Game = (() => {
             name: 'The Spotlight',
             emoji: '\u{1F3AD}',
             gridSize: 4,
-            bustThreshold: 18,
+            bustThreshold: 5,
             desc: 'Flashy club. Smaller grid, points-focused.',
             style: 'points',
             color: '#7f5af0',
@@ -69,7 +69,7 @@ const Game = (() => {
             name: 'The Velvet Room',
             emoji: '\u{1F378}',
             gridSize: 6,
-            bustThreshold: 24,
+            bustThreshold: 7,
             desc: 'Upscale lounge. Biggest grid, control-focused.',
             style: 'control',
             color: '#2cb67d',
@@ -111,9 +111,10 @@ const Game = (() => {
     }
 
     // === Game State Factory ===
-    function createGameState(playerName, playerVenue, rivalName, rivalVenue) {
+    function createGameState(playerName, playerVenue, rivalName, rivalVenue, totalRounds = DEFAULT_TOTAL_ROUNDS) {
         return {
             round: 1,
+            totalRounds,
             phase: 'guest',
             player: createPlayer(playerName, playerVenue, false),
             rival: createPlayer(rivalName, rivalVenue, true),
@@ -135,11 +136,11 @@ const Game = (() => {
             p.busted = false;
             p.phaseComplete = false;
         });
-        drawNextGuest(state.player);
-        drawNextGuest(state.rival);
+        drawNextGuest(state.player, VENUES[state.player.venueId]);
+        drawNextGuest(state.rival, VENUES[state.rival.venueId]);
     }
 
-    function drawNextGuest(player) {
+    function drawNextGuest(player, venue) {
         if (player.roundDeck.length === 0) {
             player.arrivingGuest = null;
             player.phaseComplete = true;
@@ -147,41 +148,58 @@ const Game = (() => {
             return false;
         }
         player.arrivingGuest = player.roundDeck.pop();
+        const guest = GUESTS[player.arrivingGuest];
+
+        // Door slot is part of the party: arriving guest immediately contributes
+        player.heat += guest.heat;
+        player.roundMoney += guest.money;
+        player.roundPoints += guest.points;
+
+        // Any time heat is over capacity, player immediately busts.
+        if (venue && player.heat > venue.bustThreshold) {
+            applyBustState(player);
+        }
         return true;
+    }
+
+    function moveArrivingGuestIntoHouse(player, venue) {
+        if (!player.arrivingGuest) return null;
+        let pushedOut = null;
+        player.house.unshift(player.arrivingGuest);
+        if (player.house.length > venue.gridSize) {
+            pushedOut = player.house.pop();
+        }
+        return pushedOut;
+    }
+
+    function applyBustState(player) {
+        player.busted = true;
+        player.phaseComplete = true;
+        player.roundMoney = Math.floor(player.roundMoney * BUST_PENALTY);
+        player.roundPoints = Math.floor(player.roundPoints * BUST_PENALTY);
     }
 
     function admitGuest(player, venue) {
         if (!player.arrivingGuest || player.doorClosed || player.busted) return null;
 
         const guestId = player.arrivingGuest;
-        const guest = GUESTS[guestId];
         const result = { admitted: guestId, pushedOut: null, busted: false };
 
-        // Add to front of house (newest first)
-        player.house.unshift(guestId);
-
-        // Push-out if over capacity
-        if (player.house.length > venue.gridSize) {
-            result.pushedOut = player.house.pop();
-        }
-
-        // Apply effects
-        player.heat += guest.heat;
-        player.roundMoney += guest.money;
-        player.roundPoints += guest.points;
+        // Guest is already contributing from the door; admit moves them into lane.
+        result.pushedOut = moveArrivingGuestIntoHouse(player, venue);
 
         // Check bust
         if (player.heat > venue.bustThreshold) {
             result.busted = true;
-            player.busted = true;
-            player.phaseComplete = true;
-            player.roundMoney = Math.floor(player.roundMoney * BUST_PENALTY);
-            player.roundPoints = Math.floor(player.roundPoints * BUST_PENALTY);
+            applyBustState(player);
         }
 
         player.arrivingGuest = null;
         if (!result.busted) {
-            drawNextGuest(player);
+            drawNextGuest(player, venue);
+            if (player.busted) {
+                result.busted = true;
+            }
         }
 
         return result;
@@ -195,6 +213,11 @@ const Game = (() => {
         if (!guest.ability) return null;
 
         const result = { activated: guestId, ability: guest.ability, effects: [] };
+
+        // Activating consumes this guest instead of keeping them in party.
+        player.heat -= guest.heat;
+        player.roundMoney -= guest.money;
+        player.roundPoints -= guest.points;
 
         switch (guest.ability.type) {
             case 'reduceHeat': {
@@ -212,10 +235,7 @@ const Game = (() => {
                 opponent.heat += guest.ability.value;
                 result.effects.push(`+${guest.ability.value} heat to opponent`);
                 if (!opponent.doorClosed && !opponent.busted && opponent.heat > opponentVenue.bustThreshold) {
-                    opponent.busted = true;
-                    opponent.phaseComplete = true;
-                    opponent.roundMoney = Math.floor(opponent.roundMoney * BUST_PENALTY);
-                    opponent.roundPoints = Math.floor(opponent.roundPoints * BUST_PENALTY);
+                    applyBustState(opponent);
                     result.effects.push('Opponent busted!');
                 }
                 break;
@@ -226,10 +246,7 @@ const Game = (() => {
                 opponent.heat += guest.ability.oppAdd;
                 result.effects.push(`-${selfReduced} heat, +${guest.ability.oppAdd} to opponent`);
                 if (!opponent.doorClosed && !opponent.busted && opponent.heat > opponentVenue.bustThreshold) {
-                    opponent.busted = true;
-                    opponent.phaseComplete = true;
-                    opponent.roundMoney = Math.floor(opponent.roundMoney * BUST_PENALTY);
-                    opponent.roundPoints = Math.floor(opponent.roundPoints * BUST_PENALTY);
+                    applyBustState(opponent);
                     result.effects.push('Opponent busted!');
                 }
                 break;
@@ -238,16 +255,17 @@ const Game = (() => {
 
         // Guest consumed without entering house
         player.arrivingGuest = null;
-        drawNextGuest(player);
+        drawNextGuest(player, playerVenue);
         return result;
     }
 
-    function closeDoor(player) {
+    function closeDoor(player, venue) {
         if (player.doorClosed || player.busted) return false;
+        const pushedOut = moveArrivingGuestIntoHouse(player, venue);
         player.doorClosed = true;
         player.phaseComplete = true;
         player.arrivingGuest = null;
-        return true;
+        return { closed: true, pushedOut };
     }
 
     function bothDone(state) {
@@ -276,7 +294,7 @@ const Game = (() => {
     }
 
     function endBuyPhase(state) {
-        if (state.round >= TOTAL_ROUNDS) {
+        if (state.round >= state.totalRounds) {
             state.phase = 'gameover';
             if (state.player.points > state.rival.points) {
                 state.winner = 'player';
@@ -295,7 +313,7 @@ const Game = (() => {
     return {
         GUESTS,
         VENUES,
-        TOTAL_ROUNDS,
+        TOTAL_ROUNDS: DEFAULT_TOTAL_ROUNDS,
         BUST_PENALTY,
         shuffle,
         createGameState,

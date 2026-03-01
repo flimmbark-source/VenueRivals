@@ -15,6 +15,7 @@
     let aiTimerId = null;
     let currentMarket = null;
     let tooltipEl = null;
+    let iconTooltipEl = null;
 
     // Rival names
     const RIVAL_NAMES = [
@@ -78,6 +79,7 @@
         const rVenue = Game.VENUES[r.venueId];
 
         document.getElementById('hud-round-num').textContent = gameState.round;
+        document.getElementById('hud-round-total').textContent = gameState.totalRounds;
         document.getElementById('hud-phase').textContent =
             gameState.phase === 'guest' ? 'GUEST PHASE' :
             gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
@@ -115,7 +117,7 @@
     function createGuestSlot(guestId, animate) {
         const guest = Game.GUESTS[guestId];
         const el = document.createElement('div');
-        el.className = `guest-slot tier-${guest.tier}`;
+        el.className = `guest-slot occupied-slot tier-${guest.tier}`;
         if (animate) el.classList.add('entering');
         el.innerHTML = `<span>${guest.emoji}</span><span class="slot-heat">\u{1F525}${guest.heat}</span>`;
         el.title = `${guest.name} - ${guest.desc}`;
@@ -127,10 +129,17 @@
         const player = who === 'player' ? gameState.player : gameState.rival;
         const slotsEl = document.getElementById(`${who}-slots`);
         slotsEl.innerHTML = '';
+        const venue = Game.VENUES[player.venueId];
+
+        for (let i = 0; i < venue.gridSize - player.house.length; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'guest-slot empty-slot';
+            slotsEl.appendChild(empty);
+        }
 
         // Render oldest to newest (house[0] is newest, so reverse)
         const guests = [...player.house].reverse();
-        guests.forEach((guestId, i) => {
+        guests.forEach((guestId) => {
             const slot = createGuestSlot(guestId, false);
             slotsEl.appendChild(slot);
         });
@@ -145,13 +154,38 @@
             const guest = Game.GUESTS[player.arrivingGuest];
             const card = document.createElement('div');
             card.className = 'arriving-guest-card';
-            if (guest.ability) card.classList.add('has-ability');
-            card.innerHTML = `<span>${guest.emoji}</span><span class="slot-heat">\u{1F525}${guest.heat}</span>`;
+            card.innerHTML = `
+                <span class="arriving-stat arriving-heat">🔥 ${guest.heat}</span>
+                <button class="arriving-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
+                <span class="arriving-stat arriving-money">${guest.money}</span>
+                <span class="arriving-stat arriving-points">${guest.points}</span>
+            `;
             card.title = `${guest.name}: ${guest.desc}`;
+
+            const emojiButton = card.querySelector('.arriving-emoji');
+            if (emojiButton && guest.ability) {
+                const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
+                bindAbilityTooltipInteractions(emojiButton, abilityMessage);
+            }
+
             if (who === 'player') {
                 card.addEventListener('click', () => handleAbility());
             }
             arrivingEl.appendChild(card);
+
+            const arrow = document.createElement('button');
+            arrow.className = 'entry-admit-arrow';
+            arrow.innerHTML = '←';
+            arrow.title = who === 'player' ? 'Admit guest' : 'Rival can admit this guest';
+            if (who === 'player') {
+                arrow.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleAdmit();
+                });
+            } else {
+                arrow.disabled = true;
+            }
+            arrivingEl.appendChild(arrow);
         }
     }
 
@@ -175,6 +209,19 @@
         }
     }
 
+    function animateExitGuest(who, guestId) {
+        const exitDoor = document.querySelector(`#${who}-area .exit-door`);
+        if (!exitDoor) return;
+        const ghost = createGuestSlot(guestId, false);
+        ghost.classList.add('exit-ghost');
+        const rect = exitDoor.getBoundingClientRect();
+        ghost.style.left = `${rect.left + rect.width / 2 - 19}px`;
+        ghost.style.top = `${rect.top + rect.height / 2 - 23}px`;
+        document.body.appendChild(ghost);
+        requestAnimationFrame(() => ghost.classList.add('leaving'));
+        setTimeout(() => ghost.remove(), 380);
+    }
+
     // === Guest Detail Panel ===
     function updateGuestDetail() {
         const detailEl = document.getElementById('guest-detail');
@@ -193,7 +240,7 @@
 
         const guest = Game.GUESTS[p.arrivingGuest];
         const venue = Game.VENUES[p.venueId];
-        const wouldBust = (p.heat + guest.heat) > venue.bustThreshold;
+        const wouldBust = p.heat > venue.bustThreshold;
 
         let abilityHTML = '';
         if (guest.ability) {
@@ -270,6 +317,74 @@
         }
     }
 
+    function showIconTooltip(e, text, sticky = false) {
+        removeIconTooltip();
+        const el = document.createElement('div');
+        el.className = 'effect-tooltip';
+        el.textContent = text;
+        document.body.appendChild(el);
+        iconTooltipEl = el;
+
+        const rect = e.target.getBoundingClientRect();
+        const left = Math.min(window.innerWidth - el.offsetWidth - 10, Math.max(10, rect.left - 10));
+        const top = Math.max(10, rect.top - el.offsetHeight - 8);
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
+
+        if (!sticky) {
+            setTimeout(removeIconTooltip, 1600);
+        }
+    }
+
+    function removeIconTooltip() {
+        if (iconTooltipEl) {
+            iconTooltipEl.remove();
+            iconTooltipEl = null;
+        }
+    }
+
+    function bindAbilityTooltipInteractions(el, message) {
+        if (!el || !message) return;
+
+        let pressTimer = null;
+        let didLongPress = false;
+
+        el.addEventListener('mouseenter', (e) => showIconTooltip(e, message));
+        el.addEventListener('mouseleave', removeIconTooltip);
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (didLongPress) {
+                didLongPress = false;
+                return;
+            }
+            showIconTooltip(e, message, true);
+        });
+
+        el.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            didLongPress = false;
+            pressTimer = setTimeout(() => {
+                showIconTooltip(e, message, true);
+                didLongPress = true;
+                pressTimer = null;
+            }, 420);
+        }, { passive: true });
+
+        const clearPressTimer = () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+        };
+
+        el.addEventListener('touchend', (e) => {
+            e.stopPropagation();
+            clearPressTimer();
+        }, { passive: true });
+        el.addEventListener('touchcancel', clearPressTimer, { passive: true });
+        el.addEventListener('touchmove', clearPressTimer, { passive: true });
+    }
+
     // === Center Feedback ===
     function showFeedback(text, type, duration) {
         const el = document.getElementById('center-feedback');
@@ -291,30 +406,17 @@
         const result = Game.admitGuest(p, venue);
         if (!result) return;
 
-        // Animate
-        const slotsEl = document.getElementById('player-slots');
-
-        // Handle push-out
         if (result.pushedOut) {
-            const lastSlot = slotsEl.firstChild;
-            if (lastSlot) {
-                lastSlot.classList.add('exiting');
-                setTimeout(() => lastSlot.remove(), 300);
-            }
+            animateExitGuest('player', result.pushedOut);
         }
-
-        // Add new guest
-        const newSlot = createGuestSlot(result.admitted, true);
-        slotsEl.appendChild(newSlot);
-
-        // Remove entering class after animation
-        setTimeout(() => newSlot.classList.remove('entering'), 300);
+        renderHouseGrid('player');
 
         renderArrivingGuest('player');
         updateGuestDetail();
         updateVenueStatus('player');
         updateHUD();
         removeTooltip();
+        removeIconTooltip();
 
         if (result.busted) {
             document.getElementById('player-area').classList.add('bust-flash');
@@ -350,6 +452,7 @@
         updateVenueStatus('rival');
         updateHUD();
         removeTooltip();
+        removeIconTooltip();
 
         // Check if opponent was busted by the ability
         if (r.busted) {
@@ -367,12 +470,18 @@
         const p = gameState.player;
         if (p.doorClosed || p.busted) return;
 
-        Game.closeDoor(p);
+        const venue = Game.VENUES[p.venueId];
+        const result = Game.closeDoor(p, venue);
+        if (result?.pushedOut) {
+            animateExitGuest('player', result.pushedOut);
+        }
+        renderHouseGrid('player');
         renderArrivingGuest('player');
         updateGuestDetail();
         updateVenueStatus('player');
         updateHUD();
         removeTooltip();
+        removeIconTooltip();
 
         showFeedback('You closed the door safely', 'money', 2000);
         checkGuestPhaseDone();
@@ -423,18 +532,10 @@
             const result = Game.admitGuest(r, rVenue);
             if (!result) return;
 
-            // Animate rival grid
-            const slotsEl = document.getElementById('rival-slots');
             if (result.pushedOut) {
-                const lastSlot = slotsEl.firstChild;
-                if (lastSlot) {
-                    lastSlot.classList.add('exiting');
-                    setTimeout(() => lastSlot.remove(), 300);
-                }
+                animateExitGuest('rival', result.pushedOut);
             }
-            const newSlot = createGuestSlot(result.admitted, true);
-            slotsEl.appendChild(newSlot);
-            setTimeout(() => newSlot.classList.remove('entering'), 300);
+            renderHouseGrid('rival');
 
             if (result.busted) {
                 document.getElementById('rival-area').classList.add('bust-flash');
@@ -460,7 +561,11 @@
 
             renderHouseGrid('player');
         } else if (action === 'close') {
-            Game.closeDoor(r);
+            const result = Game.closeDoor(r, rVenue);
+            if (result?.pushedOut) {
+                animateExitGuest('rival', result.pushedOut);
+            }
+            renderHouseGrid('rival');
             showFeedback(`${r.name} closed their door`, 'money', 2000);
         }
 
@@ -487,7 +592,7 @@
 
         const p = gameState.player;
         const r = gameState.rival;
-        const isFinalRound = gameState.round >= Game.TOTAL_ROUNDS;
+        const isFinalRound = gameState.round >= gameState.totalRounds;
 
         let html = `<h3>Round ${gameState.round} Results</h3>`;
 
@@ -514,7 +619,7 @@
     }
 
     function handleNextPhase() {
-        const isFinalRound = gameState.round >= Game.TOTAL_ROUNDS;
+        const isFinalRound = gameState.round >= gameState.totalRounds;
 
         if (isFinalRound) {
             Game.endBuyPhase(gameState);
@@ -566,18 +671,22 @@
             const card = document.createElement('div');
             card.className = 'shop-card' + (canAfford ? '' : ' disabled');
 
-            let abilityHTML = '';
-            if (guest.ability) {
-                abilityHTML = `<div class="shop-card-ability">\u26A1 ${guest.ability.name}</div>`;
-            }
-
             card.innerHTML = `
-                <div class="shop-card-emoji">${guest.emoji}</div>
+                <div class="shop-card-visual">
+                    <span class="shop-card-stat shop-card-heat">🔥 ${guest.heat}</span>
+                    <button class="shop-card-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
+                    <span class="shop-card-stat shop-card-money">${guest.money}</span>
+                    <span class="shop-card-stat shop-card-points">${guest.points}</span>
+                </div>
                 <div class="shop-card-name">${guest.name}</div>
-                <div class="shop-card-stats">\u{1F4B0}${guest.money} \u2B50${guest.points} \u{1F525}${guest.heat}</div>
                 <div class="shop-card-cost">$${guest.cost}</div>
-                ${abilityHTML}
             `;
+
+            const shopEmoji = card.querySelector('.shop-card-emoji');
+            if (shopEmoji && guest.ability) {
+                const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
+                bindAbilityTooltipInteractions(shopEmoji, abilityMessage);
+            }
 
             if (canAfford) {
                 card.addEventListener('click', () => {
@@ -604,7 +713,7 @@
     }
 
     // === Game Flow ===
-    function startGame(name, venueType) {
+    function startGame(name, venueType, totalRounds) {
         Renderer.resetAnimState();
 
         // Pick rival
@@ -612,7 +721,7 @@
         const rivalVenue = venueKeys[Math.floor(Math.random() * venueKeys.length)];
         const rivalName = RIVAL_NAMES[Math.floor(Math.random() * RIVAL_NAMES.length)];
 
-        gameState = Game.createGameState(name, venueType, rivalName, rivalVenue);
+        gameState = Game.createGameState(name, venueType, rivalName, rivalVenue, totalRounds);
 
         switchScreen('game');
         startNewRound();
@@ -629,10 +738,8 @@
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
 
-        // Clear grids
-        document.getElementById('player-slots').innerHTML = '';
-        document.getElementById('rival-slots').innerHTML = '';
-
+        renderHouseGrid('player');
+        renderHouseGrid('rival');
         renderArrivingGuest('player');
         renderArrivingGuest('rival');
         updateGuestDetail();
@@ -715,7 +822,8 @@
 
         document.getElementById('btn-start-game').addEventListener('click', () => {
             const rawName = document.getElementById('venue-name-input').value.trim() || 'My Venue';
-            startGame(escapeHtml(rawName), selectedVenueType);
+            const roundCount = parseInt(document.getElementById('round-count-input').value, 10) || Game.TOTAL_ROUNDS;
+            startGame(escapeHtml(rawName), selectedVenueType, roundCount);
         });
 
         // Guest phase controls
@@ -741,6 +849,7 @@
             selectedVenueType = null;
             document.querySelectorAll('.venue-type-card').forEach(c => c.classList.remove('selected'));
             document.getElementById('venue-name-input').value = '';
+            document.getElementById('round-count-input').value = String(Game.TOTAL_ROUNDS);
             document.getElementById('btn-start-game').disabled = true;
             switchScreen('title');
         });
@@ -749,6 +858,9 @@
         document.addEventListener('click', (e) => {
             if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.guest-tooltip')) {
                 removeTooltip();
+            }
+            if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.shop-card-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
+                removeIconTooltip();
             }
         });
     }

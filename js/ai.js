@@ -9,63 +9,52 @@ const AI = (() => {
      * Decide what to do with the current arriving guest.
      * Returns 'admit' | 'ability' | 'close' | null
      */
-    function decideGuestAction(state) {
-        const rival = state.rival;
-        const player = state.player;
-        const venue = Game.VENUES[rival.venueId];
+    function estimateDoorSafeAction(rival, guest, venue, player, playerVenue) {
+        if (!guest) return 'close';
 
-        if (!rival.arrivingGuest || rival.doorClosed || rival.busted) return null;
-
-        const guest = Game.GUESTS[rival.arrivingGuest];
-        const heatAfterAdmit = rival.heat + guest.heat;
-        const heatRatio = rival.heat / venue.bustThreshold;
-        const heatRatioAfter = heatAfterAdmit / venue.bustThreshold;
-
-        // Would bust if admitted
-        if (heatAfterAdmit > venue.bustThreshold) {
-            // Try defensive ability first
+        // Already over threshold while this guest is at the door.
+        if (rival.heat > venue.bustThreshold) {
             if (guest.ability && (guest.ability.type === 'reduceHeat' || guest.ability.type === 'inspect')) {
                 return 'ability';
             }
             return 'close';
         }
 
-        // Offensive ability: if opponent is vulnerable, use it
+        // If next draw likely busts, prefer stabilizing / banking.
+        const avgHeat = 3;
+        const projectedAfterNextDraw = rival.heat + avgHeat;
+
+        if (projectedAfterNextDraw > venue.bustThreshold) {
+            if (guest.ability && guest.ability.type === 'reduceHeat') return 'ability';
+            if (rival.roundMoney + rival.roundPoints > 7) return 'close';
+        }
+
+        // Offensive pressure if player is vulnerable.
         if (guest.ability && (guest.ability.type === 'addOpponentHeat' || guest.ability.type === 'inspect')) {
             if (!player.doorClosed && !player.busted) {
-                const playerVenue = Game.VENUES[player.venueId];
                 const playerHeatRatio = player.heat / playerVenue.bustThreshold;
-                if (playerHeatRatio > 0.55) {
-                    return 'ability';
-                }
+                if (playerHeatRatio > 0.5) return 'ability';
             }
         }
 
-        // Defensive ability when heat is getting high
-        if (guest.ability && guest.ability.type === 'reduceHeat' && heatRatio > 0.55) {
+        // Protective use of heat-reduction abilities if near threshold.
+        if (guest.ability && guest.ability.type === 'reduceHeat' && rival.heat / venue.bustThreshold > 0.7) {
             return 'ability';
         }
 
-        // Very dangerous zone - close unless guest is highly valuable
-        if (heatRatioAfter > 0.9) {
-            if (guest.money + guest.points >= 6) {
-                return Math.random() < 0.4 ? 'admit' : 'close';
-            }
-            return 'close';
-        }
-
-        // Dangerous zone with decent earnings banked
-        if (heatRatioAfter > 0.75 && rival.roundMoney + rival.roundPoints > 10) {
-            if (Math.random() < 0.35) return 'close';
-        }
-
-        // Moderate risk zone
-        if (heatRatioAfter > 0.65 && rival.roundMoney + rival.roundPoints > 15) {
-            if (Math.random() < 0.2) return 'close';
-        }
-
-        // Default: admit
         return 'admit';
+    }
+
+    function decideGuestAction(state) {
+        const rival = state.rival;
+        const player = state.player;
+        const venue = Game.VENUES[rival.venueId];
+        const playerVenue = Game.VENUES[player.venueId];
+
+        if (!rival.arrivingGuest || rival.doorClosed || rival.busted) return null;
+
+        const guest = Game.GUESTS[rival.arrivingGuest];
+        return estimateDoorSafeAction(rival, guest, venue, player, playerVenue);
     }
 
     /**

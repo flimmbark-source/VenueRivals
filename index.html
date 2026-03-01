@@ -68,39 +68,54 @@
             <h2>Choose Your Venue</h2>
             <div class="venue-type-grid">
                 <div class="venue-type-card" data-type="underground">
-                    <div class="venue-type-emoji">\u{1F37A}</div>
+                    <div class="venue-type-emoji">🍺</div>
                     <h3>The Underground</h3>
                     <p>Gritty bar. Money-focused.</p>
                     <div class="venue-stats-preview">
                         <span class="stat-tag">Grid: 5</span>
-                        <span class="stat-tag">Bust: 21</span>
-                        <span class="stat-tag">\u{1F4B0} Money</span>
+                        <span class="stat-tag">Bust: 6</span>
+                        <span class="stat-tag">💰 Money</span>
                     </div>
                 </div>
                 <div class="venue-type-card" data-type="spotlight">
-                    <div class="venue-type-emoji">\u{1F3AD}</div>
+                    <div class="venue-type-emoji">🎭</div>
                     <h3>The Spotlight</h3>
                     <p>Flashy club. Points-focused.</p>
                     <div class="venue-stats-preview">
                         <span class="stat-tag">Grid: 4</span>
-                        <span class="stat-tag">Bust: 18</span>
-                        <span class="stat-tag">\u2B50 Points</span>
+                        <span class="stat-tag">Bust: 5</span>
+                        <span class="stat-tag">⭐ Points</span>
                     </div>
                 </div>
                 <div class="venue-type-card" data-type="velvet">
-                    <div class="venue-type-emoji">\u{1F378}</div>
+                    <div class="venue-type-emoji">🍸</div>
                     <h3>The Velvet Room</h3>
                     <p>Upscale lounge. Control-focused.</p>
                     <div class="venue-stats-preview">
                         <span class="stat-tag">Grid: 6</span>
-                        <span class="stat-tag">Bust: 24</span>
-                        <span class="stat-tag">\u{1F6E1} Control</span>
+                        <span class="stat-tag">Bust: 7</span>
+                        <span class="stat-tag">🛡 Control</span>
                     </div>
                 </div>
             </div>
             <div class="setup-name-section">
                 <label for="venue-name-input">Name Your Venue</label>
                 <input type="text" id="venue-name-input" placeholder="Enter venue name..." maxlength="16">
+            </div>
+            <div class="setup-rounds-section">
+                <label for="round-count-input">Rounds (1-10)</label>
+                <select id="round-count-input">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                </select>
             </div>
             <button class="btn btn-primary btn-large" id="btn-start-game" disabled>Start Match</button>
         </div>
@@ -112,7 +127,7 @@
             <!-- Top HUD -->
             <div class="game-hud">
                 <div class="hud-left">
-                    <span class="hud-round">ROUND <span id="hud-round-num">1</span>/3</span>
+                    <span class="hud-round">ROUND <span id="hud-round-num">1</span>/<span id="hud-round-total">3</span></span>
                     <span class="hud-phase" id="hud-phase">GUEST PHASE</span>
                 </div>
                 <div class="hud-right">
@@ -126,26 +141,26 @@
                 <div class="venue-header">
                     <span class="venue-label rival-color" id="rival-venue-name">Rival</span>
                     <div class="venue-stats">
-                        <span class="money-badge" id="rival-money">\u{1F4B0} $0</span>
-                        <span class="pts-badge" id="rival-pts-badge">\u2B50 0</span>
+                        <span class="money-badge" id="rival-money">💰 $0</span>
+                        <span class="pts-badge" id="rival-pts-badge">⭐ 0</span>
                     </div>
                 </div>
                 <div class="heat-bar-container">
                     <div class="heat-bar">
                         <div class="heat-fill" id="rival-heat-fill"></div>
                     </div>
-                    <span class="heat-label" id="rival-heat-text">\u{1F525} 0/21</span>
+                    <span class="heat-label" id="rival-heat-text">🔥 0/21</span>
                 </div>
                 <div class="house-lane">
                     <div class="exit-door">
                         <span class="door-label">EXIT</span>
-                        <span class="door-icon">\u{1F6AA}</span>
+                        <span class="door-icon">🚪</span>
                     </div>
                     <div class="guest-slots" id="rival-slots"></div>
                     <div class="entry-area">
                         <div class="arriving-slot" id="rival-arriving"></div>
                         <div class="entry-door" id="rival-door">
-                            <span class="door-icon">\u{1F6AA}</span>
+                            <span class="door-icon">🚪</span>
                         </div>
                     </div>
                 </div>
@@ -160,26 +175,26 @@
                 <div class="venue-header">
                     <span class="venue-label player-color" id="player-venue-name">You</span>
                     <div class="venue-stats">
-                        <span class="money-badge" id="player-money">\u{1F4B0} $0</span>
-                        <span class="pts-badge" id="player-pts-badge">\u2B50 0</span>
+                        <span class="money-badge" id="player-money">💰 $0</span>
+                        <span class="pts-badge" id="player-pts-badge">⭐ 0</span>
                     </div>
                 </div>
                 <div class="heat-bar-container">
                     <div class="heat-bar">
                         <div class="heat-fill" id="player-heat-fill"></div>
                     </div>
-                    <span class="heat-label" id="player-heat-text">\u{1F525} 0/21</span>
+                    <span class="heat-label" id="player-heat-text">🔥 0/21</span>
                 </div>
                 <div class="house-lane">
                     <div class="exit-door" id="player-exit">
                         <span class="door-label">EXIT</span>
-                        <span class="door-icon">\u{1F6AA}</span>
+                        <span class="door-icon">🚪</span>
                     </div>
                     <div class="guest-slots" id="player-slots"></div>
                     <div class="entry-area">
                         <div class="arriving-slot" id="player-arriving"></div>
                         <div class="entry-door" id="player-door">
-                            <span class="door-icon">\u{1F6AA}</span>
+                            <span class="door-icon">🚪</span>
                         </div>
                     </div>
                 </div>
@@ -196,13 +211,13 @@
                     <div class="action-buttons">
                         <button class="btn btn-admit" id="btn-admit" disabled>
                             <span>ADMIT</span>
-                            <span class="btn-arrow">\u2192</span>
+                            <span class="btn-arrow">→</span>
                         </button>
                         <button class="btn btn-ability" id="btn-ability" disabled>
-                            <span>\u26A1 ABILITY</span>
+                            <span>⚡ ABILITY</span>
                         </button>
                         <button class="btn btn-close-door" id="btn-close-door" disabled>
-                            <span>\u{1F6AA} CLOSE</span>
+                            <span>🚪 CLOSE</span>
                         </button>
                     </div>
                 </div>
@@ -217,7 +232,7 @@
                 <div id="buy-phase-panel" style="display: none;">
                     <div class="shop-header">
                         <span class="shop-title">SHOP</span>
-                        <span class="shop-money" id="shop-money">\u{1F4B0} $0</span>
+                        <span class="shop-money" id="shop-money">💰 $0</span>
                     </div>
                     <div class="shop-grid" id="shop-grid"></div>
                     <button class="btn btn-primary" id="btn-done-shopping">Done Shopping</button>
