@@ -17,7 +17,8 @@ const AI = (() => {
         if (!rival.arrivingGuest || rival.doorClosed || rival.busted) return null;
 
         const guest = Game.GUESTS[rival.arrivingGuest];
-        const heatAfterAdmit = rival.heat + guest.heat;
+        // Arriving guest already contributes while at the door.
+        const heatAfterAdmit = rival.heat;
         const heatRatio = rival.heat / venue.bustThreshold;
         const heatRatioAfter = heatAfterAdmit / venue.bustThreshold;
 

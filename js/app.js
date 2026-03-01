@@ -432,7 +432,12 @@
         const p = gameState.player;
         if (p.doorClosed || p.busted) return;
 
-        Game.closeDoor(p);
+        const venue = Game.VENUES[p.venueId];
+        const result = Game.closeDoor(p, venue);
+        if (result?.pushedOut) {
+            animateExitGuest('player', result.pushedOut);
+        }
+        renderHouseGrid('player');
         renderArrivingGuest('player');
         updateGuestDetail();
         updateVenueStatus('player');
@@ -518,7 +523,11 @@
 
             renderHouseGrid('player');
         } else if (action === 'close') {
-            Game.closeDoor(r);
+            const result = Game.closeDoor(r, rVenue);
+            if (result?.pushedOut) {
+                animateExitGuest('rival', result.pushedOut);
+            }
+            renderHouseGrid('rival');
             showFeedback(`${r.name} closed their door`, 'money', 2000);
         }
 

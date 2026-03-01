@@ -596,6 +596,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     color: #ff5c5c;
+    white-space: nowrap;
 }
 
 .arriving-money {
@@ -922,6 +923,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     color: #ff5c5c;
+    white-space: nowrap;
 }
 
 .shop-card-money {
