@@ -6,7 +6,7 @@
 
 const Game = (() => {
 
-    const TOTAL_ROUNDS = 3;
+    const DEFAULT_TOTAL_ROUNDS = 3;
     const BUST_PENALTY = 0.25; // keep 25% of earnings when busted
 
     // === Guest Definitions ===
@@ -111,9 +111,10 @@ const Game = (() => {
     }
 
     // === Game State Factory ===
-    function createGameState(playerName, playerVenue, rivalName, rivalVenue) {
+    function createGameState(playerName, playerVenue, rivalName, rivalVenue, totalRounds = DEFAULT_TOTAL_ROUNDS) {
         return {
             round: 1,
+            totalRounds,
             phase: 'guest',
             player: createPlayer(playerName, playerVenue, false),
             rival: createPlayer(rivalName, rivalVenue, true),
@@ -137,15 +138,6 @@ const Game = (() => {
         });
         drawNextGuest(state.player);
         drawNextGuest(state.rival);
-
-        const pVenue = VENUES[state.player.venueId];
-        const rVenue = VENUES[state.rival.venueId];
-        if (state.player.heat > pVenue.bustThreshold) {
-            applyBustState(state.player);
-        }
-        if (state.rival.heat > rVenue.bustThreshold) {
-            applyBustState(state.rival);
-        }
     }
 
     function drawNextGuest(player) {
@@ -200,10 +192,6 @@ const Game = (() => {
         player.arrivingGuest = null;
         if (!result.busted) {
             drawNextGuest(player);
-            if (player.heat > venue.bustThreshold) {
-                result.busted = true;
-                applyBustState(player);
-            }
         }
 
         return result;
@@ -260,9 +248,6 @@ const Game = (() => {
         // Guest consumed without entering house
         player.arrivingGuest = null;
         drawNextGuest(player);
-        if (player.heat > playerVenue.bustThreshold) {
-            applyBustState(player);
-        }
         return result;
     }
 
@@ -301,7 +286,7 @@ const Game = (() => {
     }
 
     function endBuyPhase(state) {
-        if (state.round >= TOTAL_ROUNDS) {
+        if (state.round >= state.totalRounds) {
             state.phase = 'gameover';
             if (state.player.points > state.rival.points) {
                 state.winner = 'player';
@@ -320,7 +305,7 @@ const Game = (() => {
     return {
         GUESTS,
         VENUES,
-        TOTAL_ROUNDS,
+        TOTAL_ROUNDS: DEFAULT_TOTAL_ROUNDS,
         BUST_PENALTY,
         shuffle,
         createGameState,

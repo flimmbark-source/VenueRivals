@@ -102,6 +102,21 @@
                 <label for="venue-name-input">Name Your Venue</label>
                 <input type="text" id="venue-name-input" placeholder="Enter venue name..." maxlength="16">
             </div>
+            <div class="setup-rounds-section">
+                <label for="round-count-input">Rounds (1-10)</label>
+                <select id="round-count-input">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                </select>
+            </div>
             <button class="btn btn-primary btn-large" id="btn-start-game" disabled>Start Match</button>
         </div>
     </div>
@@ -112,7 +127,7 @@
             <!-- Top HUD -->
             <div class="game-hud">
                 <div class="hud-left">
-                    <span class="hud-round">ROUND <span id="hud-round-num">1</span>/3</span>
+                    <span class="hud-round">ROUND <span id="hud-round-num">1</span>/<span id="hud-round-total">3</span></span>
                     <span class="hud-phase" id="hud-phase">GUEST PHASE</span>
                 </div>
                 <div class="hud-right">

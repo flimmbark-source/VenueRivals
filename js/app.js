@@ -79,6 +79,7 @@
         const rVenue = Game.VENUES[r.venueId];
 
         document.getElementById('hud-round-num').textContent = gameState.round;
+        document.getElementById('hud-round-total').textContent = gameState.totalRounds;
         document.getElementById('hud-phase').textContent =
             gameState.phase === 'guest' ? 'GUEST PHASE' :
             gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
@@ -591,7 +592,7 @@
 
         const p = gameState.player;
         const r = gameState.rival;
-        const isFinalRound = gameState.round >= Game.TOTAL_ROUNDS;
+        const isFinalRound = gameState.round >= gameState.totalRounds;
 
         let html = `<h3>Round ${gameState.round} Results</h3>`;
 
@@ -618,7 +619,7 @@
     }
 
     function handleNextPhase() {
-        const isFinalRound = gameState.round >= Game.TOTAL_ROUNDS;
+        const isFinalRound = gameState.round >= gameState.totalRounds;
 
         if (isFinalRound) {
             Game.endBuyPhase(gameState);
@@ -712,7 +713,7 @@
     }
 
     // === Game Flow ===
-    function startGame(name, venueType) {
+    function startGame(name, venueType, totalRounds) {
         Renderer.resetAnimState();
 
         // Pick rival
@@ -720,7 +721,7 @@
         const rivalVenue = venueKeys[Math.floor(Math.random() * venueKeys.length)];
         const rivalName = RIVAL_NAMES[Math.floor(Math.random() * RIVAL_NAMES.length)];
 
-        gameState = Game.createGameState(name, venueType, rivalName, rivalVenue);
+        gameState = Game.createGameState(name, venueType, rivalName, rivalVenue, totalRounds);
 
         switchScreen('game');
         startNewRound();
@@ -821,7 +822,8 @@
 
         document.getElementById('btn-start-game').addEventListener('click', () => {
             const rawName = document.getElementById('venue-name-input').value.trim() || 'My Venue';
-            startGame(escapeHtml(rawName), selectedVenueType);
+            const roundCount = parseInt(document.getElementById('round-count-input').value, 10) || Game.TOTAL_ROUNDS;
+            startGame(escapeHtml(rawName), selectedVenueType, roundCount);
         });
 
         // Guest phase controls
@@ -847,6 +849,7 @@
             selectedVenueType = null;
             document.querySelectorAll('.venue-type-card').forEach(c => c.classList.remove('selected'));
             document.getElementById('venue-name-input').value = '';
+            document.getElementById('round-count-input').value = String(Game.TOTAL_ROUNDS);
             document.getElementById('btn-start-game').disabled = true;
             switchScreen('title');
         });
