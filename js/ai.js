@@ -1,127 +1,108 @@
 /* ============================================
    VENUE RIVALS - AI Opponent
-   Strategic decision-making for rival venue
+   Guest phase decisions and buy phase strategy
    ============================================ */
 
 const AI = (() => {
 
-    function takeTurn(state) {
+    /**
+     * Decide what to do with the current arriving guest.
+     * Returns 'admit' | 'ability' | 'close' | null
+     */
+    function decideGuestAction(state) {
         const rival = state.rival;
         const player = state.player;
-        const msgs = [];
+        const venue = Game.VENUES[rival.venueId];
 
-        // AI strategy based on game phase
-        const earlyGame = state.turn <= 8;
-        const midGame = state.turn > 8 && state.turn <= 20;
-        const lateGame = state.turn > 20;
+        if (!rival.arrivingGuest || rival.doorClosed || rival.busted) return null;
 
-        // Evaluate situation
-        const isWinning = rival.totalEarnings > player.totalEarnings;
-        const isBehind = rival.totalEarnings < player.totalEarnings - 500;
-        const isRich = rival.money > 400;
-        const isPoor = rival.money < 150;
+        const guest = Game.GUESTS[rival.arrivingGuest];
+        // Arriving guest already contributes while at the door.
+        const heatAfterAdmit = rival.heat;
+        const heatRatio = rival.heat / venue.bustThreshold;
+        const heatRatioAfter = heatAfterAdmit / venue.bustThreshold;
 
-        // Get available upgrades the AI can afford
-        const availableUpgrades = Object.entries(Game.UPGRADES)
-            .filter(([id, upg]) => {
-                if (rival.upgrades.includes(id)) return false;
-                if (rival.money < upg.cost) return false;
-                if (upg.requires && !upg.requires.every(r => rival.upgrades.includes(r))) return false;
-                return true;
-            })
-            .map(([id, upg]) => ({ id, ...upg }));
-
-        // Priority 1: If very poor, save money
-        if (isPoor && !earlyGame) {
-            rival.reputation += 2;
-            msgs.push(`${rival.name} is laying low and saving cash.`);
-            return msgs;
-        }
-
-        // Priority 2: Run promo if behind and can afford it
-        if (isBehind && !rival.promoActive && rival.money >= 80 && Math.random() < 0.5) {
-            rival.money -= 80;
-            rival.promoActive = true;
-            rival.promoTurnsLeft = 2;
-            msgs.push(`${rival.name} launched a marketing blitz!`);
-            return msgs;
-        }
-
-        // Priority 3: Buy upgrades strategically
-        if (availableUpgrades.length > 0 && isRich) {
-            // Prioritize upgrades based on game phase
-            let bestUpgrade = null;
-
-            if (earlyGame) {
-                // Prioritize cheap reputation boosters
-                bestUpgrade = availableUpgrades
-                    .filter(u => u.cost <= 250)
-                    .sort((a, b) => {
-                        const aRep = (a.effect.reputation || 0);
-                        const bRep = (b.effect.reputation || 0);
-                        return bRep - aRep;
-                    })[0];
-            } else if (midGame) {
-                // Prioritize customer and revenue upgrades
-                bestUpgrade = availableUpgrades
-                    .sort((a, b) => {
-                        const aVal = (a.effect.revenuePerCustomer || 0) * 5 +
-                                     (a.effect.reputation || 0) +
-                                     (a.effect.customerAttraction || 0) * 30;
-                        const bVal = (b.effect.revenuePerCustomer || 0) * 5 +
-                                     (b.effect.reputation || 0) +
-                                     (b.effect.customerAttraction || 0) * 30;
-                        return bVal - aVal;
-                    })[0];
-            } else {
-                // Late game: go for the most expensive/powerful
-                bestUpgrade = availableUpgrades
-                    .sort((a, b) => b.cost - a.cost)[0];
+        // Would bust if admitted
+        if (heatAfterAdmit > venue.bustThreshold) {
+            // Try defensive ability first
+            if (guest.ability && (guest.ability.type === 'reduceHeat' || guest.ability.type === 'inspect')) {
+                return 'ability';
             }
+            return 'close';
+        }
 
-            if (bestUpgrade) {
-                rival.money -= bestUpgrade.cost;
-                rival.upgrades.push(bestUpgrade.id);
-                if (bestUpgrade.effect.reputation) {
-                    rival.reputation += bestUpgrade.effect.reputation;
+        // Offensive ability: if opponent is vulnerable, use it
+        if (guest.ability && (guest.ability.type === 'addOpponentHeat' || guest.ability.type === 'inspect')) {
+            if (!player.doorClosed && !player.busted) {
+                const playerVenue = Game.VENUES[player.venueId];
+                const playerHeatRatio = player.heat / playerVenue.bustThreshold;
+                if (playerHeatRatio > 0.55) {
+                    return 'ability';
                 }
-                msgs.push(`${rival.name} installed ${bestUpgrade.name}!`);
-                return msgs;
             }
         }
 
-        // Priority 4: Hire staff if understaffed
-        const hireCost = 50 + rival.staff * 25;
-        if (rival.staff < 3 && rival.money >= hireCost && Math.random() < 0.6) {
-            rival.money -= hireCost;
-            rival.staff++;
-            msgs.push(`${rival.name} hired new staff.`);
-            return msgs;
+        // Defensive ability when heat is getting high
+        if (guest.ability && guest.ability.type === 'reduceHeat' && heatRatio > 0.55) {
+            return 'ability';
         }
 
-        // Priority 5: Promo if not active
-        if (!rival.promoActive && rival.money >= 80 && Math.random() < 0.35) {
-            rival.money -= 80;
-            rival.promoActive = true;
-            rival.promoTurnsLeft = 2;
-            msgs.push(`${rival.name} launched a promotion.`);
-            return msgs;
+        // Very dangerous zone - close unless guest is highly valuable
+        if (heatRatioAfter > 0.9) {
+            if (guest.money + guest.points >= 6) {
+                return Math.random() < 0.4 ? 'admit' : 'close';
+            }
+            return 'close';
         }
 
-        // Priority 6: Happy hour if losing customers
-        const pAttraction = Game.getAttractionScore(player);
-        const rAttraction = Game.getAttractionScore(rival);
-        if (rAttraction < pAttraction * 0.7 && Math.random() < 0.4) {
-            rival._happyHour = true; // Handled temporarily in advanceTurn
-            msgs.push(`${rival.name} is running Happy Hour specials!`);
-            return msgs;
+        // Dangerous zone with decent earnings banked
+        if (heatRatioAfter > 0.75 && rival.roundMoney + rival.roundPoints > 10) {
+            if (Math.random() < 0.35) return 'close';
         }
 
-        // Default: save
-        rival.reputation += 2;
-        msgs.push(`${rival.name} focused on daily operations.`);
-        return msgs;
+        // Moderate risk zone
+        if (heatRatioAfter > 0.65 && rival.roundMoney + rival.roundPoints > 15) {
+            if (Math.random() < 0.2) return 'close';
+        }
+
+        // Default: admit
+        return 'admit';
     }
 
-    return { takeTurn };
+    /**
+     * AI buy phase: buy guests from the market.
+     * Returns array of guestIds to buy.
+     */
+    function decideBuyPhaseActions(state, market) {
+        const rival = state.rival;
+        const purchases = [];
+        const venue = Game.VENUES[rival.venueId];
+
+        // Sort market by value heuristic
+        const ranked = [...market].sort((a, b) => {
+            const ga = Game.GUESTS[a];
+            const gb = Game.GUESTS[b];
+            let aScore = ga.money + ga.points;
+            let bScore = gb.money + gb.points;
+            if (ga.ability) aScore += 2;
+            if (gb.ability) bScore += 2;
+            // Prefer venue-aligned guests
+            if (venue.style === 'money') { aScore += ga.money; bScore += gb.money; }
+            if (venue.style === 'points') { aScore += ga.points; bScore += gb.points; }
+            return bScore - aScore;
+        });
+
+        let budget = rival.money;
+        for (const guestId of ranked) {
+            const guest = Game.GUESTS[guestId];
+            if (guest.cost <= budget && purchases.length < 3) {
+                purchases.push(guestId);
+                budget -= guest.cost;
+            }
+        }
+
+        return purchases;
+    }
+
+    return { decideGuestAction, decideBuyPhaseActions };
 })();

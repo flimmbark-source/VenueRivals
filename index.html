@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Venue Rivals</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -13,13 +13,13 @@
         <div class="title-container">
             <div class="title-logo">
                 <h1 class="title-text">VENUE<span class="title-accent">RIVALS</span></h1>
-                <p class="title-subtitle">Outplay. Outbuild. Outshine.</p>
+                <p class="title-subtitle">Push Your Luck. Crush Your Rival.</p>
             </div>
             <div class="title-venue-art">
-                <canvas id="title-canvas" width="600" height="200"></canvas>
+                <canvas id="title-canvas" width="400" height="180"></canvas>
             </div>
             <div class="title-menu">
-                <button class="btn btn-primary btn-large" id="btn-new-game">New Game</button>
+                <button class="btn btn-primary btn-large" id="btn-new-game">New Match</button>
                 <button class="btn btn-secondary btn-large" id="btn-how-to-play">How to Play</button>
             </div>
         </div>
@@ -31,29 +31,30 @@
             <h2>How to Play</h2>
             <div class="how-to-play-content">
                 <div class="how-section">
-                    <h3>Goal</h3>
-                    <p>Become the most popular venue on the block! Reach <strong>$10,000</strong> in total earnings or drive your rival out of business to win.</p>
+                    <h3>The Goal</h3>
+                    <p>Score the most <strong>points</strong> over 3 rounds. Each round has a <strong>Guest Phase</strong> followed by a <strong>Buy Phase</strong>.</p>
                 </div>
                 <div class="how-section">
-                    <h3>Each Turn</h3>
-                    <ol>
-                        <li><strong>Choose an Action</strong> — Upgrade your venue, adjust pricing, hire staff, or run a promotion.</li>
-                        <li><strong>Customers Arrive</strong> — They choose which venue to visit based on quality, price, reputation, and ambiance.</li>
-                        <li><strong>Earn Revenue</strong> — Customers spend money at your venue. Better venues earn more per customer.</li>
-                        <li><strong>Pay Costs</strong> — Staff wages and maintenance come out of your earnings.</li>
-                    </ol>
+                    <h3>Guest Phase</h3>
+                    <p>Guests arrive at your door one at a time. For each guest, you choose:</p>
+                    <ul>
+                        <li><strong>Admit</strong> &mdash; Let them in. Earn their money &amp; points, but take their heat.</li>
+                        <li><strong>Activate Ability</strong> &mdash; Use their special power instead of admitting them.</li>
+                        <li><strong>Close Door</strong> &mdash; Stop safely and bank what you earned.</li>
+                    </ul>
+                    <p>If your heat exceeds the threshold, you <strong>BUST</strong> and lose most of your round earnings!</p>
                 </div>
                 <div class="how-section">
-                    <h3>Upgrades</h3>
-                    <p>Invest in your venue to attract more customers: better decor, live music, premium drinks, expanded seating, and more!</p>
+                    <h3>Buy Phase</h3>
+                    <p>Spend <strong>money</strong> earned during the Guest Phase to buy new guests for future rounds. Points are your score &mdash; they're never spent.</p>
                 </div>
                 <div class="how-section">
                     <h3>Strategy Tips</h3>
                     <ul>
-                        <li>Balance spending on upgrades vs. saving cash reserves</li>
-                        <li>Watch what your rival does and counter their strategy</li>
-                        <li>Promotions give a short-term boost but cost money</li>
-                        <li>Reputation builds slowly but is powerful long-term</li>
+                        <li>Watch your heat &mdash; push too far and you'll bust</li>
+                        <li>Use abilities strategically to manage heat or disrupt your rival</li>
+                        <li>Buy guests that complement your venue's strengths</li>
+                        <li>Watch your opponent &mdash; their decisions play out live</li>
                     </ul>
                 </div>
             </div>
@@ -66,143 +67,171 @@
         <div class="setup-container">
             <h2>Choose Your Venue</h2>
             <div class="venue-type-grid">
-                <div class="venue-type-card" data-type="bar">
-                    <div class="venue-type-icon">
-                        <canvas class="venue-preview" data-venue="bar" width="120" height="120"></canvas>
-                    </div>
-                    <h3>The Bar</h3>
-                    <p>Cozy neighborhood spot. Low overhead, loyal regulars.</p>
+                <div class="venue-type-card" data-type="underground">
+                    <div class="venue-type-emoji">🍺</div>
+                    <h3>The Underground</h3>
+                    <p>Gritty bar. Money-focused.</p>
                     <div class="venue-stats-preview">
-                        <span class="stat-tag">+Reputation</span>
-                        <span class="stat-tag">Low Cost</span>
+                        <span class="stat-tag">Grid: 5</span>
+                        <span class="stat-tag">Bust: 6</span>
+                        <span class="stat-tag">💰 Money</span>
                     </div>
                 </div>
-                <div class="venue-type-card" data-type="club">
-                    <div class="venue-type-icon">
-                        <canvas class="venue-preview" data-venue="club" width="120" height="120"></canvas>
-                    </div>
-                    <h3>The Club</h3>
-                    <p>High energy nightlife. Big crowds, big spending.</p>
+                <div class="venue-type-card" data-type="spotlight">
+                    <div class="venue-type-emoji">🎭</div>
+                    <h3>The Spotlight</h3>
+                    <p>Flashy club. Points-focused.</p>
                     <div class="venue-stats-preview">
-                        <span class="stat-tag">+Revenue</span>
-                        <span class="stat-tag">High Risk</span>
+                        <span class="stat-tag">Grid: 4</span>
+                        <span class="stat-tag">Bust: 5</span>
+                        <span class="stat-tag">⭐ Points</span>
                     </div>
                 </div>
-                <div class="venue-type-card" data-type="lounge">
-                    <div class="venue-type-icon">
-                        <canvas class="venue-preview" data-venue="lounge" width="120" height="120"></canvas>
-                    </div>
-                    <h3>The Lounge</h3>
-                    <p>Upscale and refined. Premium prices, discerning clientele.</p>
+                <div class="venue-type-card" data-type="velvet">
+                    <div class="venue-type-emoji">🍸</div>
+                    <h3>The Velvet Room</h3>
+                    <p>Upscale lounge. Control-focused.</p>
                     <div class="venue-stats-preview">
-                        <span class="stat-tag">+Quality</span>
-                        <span class="stat-tag">Balanced</span>
+                        <span class="stat-tag">Grid: 6</span>
+                        <span class="stat-tag">Bust: 7</span>
+                        <span class="stat-tag">🛡 Control</span>
                     </div>
                 </div>
             </div>
             <div class="setup-name-section">
                 <label for="venue-name-input">Name Your Venue</label>
-                <input type="text" id="venue-name-input" placeholder="Enter venue name..." maxlength="20">
+                <input type="text" id="venue-name-input" placeholder="Enter venue name..." maxlength="16">
             </div>
-            <button class="btn btn-primary btn-large" id="btn-start-game" disabled>Start Game</button>
+            <button class="btn btn-primary btn-large" id="btn-start-game" disabled>Start Match</button>
         </div>
     </div>
 
     <!-- Main Game Screen -->
     <div id="game-screen" class="screen">
-        <!-- Top HUD -->
-        <div class="game-hud">
-            <div class="hud-player">
-                <div class="hud-venue-name" id="hud-player-name">Your Venue</div>
-                <div class="hud-stats">
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon">$</span>
-                        <span class="hud-stat-value" id="hud-player-money">500</span>
-                    </div>
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon star-icon">&#9733;</span>
-                        <span class="hud-stat-value" id="hud-player-rep">10</span>
-                    </div>
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon people-icon">&#9823;</span>
-                        <span class="hud-stat-value" id="hud-player-customers">0</span>
-                    </div>
+        <div class="game-layout">
+            <!-- Top HUD -->
+            <div class="game-hud">
+                <div class="hud-left">
+                    <span class="hud-round">ROUND <span id="hud-round-num">1</span>/3</span>
+                    <span class="hud-phase" id="hud-phase">GUEST PHASE</span>
                 </div>
-                <div class="hud-earnings-bar">
-                    <div class="earnings-fill" id="player-earnings-fill" style="width: 0%"></div>
-                    <span class="earnings-label" id="player-earnings-label">$0 / $10,000</span>
-                </div>
-            </div>
-            <div class="hud-center">
-                <div class="turn-display">
-                    <span class="turn-label">TURN</span>
-                    <span class="turn-number" id="turn-number">1</span>
-                </div>
-                <div class="customer-pool">
-                    <span class="pool-label">Customers Tonight</span>
-                    <span class="pool-value" id="customer-pool-count">10</span>
-                </div>
-            </div>
-            <div class="hud-rival">
-                <div class="hud-venue-name" id="hud-rival-name">Rival Venue</div>
-                <div class="hud-stats">
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon">$</span>
-                        <span class="hud-stat-value" id="hud-rival-money">500</span>
-                    </div>
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon star-icon">&#9733;</span>
-                        <span class="hud-stat-value" id="hud-rival-rep">10</span>
-                    </div>
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon people-icon">&#9823;</span>
-                        <span class="hud-stat-value" id="hud-rival-customers">0</span>
-                    </div>
-                </div>
-                <div class="hud-earnings-bar rival-bar">
-                    <div class="earnings-fill rival-fill" id="rival-earnings-fill" style="width: 0%"></div>
-                    <span class="earnings-label" id="rival-earnings-label">$0 / $10,000</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Game Area -->
-        <div class="game-main">
-            <!-- Street View Canvas -->
-            <div class="street-view-container">
-                <canvas id="game-canvas" width="900" height="400"></canvas>
-            </div>
-
-            <!-- Action Panel -->
-            <div class="action-panel" id="action-panel">
-                <h3 class="action-title">Choose Your Action</h3>
-                <div class="action-grid" id="action-grid">
-                    <!-- Actions populated by JS -->
+                <div class="hud-right">
+                    <span class="hud-score player-color" id="hud-player-pts">You: 0 pts</span>
+                    <span class="hud-score rival-color" id="hud-rival-pts">Rival: 0 pts</span>
                 </div>
             </div>
 
-            <!-- Event/Resolution Panel -->
-            <div class="event-panel" id="event-panel" style="display: none;">
-                <div class="event-content" id="event-content"></div>
-                <button class="btn btn-primary" id="btn-continue">Continue</button>
+            <!-- Opponent Venue Area -->
+            <div class="venue-area rival-venue" id="rival-area">
+                <div class="venue-header">
+                    <span class="venue-label rival-color" id="rival-venue-name">Rival</span>
+                    <div class="venue-stats">
+                        <span class="money-badge" id="rival-money">💰 $0</span>
+                        <span class="pts-badge" id="rival-pts-badge">⭐ 0</span>
+                    </div>
+                </div>
+                <div class="heat-bar-container">
+                    <div class="heat-bar">
+                        <div class="heat-fill" id="rival-heat-fill"></div>
+                    </div>
+                    <span class="heat-label" id="rival-heat-text">🔥 0/21</span>
+                </div>
+                <div class="house-lane">
+                    <div class="exit-door">
+                        <span class="door-label">EXIT</span>
+                        <span class="door-icon">🚪</span>
+                    </div>
+                    <div class="guest-slots" id="rival-slots"></div>
+                    <div class="entry-area">
+                        <div class="arriving-slot" id="rival-arriving"></div>
+                        <div class="entry-door" id="rival-door">
+                            <span class="door-icon">🚪</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="venue-status" id="rival-status"></div>
             </div>
-        </div>
 
-        <!-- Game Log -->
-        <div class="game-log" id="game-log">
-            <div class="log-header">Activity Log</div>
-            <div class="log-entries" id="log-entries"></div>
-        </div>
-    </div>
+            <!-- Center Feedback -->
+            <div class="center-feedback" id="center-feedback"></div>
 
-    <!-- Game Over Screen -->
-    <div id="gameover-screen" class="screen">
-        <div class="gameover-container">
-            <canvas id="gameover-canvas" width="600" height="300"></canvas>
-            <h2 id="gameover-title">Game Over</h2>
-            <p id="gameover-message"></p>
-            <div class="gameover-stats" id="gameover-stats"></div>
-            <button class="btn btn-primary btn-large" id="btn-play-again">Play Again</button>
+            <!-- Player Venue Area -->
+            <div class="venue-area player-venue" id="player-area">
+                <div class="venue-header">
+                    <span class="venue-label player-color" id="player-venue-name">You</span>
+                    <div class="venue-stats">
+                        <span class="money-badge" id="player-money">💰 $0</span>
+                        <span class="pts-badge" id="player-pts-badge">⭐ 0</span>
+                    </div>
+                </div>
+                <div class="heat-bar-container">
+                    <div class="heat-bar">
+                        <div class="heat-fill" id="player-heat-fill"></div>
+                    </div>
+                    <span class="heat-label" id="player-heat-text">🔥 0/21</span>
+                </div>
+                <div class="house-lane">
+                    <div class="exit-door" id="player-exit">
+                        <span class="door-label">EXIT</span>
+                        <span class="door-icon">🚪</span>
+                    </div>
+                    <div class="guest-slots" id="player-slots"></div>
+                    <div class="entry-area">
+                        <div class="arriving-slot" id="player-arriving"></div>
+                        <div class="entry-door" id="player-door">
+                            <span class="door-icon">🚪</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="venue-status" id="player-status"></div>
+            </div>
+
+            <!-- Bottom Panel -->
+            <div class="bottom-panel" id="bottom-panel">
+                <!-- Guest Phase Controls -->
+                <div id="guest-phase-panel">
+                    <div class="guest-detail" id="guest-detail">
+                        <div class="guest-detail-empty">Waiting for guest...</div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-admit" id="btn-admit" disabled>
+                            <span>ADMIT</span>
+                            <span class="btn-arrow">→</span>
+                        </button>
+                        <button class="btn btn-ability" id="btn-ability" disabled>
+                            <span>⚡ ABILITY</span>
+                        </button>
+                        <button class="btn btn-close-door" id="btn-close-door" disabled>
+                            <span>🚪 CLOSE</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Round Results Panel -->
+                <div id="round-results-panel" style="display: none;">
+                    <div class="results-content" id="results-content"></div>
+                    <button class="btn btn-primary" id="btn-next-phase">Continue</button>
+                </div>
+
+                <!-- Buy Phase Panel -->
+                <div id="buy-phase-panel" style="display: none;">
+                    <div class="shop-header">
+                        <span class="shop-title">SHOP</span>
+                        <span class="shop-money" id="shop-money">💰 $0</span>
+                    </div>
+                    <div class="shop-grid" id="shop-grid"></div>
+                    <button class="btn btn-primary" id="btn-done-shopping">Done Shopping</button>
+                </div>
+
+                <!-- Game Over Panel -->
+                <div id="gameover-panel" style="display: none;">
+                    <canvas id="gameover-canvas" width="400" height="200"></canvas>
+                    <h2 id="gameover-title">Game Over</h2>
+                    <p id="gameover-message"></p>
+                    <div class="gameover-stats" id="gameover-stats"></div>
+                    <button class="btn btn-primary btn-large" id="btn-play-again">Play Again</button>
+                </div>
+            </div>
         </div>
     </div>
 
