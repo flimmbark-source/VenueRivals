@@ -119,7 +119,12 @@
         const el = document.createElement('div');
         el.className = `guest-slot occupied-slot tier-${guest.tier}`;
         if (animate) el.classList.add('entering');
-        el.innerHTML = `<span>${guest.emoji}</span><span class="slot-heat">\u{1F525}${guest.heat}</span>`;
+        el.innerHTML = `
+            <span class="slot-stat slot-heat">🔥 ${guest.heat}</span>
+            <span class="slot-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
+            <span class="slot-stat slot-money">${guest.money}</span>
+            <span class="slot-stat slot-points">${guest.points}</span>
+        `;
         el.title = `${guest.name} - ${guest.desc}`;
         el.addEventListener('click', (e) => showTooltip(e, guestId));
         return el;
@@ -678,7 +683,7 @@
                     <span class="shop-card-stat shop-card-money">${guest.money}</span>
                     <span class="shop-card-stat shop-card-points">${guest.points}</span>
                 </div>
-                <div class="shop-card-name">${guest.name}</div>
+                <div class="shop-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
                 <div class="shop-card-cost">$${guest.cost}</div>
             `;
 
