@@ -450,8 +450,10 @@
 
         showFeedback(`\u26A1 ${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
 
-        renderArrivingGuest('player');
+        renderHouseGrid('player');
         renderHouseGrid('rival');
+        renderArrivingGuest('player');
+        renderArrivingGuest('rival');
         updateGuestDetail();
         updateVenueStatus('player');
         updateVenueStatus('rival');
@@ -565,6 +567,7 @@
             }
 
             renderHouseGrid('player');
+            renderHouseGrid('rival');
         } else if (action === 'close') {
             const result = Game.closeDoor(r, rVenue);
             if (result?.pushedOut) {
@@ -575,6 +578,7 @@
         }
 
         renderArrivingGuest('rival');
+        renderArrivingGuest('player');
         updateVenueStatus('rival');
         // AI abilities can change player heat/bust state as well, so always refresh player UI.
         updateVenueStatus('player');
