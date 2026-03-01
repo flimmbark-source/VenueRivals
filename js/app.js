@@ -346,17 +346,25 @@
         if (!el || !message) return;
 
         let pressTimer = null;
+        let didLongPress = false;
 
         el.addEventListener('mouseenter', (e) => showIconTooltip(e, message));
         el.addEventListener('mouseleave', removeIconTooltip);
         el.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (didLongPress) {
+                didLongPress = false;
+                return;
+            }
             showIconTooltip(e, message, true);
         });
 
         el.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            didLongPress = false;
             pressTimer = setTimeout(() => {
                 showIconTooltip(e, message, true);
+                didLongPress = true;
                 pressTimer = null;
             }, 420);
         }, { passive: true });
@@ -368,7 +376,10 @@
             }
         };
 
-        el.addEventListener('touchend', clearPressTimer, { passive: true });
+        el.addEventListener('touchend', (e) => {
+            e.stopPropagation();
+            clearPressTimer();
+        }, { passive: true });
         el.addEventListener('touchcancel', clearPressTimer, { passive: true });
         el.addEventListener('touchmove', clearPressTimer, { passive: true });
     }
