@@ -549,6 +549,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 4px;
 }
 
 .arriving-guest-card {
@@ -558,7 +559,6 @@ body {
     background: var(--bg-light);
     border: 2px solid var(--accent-gold);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     font-size: 18px;
@@ -566,27 +566,100 @@ body {
     box-shadow: 0 0 10px rgba(255, 209, 102, 0.3);
     cursor: pointer;
     position: relative;
+    overflow: visible;
 }
 
-.arriving-guest-card .slot-heat {
-    font-size: 0.6rem;
-    color: var(--accent-gold);
+.arriving-emoji {
+    font-size: 18px;
     line-height: 1;
 }
 
-.arriving-guest-card.has-ability::after {
-    content: '\u26A1';
+.arriving-stat {
     position: absolute;
-    top: -4px;
-    right: -4px;
-    font-size: 0.6rem;
-    background: var(--accent-gold);
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.65);
+}
+
+.arriving-heat {
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ff5c5c;
+}
+
+.arriving-money {
+    left: 4px;
+    bottom: 3px;
+    color: #2cb67d;
+}
+
+.arriving-points {
+    right: 4px;
+    bottom: 3px;
+    color: #ffd166;
+}
+
+.arriving-ability-icon {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 1px solid rgba(255, 209, 102, 0.45);
+    background: rgba(255, 209, 102, 0.13);
+    color: var(--accent-gold);
     border-radius: 50%;
     width: 14px;
     height: 14px;
+    font-size: 0.55rem;
+    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+.arriving-ability-spacer {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 14px;
+}
+
+.entry-admit-arrow {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-tertiary), #1f9860);
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(44, 182, 125, 0.4);
+}
+
+.entry-admit-arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
+    box-shadow: none;
+}
+
+.entry-admit-arrow:hover:not(:disabled) {
+    transform: scale(1.08);
+}
+
+.empty-slot {
+    background: rgba(255,255,255,0.03);
+    border: 1px dashed rgba(148,161,178,0.25);
+    cursor: default;
+}
+
+.empty-slot:hover {
+    transform: none;
 }
 
 /* === Venue Status === */
@@ -881,6 +954,20 @@ body {
     animation: tooltipIn 0.15s ease;
 }
 
+.effect-tooltip {
+    position: fixed;
+    z-index: 120;
+    background: rgba(15, 14, 23, 0.97);
+    border: 1px solid rgba(127, 90, 240, 0.45);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    font-size: 0.65rem;
+    color: var(--text-primary);
+    max-width: 180px;
+    pointer-events: none;
+    animation: tooltipIn 0.15s ease;
+}
+
 .guest-tooltip .tt-name {
     font-family: 'Poppins', sans-serif;
     font-weight: 700;
@@ -1019,6 +1106,18 @@ body {
 .entering { animation: slideInFromRight 0.3s ease both; }
 .exiting { animation: slideOutLeft 0.3s ease both; }
 .bust-flash { animation: bustFlash 0.5s ease; }
+
+.exit-ghost {
+    position: fixed;
+    z-index: 90;
+    pointer-events: none;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+.exit-ghost.leaving {
+    transform: translateX(-44px);
+    opacity: 0;
+}
 
 /* === Responsive (larger screens) === */
 @media (min-width: 500px) {

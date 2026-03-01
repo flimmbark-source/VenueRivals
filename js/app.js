@@ -15,6 +15,7 @@
     let aiTimerId = null;
     let currentMarket = null;
     let tooltipEl = null;
+    let iconTooltipEl = null;
 
     // Rival names
     const RIVAL_NAMES = [
@@ -115,7 +116,7 @@
     function createGuestSlot(guestId, animate) {
         const guest = Game.GUESTS[guestId];
         const el = document.createElement('div');
-        el.className = `guest-slot tier-${guest.tier}`;
+        el.className = `guest-slot occupied-slot tier-${guest.tier}`;
         if (animate) el.classList.add('entering');
         el.innerHTML = `<span>${guest.emoji}</span><span class="slot-heat">\u{1F525}${guest.heat}</span>`;
         el.title = `${guest.name} - ${guest.desc}`;
@@ -127,10 +128,17 @@
         const player = who === 'player' ? gameState.player : gameState.rival;
         const slotsEl = document.getElementById(`${who}-slots`);
         slotsEl.innerHTML = '';
+        const venue = Game.VENUES[player.venueId];
+
+        for (let i = 0; i < venue.gridSize - player.house.length; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'guest-slot empty-slot';
+            slotsEl.appendChild(empty);
+        }
 
         // Render oldest to newest (house[0] is newest, so reverse)
         const guests = [...player.house].reverse();
-        guests.forEach((guestId, i) => {
+        guests.forEach((guestId) => {
             const slot = createGuestSlot(guestId, false);
             slotsEl.appendChild(slot);
         });
@@ -145,13 +153,44 @@
             const guest = Game.GUESTS[player.arrivingGuest];
             const card = document.createElement('div');
             card.className = 'arriving-guest-card';
-            if (guest.ability) card.classList.add('has-ability');
-            card.innerHTML = `<span>${guest.emoji}</span><span class="slot-heat">\u{1F525}${guest.heat}</span>`;
+            card.innerHTML = `
+                <span class="arriving-stat arriving-heat">${guest.heat}</span>
+                <span class="arriving-emoji">${guest.emoji}</span>
+                <span class="arriving-stat arriving-money">${guest.money}</span>
+                <span class="arriving-stat arriving-points">${guest.points}</span>
+                ${guest.ability ? `<button class="arriving-ability-icon" title="${guest.ability.name}">${guest.ability.icon}</button>` : '<span class="arriving-ability-spacer"></span>'}
+            `;
             card.title = `${guest.name}: ${guest.desc}`;
+
+            const abilityIcon = card.querySelector('.arriving-ability-icon');
+            if (abilityIcon && guest.ability) {
+                const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
+                abilityIcon.addEventListener('mouseenter', (e) => showIconTooltip(e, abilityMessage));
+                abilityIcon.addEventListener('mouseleave', removeIconTooltip);
+                abilityIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showIconTooltip(e, abilityMessage, true);
+                });
+            }
+
             if (who === 'player') {
                 card.addEventListener('click', () => handleAbility());
             }
             arrivingEl.appendChild(card);
+
+            const arrow = document.createElement('button');
+            arrow.className = 'entry-admit-arrow';
+            arrow.innerHTML = '→';
+            arrow.title = who === 'player' ? 'Admit guest' : 'Rival can admit this guest';
+            if (who === 'player') {
+                arrow.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleAdmit();
+                });
+            } else {
+                arrow.disabled = true;
+            }
+            arrivingEl.appendChild(arrow);
         }
     }
 
@@ -173,6 +212,19 @@
             statusEl.textContent = '';
             statusEl.className = 'venue-status';
         }
+    }
+
+    function animateExitGuest(who, guestId) {
+        const exitDoor = document.querySelector(`#${who}-area .exit-door`);
+        if (!exitDoor) return;
+        const ghost = createGuestSlot(guestId, false);
+        ghost.classList.add('exit-ghost');
+        const rect = exitDoor.getBoundingClientRect();
+        ghost.style.left = `${rect.left + rect.width / 2 - 19}px`;
+        ghost.style.top = `${rect.top + rect.height / 2 - 23}px`;
+        document.body.appendChild(ghost);
+        requestAnimationFrame(() => ghost.classList.add('leaving'));
+        setTimeout(() => ghost.remove(), 380);
     }
 
     // === Guest Detail Panel ===
@@ -270,6 +322,32 @@
         }
     }
 
+    function showIconTooltip(e, text, sticky = false) {
+        removeIconTooltip();
+        const el = document.createElement('div');
+        el.className = 'effect-tooltip';
+        el.textContent = text;
+        document.body.appendChild(el);
+        iconTooltipEl = el;
+
+        const rect = e.target.getBoundingClientRect();
+        const left = Math.min(window.innerWidth - el.offsetWidth - 10, Math.max(10, rect.left - 10));
+        const top = Math.max(10, rect.top - el.offsetHeight - 8);
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
+
+        if (!sticky) {
+            setTimeout(removeIconTooltip, 1600);
+        }
+    }
+
+    function removeIconTooltip() {
+        if (iconTooltipEl) {
+            iconTooltipEl.remove();
+            iconTooltipEl = null;
+        }
+    }
+
     // === Center Feedback ===
     function showFeedback(text, type, duration) {
         const el = document.getElementById('center-feedback');
@@ -291,30 +369,17 @@
         const result = Game.admitGuest(p, venue);
         if (!result) return;
 
-        // Animate
-        const slotsEl = document.getElementById('player-slots');
-
-        // Handle push-out
         if (result.pushedOut) {
-            const lastSlot = slotsEl.firstChild;
-            if (lastSlot) {
-                lastSlot.classList.add('exiting');
-                setTimeout(() => lastSlot.remove(), 300);
-            }
+            animateExitGuest('player', result.pushedOut);
         }
-
-        // Add new guest
-        const newSlot = createGuestSlot(result.admitted, true);
-        slotsEl.appendChild(newSlot);
-
-        // Remove entering class after animation
-        setTimeout(() => newSlot.classList.remove('entering'), 300);
+        renderHouseGrid('player');
 
         renderArrivingGuest('player');
         updateGuestDetail();
         updateVenueStatus('player');
         updateHUD();
         removeTooltip();
+        removeIconTooltip();
 
         if (result.busted) {
             document.getElementById('player-area').classList.add('bust-flash');
@@ -350,6 +415,7 @@
         updateVenueStatus('rival');
         updateHUD();
         removeTooltip();
+        removeIconTooltip();
 
         // Check if opponent was busted by the ability
         if (r.busted) {
@@ -373,6 +439,7 @@
         updateVenueStatus('player');
         updateHUD();
         removeTooltip();
+        removeIconTooltip();
 
         showFeedback('You closed the door safely', 'money', 2000);
         checkGuestPhaseDone();
@@ -423,18 +490,10 @@
             const result = Game.admitGuest(r, rVenue);
             if (!result) return;
 
-            // Animate rival grid
-            const slotsEl = document.getElementById('rival-slots');
             if (result.pushedOut) {
-                const lastSlot = slotsEl.firstChild;
-                if (lastSlot) {
-                    lastSlot.classList.add('exiting');
-                    setTimeout(() => lastSlot.remove(), 300);
-                }
+                animateExitGuest('rival', result.pushedOut);
             }
-            const newSlot = createGuestSlot(result.admitted, true);
-            slotsEl.appendChild(newSlot);
-            setTimeout(() => newSlot.classList.remove('entering'), 300);
+            renderHouseGrid('rival');
 
             if (result.busted) {
                 document.getElementById('rival-area').classList.add('bust-flash');
@@ -629,10 +688,8 @@
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
 
-        // Clear grids
-        document.getElementById('player-slots').innerHTML = '';
-        document.getElementById('rival-slots').innerHTML = '';
-
+        renderHouseGrid('player');
+        renderHouseGrid('rival');
         renderArrivingGuest('player');
         renderArrivingGuest('rival');
         updateGuestDetail();
@@ -749,6 +806,9 @@
         document.addEventListener('click', (e) => {
             if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.guest-tooltip')) {
                 removeTooltip();
+            }
+            if (iconTooltipEl && !e.target.closest('.arriving-ability-icon') && !e.target.closest('.effect-tooltip')) {
+                removeIconTooltip();
             }
         });
     }
