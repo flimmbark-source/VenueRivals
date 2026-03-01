@@ -164,12 +164,7 @@
             const emojiButton = card.querySelector('.arriving-emoji');
             if (emojiButton && guest.ability) {
                 const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
-                emojiButton.addEventListener('mouseenter', (e) => showIconTooltip(e, abilityMessage));
-                emojiButton.addEventListener('mouseleave', removeIconTooltip);
-                emojiButton.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    showIconTooltip(e, abilityMessage, true);
-                });
+                bindAbilityTooltipInteractions(emojiButton, abilityMessage);
             }
 
             if (who === 'player') {
@@ -244,7 +239,7 @@
 
         const guest = Game.GUESTS[p.arrivingGuest];
         const venue = Game.VENUES[p.venueId];
-        const wouldBust = (p.heat + guest.heat) > venue.bustThreshold;
+        const wouldBust = p.heat > venue.bustThreshold;
 
         let abilityHTML = '';
         if (guest.ability) {
@@ -345,6 +340,37 @@
             iconTooltipEl.remove();
             iconTooltipEl = null;
         }
+    }
+
+    function bindAbilityTooltipInteractions(el, message) {
+        if (!el || !message) return;
+
+        let pressTimer = null;
+
+        el.addEventListener('mouseenter', (e) => showIconTooltip(e, message));
+        el.addEventListener('mouseleave', removeIconTooltip);
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showIconTooltip(e, message, true);
+        });
+
+        el.addEventListener('touchstart', (e) => {
+            pressTimer = setTimeout(() => {
+                showIconTooltip(e, message, true);
+                pressTimer = null;
+            }, 420);
+        }, { passive: true });
+
+        const clearPressTimer = () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+        };
+
+        el.addEventListener('touchend', clearPressTimer, { passive: true });
+        el.addEventListener('touchcancel', clearPressTimer, { passive: true });
+        el.addEventListener('touchmove', clearPressTimer, { passive: true });
     }
 
     // === Center Feedback ===
@@ -647,12 +673,7 @@
             const shopEmoji = card.querySelector('.shop-card-emoji');
             if (shopEmoji && guest.ability) {
                 const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
-                shopEmoji.addEventListener('mouseenter', (e) => showIconTooltip(e, abilityMessage));
-                shopEmoji.addEventListener('mouseleave', removeIconTooltip);
-                shopEmoji.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    showIconTooltip(e, abilityMessage, true);
-                });
+                bindAbilityTooltipInteractions(shopEmoji, abilityMessage);
             }
 
             if (canAfford) {
