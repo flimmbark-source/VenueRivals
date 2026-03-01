@@ -549,6 +549,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 4px;
 }
 
 .arriving-guest-card {
@@ -566,6 +567,7 @@ body {
     box-shadow: 0 0 10px rgba(255, 209, 102, 0.3);
     cursor: pointer;
     position: relative;
+    overflow: visible;
 }
 
 .arriving-guest-card .slot-heat {
@@ -587,6 +589,62 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.entry-admit-arrow {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-tertiary), #1f9860);
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(44, 182, 125, 0.4);
+}
+
+.entry-admit-arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
+    box-shadow: none;
+}
+
+.entry-admit-arrow:hover:not(:disabled) {
+    transform: scale(1.08);
+}
+
+.guest-effect-icons {
+    position: absolute;
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 2px;
+}
+
+.effect-icon {
+    border: 1px solid rgba(255,255,255,0.15);
+    background: var(--bg-medium);
+    color: var(--text-primary);
+    border-radius: 10px;
+    font-size: 0.45rem;
+    line-height: 1;
+    padding: 2px 4px;
+    cursor: pointer;
+}
+
+.effect-icon.ability {
+    background: rgba(255, 209, 102, 0.2);
+}
+
+.empty-slot {
+    background: rgba(255,255,255,0.03);
+    border: 1px dashed rgba(148,161,178,0.25);
+    cursor: default;
+}
+
+.empty-slot:hover {
+    transform: none;
 }
 
 /* === Venue Status === */
@@ -881,6 +939,20 @@ body {
     animation: tooltipIn 0.15s ease;
 }
 
+.effect-tooltip {
+    position: fixed;
+    z-index: 120;
+    background: rgba(15, 14, 23, 0.97);
+    border: 1px solid rgba(127, 90, 240, 0.45);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    font-size: 0.65rem;
+    color: var(--text-primary);
+    max-width: 180px;
+    pointer-events: none;
+    animation: tooltipIn 0.15s ease;
+}
+
 .guest-tooltip .tt-name {
     font-family: 'Poppins', sans-serif;
     font-weight: 700;
@@ -1019,6 +1091,18 @@ body {
 .entering { animation: slideInFromRight 0.3s ease both; }
 .exiting { animation: slideOutLeft 0.3s ease both; }
 .bust-flash { animation: bustFlash 0.5s ease; }
+
+.exit-ghost {
+    position: fixed;
+    z-index: 90;
+    pointer-events: none;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+.exit-ghost.leaving {
+    transform: translateX(-44px);
+    opacity: 0;
+}
 
 /* === Responsive (larger screens) === */
 @media (min-width: 500px) {
