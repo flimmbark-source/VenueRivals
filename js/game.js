@@ -140,7 +140,7 @@ const Game = (() => {
         drawNextGuest(state.rival, VENUES[state.rival.venueId]);
     }
 
-    function drawNextGuest(player, venue) {
+    function drawNextGuest(player, venue, skipBustCheck = false) {
         if (player.roundDeck.length === 0) {
             player.arrivingGuest = null;
             player.phaseComplete = true;
@@ -156,7 +156,7 @@ const Game = (() => {
         player.roundPoints += guest.points;
 
         // Any time heat is over capacity, player immediately busts.
-        if (venue && player.heat > venue.bustThreshold) {
+        if (!skipBustCheck && venue && player.heat > venue.bustThreshold) {
             applyBustState(player);
         }
         return true;
@@ -219,6 +219,12 @@ const Game = (() => {
         player.roundMoney -= guest.money;
         player.roundPoints -= guest.points;
 
+        const shouldDeferBustCheck = guest.ability.type === 'reduceHeat' || guest.ability.type === 'inspect';
+
+        // Guest consumed without entering house
+        player.arrivingGuest = null;
+        drawNextGuest(player, playerVenue, shouldDeferBustCheck);
+
         switch (guest.ability.type) {
             case 'reduceHeat': {
                 const reduced = Math.min(player.heat, guest.ability.value);
@@ -253,9 +259,11 @@ const Game = (() => {
             }
         }
 
-        // Guest consumed without entering house
-        player.arrivingGuest = null;
-        drawNextGuest(player, playerVenue);
+        if (shouldDeferBustCheck && !player.doorClosed && !player.busted && player.heat > playerVenue.bustThreshold) {
+            applyBustState(player);
+            result.effects.push('You busted!');
+        }
+
         return result;
     }
 
