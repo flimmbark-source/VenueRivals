@@ -153,6 +153,14 @@
     function renderArrivingGuest(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const arrivingEl = document.getElementById(`${who}-arriving`);
+        const arrivingKey = `${player.arrivingGuest || 'none'}:${player.doorClosed ? 'closed' : 'open'}:${player.busted ? 'busted' : 'active'}`;
+
+        // Avoid re-building identical DOM every tick so the door card does not visually refresh.
+        if (arrivingEl.dataset.renderKey === arrivingKey) {
+            return;
+        }
+
+        arrivingEl.dataset.renderKey = arrivingKey;
         arrivingEl.innerHTML = '';
 
         if (player.arrivingGuest && !player.doorClosed && !player.busted) {
