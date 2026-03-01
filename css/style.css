@@ -570,8 +570,17 @@ body {
 }
 
 .arriving-emoji {
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: inherit;
     font-size: 18px;
     line-height: 1;
+}
+
+.arriving-emoji.has-ability {
+    cursor: pointer;
+    filter: drop-shadow(0 0 4px rgba(255, 209, 102, 0.45));
 }
 
 .arriving-stat {
@@ -599,35 +608,6 @@ body {
     right: 4px;
     bottom: 3px;
     color: #ffd166;
-}
-
-.arriving-ability-icon {
-    position: absolute;
-    bottom: 2px;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 1px solid rgba(255, 209, 102, 0.45);
-    background: rgba(255, 209, 102, 0.13);
-    color: var(--accent-gold);
-    border-radius: 50%;
-    width: 14px;
-    height: 14px;
-    font-size: 0.55rem;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    padding: 0;
-}
-
-.arriving-ability-spacer {
-    position: absolute;
-    bottom: 2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 14px;
-    height: 14px;
 }
 
 .entry-admit-arrow {
@@ -906,7 +886,55 @@ body {
     cursor: not-allowed;
 }
 
-.shop-card-emoji { font-size: 1.5rem; margin-bottom: 2px; }
+.shop-card-visual {
+    position: relative;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+
+.shop-card-emoji {
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: inherit;
+}
+
+.shop-card-emoji.has-ability {
+    cursor: pointer;
+    filter: drop-shadow(0 0 4px rgba(255, 209, 102, 0.45));
+}
+
+.shop-card-stat {
+    position: absolute;
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 1;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.65);
+}
+
+.shop-card-heat {
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ff5c5c;
+}
+
+.shop-card-money {
+    left: 0;
+    bottom: 0;
+    color: #2cb67d;
+}
+
+.shop-card-points {
+    right: 0;
+    bottom: 0;
+    color: #ffd166;
+}
 
 .shop-card-name {
     font-family: 'Poppins', sans-serif;
@@ -919,22 +947,10 @@ body {
     text-overflow: ellipsis;
 }
 
-.shop-card-stats {
-    font-size: 0.6rem;
-    color: var(--text-secondary);
-    margin-bottom: 2px;
-}
-
 .shop-card-cost {
     font-size: 0.7rem;
     color: var(--accent-gold);
     font-weight: 700;
-}
-
-.shop-card-ability {
-    font-size: 0.55rem;
-    color: var(--accent-gold);
-    margin-top: 2px;
 }
 
 #buy-phase-panel .btn { width: 100%; }

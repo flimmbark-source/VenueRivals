@@ -154,20 +154,19 @@
             const card = document.createElement('div');
             card.className = 'arriving-guest-card';
             card.innerHTML = `
-                <span class="arriving-stat arriving-heat">${guest.heat}</span>
-                <span class="arriving-emoji">${guest.emoji}</span>
+                <span class="arriving-stat arriving-heat">🔥 ${guest.heat}</span>
+                <button class="arriving-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
                 <span class="arriving-stat arriving-money">${guest.money}</span>
                 <span class="arriving-stat arriving-points">${guest.points}</span>
-                ${guest.ability ? `<button class="arriving-ability-icon" title="${guest.ability.name}">${guest.ability.icon}</button>` : '<span class="arriving-ability-spacer"></span>'}
             `;
             card.title = `${guest.name}: ${guest.desc}`;
 
-            const abilityIcon = card.querySelector('.arriving-ability-icon');
-            if (abilityIcon && guest.ability) {
+            const emojiButton = card.querySelector('.arriving-emoji');
+            if (emojiButton && guest.ability) {
                 const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
-                abilityIcon.addEventListener('mouseenter', (e) => showIconTooltip(e, abilityMessage));
-                abilityIcon.addEventListener('mouseleave', removeIconTooltip);
-                abilityIcon.addEventListener('click', (e) => {
+                emojiButton.addEventListener('mouseenter', (e) => showIconTooltip(e, abilityMessage));
+                emojiButton.addEventListener('mouseleave', removeIconTooltip);
+                emojiButton.addEventListener('click', (e) => {
                     e.stopPropagation();
                     showIconTooltip(e, abilityMessage, true);
                 });
@@ -180,7 +179,7 @@
 
             const arrow = document.createElement('button');
             arrow.className = 'entry-admit-arrow';
-            arrow.innerHTML = '→';
+            arrow.innerHTML = '←';
             arrow.title = who === 'player' ? 'Admit guest' : 'Rival can admit this guest';
             if (who === 'player') {
                 arrow.addEventListener('click', (e) => {
@@ -625,18 +624,27 @@
             const card = document.createElement('div');
             card.className = 'shop-card' + (canAfford ? '' : ' disabled');
 
-            let abilityHTML = '';
-            if (guest.ability) {
-                abilityHTML = `<div class="shop-card-ability">\u26A1 ${guest.ability.name}</div>`;
-            }
-
             card.innerHTML = `
-                <div class="shop-card-emoji">${guest.emoji}</div>
+                <div class="shop-card-visual">
+                    <span class="shop-card-stat shop-card-heat">🔥 ${guest.heat}</span>
+                    <button class="shop-card-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
+                    <span class="shop-card-stat shop-card-money">${guest.money}</span>
+                    <span class="shop-card-stat shop-card-points">${guest.points}</span>
+                </div>
                 <div class="shop-card-name">${guest.name}</div>
-                <div class="shop-card-stats">\u{1F4B0}${guest.money} \u2B50${guest.points} \u{1F525}${guest.heat}</div>
                 <div class="shop-card-cost">$${guest.cost}</div>
-                ${abilityHTML}
             `;
+
+            const shopEmoji = card.querySelector('.shop-card-emoji');
+            if (shopEmoji && guest.ability) {
+                const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
+                shopEmoji.addEventListener('mouseenter', (e) => showIconTooltip(e, abilityMessage));
+                shopEmoji.addEventListener('mouseleave', removeIconTooltip);
+                shopEmoji.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showIconTooltip(e, abilityMessage, true);
+                });
+            }
 
             if (canAfford) {
                 card.addEventListener('click', () => {
@@ -807,7 +815,7 @@
             if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.guest-tooltip')) {
                 removeTooltip();
             }
-            if (iconTooltipEl && !e.target.closest('.arriving-ability-icon') && !e.target.closest('.effect-tooltip')) {
+            if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.shop-card-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
                 removeIconTooltip();
             }
         });
