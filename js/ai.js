@@ -90,8 +90,12 @@ const AI = (() => {
             const heatPressure = nextHeat / venue.bustThreshold;
             const nearEnd = i >= orderedDeck.length - 1;
 
-            // Rollout policy: close when pressure is high and extending appears marginal.
-            if (heatPressure > 0.8 && (continueScore - closeScore) <= 2 && !nearEnd) {
+            // Rollout policy: only close under very high pressure after we've
+            // already seen a couple of extra guests and further upside is tiny.
+            // This keeps the AI from banking too early every round.
+            const lowUpside = (continueScore - closeScore) <= 1;
+            const deepIntoRun = i >= 1;
+            if (heatPressure > 0.85 && lowUpside && deepIntoRun && !nearEnd) {
                 return closeScore;
             }
 
@@ -162,6 +166,12 @@ const AI = (() => {
 
         if (guest.ability && guest.ability.type === 'reduceHeat' && rival.heat / venue.bustThreshold > 0.7) {
             return 'ability';
+        }
+
+        // Early-round tempo: avoid closing immediately unless pressure is already high.
+        const remainingHeatBuffer = venue.bustThreshold - rival.heat;
+        if (rival.house.length < 2 && remainingHeatBuffer >= 2) {
+            return 'admit';
         }
 
         // Monte Carlo decision between admitting and banking current value.
