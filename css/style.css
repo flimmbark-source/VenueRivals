@@ -293,7 +293,19 @@ body {
 
 .setup-name-section { margin-bottom: 20px; }
 
+.setup-rounds-section {
+    margin-bottom: 20px;
+}
+
 .setup-name-section label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.setup-rounds-section label {
     display: block;
     font-size: 0.9rem;
     color: var(--text-secondary);
@@ -317,6 +329,23 @@ body {
 }
 
 #venue-name-input:focus { border-color: var(--accent-secondary); }
+
+#round-count-input {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    padding: 10px 16px;
+    border: 2px solid var(--bg-card);
+    border-radius: var(--radius-md);
+    background: var(--bg-medium);
+    color: var(--text-primary);
+    text-align: center;
+    width: 100%;
+    max-width: 180px;
+    outline: none;
+    transition: var(--transition);
+}
+
+#round-count-input:focus { border-color: var(--accent-secondary); }
 
 /* === Game Screen === */
 #game-screen.active {
