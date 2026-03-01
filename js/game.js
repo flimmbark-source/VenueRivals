@@ -1,251 +1,432 @@
 /* ============================================
-   VENUE RIVALS - Parallel Push-Your-Luck Engine
-   Shared live rounds, close door or bust,
-   real-time disruption between both players.
+   VENUE RIVALS - Portrait 1v1 Venue Battler Engine
+   Parallel guest phase + shared buy phase.
    ============================================ */
 
 const Game = (() => {
     const TOTAL_ROUNDS = 3;
-    const STARTING_LIMIT = 21;
-    const STARTING_HAND_SIZE = 18;
 
-    const GUEST_POOL = [
-        { name: 'Regular', pressure: 2, ability: 'none' },
-        { name: 'Big Spender', pressure: 4, ability: 'none' },
-        { name: 'Influencer', pressure: 3, ability: 'boost' },
-        { name: 'Troublemaker', pressure: 3, ability: 'jam' },
-        { name: 'VIP Entourage', pressure: 5, ability: 'crowd' },
-        { name: 'Security Ally', pressure: 2, ability: 'stabilize' },
-    ];
+    const EFFECT_LIBRARY = {
+        money: { icon: '💰', text: 'Gain extra money this round.' },
+        points: { icon: '⭐', text: 'Gain extra points this round.' },
+        reduceDanger: { icon: '🧯', text: 'Reduce your danger immediately.' },
+        jam: { icon: '🚫', text: 'Increase rival danger and reduce their danger cap.' },
+        push: { icon: '↗', text: 'Force pressure on the rival house.' },
+        discount: { icon: '🪙', text: 'Your next buy this phase is cheaper.' },
+    };
 
-    function makeDeck() {
-        const deck = [];
-        for (let i = 0; i < STARTING_HAND_SIZE; i++) {
-            const card = GUEST_POOL[Math.floor(Math.random() * GUEST_POOL.length)];
-            deck.push({ ...card, id: `${card.name}-${i}-${Math.random().toString(36).slice(2, 7)}` });
-        }
-        return deck;
+    const GUESTS = {
+        regular: { id: 'regular', name: 'Regular', visual: '🙂', pressure: 2, money: 1, points: 1, activatable: null },
+        spender: { id: 'spender', name: 'Big Spender', visual: '🕴️', pressure: 3, money: 3, points: 1, activatable: null },
+        influencer: { id: 'influencer', name: 'Influencer', visual: '📸', pressure: 2, money: 1, points: 2, activatable: { id: 'points', amount: 2 } },
+        troublemaker: { id: 'troublemaker', name: 'Troublemaker', visual: '😈', pressure: 3, money: 1, points: 1, activatable: { id: 'jam', danger: 2, capPenalty: 1 } },
+        bouncer: { id: 'bouncer', name: 'Bouncer Ally', visual: '🧱', pressure: 1, money: 1, points: 1, activatable: { id: 'reduceDanger', amount: 3 } },
+        promoter: { id: 'promoter', name: 'Promoter', visual: '📣', pressure: 2, money: 2, points: 1, activatable: { id: 'money', amount: 2 } },
+        inspector: { id: 'inspector', name: 'Inspector', visual: '🧾', pressure: 2, money: 1, points: 2, activatable: { id: 'push', danger: 2 } },
+        vip: { id: 'vip', name: 'VIP Crew', visual: '👑', pressure: 4, money: 2, points: 3, activatable: null },
+    };
+
+    const VENUES = {
+        bar: {
+            id: 'bar',
+            name: 'Neighborhood Bar',
+            houseSize: 5,
+            dangerCap: 11,
+            passive: 'Happy Hour: first buy each round costs 1 less.',
+            active: 'Call Security: reduce danger by 2 (once each guest phase).',
+            startingDeck: ['regular', 'regular', 'spender', 'promoter', 'bouncer', 'influencer'],
+            marketPool: ['regular', 'spender', 'promoter', 'bouncer', 'influencer'],
+        },
+        club: {
+            id: 'club',
+            name: 'Neon Club',
+            houseSize: 6,
+            dangerCap: 13,
+            passive: 'Spotlight: every 3rd admitted guest gains +1 point.',
+            active: 'Pulse Drop: give rival +1 danger (once each guest phase).',
+            startingDeck: ['regular', 'spender', 'vip', 'promoter', 'influencer', 'troublemaker'],
+            marketPool: ['spender', 'vip', 'promoter', 'influencer', 'troublemaker'],
+        },
+        lounge: {
+            id: 'lounge',
+            name: 'Velvet Lounge',
+            houseSize: 4,
+            dangerCap: 10,
+            passive: 'Controlled Flow: close with +1 bonus point if not busted.',
+            active: 'Quiet Reset: remove top guest and reduce danger by 1 (once each guest phase).',
+            startingDeck: ['regular', 'bouncer', 'inspector', 'influencer', 'spender', 'troublemaker'],
+            marketPool: ['bouncer', 'inspector', 'influencer', 'troublemaker', 'vip'],
+        },
+    };
+
+    const MARKET_COST = {
+        regular: 3,
+        spender: 5,
+        influencer: 5,
+        troublemaker: 5,
+        bouncer: 4,
+        promoter: 4,
+        inspector: 5,
+        vip: 7,
+    };
+
+    function randomId(prefix) {
+        return `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
     }
 
-    function createVenue(name, type) {
+    function makeGuest(id) {
+        const base = GUESTS[id];
+        return { ...base, instanceId: randomId(id), usedAbility: false };
+    }
+
+    function shuffle(arr) {
+        const out = [...arr];
+        for (let i = out.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [out[i], out[j]] = [out[j], out[i]];
+        }
+        return out;
+    }
+
+    function createVenueState(profileName, venueType, isRival = false) {
+        const venue = VENUES[venueType] || VENUES.bar;
+        const rivalName = ['Neon Pulse', 'Velvet Edge', 'Crimson Room', 'Echo Syndicate'][Math.floor(Math.random() * 4)];
+
         return {
-            name,
-            type,
-            totalScore: 0,
-            roundsWon: 0,
-            upgrades: [],
-            deck: makeDeck(),
-            drawIndex: 0,
-            current: {
-                occupancy: 0,
-                limit: STARTING_LIMIT,
-                closed: false,
-                busted: false,
-                admitted: [],
-                pendingAbilities: [],
-                doorGuest: null,
-                banked: 0,
+            profile: {
+                playerName: profileName,
+                venueType,
+                venueName: venue.name,
+                passive: venue.passive,
+                active: venue.active,
             },
+            name: isRival ? rivalName : profileName,
+            venue,
+            totalPoints: 0,
+            totalMoneySpent: 0,
+            deck: shuffle(venue.startingDeck.map(makeGuest)),
+            discard: [],
+            roundMoney: 0,
+            roundPoints: 0,
+            lane: [],
+            exitingGuest: null,
+            admittedCount: 0,
+            danger: 0,
+            dangerCap: venue.dangerCap,
+            closed: false,
+            busted: false,
+            doorGuest: null,
+            phaseDone: false,
+            buyDiscount: 0,
+            usedVenueActive: false,
         };
     }
 
-    function createGameState(playerName, playerType) {
-        const rivalNames = ['Neon Pulse', 'Velvet Edge', 'The Crimson Fox', 'Shadow & Tonic'];
+    function drawGuest(venueState) {
+        if (!venueState.deck.length) {
+            if (!venueState.discard.length) {
+                venueState.deck = shuffle(venueState.venue.startingDeck.map(makeGuest));
+            } else {
+                venueState.deck = shuffle(venueState.discard);
+                venueState.discard = [];
+            }
+        }
+        return venueState.deck.pop() || null;
+    }
+
+    function dealDoorGuest(venueState) {
+        if (venueState.closed || venueState.busted || venueState.phaseDone) return;
+        if (!venueState.doorGuest) {
+            venueState.doorGuest = drawGuest(venueState);
+        }
+    }
+
+    function createGameState(playerName, venueType) {
+        const player = createVenueState(playerName, venueType, false);
+        const rivalVenueType = ['bar', 'club', 'lounge'][Math.floor(Math.random() * 3)];
+        const rival = createVenueState('Rival', rivalVenueType, true);
+
         const state = {
             round: 1,
-            phase: 'live',
-            player: createVenue(playerName, playerType),
-            rival: createVenue(rivalNames[Math.floor(Math.random() * rivalNames.length)], 'rival'),
-            lastRoundPlayerCustomers: 0,
-            lastRoundRivalCustomers: 0,
+            phase: 'guest',
+            phaseLabel: 'Guest Phase',
+            player,
+            rival,
             log: [],
             winner: null,
-            lastActionFrame: 0,
+            market: {
+                player: [],
+                rival: [],
+            },
         };
 
-        dealDoorGuest(state.player);
-        dealDoorGuest(state.rival);
+        dealDoorGuest(player);
+        dealDoorGuest(rival);
+        buildMarket(state);
         return state;
     }
 
-    function drawGuest(venue) {
-        if (venue.drawIndex >= venue.deck.length) {
-            venue.deck = venue.deck.concat(makeDeck());
-        }
-        const guest = venue.deck[venue.drawIndex];
-        venue.drawIndex += 1;
-        return { ...guest };
+    function getRoundSnapshot(state, who) {
+        const v = who === 'player' ? state.player : state.rival;
+        return {
+            money: v.roundMoney,
+            points: v.roundPoints,
+            closed: v.closed,
+            busted: v.busted,
+            danger: v.danger,
+            cap: v.dangerCap,
+        };
     }
 
-
-    function dealDoorGuest(venue) {
-        if (venue.current.closed || venue.current.busted) return null;
-        venue.current.doorGuest = drawGuest(venue);
-        return venue.current.doorGuest;
-    }
-
-    function maybeBust(venue) {
-        if (venue.current.occupancy > venue.current.limit) {
-            venue.current.busted = true;
-            venue.current.closed = true;
-            venue.current.banked = 0;
+    function checkBust(venueState) {
+        if (venueState.danger > venueState.dangerCap) {
+            venueState.busted = true;
+            venueState.closed = true;
+            venueState.phaseDone = true;
+            venueState.roundMoney = Math.floor(venueState.roundMoney * 0.2);
+            venueState.roundPoints = 0;
             return true;
         }
         return false;
     }
 
-    function admitGuest(venue) {
-        if (venue.current.closed) return null;
-        const guest = venue.current.doorGuest || dealDoorGuest(venue);
-        if (!guest) return null;
-
-        venue.current.admitted.push(guest);
-        venue.current.occupancy += guest.pressure;
-        venue.current.doorGuest = null;
-
-        if (guest.ability !== 'none') {
-            venue.current.pendingAbilities.push(guest);
+    function applyVenuePassiveOnAdmit(venueState, guest) {
+        if (venueState.venue.id === 'club' && venueState.admittedCount % 3 === 0) {
+            venueState.roundPoints += 1;
+            return `${venueState.name} passive Spotlight triggered (+1 point).`;
         }
-
-        maybeBust(venue);
-        if (!venue.current.closed) {
-            dealDoorGuest(venue);
+        if (venueState.venue.id === 'bar' && guest.id === 'spender') {
+            venueState.roundMoney += 1;
+            return `${venueState.name} Bar crowd spent extra (+1 money).`;
         }
-
-        return guest;
+        return null;
     }
 
-    function applyAbility(source, target, guest) {
-        if (!guest) return null;
-        if (source.current.closed && source.current.busted) return null;
-
-        let text = '';
-        if (guest.ability === 'boost') {
-            source.current.occupancy = Math.max(0, source.current.occupancy - 2);
-            text = `${source.name} used Influencer to smooth flow (-2 pressure).`;
-        } else if (guest.ability === 'jam') {
-            target.current.limit = Math.max(10, target.current.limit - 1);
-            text = `${source.name} sent a Troublemaker. ${target.name}'s limit -1.`;
-        } else if (guest.ability === 'crowd') {
-            target.current.occupancy += 2;
-            text = `${source.name}'s entourage spills over. ${target.name} +2 pressure.`;
-        } else if (guest.ability === 'stabilize') {
-            source.current.limit += 1;
-            text = `${source.name} added extra security. Limit +1.`;
-        }
-
-        maybeBust(source);
-        maybeBust(target);
-        return text;
-    }
-
-    function closeDoor(venue) {
-        venue.current.closed = true;
-        venue.current.doorGuest = null;
-        if (!venue.current.busted) {
-            venue.current.banked = venue.current.occupancy;
-        }
-    }
-
-    function executeAction(state, actor, actionId) {
+    function admitGuest(state, actor) {
         const source = actor === 'player' ? state.player : state.rival;
-        const target = actor === 'player' ? state.rival : state.player;
-        const msgs = [];
+        if (source.closed || source.busted || !source.doorGuest) return [];
 
-        if (source.current.closed) return msgs;
+        const guest = source.doorGuest;
+        source.doorGuest = null;
+        source.roundMoney += guest.money;
+        source.roundPoints += guest.points;
+        source.danger += guest.pressure;
+        source.admittedCount += 1;
 
-        if (actionId === 'admit') {
-            const guest = admitGuest(source);
-            if (guest) msgs.push(`${source.name} admitted ${guest.name} (+${guest.pressure} pressure).`);
-        } else if (actionId === 'ability') {
-            const guest = source.current.pendingAbilities.shift();
-            if (!guest) {
-                msgs.push(`${source.name} had no guest ability ready.`);
-            } else {
-                const result = applyAbility(source, target, guest);
-                if (result) msgs.push(result);
-            }
-        } else if (actionId === 'close') {
-            closeDoor(source);
-            msgs.push(`${source.name} closed the door and locked the round.`);
+        source.lane.unshift(guest);
+        if (source.lane.length > source.venue.houseSize) {
+            source.exitingGuest = source.lane.pop();
+            source.discard.push(source.exitingGuest);
         }
 
-        if (source.current.busted) msgs.push(`${source.name} busted and loses this round.`);
-        if (target.current.busted) msgs.push(`${target.name} busted under pressure.`);
+        const msgs = [`${source.name} admitted ${guest.name} (+${guest.money} money, +${guest.points} points, +${guest.pressure} danger).`];
+        const passiveMsg = applyVenuePassiveOnAdmit(source, guest);
+        if (passiveMsg) msgs.push(passiveMsg);
 
-        if (state.player.current.closed && state.rival.current.closed) {
-            resolveRound(state, msgs);
-        }
+        if (checkBust(source)) msgs.push(`${source.name} busted! Round points are lost.`);
 
+        dealDoorGuest(source);
         return msgs;
     }
 
-    function resolveRound(state, msgs) {
-        const pRound = state.player.current.busted ? 0 : state.player.current.banked;
-        const rRound = state.rival.current.busted ? 0 : state.rival.current.banked;
+    function activateGuest(state, actor) {
+        const source = actor === 'player' ? state.player : state.rival;
+        const target = actor === 'player' ? state.rival : state.player;
+        const guest = source.doorGuest;
 
-        state.player.totalScore += pRound;
-        state.rival.totalScore += rRound;
-        state.lastRoundPlayerCustomers = pRound;
-        state.lastRoundRivalCustomers = rRound;
+        if (!guest || !guest.activatable || source.closed || source.busted) return [`${source.name} has no activatable door guest.`];
 
-        if (pRound > rRound) state.player.roundsWon += 1;
-        if (rRound > pRound) state.rival.roundsWon += 1;
+        const ability = guest.activatable;
+        let msg = `${source.name} activated ${guest.name}.`;
 
-        msgs.push(`Round ${state.round} result: You ${pRound} - Rival ${rRound}.`);
+        if (ability.id === 'points') {
+            source.roundPoints += ability.amount;
+            msg += ` +${ability.amount} points.`;
+        } else if (ability.id === 'money') {
+            source.roundMoney += ability.amount;
+            msg += ` +${ability.amount} money.`;
+        } else if (ability.id === 'reduceDanger') {
+            source.danger = Math.max(0, source.danger - ability.amount);
+            msg += ` Danger -${ability.amount}.`;
+        } else if (ability.id === 'jam') {
+            target.danger += ability.danger;
+            target.dangerCap = Math.max(6, target.dangerCap - ability.capPenalty);
+            msg += ` ${target.name} gets +${ability.danger} danger and -${ability.capPenalty} cap.`;
+        } else if (ability.id === 'push') {
+            target.danger += ability.danger;
+            msg += ` ${target.name} gets +${ability.danger} danger.`;
+        }
+
+        source.doorGuest = null;
+        source.discard.push({ ...guest, usedAbility: true });
+
+        const msgs = [msg];
+        if (checkBust(source)) msgs.push(`${source.name} busted after activating!`);
+        if (checkBust(target)) msgs.push(`${target.name} busted from disruption!`);
+
+        dealDoorGuest(source);
+        return msgs;
+    }
+
+    function closeDoor(state, actor) {
+        const source = actor === 'player' ? state.player : state.rival;
+        if (source.closed) return [`${source.name} already closed.`];
+
+        source.closed = true;
+        source.phaseDone = true;
+        source.doorGuest = null;
+
+        if (source.venue.id === 'lounge' && !source.busted) {
+            source.roundPoints += 1;
+        }
+
+        return [`${source.name} closed the door and locked round value.`];
+    }
+
+    function activateVenueActive(state, actor) {
+        const source = actor === 'player' ? state.player : state.rival;
+        const target = actor === 'player' ? state.rival : state.player;
+
+        if (source.usedVenueActive || source.closed || source.busted) return [`${source.name} cannot use venue active now.`];
+        source.usedVenueActive = true;
+
+        if (source.venue.id === 'bar') {
+            source.danger = Math.max(0, source.danger - 2);
+            return [`${source.name} used Call Security (danger -2).`];
+        }
+        if (source.venue.id === 'club') {
+            target.danger += 1;
+            const msgs = [`${source.name} used Pulse Drop (${target.name} +1 danger).`];
+            if (checkBust(target)) msgs.push(`${target.name} busted from Pulse Drop!`);
+            return msgs;
+        }
+        if (source.venue.id === 'lounge') {
+            if (source.lane.length) {
+                const removed = source.lane.shift();
+                source.discard.push(removed);
+                source.danger = Math.max(0, source.danger - 1);
+                return [`${source.name} used Quiet Reset, removed ${removed.name} and reduced danger.`];
+            }
+            return [`${source.name} tried Quiet Reset but had no guest inside.`];
+        }
+        return [`${source.name} has no active ability.`];
+    }
+
+    function executeAction(state, actor, actionId) {
+        if (state.phase !== 'guest') return [];
+        let msgs = [];
+        if (actionId === 'admit') msgs = admitGuest(state, actor);
+        if (actionId === 'activate') msgs = activateGuest(state, actor);
+        if (actionId === 'close') msgs = closeDoor(state, actor);
+        if (actionId === 'venue-active') msgs = activateVenueActive(state, actor);
+
+        if (state.player.phaseDone && state.rival.phaseDone) {
+            enterBuyPhase(state);
+            msgs.push('Guest phase ended. Entering buy phase.');
+        }
+        return msgs;
+    }
+
+    function buildMarket(state) {
+        const mk = (venue) => shuffle(venue.marketPool).slice(0, 4).map(id => ({ guestId: id, cost: MARKET_COST[id] }));
+        state.market.player = mk(state.player.venue);
+        state.market.rival = mk(state.rival.venue);
+    }
+
+    function enterBuyPhase(state) {
+        state.phase = 'buy';
+        state.phaseLabel = 'Buy Phase';
+        state.player.buyDiscount = state.player.venue.id === 'bar' ? 1 : 0;
+        state.rival.buyDiscount = state.rival.venue.id === 'bar' ? 1 : 0;
+        buildMarket(state);
+    }
+
+    function buyGuest(state, actor, guestId) {
+        if (state.phase !== 'buy') return { ok: false, message: 'Not in buy phase.' };
+        const source = actor === 'player' ? state.player : state.rival;
+        const marketList = actor === 'player' ? state.market.player : state.market.rival;
+        const offer = marketList.find(o => o.guestId === guestId);
+        if (!offer) return { ok: false, message: 'Guest unavailable.' };
+
+        const finalCost = Math.max(1, offer.cost - source.buyDiscount);
+        if (source.roundMoney < finalCost) return { ok: false, message: 'Not enough money.' };
+
+        source.roundMoney -= finalCost;
+        source.totalMoneySpent += finalCost;
+        source.discard.push(makeGuest(guestId));
+        source.buyDiscount = 0;
+
+        return { ok: true, message: `${source.name} bought ${GUESTS[guestId].name} for ${finalCost}.` };
+    }
+
+    function finalizeBuyPhase(state) {
+        if (state.phase !== 'buy') return;
+
+        state.player.totalPoints += state.player.roundPoints;
+        state.rival.totalPoints += state.rival.roundPoints;
 
         if (state.round >= TOTAL_ROUNDS) {
             state.phase = 'gameover';
-            state.winner = state.player.totalScore >= state.rival.totalScore ? 'player' : 'rival';
+            state.phaseLabel = 'Match Complete';
+            state.winner = state.player.totalPoints >= state.rival.totalPoints ? 'player' : 'rival';
             return;
         }
 
         state.round += 1;
-        resetRoundState(state.player);
-        resetRoundState(state.rival);
+        state.phase = 'guest';
+        state.phaseLabel = 'Guest Phase';
+        resetForNewRound(state.player);
+        resetForNewRound(state.rival);
         dealDoorGuest(state.player);
         dealDoorGuest(state.rival);
     }
 
-    function resetRoundState(venue) {
-        venue.current = {
-            occupancy: 0,
-            limit: STARTING_LIMIT,
-            closed: false,
-            busted: false,
-            admitted: [],
-            pendingAbilities: [],
-            doorGuest: null,
-            banked: 0,
-        };
+    function resetForNewRound(venueState) {
+        venueState.roundMoney = 0;
+        venueState.roundPoints = 0;
+        venueState.lane = [];
+        venueState.exitingGuest = null;
+        venueState.admittedCount = 0;
+        venueState.danger = 0;
+        venueState.dangerCap = venueState.venue.dangerCap;
+        venueState.closed = false;
+        venueState.busted = false;
+        venueState.doorGuest = null;
+        venueState.phaseDone = false;
+        venueState.buyDiscount = 0;
+        venueState.usedVenueActive = false;
     }
 
-    function getAvailableActions(state) {
-        const c = state.player.current;
-        if (state.phase === 'gameover' || c.closed) return [];
+    function getActions(state, actor) {
+        const source = actor === 'player' ? state.player : state.rival;
+        if (state.phase !== 'guest' || source.phaseDone) return [];
 
         return [
-            {
-                id: 'admit',
-                name: 'Admit Guest',
-                icon: '🚪',
-                description: c.doorGuest ? `Let in ${c.doorGuest.name} (+${c.doorGuest.pressure})` : 'Draw from your deck and add pressure.',
-                enabled: true,
-            },
-            { id: 'ability', name: 'Activate Ability', icon: '⚡', description: 'Use one admitted guest effect.', enabled: c.pendingAbilities.length > 0 },
-            { id: 'close', name: 'Close Door', icon: '🔒', description: 'Bank this round safely.', enabled: true },
+            { id: 'admit', name: 'Admit →', enabled: !!source.doorGuest },
+            { id: 'activate', name: 'Activate Guest', enabled: !!(source.doorGuest && source.doorGuest.activatable) },
+            { id: 'venue-active', name: 'Use Venue Active', enabled: !source.usedVenueActive },
+            { id: 'close', name: 'Close Door', enabled: true },
         ];
     }
 
-    function getCustomerPool(state) {
-        return Math.max(0, state.player.current.limit - state.player.current.occupancy);
+    function getGuestData() {
+        return GUESTS;
+    }
+
+    function getEffectLibrary() {
+        return EFFECT_LIBRARY;
     }
 
     return {
+        TOTAL_ROUNDS,
+        VENUES,
         createGameState,
         executeAction,
-        getAvailableActions,
-        getCustomerPool,
-        TOTAL_ROUNDS,
+        getActions,
+        getRoundSnapshot,
+        getGuestData,
+        getEffectLibrary,
+        buyGuest,
+        finalizeBuyPhase,
     };
 })();
