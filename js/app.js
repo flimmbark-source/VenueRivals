@@ -1,7 +1,7 @@
 /* ============================================
    VENUE RIVALS - App Controller
-   Screen management, UI binding, game loop,
-   animation loop, event handling
+   Screen management, game loop, UI binding,
+   guest phase, buy phase, animation
    ============================================ */
 
 (function () {
@@ -12,7 +12,15 @@
     let selectedVenueType = null;
     let currentScreen = 'title';
     let animLoopId = null;
-    let showingUpgrades = false;
+    let aiTimerId = null;
+    let currentMarket = null;
+    let tooltipEl = null;
+
+    // Rival names
+    const RIVAL_NAMES = [
+        'The Crimson Fox', 'Midnight Ember', 'Velvet Edge',
+        'Neon Pulse', 'The Gilded Owl', 'Shadow & Tonic',
+    ];
 
     // === DOM References ===
     const screens = {
@@ -20,38 +28,10 @@
         howToPlay: document.getElementById('how-to-play-screen'),
         setup: document.getElementById('setup-screen'),
         game: document.getElementById('game-screen'),
-        gameover: document.getElementById('gameover-screen'),
     };
 
     const titleCanvas = document.getElementById('title-canvas');
-    const gameCanvas = document.getElementById('game-canvas');
     const gameoverCanvas = document.getElementById('gameover-canvas');
-
-    // HUD elements
-    const hud = {
-        playerName: document.getElementById('hud-player-name'),
-        playerMoney: document.getElementById('hud-player-money'),
-        playerRep: document.getElementById('hud-player-rep'),
-        playerCustomers: document.getElementById('hud-player-customers'),
-        playerEarningsFill: document.getElementById('player-earnings-fill'),
-        playerEarningsLabel: document.getElementById('player-earnings-label'),
-        rivalName: document.getElementById('hud-rival-name'),
-        rivalMoney: document.getElementById('hud-rival-money'),
-        rivalRep: document.getElementById('hud-rival-rep'),
-        rivalCustomers: document.getElementById('hud-rival-customers'),
-        rivalEarningsFill: document.getElementById('rival-earnings-fill'),
-        rivalEarningsLabel: document.getElementById('rival-earnings-label'),
-        turnNumber: document.getElementById('turn-number'),
-        customerPool: document.getElementById('customer-pool-count'),
-    };
-
-    // Panels
-    const actionPanel = document.getElementById('action-panel');
-    const actionGrid = document.getElementById('action-grid');
-    const eventPanel = document.getElementById('event-panel');
-    const eventContent = document.getElementById('event-content');
-    const btnContinue = document.getElementById('btn-continue');
-    const logEntries = document.getElementById('log-entries');
 
     // === Screen Management ===
     function switchScreen(name) {
@@ -66,12 +46,18 @@
         function loop() {
             if (currentScreen === 'title') {
                 Renderer.drawTitleScreen(titleCanvas);
-            } else if (currentScreen === 'game' && gameState) {
-                Renderer.drawGameScene(gameCanvas, gameState);
-            } else if (currentScreen === 'gameover') {
-                Renderer.drawGameOverScene(gameoverCanvas, gameState && gameState.winner === 'player');
             }
             animLoopId = requestAnimationFrame(loop);
+        }
+        loop();
+    }
+
+    function startGameOverAnim(won) {
+        function loop() {
+            Renderer.drawGameOverScene(gameoverCanvas, won);
+            if (currentScreen === 'game') {
+                requestAnimationFrame(loop);
+            }
         }
         loop();
     }
@@ -86,260 +72,636 @@
     // === HUD Update ===
     function updateHUD() {
         if (!gameState) return;
-
         const p = gameState.player;
         const r = gameState.rival;
+        const pVenue = Game.VENUES[p.venueId];
+        const rVenue = Game.VENUES[r.venueId];
 
-        hud.playerName.textContent = p.name;
-        hud.playerMoney.textContent = Math.round(p.money);
-        hud.playerRep.textContent = Math.round(p.reputation);
-        hud.playerCustomers.textContent = gameState.lastRoundPlayerCustomers;
+        document.getElementById('hud-round-num').textContent = gameState.round;
+        document.getElementById('hud-phase').textContent =
+            gameState.phase === 'guest' ? 'GUEST PHASE' :
+            gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
-        const pPct = Math.min(100, (p.totalEarnings / Game.WIN_EARNINGS) * 100);
-        hud.playerEarningsFill.style.width = pPct + '%';
-        hud.playerEarningsLabel.textContent = `$${Math.round(p.totalEarnings)} / $${Game.WIN_EARNINGS}`;
+        document.getElementById('hud-player-pts').textContent = `You: ${p.points} pts`;
+        document.getElementById('hud-rival-pts').textContent = `Rival: ${r.points} pts`;
 
-        hud.rivalName.textContent = r.name;
-        hud.rivalMoney.textContent = Math.round(r.money);
-        hud.rivalRep.textContent = Math.round(r.reputation);
-        hud.rivalCustomers.textContent = gameState.lastRoundRivalCustomers;
+        // Player venue
+        document.getElementById('player-venue-name').textContent = p.name;
+        document.getElementById('player-money').textContent = `\u{1F4B0} $${p.money + p.roundMoney}`;
+        document.getElementById('player-pts-badge').textContent = `\u2B50 ${p.points + p.roundPoints}`;
+        updateHeatBar('player', p.heat, pVenue.bustThreshold);
 
-        const rPct = Math.min(100, (r.totalEarnings / Game.WIN_EARNINGS) * 100);
-        hud.rivalEarningsFill.style.width = rPct + '%';
-        hud.rivalEarningsLabel.textContent = `$${Math.round(r.totalEarnings)} / $${Game.WIN_EARNINGS}`;
-
-        hud.turnNumber.textContent = gameState.turn;
-        hud.turnNumber.classList.add('pulse');
-        setTimeout(() => hud.turnNumber.classList.remove('pulse'), 500);
-
-        hud.customerPool.textContent = Game.getCustomerPool(gameState);
+        // Rival venue
+        document.getElementById('rival-venue-name').textContent = r.name;
+        document.getElementById('rival-money').textContent = `\u{1F4B0} $${r.money + r.roundMoney}`;
+        document.getElementById('rival-pts-badge').textContent = `\u2B50 ${r.points + r.roundPoints}`;
+        updateHeatBar('rival', r.heat, rVenue.bustThreshold);
     }
 
-    // === Game Log ===
-    function addLogEntry(text) {
-        if (!gameState) return;
-        const entry = document.createElement('div');
-        entry.className = 'log-entry';
-        entry.innerHTML = `<span class="log-turn">T${gameState.turn}</span> ${text}`;
-        logEntries.prepend(entry);
+    function updateHeatBar(who, heat, max) {
+        const fill = document.getElementById(`${who}-heat-fill`);
+        const text = document.getElementById(`${who}-heat-text`);
+        const pct = Math.min(100, (heat / max) * 100);
+        fill.style.width = pct + '%';
+        fill.className = 'heat-fill';
+        if (pct > 85) fill.classList.add('critical');
+        else if (pct > 70) fill.classList.add('danger');
+        else if (pct > 50) fill.classList.add('warning');
+        else fill.classList.add('safe');
+        text.textContent = `\u{1F525} ${heat}/${max}`;
+    }
 
-        // Keep log manageable
-        while (logEntries.children.length > 50) {
-            logEntries.removeChild(logEntries.lastChild);
+    // === Guest Slot Rendering ===
+    function createGuestSlot(guestId, animate) {
+        const guest = Game.GUESTS[guestId];
+        const el = document.createElement('div');
+        el.className = `guest-slot tier-${guest.tier}`;
+        if (animate) el.classList.add('entering');
+        el.innerHTML = `<span>${guest.emoji}</span><span class="slot-heat">\u{1F525}${guest.heat}</span>`;
+        el.title = `${guest.name} - ${guest.desc}`;
+        el.addEventListener('click', (e) => showTooltip(e, guestId));
+        return el;
+    }
+
+    function renderHouseGrid(who) {
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        const slotsEl = document.getElementById(`${who}-slots`);
+        slotsEl.innerHTML = '';
+
+        // Render oldest to newest (house[0] is newest, so reverse)
+        const guests = [...player.house].reverse();
+        guests.forEach((guestId, i) => {
+            const slot = createGuestSlot(guestId, false);
+            slotsEl.appendChild(slot);
+        });
+    }
+
+    function renderArrivingGuest(who) {
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        const arrivingEl = document.getElementById(`${who}-arriving`);
+        arrivingEl.innerHTML = '';
+
+        if (player.arrivingGuest && !player.doorClosed && !player.busted) {
+            const guest = Game.GUESTS[player.arrivingGuest];
+            const card = document.createElement('div');
+            card.className = 'arriving-guest-card';
+            if (guest.ability) card.classList.add('has-ability');
+            card.innerHTML = `<span>${guest.emoji}</span><span class="slot-heat">\u{1F525}${guest.heat}</span>`;
+            card.title = `${guest.name}: ${guest.desc}`;
+            if (who === 'player') {
+                card.addEventListener('click', () => handleAbility());
+            }
+            arrivingEl.appendChild(card);
         }
     }
 
-    // === Action Panel ===
-    function showActions() {
-        showingUpgrades = false;
-        actionPanel.style.display = '';
-        eventPanel.style.display = 'none';
+    function updateVenueStatus(who) {
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        const statusEl = document.getElementById(`${who}-status`);
 
-        const actions = Game.getAvailableActions(gameState);
-        actionGrid.innerHTML = '';
+        if (player.busted) {
+            statusEl.textContent = 'BUSTED!';
+            statusEl.className = 'venue-status busted';
+        } else if (player.doorClosed) {
+            statusEl.textContent = 'DOOR CLOSED';
+            statusEl.className = 'venue-status closed';
+        } else if (player.arrivingGuest) {
+            const remaining = player.roundDeck.length + 1;
+            statusEl.textContent = `${remaining} guest${remaining !== 1 ? 's' : ''} remaining`;
+            statusEl.className = 'venue-status';
+        } else {
+            statusEl.textContent = '';
+            statusEl.className = 'venue-status';
+        }
+    }
 
-        actions.forEach(action => {
+    // === Guest Detail Panel ===
+    function updateGuestDetail() {
+        const detailEl = document.getElementById('guest-detail');
+        const p = gameState.player;
+
+        if (!p.arrivingGuest || p.doorClosed || p.busted) {
+            detailEl.innerHTML = '<div class="guest-detail-empty">' +
+                (p.busted ? 'You busted! Round over.' :
+                 p.doorClosed ? 'Door closed. Waiting for rival...' :
+                 'No more guests.') + '</div>';
+            document.getElementById('btn-admit').disabled = true;
+            document.getElementById('btn-ability').disabled = true;
+            document.getElementById('btn-close-door').disabled = true;
+            return;
+        }
+
+        const guest = Game.GUESTS[p.arrivingGuest];
+        const venue = Game.VENUES[p.venueId];
+        const wouldBust = (p.heat + guest.heat) > venue.bustThreshold;
+
+        let abilityHTML = '';
+        if (guest.ability) {
+            abilityHTML = `<div class="guest-detail-ability">\u26A1 ${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
+        }
+
+        detailEl.innerHTML = `
+            <div class="guest-detail-content">
+                <div class="guest-detail-emoji">${guest.emoji}</div>
+                <div class="guest-detail-info">
+                    <div class="guest-detail-name">${guest.name}</div>
+                    <div class="guest-detail-desc">${guest.desc}</div>
+                    <div class="guest-detail-stats">
+                        <span class="stat-money">\u{1F4B0} ${guest.money}</span>
+                        <span class="stat-points">\u2B50 ${guest.points}</span>
+                        <span class="stat-heat${wouldBust ? ' danger' : ''}">\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}</span>
+                    </div>
+                    ${abilityHTML}
+                </div>
+            </div>
+        `;
+
+        // Update buttons
+        document.getElementById('btn-admit').disabled = false;
+        document.getElementById('btn-ability').disabled = !guest.ability;
+        document.getElementById('btn-close-door').disabled = false;
+    }
+
+    // === Tooltip ===
+    function showTooltip(e, guestId) {
+        removeTooltip();
+        const guest = Game.GUESTS[guestId];
+        const el = document.createElement('div');
+        el.className = 'guest-tooltip';
+
+        let abilityHTML = '';
+        if (guest.ability) {
+            abilityHTML = `<div class="tt-ability">\u26A1 ${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
+        }
+
+        el.innerHTML = `
+            <div class="tt-name">${guest.emoji} ${guest.name}</div>
+            <div class="tt-desc">${guest.desc}</div>
+            <div class="tt-stats">
+                <span class="stat-money">\u{1F4B0}${guest.money}</span>
+                <span class="stat-points">\u2B50${guest.points}</span>
+                <span class="stat-heat">\u{1F525}${guest.heat}</span>
+            </div>
+            ${abilityHTML}
+        `;
+
+        document.body.appendChild(el);
+        tooltipEl = el;
+
+        // Position
+        const rect = e.target.getBoundingClientRect();
+        let left = rect.left + rect.width / 2 - 80;
+        let top = rect.top - el.offsetHeight - 8;
+        if (top < 10) top = rect.bottom + 8;
+        if (left < 10) left = 10;
+        if (left + el.offsetWidth > window.innerWidth - 10) {
+            left = window.innerWidth - el.offsetWidth - 10;
+        }
+        el.style.left = left + 'px';
+        el.style.top = top + 'px';
+
+        setTimeout(removeTooltip, 2000);
+    }
+
+    function removeTooltip() {
+        if (tooltipEl) {
+            tooltipEl.remove();
+            tooltipEl = null;
+        }
+    }
+
+    // === Center Feedback ===
+    function showFeedback(text, type, duration) {
+        const el = document.getElementById('center-feedback');
+        el.innerHTML = `<div class="feedback-msg ${type || ''}">${text}</div>`;
+        setTimeout(() => {
+            if (el.querySelector('.feedback-msg')?.textContent === text) {
+                el.innerHTML = '';
+            }
+        }, duration || 2000);
+    }
+
+    // === Guest Phase Actions ===
+    function handleAdmit() {
+        if (!gameState || gameState.phase !== 'guest') return;
+        const p = gameState.player;
+        if (!p.arrivingGuest || p.doorClosed || p.busted) return;
+
+        const venue = Game.VENUES[p.venueId];
+        const result = Game.admitGuest(p, venue);
+        if (!result) return;
+
+        // Animate
+        const slotsEl = document.getElementById('player-slots');
+
+        // Handle push-out
+        if (result.pushedOut) {
+            const lastSlot = slotsEl.firstChild;
+            if (lastSlot) {
+                lastSlot.classList.add('exiting');
+                setTimeout(() => lastSlot.remove(), 300);
+            }
+        }
+
+        // Add new guest
+        const newSlot = createGuestSlot(result.admitted, true);
+        slotsEl.appendChild(newSlot);
+
+        // Remove entering class after animation
+        setTimeout(() => newSlot.classList.remove('entering'), 300);
+
+        renderArrivingGuest('player');
+        updateGuestDetail();
+        updateVenueStatus('player');
+        updateHUD();
+        removeTooltip();
+
+        if (result.busted) {
+            document.getElementById('player-area').classList.add('bust-flash');
+            showFeedback('YOU BUSTED!', 'bust', 3000);
+            setTimeout(() => {
+                document.getElementById('player-area').classList.remove('bust-flash');
+            }, 500);
+        }
+
+        checkGuestPhaseDone();
+    }
+
+    function handleAbility() {
+        if (!gameState || gameState.phase !== 'guest') return;
+        const p = gameState.player;
+        const r = gameState.rival;
+        if (!p.arrivingGuest || p.doorClosed || p.busted) return;
+
+        const guest = Game.GUESTS[p.arrivingGuest];
+        if (!guest.ability) return;
+
+        const pVenue = Game.VENUES[p.venueId];
+        const rVenue = Game.VENUES[r.venueId];
+        const result = Game.activateAbility(p, r, pVenue, rVenue);
+        if (!result) return;
+
+        showFeedback(`\u26A1 ${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
+
+        renderArrivingGuest('player');
+        renderHouseGrid('rival');
+        updateGuestDetail();
+        updateVenueStatus('player');
+        updateVenueStatus('rival');
+        updateHUD();
+        removeTooltip();
+
+        // Check if opponent was busted by the ability
+        if (r.busted) {
+            document.getElementById('rival-area').classList.add('bust-flash');
+            setTimeout(() => {
+                document.getElementById('rival-area').classList.remove('bust-flash');
+            }, 500);
+        }
+
+        checkGuestPhaseDone();
+    }
+
+    function handleCloseDoor() {
+        if (!gameState || gameState.phase !== 'guest') return;
+        const p = gameState.player;
+        if (p.doorClosed || p.busted) return;
+
+        Game.closeDoor(p);
+        renderArrivingGuest('player');
+        updateGuestDetail();
+        updateVenueStatus('player');
+        updateHUD();
+        removeTooltip();
+
+        showFeedback('You closed the door safely', 'money', 2000);
+        checkGuestPhaseDone();
+    }
+
+    // === AI Guest Phase ===
+    function startAITimer() {
+        if (aiTimerId) clearInterval(aiTimerId);
+        const baseDelay = 1200;
+        const variance = 600;
+
+        function aiTick() {
+            if (!gameState || gameState.phase !== 'guest') {
+                clearInterval(aiTimerId);
+                aiTimerId = null;
+                return;
+            }
+
+            const r = gameState.rival;
+            if (r.phaseComplete) {
+                clearInterval(aiTimerId);
+                aiTimerId = null;
+                checkGuestPhaseDone();
+                return;
+            }
+
+            const action = AI.decideGuestAction(gameState);
+            if (!action) {
+                clearInterval(aiTimerId);
+                aiTimerId = null;
+                checkGuestPhaseDone();
+                return;
+            }
+
+            executeAIAction(action);
+        }
+
+        aiTimerId = setInterval(aiTick, baseDelay + Math.random() * variance);
+    }
+
+    function executeAIAction(action) {
+        const r = gameState.rival;
+        const p = gameState.player;
+        const rVenue = Game.VENUES[r.venueId];
+        const pVenue = Game.VENUES[p.venueId];
+
+        if (action === 'admit') {
+            const result = Game.admitGuest(r, rVenue);
+            if (!result) return;
+
+            // Animate rival grid
+            const slotsEl = document.getElementById('rival-slots');
+            if (result.pushedOut) {
+                const lastSlot = slotsEl.firstChild;
+                if (lastSlot) {
+                    lastSlot.classList.add('exiting');
+                    setTimeout(() => lastSlot.remove(), 300);
+                }
+            }
+            const newSlot = createGuestSlot(result.admitted, true);
+            slotsEl.appendChild(newSlot);
+            setTimeout(() => newSlot.classList.remove('entering'), 300);
+
+            if (result.busted) {
+                document.getElementById('rival-area').classList.add('bust-flash');
+                showFeedback(`${r.name} BUSTED!`, 'bust', 2500);
+                setTimeout(() => {
+                    document.getElementById('rival-area').classList.remove('bust-flash');
+                }, 500);
+            }
+        } else if (action === 'ability') {
+            const result = Game.activateAbility(r, p, rVenue, pVenue);
+            if (!result) return;
+            showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500);
+
+            // Check if player was busted
+            if (p.busted) {
+                document.getElementById('player-area').classList.add('bust-flash');
+                updateGuestDetail();
+                updateVenueStatus('player');
+                setTimeout(() => {
+                    document.getElementById('player-area').classList.remove('bust-flash');
+                }, 500);
+            }
+
+            renderHouseGrid('player');
+        } else if (action === 'close') {
+            Game.closeDoor(r);
+            showFeedback(`${r.name} closed their door`, 'money', 2000);
+        }
+
+        renderArrivingGuest('rival');
+        updateVenueStatus('rival');
+        updateHUD();
+    }
+
+    // === Phase Transitions ===
+    function checkGuestPhaseDone() {
+        if (!gameState || gameState.phase !== 'guest') return;
+        if (!Game.bothDone(gameState)) return;
+
+        // Both players done - stop AI timer
+        if (aiTimerId) { clearInterval(aiTimerId); aiTimerId = null; }
+
+        // Small delay for last animation
+        setTimeout(showRoundResults, 600);
+    }
+
+    function showRoundResults() {
+        Game.endGuestPhase(gameState);
+        updateHUD();
+
+        const p = gameState.player;
+        const r = gameState.rival;
+        const isFinalRound = gameState.round >= Game.TOTAL_ROUNDS;
+
+        let html = `<h3>Round ${gameState.round} Results</h3>`;
+
+        // Player results
+        html += `<div class="results-row"><span class="label player-color">${p.name}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u{1F4B0} Money earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+$${p.roundMoney}${p.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+${p.roundPoints}${p.busted ? ' (busted)' : ''}</span></div>`;
+
+        html += '<div class="results-divider"></div>';
+
+        // Rival results
+        html += `<div class="results-row"><span class="label rival-color">${r.name}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u{1F4B0} Money earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+$${r.roundMoney}${r.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+${r.roundPoints}${r.busted ? ' (busted)' : ''}</span></div>`;
+
+        document.getElementById('results-content').innerHTML = html;
+        document.getElementById('btn-next-phase').textContent = isFinalRound ? 'Final Results' : 'Continue to Shop';
+
+        // Show results panel
+        document.getElementById('guest-phase-panel').style.display = 'none';
+        document.getElementById('round-results-panel').style.display = '';
+        document.getElementById('buy-phase-panel').style.display = 'none';
+        document.getElementById('gameover-panel').style.display = 'none';
+    }
+
+    function handleNextPhase() {
+        const isFinalRound = gameState.round >= Game.TOTAL_ROUNDS;
+
+        if (isFinalRound) {
+            Game.endBuyPhase(gameState);
+            showGameOver();
+        } else {
+            startBuyPhase();
+        }
+    }
+
+    // === Buy Phase ===
+    function startBuyPhase() {
+        gameState.phase = 'buy';
+        updateHUD();
+
+        // Generate markets
+        const playerMarket = Game.getMarket(gameState.player.venueId);
+        const rivalMarket = Game.getMarket(gameState.rival.venueId);
+
+        // AI buys
+        const aiBuys = AI.decideBuyPhaseActions(gameState, rivalMarket);
+        aiBuys.forEach(guestId => Game.buyGuest(gameState.rival, guestId));
+
+        if (aiBuys.length > 0) {
+            const names = aiBuys.map(id => Game.GUESTS[id].name).join(', ');
+            showFeedback(`${gameState.rival.name} bought: ${names}`, 'disruption', 3000);
+        }
+
+        currentMarket = playerMarket;
+        renderShop();
+
+        // Show buy panel
+        document.getElementById('guest-phase-panel').style.display = 'none';
+        document.getElementById('round-results-panel').style.display = 'none';
+        document.getElementById('buy-phase-panel').style.display = '';
+        document.getElementById('gameover-panel').style.display = 'none';
+    }
+
+    function renderShop() {
+        const shopMoney = document.getElementById('shop-money');
+        shopMoney.textContent = `\u{1F4B0} $${gameState.player.money}`;
+
+        const grid = document.getElementById('shop-grid');
+        grid.innerHTML = '';
+
+        currentMarket.forEach(guestId => {
+            const guest = Game.GUESTS[guestId];
+            const canAfford = gameState.player.money >= guest.cost;
+
             const card = document.createElement('div');
-            card.className = 'action-card' + (action.enabled ? '' : ' disabled');
+            card.className = 'shop-card' + (canAfford ? '' : ' disabled');
+
+            let abilityHTML = '';
+            if (guest.ability) {
+                abilityHTML = `<div class="shop-card-ability">\u26A1 ${guest.ability.name}</div>`;
+            }
+
             card.innerHTML = `
-                <span class="action-card-icon">${action.icon}</span>
-                <div class="action-card-name">${action.name}</div>
-                <div class="action-card-desc">${action.description}</div>
-                ${action.cost !== null ? `<div class="action-card-cost">$${action.cost}</div>` : ''}
+                <div class="shop-card-emoji">${guest.emoji}</div>
+                <div class="shop-card-name">${guest.name}</div>
+                <div class="shop-card-stats">\u{1F4B0}${guest.money} \u2B50${guest.points} \u{1F525}${guest.heat}</div>
+                <div class="shop-card-cost">$${guest.cost}</div>
+                ${abilityHTML}
             `;
 
-            if (action.enabled) {
+            if (canAfford) {
                 card.addEventListener('click', () => {
-                    if (action.id === 'upgrade') {
-                        showUpgradePanel();
-                    } else {
-                        executePlayerAction(action.id);
+                    if (Game.buyGuest(gameState.player, guestId)) {
+                        showFeedback(`Bought ${guest.name}!`, 'money', 1500);
+                        renderShop();
+                        updateHUD();
                     }
                 });
             }
 
-            actionGrid.appendChild(card);
+            grid.appendChild(card);
         });
     }
 
-    function showUpgradePanel() {
-        showingUpgrades = true;
-        const upgrades = Game.getAvailableUpgrades(gameState);
-        actionGrid.innerHTML = '';
+    function handleDoneShopping() {
+        Game.endBuyPhase(gameState);
 
-        // Back button
-        const backCard = document.createElement('div');
-        backCard.className = 'action-card';
-        backCard.innerHTML = `
-            <span class="action-card-icon">\u2B05\uFE0F</span>
-            <div class="action-card-name">Back</div>
-            <div class="action-card-desc">Return to actions</div>
-        `;
-        backCard.addEventListener('click', showActions);
-        actionGrid.appendChild(backCard);
-
-        upgrades.forEach(upg => {
-            const card = document.createElement('div');
-            card.className = 'upgrade-card' +
-                (upg.owned ? ' owned' : (upg.enabled ? '' : ' disabled'));
-            card.innerHTML = `
-                <div class="upgrade-icon">${upg.icon}</div>
-                <div class="upgrade-name">${upg.name}</div>
-                <div class="upgrade-effect">${upg.description}</div>
-                ${!upg.owned ? `<div class="upgrade-cost">$${upg.cost}</div>` : ''}
-            `;
-
-            if (upg.enabled && !upg.owned) {
-                card.addEventListener('click', () => {
-                    executePlayerAction('upgrade', upg.id);
-                });
-            }
-
-            actionGrid.appendChild(card);
-        });
-    }
-
-    // === Execute Player Action ===
-    function executePlayerAction(actionId, upgradeId) {
-        // Execute player action
-        const msgs = Game.executeAction(gameState, actionId, upgradeId);
-        msgs.forEach(m => addLogEntry(`<span class="highlight-player">[You]</span> ${m}`));
-
-        // Spawn particles for upgrades/purchases
-        if (actionId === 'upgrade' || actionId === 'hire') {
-            for (let i = 0; i < 5; i++) {
-                Renderer.spawnParticle(200, 250, 'star');
-            }
+        if (gameState.phase === 'gameover') {
+            showGameOver();
+        } else {
+            startNewRound();
         }
-
-        // AI takes its turn
-        const aiMsgs = AI.takeTurn(gameState);
-        aiMsgs.forEach(m => addLogEntry(`<span class="highlight-rival">[Rival]</span> ${m}`));
-
-        // Resolve the turn
-        gameState.lastActionFrame = Renderer.getAnimFrame(); // Sync animation timer
-        const results = Game.advanceTurn(gameState);
-
-        // Show resolution
-        showResolution(results);
     }
 
-    // === Resolution Display ===
-    function showResolution(results) {
-        actionPanel.style.display = 'none';
-        eventPanel.style.display = '';
+    // === Game Flow ===
+    function startGame(name, venueType) {
+        Renderer.resetAnimState();
 
-        let html = '';
+        // Pick rival
+        const venueKeys = Object.keys(Game.VENUES).filter(k => k !== venueType);
+        const rivalVenue = venueKeys[Math.floor(Math.random() * venueKeys.length)];
+        const rivalName = RIVAL_NAMES[Math.floor(Math.random() * RIVAL_NAMES.length)];
 
-        // Show event if any
-        results.messages.forEach(msg => {
-            if (msg.type === 'event') {
-                html += `<h3>\u26A1 ${msg.title}</h3>`;
-                html += `<p>${msg.desc}</p>`;
-                msg.details.forEach(d => {
-                    const cls = d.who === 'player' ? 'highlight-player' :
-                                d.who === 'rival' ? 'highlight-rival' : 'highlight-gold';
-                    html += `<p class="${cls}">${d.text}</p>`;
-                });
-                html += '<hr style="border-color: #333; margin: 12px 0;">';
-            }
-            if (msg.type === 'resolution') {
-                html += `<h3>Tonight's Results</h3>`;
-                html += `<p><span class="highlight-gold">${msg.pool} customers</span> visited the block.</p>`;
-                html += `<p><span class="highlight-player">${gameState.player.name}</span> attracted <strong>${msg.playerCustomers}</strong> customers</p>`;
-                html += `<p style="font-size:0.85rem">Revenue: <span class="highlight-green">+$${msg.playerRevenue}</span> | Costs: -$${msg.playerCosts} | Net: <strong>${msg.playerProfit >= 0 ? '+' : ''}$${msg.playerProfit}</strong></p>`;
-                html += `<p><span class="highlight-rival">${gameState.rival.name}</span> attracted <strong>${msg.rivalCustomers}</strong> customers</p>`;
-                html += `<p style="font-size:0.85rem">Revenue: <span class="highlight-green">+$${msg.rivalRevenue}</span> | Costs: -$${msg.rivalCosts} | Net: <strong>${msg.rivalProfit >= 0 ? '+' : ''}$${msg.rivalProfit}</strong></p>`;
+        gameState = Game.createGameState(name, venueType, rivalName, rivalVenue);
 
-                // Log it
-                addLogEntry(`${msg.playerCustomers}/${msg.pool} customers \u2192 you (+$${msg.playerRevenue}), rival (+$${msg.rivalRevenue})`);
+        switchScreen('game');
+        startNewRound();
+    }
 
-                // Spawn money particles
-                for (let i = 0; i < Math.min(msg.playerCustomers, 5); i++) {
-                    Renderer.spawnParticle(180 + Math.random() * 40, 200, 'money');
-                }
-            }
-        });
+    function startNewRound() {
+        Game.startGuestPhase(gameState);
 
-        eventContent.innerHTML = html;
+        showFeedback(`ROUND ${gameState.round}`, 'points', 1500);
+
+        // Reset UI
+        document.getElementById('guest-phase-panel').style.display = '';
+        document.getElementById('round-results-panel').style.display = 'none';
+        document.getElementById('buy-phase-panel').style.display = 'none';
+        document.getElementById('gameover-panel').style.display = 'none';
+
+        // Clear grids
+        document.getElementById('player-slots').innerHTML = '';
+        document.getElementById('rival-slots').innerHTML = '';
+
+        renderArrivingGuest('player');
+        renderArrivingGuest('rival');
+        updateGuestDetail();
+        updateVenueStatus('player');
+        updateVenueStatus('rival');
         updateHUD();
 
-        // Check game over
-        if (gameState.phase === 'gameover') {
-            btnContinue.textContent = 'See Results';
-            btnContinue.onclick = () => showGameOver();
-        } else {
-            btnContinue.textContent = 'Next Turn';
-            btnContinue.onclick = () => {
-                showActions();
-                updateHUD();
-            };
-        }
+        // Start AI
+        setTimeout(() => startAITimer(), 800);
     }
 
     // === Game Over ===
     function showGameOver() {
-        switchScreen('gameover');
-
         const won = gameState.winner === 'player';
-        const title = document.getElementById('gameover-title');
-        const message = document.getElementById('gameover-message');
-        const stats = document.getElementById('gameover-stats');
+        const p = gameState.player;
+        const r = gameState.rival;
 
+        document.getElementById('hud-phase').textContent = 'GAME OVER';
+
+        const title = document.getElementById('gameover-title');
         title.textContent = won ? 'Victory!' : 'Defeated!';
         title.className = won ? 'win' : 'lose';
 
-        if (won) {
-            if (gameState.rival.money < -100) {
-                message.textContent = `${gameState.rival.name} went bankrupt! Your venue reigns supreme on the block.`;
-            } else {
-                message.textContent = `${gameState.player.name} became the most successful venue! Congratulations!`;
-            }
-        } else {
-            if (gameState.player.money < -100) {
-                message.textContent = `You ran out of money. ${gameState.rival.name} takes over the block.`;
-            } else {
-                message.textContent = `${gameState.rival.name} outperformed you this time. Better luck next time!`;
-            }
-        }
+        document.getElementById('gameover-message').textContent = won
+            ? `${p.name} dominated the scene! Congratulations!`
+            : `${r.name} outscored you. Better luck next time!`;
 
-        stats.innerHTML = `
+        document.getElementById('gameover-stats').innerHTML = `
             <div class="gameover-stat-card">
-                <div class="stat-label">Your Earnings</div>
-                <div class="stat-value">$${Math.round(gameState.player.totalEarnings)}</div>
+                <div class="stat-label">Your Points</div>
+                <div class="stat-value player-color">${p.points}</div>
             </div>
             <div class="gameover-stat-card">
-                <div class="stat-label">Rival Earnings</div>
-                <div class="stat-value">$${Math.round(gameState.rival.totalEarnings)}</div>
+                <div class="stat-label">Rival Points</div>
+                <div class="stat-value rival-color">${r.points}</div>
             </div>
             <div class="gameover-stat-card">
-                <div class="stat-label">Turns Played</div>
-                <div class="stat-value">${gameState.turn}</div>
+                <div class="stat-label">Your Deck</div>
+                <div class="stat-value">${p.fullDeck.length} guests</div>
             </div>
             <div class="gameover-stat-card">
-                <div class="stat-label">Your Upgrades</div>
-                <div class="stat-value">${gameState.player.upgrades.length}</div>
+                <div class="stat-label">Rival Deck</div>
+                <div class="stat-value">${r.fullDeck.length} guests</div>
             </div>
         `;
+
+        // Show game over panel
+        document.getElementById('guest-phase-panel').style.display = 'none';
+        document.getElementById('round-results-panel').style.display = 'none';
+        document.getElementById('buy-phase-panel').style.display = 'none';
+        document.getElementById('gameover-panel').style.display = '';
+
+        startGameOverAnim(won);
     }
 
     // === Event Listeners ===
     function setupEventListeners() {
-        // Title screen
+        // Title
         document.getElementById('btn-new-game').addEventListener('click', () => {
             switchScreen('setup');
-            drawSetupPreviews();
         });
-
         document.getElementById('btn-how-to-play').addEventListener('click', () => {
             switchScreen('howToPlay');
         });
-
         document.getElementById('btn-back-to-title').addEventListener('click', () => {
             switchScreen('title');
         });
 
-        // Setup screen
+        // Setup
         document.querySelectorAll('.venue-type-card').forEach(card => {
             card.addEventListener('click', () => {
                 document.querySelectorAll('.venue-type-card').forEach(c => c.classList.remove('selected'));
@@ -356,10 +718,38 @@
             startGame(escapeHtml(rawName), selectedVenueType);
         });
 
+        // Guest phase controls
+        document.getElementById('btn-admit').addEventListener('click', handleAdmit);
+        document.getElementById('btn-ability').addEventListener('click', handleAbility);
+        document.getElementById('btn-close-door').addEventListener('click', handleCloseDoor);
+
+        // Player door click to close
+        document.getElementById('player-door').addEventListener('click', handleCloseDoor);
+
+        // Round results
+        document.getElementById('btn-next-phase').addEventListener('click', handleNextPhase);
+
+        // Buy phase
+        document.getElementById('btn-done-shopping').addEventListener('click', handleDoneShopping);
+
         // Game over
         document.getElementById('btn-play-again').addEventListener('click', () => {
+            if (aiTimerId) { clearInterval(aiTimerId); aiTimerId = null; }
             Renderer.resetAnimState();
+            gameState = null;
+            currentMarket = null;
+            selectedVenueType = null;
+            document.querySelectorAll('.venue-type-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById('venue-name-input').value = '';
+            document.getElementById('btn-start-game').disabled = true;
             switchScreen('title');
+        });
+
+        // Remove tooltip on any click outside
+        document.addEventListener('click', (e) => {
+            if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.guest-tooltip')) {
+                removeTooltip();
+            }
         });
     }
 
@@ -368,64 +758,12 @@
         document.getElementById('btn-start-game').disabled = !(nameOk && selectedVenueType);
     }
 
-    function drawSetupPreviews() {
-        document.querySelectorAll('.venue-preview').forEach(canvas => {
-            Renderer.drawVenuePreview(canvas, canvas.dataset.venue);
-        });
-    }
-
-    // === Start Game ===
-    function startGame(name, type) {
-        Renderer.resetAnimState();
-        gameState = Game.createGameState(name, type);
-        logEntries.innerHTML = '';
-        addLogEntry(`Welcome to ${gameState.player.name}! Your rival: ${gameState.rival.name}`);
-
-        switchScreen('game');
-        updateHUD();
-        showActions();
-    }
-
-    // === Canvas Resize ===
-    function resizeGameCanvas() {
-        if (!gameCanvas) return;
-        const container = gameCanvas.parentElement;
-        if (!container) return;
-
-        // Keep aspect ratio but fit container
-        const maxW = Math.min(container.clientWidth - 16, 900);
-        const maxH = Math.min(container.clientHeight - 16, 400);
-        const aspect = 900 / 400;
-
-        let w = maxW;
-        let h = w / aspect;
-        if (h > maxH) {
-            h = maxH;
-            w = h * aspect;
-        }
-
-        gameCanvas.style.width = w + 'px';
-        gameCanvas.style.height = h + 'px';
-    }
-
     // === Init ===
     function init() {
         setupEventListeners();
         startAnimLoop();
-        resizeGameCanvas();
-
-        window.addEventListener('resize', resizeGameCanvas);
-
-        // High DPI canvas support
-        [titleCanvas, gameCanvas, gameoverCanvas].forEach(canvas => {
-            if (!canvas) return;
-            const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
-            // Keep fixed internal resolution for consistent rendering
-        });
     }
 
-    // Start when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
