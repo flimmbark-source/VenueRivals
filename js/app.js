@@ -576,6 +576,9 @@
 
         renderArrivingGuest('rival');
         updateVenueStatus('rival');
+        // AI abilities can change player heat/bust state as well, so always refresh player UI.
+        updateVenueStatus('player');
+        updateGuestDetail();
         updateHUD();
     }
 
