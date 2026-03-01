@@ -136,11 +136,11 @@ const Game = (() => {
             p.busted = false;
             p.phaseComplete = false;
         });
-        drawNextGuest(state.player);
-        drawNextGuest(state.rival);
+        drawNextGuest(state.player, VENUES[state.player.venueId]);
+        drawNextGuest(state.rival, VENUES[state.rival.venueId]);
     }
 
-    function drawNextGuest(player) {
+    function drawNextGuest(player, venue) {
         if (player.roundDeck.length === 0) {
             player.arrivingGuest = null;
             player.phaseComplete = true;
@@ -154,6 +154,11 @@ const Game = (() => {
         player.heat += guest.heat;
         player.roundMoney += guest.money;
         player.roundPoints += guest.points;
+
+        // Any time heat is over capacity, player immediately busts.
+        if (venue && player.heat > venue.bustThreshold) {
+            applyBustState(player);
+        }
         return true;
     }
 
@@ -191,7 +196,10 @@ const Game = (() => {
 
         player.arrivingGuest = null;
         if (!result.busted) {
-            drawNextGuest(player);
+            drawNextGuest(player, venue);
+            if (player.busted) {
+                result.busted = true;
+            }
         }
 
         return result;
@@ -247,7 +255,7 @@ const Game = (() => {
 
         // Guest consumed without entering house
         player.arrivingGuest = null;
-        drawNextGuest(player);
+        drawNextGuest(player, playerVenue);
         return result;
     }
 
