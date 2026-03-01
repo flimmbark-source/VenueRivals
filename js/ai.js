@@ -141,6 +141,50 @@ const AI = (() => {
         };
     }
 
+    function estimateAbilityValue(rival, player, venue, playerVenue, guest) {
+        if (!guest?.ability) return Number.NEGATIVE_INFINITY;
+
+        // Activating an ability consumes the current guest's baseline contribution.
+        let nextHeat = rival.heat - guest.heat;
+        let nextMoney = rival.roundMoney - guest.money;
+        let nextPoints = rival.roundPoints - guest.points;
+
+        switch (guest.ability.type) {
+            case 'reduceHeat':
+                nextHeat = Math.max(0, nextHeat - guest.ability.value);
+                break;
+            case 'bonusPoints':
+                nextPoints += guest.ability.value;
+                break;
+            case 'inspect':
+                nextHeat = Math.max(0, nextHeat - guest.ability.selfReduce);
+                break;
+            case 'addOpponentHeat':
+                // No direct self stat change beyond consuming the guest.
+                break;
+        }
+
+        if (nextHeat > venue.bustThreshold) {
+            nextMoney = Math.floor(nextMoney * 0.25);
+            nextPoints = Math.floor(nextPoints * 0.25);
+        }
+
+        let value = scoreRoundValue(nextMoney, nextPoints, venue);
+
+        // Add tactical pressure value for disruptive abilities.
+        if (guest.ability.type === 'addOpponentHeat' || guest.ability.type === 'inspect') {
+            const oppHeatDelta = guest.ability.oppAdd ?? guest.ability.value ?? 0;
+            const projectedOpponentHeat = player.heat + oppHeatDelta;
+            const projectedRatio = projectedOpponentHeat / playerVenue.bustThreshold;
+            value += projectedRatio * 3;
+            if (!player.doorClosed && !player.busted && projectedOpponentHeat > playerVenue.bustThreshold) {
+                value += 6;
+            }
+        }
+
+        return value;
+    }
+
     /**
      * Decide what to do with the current arriving guest.
      * Returns 'admit' | 'ability' | 'close' | null
@@ -156,26 +200,20 @@ const AI = (() => {
             return 'close';
         }
 
-        // Keep tactical ability usage first.
-        if (guest.ability && (guest.ability.type === 'addOpponentHeat' || guest.ability.type === 'inspect')) {
-            if (!player.doorClosed && !player.busted) {
-                const playerHeatRatio = player.heat / playerVenue.bustThreshold;
-                if (playerHeatRatio > 0.5) return 'ability';
-            }
-        }
-
-        if (guest.ability && guest.ability.type === 'reduceHeat' && rival.heat / venue.bustThreshold > 0.7) {
-            return 'ability';
-        }
-
         // Early-round tempo: avoid closing immediately unless pressure is already high.
         const remainingHeatBuffer = venue.bustThreshold - rival.heat;
         if (rival.house.length < 2 && remainingHeatBuffer >= 2) {
             return 'admit';
         }
 
-        // Monte Carlo decision between admitting and banking current value.
+        // Monte Carlo decision between admitting, ability usage, and banking current value.
         const values = estimateAdmitVsCloseValue(rival, venue);
+        const abilityValue = estimateAbilityValue(rival, player, venue, playerVenue, guest);
+
+        if (abilityValue >= values.admitValue && abilityValue >= values.closeValue) {
+            return 'ability';
+        }
+
         if (values.admitValue >= values.closeValue) return 'admit';
         return 'close';
     }
