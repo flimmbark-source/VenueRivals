@@ -955,3 +955,135 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* === Portrait battler refactor === */
+#game-screen.active {
+    align-items: stretch;
+    justify-content: flex-start;
+}
+
+.portrait-shell {
+    position: relative;
+    width: min(520px, 100vw);
+    margin: 0 auto;
+    min-height: 100dvh;
+    padding: 10px 10px 90px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: radial-gradient(circle at top, rgba(127, 90, 240, 0.2), transparent 50%);
+}
+
+.top-hud,
+.board-section,
+.center-section,
+.command-section,
+.buy-panel {
+    background: var(--bg-medium);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 10px;
+}
+
+.top-row,
+.score-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.86rem;
+}
+
+.top-row { color: var(--accent-gold); margin-bottom: 4px; }
+.score-row { color: var(--text-secondary); font-size: 0.78rem; }
+
+.board-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.board-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 0.95rem; }
+.board-sub { color: var(--text-muted); font-size: 0.72rem; }
+.board-metrics { display: flex; gap: 8px; flex-wrap: wrap; color: var(--text-secondary); font-size: 0.74rem; margin-bottom: 8px; }
+
+.status { font-size: 0.7rem; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; letter-spacing: 0.6px; }
+.status.live { background: rgba(76, 201, 240, 0.16); color: var(--player-color); }
+.status.closed { background: rgba(255, 209, 102, 0.2); color: var(--accent-gold); }
+.status.busted { background: rgba(255, 110, 110, 0.2); color: var(--rival-color); }
+
+.house-row { display: grid; grid-template-columns: 70px 1fr 76px; align-items: center; gap: 8px; }
+.door-btn, .exit-door { font-size: 0.72rem; border-radius: 10px; padding: 8px 6px; text-align: center; border: 1px solid rgba(255,255,255,0.14); background: var(--bg-card); color: var(--text-primary); }
+.door-btn { cursor: pointer; }
+.door-btn.player { border-color: rgba(76,201,240,0.45); }
+.door-btn.rival { border-color: rgba(255,110,110,0.45); cursor: default; }
+.exit-door { color: var(--text-secondary); min-height: 44px; display: flex; align-items: center; justify-content: center; }
+
+.lane-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); gap: 6px; overflow-x: auto; padding-bottom: 3px; }
+.lane-slot { min-width: 64px; }
+
+.door-card-wrap { margin-top: 8px; }
+
+.guest-card {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 6px;
+}
+
+.guest-card.door { border-color: rgba(127, 90, 240, 0.6); }
+.guest-card.empty { justify-content: center; color: var(--text-muted); min-height: 48px; }
+.guest-visual { font-size: 1.2rem; }
+.guest-name { font-size: 0.74rem; font-weight: 700; }
+.guest-icons { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+.effect-icon { border: none; background: rgba(255,255,255,0.08); color: var(--text-primary); font-size: 0.68rem; border-radius: 999px; padding: 2px 6px; }
+
+#player-door-card.clickable { cursor: pointer; }
+#player-door-card.clickable .guest-card { border-color: var(--accent-secondary); box-shadow: 0 0 0 1px rgba(127,90,240,0.5); }
+
+.action-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.action-btn { border: none; background: linear-gradient(135deg, var(--bg-card), var(--bg-light)); color: var(--text-primary); border-radius: 10px; padding: 10px; font-family: 'Poppins', sans-serif; font-size: 0.78rem; }
+.action-btn:disabled { opacity: 0.35; }
+
+.buy-summary { font-size: 0.76rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 10px; }
+.buy-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.buy-card { border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; background: var(--bg-card); color: var(--text-primary); text-align: left; padding: 8px; font-size: 0.74rem; }
+.buy-card:disabled { opacity: 0.4; }
+.buy-top { font-weight: 700; margin-bottom: 4px; }
+.buy-mid { color: var(--accent-gold); margin-bottom: 3px; }
+.buy-foot { color: var(--text-secondary); font-size: 0.68rem; }
+
+.center-section { font-size: 0.72rem; color: var(--text-secondary); text-align: center; }
+
+.icon-tooltip {
+    position: fixed;
+    z-index: 40;
+    display: none;
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+    background: rgba(15, 14, 23, 0.95);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 5px 8px;
+    font-size: 0.7rem;
+    color: var(--text-primary);
+    max-width: 200px;
+}
+
+.game-log {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0;
+    width: min(520px, 100vw);
+    max-height: 86px;
+    border-radius: 12px 12px 0 0;
+}
+
+@media (max-width: 420px) {
+    .house-row { grid-template-columns: 62px 1fr 66px; }
+    .buy-cards { grid-template-columns: 1fr; }
+}

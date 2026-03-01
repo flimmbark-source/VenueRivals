@@ -2,200 +2,128 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Venue Rivals</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Title Screen -->
     <div id="title-screen" class="screen active">
         <div class="title-container">
             <div class="title-logo">
                 <h1 class="title-text">VENUE<span class="title-accent">RIVALS</span></h1>
-                <p class="title-subtitle">Outplay. Outbuild. Outshine.</p>
+                <p class="title-subtitle">Portrait 1v1 Venue Battler</p>
             </div>
-            <div class="title-venue-art">
-                <canvas id="title-canvas" width="600" height="200"></canvas>
-            </div>
+            <div class="title-venue-art"><canvas id="title-canvas" width="600" height="200"></canvas></div>
             <div class="title-menu">
-                <button class="btn btn-primary btn-large" id="btn-new-game">New Game</button>
+                <button class="btn btn-primary btn-large" id="btn-new-game">New Match</button>
                 <button class="btn btn-secondary btn-large" id="btn-how-to-play">How to Play</button>
             </div>
         </div>
     </div>
 
-    <!-- How to Play Screen -->
     <div id="how-to-play-screen" class="screen">
         <div class="how-to-play-container">
             <h2>How to Play</h2>
             <div class="how-to-play-content">
                 <div class="how-section">
-                    <h3>Goal</h3>
-                    <p>Play a 3-round competitive push-your-luck showdown. Score more total round points than your rival to win.</p>
+                    <h3>Match Structure</h3>
+                    <p>3 rounds total. Every round has a <strong>shared live Guest Phase</strong> followed by a <strong>shared Buy Phase</strong>.</p>
                 </div>
                 <div class="how-section">
-                    <h3>Shared Live Round Flow</h3>
+                    <h3>Guest Phase (Parallel Turns)</h3>
                     <ol>
-                        <li><strong>Both players act at the same time</strong> — each decides whether to admit another guest, activate an ability, or close the door.</li>
-                        <li><strong>Push your luck</strong> — admitted guests add pressure to your house.</li>
-                        <li><strong>Close to bank points</strong> — once you close, your round is locked.</li>
-                        <li><strong>Bust risk</strong> — if pressure exceeds your limit before closing, you bust and lose that round.</li>
+                        <li>Both players resolve their own door guest at the same time.</li>
+                        <li>For each arrival choose: <strong>Admit</strong>, <strong>Activate</strong>, or <strong>Close Door</strong>.</li>
+                        <li>Admitted guests shift through your house lane and can push guests out the Exit door.</li>
+                        <li>If danger goes above your cap before closing, you bust and lose round points.</li>
                     </ol>
                 </div>
                 <div class="how-section">
-                    <h3>Real-Time Rival Pressure</h3>
-                    <p>Guest abilities can disrupt the opponent while their round is still live, lowering limits or adding pressure.</p>
+                    <h3>Money vs Points</h3>
+                    <p><strong>💵 Money</strong> is spent in Buy Phase to improve future rounds. <strong>⭐ Points</strong> are your win score and are never spent.</p>
                 </div>
                 <div class="how-section">
-                    <h3>Strategy Tips</h3>
-                    <ul>
-                        <li>Close early for a safe score, or push for a bigger round.</li>
-                        <li>Use abilities to stabilize your house or disrupt your rival.</li>
-                        <li>Watch your remaining pressure space before admitting again.</li>
-                        <li>Win over 3 rounds by managing risk better than your opponent.</li>
-                    </ul>
+                    <h3>Buy Phase</h3>
+                    <p>Spend money on venue-linked guests. Purchased guests are shuffled into future draws, not the current guest phase.</p>
                 </div>
             </div>
             <button class="btn btn-secondary" id="btn-back-to-title">Back</button>
         </div>
     </div>
 
-    <!-- Setup Screen -->
     <div id="setup-screen" class="screen">
         <div class="setup-container">
-            <h2>Choose Your Venue</h2>
+            <h2>Select Profile / Venue</h2>
             <div class="venue-type-grid">
                 <div class="venue-type-card" data-type="bar">
-                    <div class="venue-type-icon">
-                        <canvas class="venue-preview" data-venue="bar" width="120" height="120"></canvas>
-                    </div>
+                    <div class="venue-type-icon"><canvas class="venue-preview" data-venue="bar" width="120" height="120"></canvas></div>
                     <h3>The Bar</h3>
-                    <p>Cozy neighborhood spot. Low overhead, loyal regulars.</p>
-                    <div class="venue-stats-preview">
-                        <span class="stat-tag">+Reputation</span>
-                        <span class="stat-tag">Low Cost</span>
-                    </div>
+                    <p>Economy leaning. Safer active and discount buy turns.</p>
                 </div>
                 <div class="venue-type-card" data-type="club">
-                    <div class="venue-type-icon">
-                        <canvas class="venue-preview" data-venue="club" width="120" height="120"></canvas>
-                    </div>
+                    <div class="venue-type-icon"><canvas class="venue-preview" data-venue="club" width="120" height="120"></canvas></div>
                     <h3>The Club</h3>
-                    <p>High energy nightlife. Big crowds, big spending.</p>
-                    <div class="venue-stats-preview">
-                        <span class="stat-tag">+Revenue</span>
-                        <span class="stat-tag">High Risk</span>
-                    </div>
+                    <p>Bigger capacity and aggressive scoring spikes.</p>
                 </div>
                 <div class="venue-type-card" data-type="lounge">
-                    <div class="venue-type-icon">
-                        <canvas class="venue-preview" data-venue="lounge" width="120" height="120"></canvas>
-                    </div>
+                    <div class="venue-type-icon"><canvas class="venue-preview" data-venue="lounge" width="120" height="120"></canvas></div>
                     <h3>The Lounge</h3>
-                    <p>Upscale and refined. Premium prices, discerning clientele.</p>
-                    <div class="venue-stats-preview">
-                        <span class="stat-tag">+Quality</span>
-                        <span class="stat-tag">Balanced</span>
-                    </div>
+                    <p>Tight control and disruption-focused guest pool.</p>
                 </div>
             </div>
             <div class="setup-name-section">
-                <label for="venue-name-input">Name Your Venue</label>
-                <input type="text" id="venue-name-input" placeholder="Enter venue name..." maxlength="20">
+                <label for="venue-name-input">Profile Name</label>
+                <input type="text" id="venue-name-input" maxlength="20" placeholder="Enter player name...">
             </div>
-            <button class="btn btn-primary btn-large" id="btn-start-game" disabled>Start Game</button>
+            <button class="btn btn-primary btn-large" id="btn-start-game" disabled>Start Match</button>
         </div>
     </div>
 
-    <!-- Main Game Screen -->
     <div id="game-screen" class="screen">
-        <!-- Top HUD -->
-        <div class="game-hud">
-            <div class="hud-player">
-                <div class="hud-venue-name" id="hud-player-name">Your Venue</div>
-                <div class="hud-stats">
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon">$</span>
-                        <span class="hud-stat-value" id="hud-player-money">500</span>
-                    </div>
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon star-icon">&#9733;</span>
-                        <span class="hud-stat-value" id="hud-player-rep">10</span>
-                    </div>
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon people-icon">&#9823;</span>
-                        <span class="hud-stat-value" id="hud-player-customers">0</span>
-                    </div>
+        <div class="portrait-shell">
+            <header class="top-hud">
+                <div class="top-row">
+                    <span>Round <strong id="round-number">1</strong>/3</span>
+                    <span id="phase-label">Guest Phase</span>
                 </div>
-                <div class="hud-earnings-bar">
-                    <div class="earnings-fill" id="player-earnings-fill" style="width: 0%"></div>
-                    <span class="earnings-label" id="player-earnings-label">$0 / $10,000</span>
+                <div class="score-row">
+                    <div><span id="player-name">You</span> ⭐ <strong id="player-points">0</strong> · 💵 <strong id="player-money">0</strong></div>
+                    <div><span id="rival-name">Rival</span> ⭐ <strong id="rival-points">0</strong> · 💵 <strong id="rival-money">0</strong></div>
                 </div>
-            </div>
-            <div class="hud-center">
-                <div class="turn-display">
-                    <span class="turn-label">ROUND</span>
-                    <span class="turn-number" id="turn-number">1</span>
-                </div>
-                <div class="customer-pool">
-                    <span class="pool-label">Safe Pressure Left</span>
-                    <span class="pool-value" id="customer-pool-count">10</span>
-                </div>
-            </div>
-            <div class="hud-rival">
-                <div class="hud-venue-name" id="hud-rival-name">Rival Venue</div>
-                <div class="hud-stats">
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon">$</span>
-                        <span class="hud-stat-value" id="hud-rival-money">500</span>
-                    </div>
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon star-icon">&#9733;</span>
-                        <span class="hud-stat-value" id="hud-rival-rep">10</span>
-                    </div>
-                    <div class="hud-stat">
-                        <span class="hud-stat-icon people-icon">&#9823;</span>
-                        <span class="hud-stat-value" id="hud-rival-customers">0</span>
-                    </div>
-                </div>
-                <div class="hud-earnings-bar rival-bar">
-                    <div class="earnings-fill rival-fill" id="rival-earnings-fill" style="width: 0%"></div>
-                    <span class="earnings-label" id="rival-earnings-label">$0 / $10,000</span>
-                </div>
-            </div>
-        </div>
+            </header>
 
-        <!-- Main Game Area -->
-        <div class="game-main">
-            <!-- Street View Canvas -->
-            <div class="street-view-container">
-                <canvas id="game-canvas" width="900" height="400"></canvas>
-            </div>
+            <section class="board-section rival-section">
+                <div id="rival-board"></div>
+                <div class="door-card-wrap"><div id="rival-door-card"></div></div>
+            </section>
 
-            <!-- Action Panel -->
-            <div class="action-panel" id="action-panel">
-                <h3 class="action-title">Choose Your Action</h3>
-                <div class="action-grid" id="action-grid">
-                    <!-- Actions populated by JS -->
-                </div>
-            </div>
+            <section class="center-section">
+                <div id="center-feed">Live disruption, bust notices, and buy feedback appear in the log.</div>
+            </section>
 
-            <!-- Event/Resolution Panel -->
-            <div class="event-panel" id="event-panel" style="display: none;">
-                <div class="event-content" id="event-content"></div>
-                <button class="btn btn-primary" id="btn-continue">Continue</button>
-            </div>
-        </div>
+            <section class="board-section player-section">
+                <div id="player-board"></div>
+                <div class="door-card-wrap"><div id="player-door-card"></div></div>
+            </section>
 
-        <!-- Game Log -->
-        <div class="game-log" id="game-log">
-            <div class="log-header">Activity Log</div>
-            <div class="log-entries" id="log-entries"></div>
+            <section class="command-section">
+                <div id="player-actions" class="action-strip"></div>
+            </section>
+
+            <section id="buy-panel" class="buy-panel" style="display:none;">
+                <div id="buy-summary" class="buy-summary"></div>
+                <div id="buy-cards" class="buy-cards"></div>
+                <button id="btn-ready-next-round" class="btn btn-primary">Ready / Next Round</button>
+            </section>
+
+            <aside class="game-log" id="game-log">
+                <div class="log-header">Live Log</div>
+                <div class="log-entries" id="log-entries"></div>
+            </aside>
         </div>
     </div>
 
-    <!-- Game Over Screen -->
     <div id="gameover-screen" class="screen">
         <div class="gameover-container">
             <canvas id="gameover-canvas" width="600" height="300"></canvas>
@@ -205,6 +133,8 @@
             <button class="btn btn-primary btn-large" id="btn-play-again">Play Again</button>
         </div>
     </div>
+
+    <div id="icon-tooltip" class="icon-tooltip"></div>
 
     <script src="js/renderer.js"></script>
     <script src="js/game.js"></script>
