@@ -875,6 +875,8 @@ body {
     text-align: center;
     cursor: pointer;
     transition: var(--transition);
+    display: flex;
+    flex-direction: column;
 }
 
 .shop-card:hover:not(.disabled) {
@@ -889,11 +891,12 @@ body {
 
 .shop-card-visual {
     position: relative;
-    height: 42px;
+    min-height: 54px;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
 .shop-card-emoji {
