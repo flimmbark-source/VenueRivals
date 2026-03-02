@@ -163,10 +163,10 @@
         arrivingEl.dataset.renderKey = arrivingKey;
         arrivingEl.innerHTML = '';
 
-        if (player.arrivingGuest && !player.doorClosed && !player.busted) {
+        if (player.arrivingGuest && !player.doorClosed) {
             const guest = Game.GUESTS[player.arrivingGuest];
             const card = document.createElement('div');
-            card.className = 'arriving-guest-card';
+            card.className = `arriving-guest-card${player.busted ? ' busted' : ''}`;
             card.innerHTML = `
                 <span class="arriving-stat arriving-heat">🔥 ${guest.heat}</span>
                 <button class="arriving-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
@@ -181,24 +181,26 @@
                 bindAbilityTooltipInteractions(emojiButton, abilityMessage);
             }
 
-            if (who === 'player') {
+            if (who === 'player' && !player.busted) {
                 card.addEventListener('click', () => handleAbility());
             }
             arrivingEl.appendChild(card);
 
-            const arrow = document.createElement('button');
-            arrow.className = 'entry-admit-arrow';
-            arrow.innerHTML = '←';
-            arrow.title = who === 'player' ? 'Admit guest' : 'Rival can admit this guest';
-            if (who === 'player') {
-                arrow.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    handleAdmit();
-                });
-            } else {
-                arrow.disabled = true;
+            if (!player.busted) {
+                const arrow = document.createElement('button');
+                arrow.className = 'entry-admit-arrow';
+                arrow.innerHTML = '←';
+                arrow.title = who === 'player' ? 'Admit guest' : 'Rival can admit this guest';
+                if (who === 'player') {
+                    arrow.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        handleAdmit();
+                    });
+                } else {
+                    arrow.disabled = true;
+                }
+                arrivingEl.appendChild(arrow);
             }
-            arrivingEl.appendChild(arrow);
         }
     }
 

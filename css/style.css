@@ -623,6 +623,11 @@ body {
     overflow: visible;
 }
 
+.arriving-guest-card.busted {
+    border-color: #ff4d4d;
+    box-shadow: 0 0 12px rgba(255, 77, 77, 0.45);
+}
+
 .arriving-emoji {
     border: none;
     background: transparent;
