@@ -62,40 +62,24 @@
         </div>
     </div>
 
-    <!-- Setup Screen -->
+    <!-- Setup Screen (Loadout) -->
     <div id="setup-screen" class="screen">
         <div class="setup-container">
-            <h2>Choose Your Venue</h2>
-            <div class="venue-type-grid">
-                <div class="venue-type-card" data-type="underground">
-                    <div class="venue-type-emoji">🍺</div>
-                    <h3>The Underground</h3>
-                    <p>Gritty bar. Money-focused.</p>
-                    <div class="venue-stats-preview">
-                        <span class="stat-tag">Grid: 5</span>
-                        <span class="stat-tag">Bust: 6</span>
-                        <span class="stat-tag">💰 Money</span>
+            <h2 class="loadout-title">Your Loadout</h2>
+            <div class="loadout-area">
+                <div class="loadout-card" id="loadout-venue-card">
+                    <div class="loadout-card-header">
+                        <span class="loadout-card-label">VENUE</span>
+                        <span class="loadout-card-change">Change</span>
                     </div>
+                    <div class="loadout-venue-body" id="loadout-venue-body"></div>
                 </div>
-                <div class="venue-type-card" data-type="spotlight">
-                    <div class="venue-type-emoji">🎭</div>
-                    <h3>The Spotlight</h3>
-                    <p>Flashy club. Points-focused.</p>
-                    <div class="venue-stats-preview">
-                        <span class="stat-tag">Grid: 4</span>
-                        <span class="stat-tag">Bust: 5</span>
-                        <span class="stat-tag">⭐ Points</span>
+                <div class="loadout-card" id="loadout-deck-card">
+                    <div class="loadout-card-header">
+                        <span class="loadout-card-label">DECK</span>
+                        <span class="loadout-card-change">Edit</span>
                     </div>
-                </div>
-                <div class="venue-type-card" data-type="velvet">
-                    <div class="venue-type-emoji">🍸</div>
-                    <h3>The Velvet Room</h3>
-                    <p>Upscale lounge. Control-focused.</p>
-                    <div class="venue-stats-preview">
-                        <span class="stat-tag">Grid: 6</span>
-                        <span class="stat-tag">Bust: 7</span>
-                        <span class="stat-tag">🛡 Control</span>
-                    </div>
+                    <div class="loadout-deck-body" id="loadout-deck-body"></div>
                 </div>
             </div>
             <div class="setup-name-section">
@@ -118,6 +102,46 @@
                 </select>
             </div>
             <button class="btn btn-primary btn-large" id="btn-start-game" disabled>Start Match</button>
+        </div>
+
+        <!-- Venue Selection Overlay -->
+        <div class="loadout-overlay" id="venue-select-overlay" style="display:none">
+            <div class="loadout-overlay-panel">
+                <div class="loadout-overlay-top">
+                    <h3>Select Venue</h3>
+                    <button class="loadout-overlay-close" id="btn-close-venue-select">&times;</button>
+                </div>
+                <div class="venue-type-grid" id="venue-select-grid"></div>
+            </div>
+        </div>
+
+        <!-- Deck Management Overlay -->
+        <div class="loadout-overlay" id="deck-manage-overlay" style="display:none">
+            <div class="loadout-overlay-panel">
+                <div class="loadout-overlay-top">
+                    <h3>Manage Deck</h3>
+                    <span class="deck-size-badge" id="deck-size-badge"></span>
+                    <button class="loadout-overlay-close" id="btn-close-deck-manage">&times;</button>
+                </div>
+                <div class="deck-validity-msg" id="deck-validity-msg" style="display:none"></div>
+                <div class="deck-manage-body">
+                    <div class="deck-manage-section">
+                        <div class="deck-manage-section-header">
+                            <h4>Your Deck</h4>
+                            <span class="deck-manage-hint">Tap to remove</span>
+                        </div>
+                        <div class="deck-manage-grid" id="deck-cards-grid"></div>
+                    </div>
+                    <div class="deck-manage-section">
+                        <div class="deck-manage-section-header">
+                            <h4>Available Guests</h4>
+                            <span class="deck-manage-hint">Tap to add</span>
+                        </div>
+                        <div class="deck-manage-grid" id="inventory-cards-grid"></div>
+                        <div class="deck-manage-empty" id="inventory-empty" style="display:none">No guests available</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

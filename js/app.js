@@ -16,6 +16,22 @@
     let currentMarket = null;
     let tooltipEl = null;
     let iconTooltipEl = null;
+    let loadoutState = null;
+
+    const MIN_DECK_SIZE = 4;
+    const MAX_DECK_SIZE = 15;
+
+    const VENUE_POOL_DESC = {
+        underground: 'Cash-heavy guests & big earners',
+        spotlight: 'Point-scoring stars & entertainers',
+        velvet: 'Refined guests with heat control',
+    };
+
+    const VENUE_STYLE_LABEL = {
+        money: '\u{1F4B0} Money',
+        points: '\u2B50 Points',
+        control: '\u{1F6E1} Control',
+    };
 
     // Rival names
     const RIVAL_NAMES = [
@@ -745,6 +761,11 @@
 
         gameState = Game.createGameState(name, venueType, rivalName, rivalVenue, totalRounds);
 
+        // Override player deck with the loadout deck
+        if (loadoutState) {
+            gameState.player.fullDeck = [...loadoutState.deck];
+        }
+
         switchScreen('game');
         startNewRound();
     }
@@ -817,6 +838,217 @@
         startGameOverAnim(won);
     }
 
+    // === Loadout Management ===
+    function initLoadout() {
+        const defaultVenue = 'underground';
+        loadoutState = {
+            venueId: defaultVenue,
+            deck: [...Game.VENUES[defaultVenue].startingDeck],
+            inventory: [...Game.VENUES[defaultVenue].market],
+        };
+        selectedVenueType = defaultVenue;
+        renderLoadout();
+    }
+
+    function renderLoadout() {
+        renderLoadoutVenue();
+        renderLoadoutDeck();
+        checkStartEnabled();
+    }
+
+    function renderLoadoutVenue() {
+        const venue = Game.VENUES[loadoutState.venueId];
+        const body = document.getElementById('loadout-venue-body');
+        body.innerHTML = `
+            <div class="loadout-venue-icon">${venue.emoji}</div>
+            <div class="loadout-venue-name">${venue.name}</div>
+            <div class="loadout-venue-desc">${venue.desc}</div>
+            <div class="loadout-venue-stats">
+                <span class="stat-tag">Grid: ${venue.gridSize}</span>
+                <span class="stat-tag">Bust: ${venue.bustThreshold}</span>
+                <span class="stat-tag">${VENUE_STYLE_LABEL[venue.style]}</span>
+            </div>
+            <div class="loadout-venue-pool">${VENUE_POOL_DESC[loadoutState.venueId]}</div>
+        `;
+    }
+
+    function renderLoadoutDeck() {
+        const body = document.getElementById('loadout-deck-body');
+        const count = loadoutState.deck.length;
+        const valid = count >= MIN_DECK_SIZE;
+
+        const emojis = loadoutState.deck.map(id => Game.GUESTS[id].emoji).join('');
+
+        // Build a composition summary (count of each unique guest)
+        const counts = {};
+        loadoutState.deck.forEach(id => {
+            counts[id] = (counts[id] || 0) + 1;
+        });
+        const tags = Object.entries(counts).map(([id, n]) => {
+            const guest = Game.GUESTS[id];
+            return `<span class="loadout-deck-tag">${guest.emoji}${n > 1 ? ' \u00D7' + n : ''}</span>`;
+        }).join('');
+
+        body.innerHTML = `
+            <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${count} card${count !== 1 ? 's' : ''}</div>
+            <div class="loadout-deck-preview">${emojis}</div>
+            <div class="loadout-deck-composition">${tags}</div>
+            ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
+        `;
+    }
+
+    function openVenueSelect() {
+        const overlay = document.getElementById('venue-select-overlay');
+        const grid = document.getElementById('venue-select-grid');
+
+        grid.innerHTML = '';
+        Object.entries(Game.VENUES).forEach(([id, venue]) => {
+            const isEquipped = id === loadoutState.venueId;
+            const card = document.createElement('div');
+            card.className = 'venue-type-card' + (isEquipped ? ' selected' : '');
+            card.dataset.type = id;
+            card.innerHTML = `
+                <div class="venue-type-emoji">${venue.emoji}</div>
+                <div>
+                    <h3>${venue.name}${isEquipped ? ' <span class="equipped-badge">EQUIPPED</span>' : ''}</h3>
+                    <p>${venue.desc}</p>
+                    <div class="venue-stats-preview">
+                        <span class="stat-tag">Grid: ${venue.gridSize}</span>
+                        <span class="stat-tag">Bust: ${venue.bustThreshold}</span>
+                        <span class="stat-tag">${VENUE_STYLE_LABEL[venue.style]}</span>
+                    </div>
+                    <div class="venue-select-pool">${VENUE_POOL_DESC[id]}</div>
+                </div>
+            `;
+
+            card.addEventListener('click', () => {
+                if (id !== loadoutState.venueId) {
+                    loadoutState.venueId = id;
+                    loadoutState.deck = [...venue.startingDeck];
+                    loadoutState.inventory = [...venue.market];
+                    selectedVenueType = id;
+                }
+                closeVenueSelect();
+                renderLoadout();
+            });
+
+            grid.appendChild(card);
+        });
+
+        overlay.style.display = '';
+    }
+
+    function closeVenueSelect() {
+        document.getElementById('venue-select-overlay').style.display = 'none';
+    }
+
+    function openDeckManage() {
+        document.getElementById('deck-manage-overlay').style.display = '';
+        renderDeckManage();
+    }
+
+    function closeDeckManage() {
+        document.getElementById('deck-manage-overlay').style.display = 'none';
+        renderLoadout();
+    }
+
+    function renderDeckManage() {
+        const count = loadoutState.deck.length;
+
+        // Update size badge
+        const badge = document.getElementById('deck-size-badge');
+        badge.textContent = `${count} / ${MAX_DECK_SIZE}`;
+        badge.className = 'deck-size-badge' +
+            (count < MIN_DECK_SIZE ? ' invalid' : count >= MAX_DECK_SIZE ? ' full' : '');
+
+        // Deck validity message
+        const msgEl = document.getElementById('deck-validity-msg');
+        if (count < MIN_DECK_SIZE) {
+            msgEl.textContent = `Need at least ${MIN_DECK_SIZE} cards to play`;
+            msgEl.className = 'deck-validity-msg';
+            msgEl.style.display = '';
+        } else if (count >= MAX_DECK_SIZE) {
+            msgEl.textContent = 'Deck full \u2014 remove a card to add another';
+            msgEl.className = 'deck-validity-msg info';
+            msgEl.style.display = '';
+        } else {
+            msgEl.style.display = 'none';
+        }
+
+        // Render deck cards
+        const deckGrid = document.getElementById('deck-cards-grid');
+        deckGrid.innerHTML = '';
+        loadoutState.deck.forEach((guestId, index) => {
+            deckGrid.appendChild(createDeckManageCard(guestId, 'deck', index));
+        });
+
+        // Render inventory cards
+        const invGrid = document.getElementById('inventory-cards-grid');
+        invGrid.innerHTML = '';
+        const invEmpty = document.getElementById('inventory-empty');
+
+        if (loadoutState.inventory.length === 0) {
+            invEmpty.style.display = '';
+        } else {
+            invEmpty.style.display = 'none';
+            loadoutState.inventory.forEach((guestId, index) => {
+                invGrid.appendChild(createDeckManageCard(guestId, 'inventory', index));
+            });
+        }
+    }
+
+    function createDeckManageCard(guestId, source, index) {
+        const guest = Game.GUESTS[guestId];
+        const card = document.createElement('div');
+        const isDeck = source === 'deck';
+        card.className = 'deck-manage-card tier-' + guest.tier;
+
+        let actionHTML;
+        if (isDeck) {
+            actionHTML = '<div class="deck-card-action remove">Remove</div>';
+        } else if (loadoutState.deck.length < MAX_DECK_SIZE) {
+            actionHTML = '<div class="deck-card-action add">Add</div>';
+        } else {
+            actionHTML = '<div class="deck-card-action disabled">Full</div>';
+        }
+
+        card.innerHTML = `
+            <div class="deck-card-visual">
+                <span class="deck-card-stat deck-card-heat">\u{1F525} ${guest.heat}</span>
+                <span class="deck-card-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
+                <span class="deck-card-stat deck-card-money">${guest.money}</span>
+                <span class="deck-card-stat deck-card-points">${guest.points}</span>
+            </div>
+            <div class="deck-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
+            ${guest.ability ? '<div class="deck-card-ability">\u26A1 ' + guest.ability.name + '</div>' : ''}
+            ${actionHTML}
+        `;
+
+        card.addEventListener('click', () => {
+            if (isDeck) {
+                removeFromDeck(index);
+            } else if (loadoutState.deck.length < MAX_DECK_SIZE) {
+                addToDeck(index);
+            }
+        });
+
+        return card;
+    }
+
+    function removeFromDeck(index) {
+        const removed = loadoutState.deck.splice(index, 1)[0];
+        loadoutState.inventory.push(removed);
+        renderDeckManage();
+        checkStartEnabled();
+    }
+
+    function addToDeck(index) {
+        const added = loadoutState.inventory.splice(index, 1)[0];
+        loadoutState.deck.push(added);
+        renderDeckManage();
+        checkStartEnabled();
+    }
+
     // === Event Listeners ===
     function setupEventListeners() {
         // Title
@@ -830,14 +1062,18 @@
             switchScreen('title');
         });
 
-        // Setup
-        document.querySelectorAll('.venue-type-card').forEach(card => {
-            card.addEventListener('click', () => {
-                document.querySelectorAll('.venue-type-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                selectedVenueType = card.dataset.type;
-                checkStartEnabled();
-            });
+        // Setup / Loadout
+        document.getElementById('loadout-venue-card').addEventListener('click', openVenueSelect);
+        document.getElementById('loadout-deck-card').addEventListener('click', openDeckManage);
+        document.getElementById('btn-close-venue-select').addEventListener('click', closeVenueSelect);
+        document.getElementById('btn-close-deck-manage').addEventListener('click', closeDeckManage);
+
+        // Close overlays on background click
+        document.getElementById('venue-select-overlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeVenueSelect();
+        });
+        document.getElementById('deck-manage-overlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeDeckManage();
         });
 
         document.getElementById('venue-name-input').addEventListener('input', checkStartEnabled);
@@ -845,7 +1081,7 @@
         document.getElementById('btn-start-game').addEventListener('click', () => {
             const rawName = document.getElementById('venue-name-input').value.trim() || 'My Venue';
             const roundCount = parseInt(document.getElementById('round-count-input').value, 10) || Game.TOTAL_ROUNDS;
-            startGame(escapeHtml(rawName), selectedVenueType, roundCount);
+            startGame(escapeHtml(rawName), loadoutState.venueId, roundCount);
         });
 
         // Guest phase controls
@@ -868,11 +1104,9 @@
             Renderer.resetAnimState();
             gameState = null;
             currentMarket = null;
-            selectedVenueType = null;
-            document.querySelectorAll('.venue-type-card').forEach(c => c.classList.remove('selected'));
             document.getElementById('venue-name-input').value = '';
             document.getElementById('round-count-input').value = String(Game.TOTAL_ROUNDS);
-            document.getElementById('btn-start-game').disabled = true;
+            initLoadout();
             switchScreen('title');
         });
 
@@ -889,11 +1123,13 @@
 
     function checkStartEnabled() {
         const nameOk = document.getElementById('venue-name-input').value.trim().length > 0;
-        document.getElementById('btn-start-game').disabled = !(nameOk && selectedVenueType);
+        const deckOk = loadoutState && loadoutState.deck.length >= MIN_DECK_SIZE;
+        document.getElementById('btn-start-game').disabled = !(nameOk && deckOk);
     }
 
     // === Init ===
     function init() {
+        initLoadout();
         setupEventListeners();
         startAnimLoop();
     }
