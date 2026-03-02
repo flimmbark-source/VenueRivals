@@ -231,8 +231,7 @@
             statusEl.textContent = 'DOOR CLOSED';
             statusEl.className = 'venue-status closed';
         } else if (player.arrivingGuest) {
-            const remaining = player.roundDeck.length + 1;
-            statusEl.textContent = `${remaining} guest${remaining !== 1 ? 's' : ''} remaining`;
+            statusEl.textContent = '';
             statusEl.className = 'venue-status';
         } else {
             statusEl.textContent = '';
@@ -1022,6 +1021,20 @@
             deckGrid.appendChild(createDeckManageCard(guestId, 'deck', index));
         });
 
+        // Render inventory cards
+        const invGrid = document.getElementById('inventory-cards-grid');
+        invGrid.innerHTML = '';
+        const invEmpty = document.getElementById('inventory-empty');
+
+        if (loadoutState.inventory.length === 0) {
+            invEmpty.style.display = '';
+        } else {
+            invEmpty.style.display = 'none';
+            loadoutState.inventory.forEach((guestId, index) => {
+                invGrid.appendChild(createDeckManageCard(guestId, 'inventory', index));
+            });
+        }
+
     }
 
     function createDeckManageCard(guestId, source, index) {
@@ -1033,8 +1046,10 @@
         let actionHTML;
         if (isDeck) {
             actionHTML = '<div class="deck-card-action remove">Remove</div>';
+        } else if (loadoutState.deck.length < MAX_DECK_SIZE) {
+            actionHTML = '<div class="deck-card-action add">Add</div>';
         } else {
-            actionHTML = '<div class="deck-card-action disabled">Locked</div>';
+            actionHTML = '<div class="deck-card-action disabled">Full</div>';
         }
 
         card.innerHTML = `
@@ -1052,6 +1067,8 @@
         card.addEventListener('click', () => {
             if (isDeck) {
                 removeFromDeck(index);
+            } else if (loadoutState.deck.length < MAX_DECK_SIZE) {
+                addToDeck(index);
             }
         });
 
@@ -1061,6 +1078,13 @@
     function removeFromDeck(index) {
         const removed = loadoutState.deck.splice(index, 1)[0];
         loadoutState.inventory.push(removed);
+        renderDeckManage();
+        checkStartEnabled();
+    }
+
+    function addToDeck(index) {
+        const added = loadoutState.inventory.splice(index, 1)[0];
+        loadoutState.deck.push(added);
         renderDeckManage();
         checkStartEnabled();
     }
