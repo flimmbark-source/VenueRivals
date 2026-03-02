@@ -162,7 +162,8 @@
 
         // Render oldest to newest (house[0] is newest, so reverse)
         const guests = [...player.house].reverse();
-        guests.forEach((guestId) => {
+        guests.forEach((entry) => {
+            const guestId = entry.guestId || entry;
             const slot = createGuestSlot(guestId, false);
             slotsEl.appendChild(slot);
         });
@@ -435,7 +436,7 @@
         if (!p.arrivingGuest || p.doorClosed || p.busted) return;
 
         const venue = Game.VENUES[p.venueId];
-        const result = Game.admitGuest(p, venue);
+        const result = Game.admitGuest(p, venue, gameState.rival, Game.VENUES[gameState.rival.venueId]);
         if (!result) return;
 
         if (result.pushedOut) {
@@ -505,7 +506,7 @@
         if (p.doorClosed || p.busted) return;
 
         const venue = Game.VENUES[p.venueId];
-        const result = Game.closeDoor(p, venue);
+        const result = Game.closeDoor(p, venue, gameState.rival);
         if (result?.pushedOut) {
             animateExitGuest('player', result.pushedOut);
         }
@@ -563,7 +564,7 @@
         const pVenue = Game.VENUES[p.venueId];
 
         if (action === 'admit') {
-            const result = Game.admitGuest(r, rVenue);
+            const result = Game.admitGuest(r, rVenue, gameState.player, Game.VENUES[gameState.player.venueId]);
             if (!result) return;
 
             if (result.pushedOut) {
@@ -596,7 +597,7 @@
             renderHouseGrid('player');
             renderHouseGrid('rival');
         } else if (action === 'close') {
-            const result = Game.closeDoor(r, rVenue);
+            const result = Game.closeDoor(r, rVenue, gameState.player);
             if (result?.pushedOut) {
                 animateExitGuest('rival', result.pushedOut);
             }
