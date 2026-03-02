@@ -1103,14 +1103,11 @@
 
     function renderGuestListManage() {
         const presetsGrid = document.getElementById('guest-list-presets-grid');
-        const msgEl = document.getElementById('guest-list-validity-msg');
         const badge = document.getElementById('guest-list-size-badge');
         const lists = getGuestListsForVenue(loadoutState.venueId);
 
         badge.textContent = `${lists.length} presets`;
         badge.className = 'deck-size-badge';
-        msgEl.textContent = `Tap a list to equip it. The preview below always shows your equipped guest list.`;
-        msgEl.style.display = '';
 
         presetsGrid.innerHTML = '';
         lists.forEach(([id, list]) => {
@@ -1119,14 +1116,17 @@
             card.className = 'venue-type-card' + (selected ? ' selected' : '');
             const emojis = list.guests.map(g => Game.GUESTS[g].emoji).join('');
             card.innerHTML = `
-                <div class="venue-type-emoji">📜</div>
+                <div class="guest-list-card-leading">
+                    ${selected ? '<span class="equipped-badge">EQUIPPED</span>' : ''}
+                    <div class="venue-type-emoji">📜</div>
+                </div>
                 <div>
-                    <h3>${list.name}${selected ? ' <span class="equipped-badge">EQUIPPED</span>' : ''}</h3>
+                    <h3>${list.name}</h3>
                     <p>${list.description}</p>
                     <div class="venue-stats-preview">
                         <span class="stat-tag">${list.guests.length} guests</span>
+                        <span class="guest-list-card-emojis">${emojis}</span>
                     </div>
-                    <div class="venue-select-pool">${emojis}</div>
                 </div>
             `;
             card.addEventListener('click', () => {
