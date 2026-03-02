@@ -915,12 +915,12 @@
         const count = loadoutState.guestList.length;
         const valid = count >= MIN_DECK_SIZE;
         const selectedList = Game.GUEST_LISTS[loadoutState.selectedGuestListId];
+        const guestListName = selectedList ? selectedList.name : 'Custom Guest List';
         const emojis = loadoutState.guestList.map(id => Game.GUESTS[id].emoji).join('');
 
         body.innerHTML = `
-            <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${count} card${count !== 1 ? 's' : ''}</div>
+            <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${guestListName}</div>
             <div class="loadout-deck-preview">${emojis}</div>
-            <div class="loadout-deck-warning" style="display:block">${selectedList ? selectedList.name : 'Custom Guest List'}</div>
             ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
         `;
     }
