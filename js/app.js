@@ -895,14 +895,11 @@
         const count = loadoutState.guestList.length;
         const valid = count >= MIN_DECK_SIZE;
 
-        const tags = loadoutState.guestList.map((id) => {
-            const guest = Game.GUESTS[id];
-            return `<span class="loadout-deck-tag">${guest.emoji}</span>`;
-        }).join('');
+        const emojis = loadoutState.guestList.map(id => Game.GUESTS[id].emoji).join('');
 
         body.innerHTML = `
             <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${count} card${count !== 1 ? 's' : ''}</div>
-            <div class="loadout-deck-composition">${tags}</div>
+            <div class="loadout-deck-preview">${emojis}</div>
             ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
         `;
     }
