@@ -245,6 +245,14 @@ body {
     padding-right: 4px;
 }
 
+#guest-list-manage-overlay #guest-list-presets-grid {
+    margin-bottom: 8px;
+}
+
+#deck-manage-overlay #deck-presets-grid {
+    margin-bottom: 8px;
+}
+
 #guest-list-presets-grid::-webkit-scrollbar {
     width: 6px;
 }
@@ -1549,6 +1557,14 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+#guest-list-manage-overlay .deck-manage-body {
+    gap: 10px;
+}
+
+#deck-manage-overlay .deck-manage-body {
+    gap: 10px;
 }
 
 .deck-manage-section-header {
