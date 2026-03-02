@@ -845,6 +845,23 @@
         return Object.entries(Game.GUEST_LISTS).filter(([, list]) => list.venueId === venueId);
     }
 
+    function getDecksForVenue(venueId) {
+        return Object.entries(Game.DECKS).filter(([, deck]) => deck.venueId === venueId);
+    }
+
+    function getDefaultDeckId(venueId) {
+        const decks = getDecksForVenue(venueId);
+        return decks.length ? decks[0][0] : null;
+    }
+
+    function applyDeck(deckId) {
+        const deck = Game.DECKS[deckId];
+        if (!deck) return;
+        loadoutState.selectedDeckId = deckId;
+        loadoutState.previewDeckId = deckId;
+        loadoutState.deck = [...deck.guests];
+    }
+
     function getDefaultGuestListId(venueId) {
         const lists = getGuestListsForVenue(venueId);
         return lists.length ? lists[0][0] : null;
@@ -860,11 +877,14 @@
 
     function initLoadout() {
         const defaultVenue = 'velvetRoom';
+        const defaultDeckId = getDefaultDeckId(defaultVenue);
         const defaultGuestListId = getDefaultGuestListId(defaultVenue);
         loadoutState = {
             venueId: defaultVenue,
-            deck: [...Game.VENUES[defaultVenue].startingDeck],
+            deck: defaultDeckId ? [...Game.DECKS[defaultDeckId].guests] : [...Game.VENUES[defaultVenue].startingDeck],
             inventory: [...Game.VENUES[defaultVenue].market],
+            selectedDeckId: defaultDeckId,
+            previewDeckId: defaultDeckId,
             selectedGuestListId: defaultGuestListId,
             previewGuestListId: defaultGuestListId,
             guestList: defaultGuestListId ? [...Game.GUEST_LISTS[defaultGuestListId].guests] : [...Game.VENUES[defaultVenue].startingDeck],
@@ -900,11 +920,13 @@
         const body = document.getElementById('loadout-deck-body');
         const count = loadoutState.deck.length;
         const valid = count >= MIN_DECK_SIZE;
+        const selectedDeck = Game.DECKS[loadoutState.selectedDeckId];
+        const deckName = selectedDeck ? selectedDeck.name : `${count} card${count !== 1 ? 's' : ''}`;
 
         const emojis = loadoutState.deck.map(id => Game.GUESTS[id].emoji).join('');
 
         body.innerHTML = `
-            <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${count} card${count !== 1 ? 's' : ''}</div>
+            <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${deckName}</div>
             <div class="loadout-deck-preview">${emojis}</div>
             ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
         `;
@@ -952,7 +974,7 @@
             card.addEventListener('click', () => {
                 if (id !== loadoutState.venueId) {
                     loadoutState.venueId = id;
-                    loadoutState.deck = [...venue.startingDeck];
+                    applyDeck(getDefaultDeckId(id));
                     loadoutState.inventory = [...venue.market];
                     applyGuestList(getDefaultGuestListId(id));
                     selectedVenueType = id;
@@ -992,31 +1014,42 @@
     }
 
     function renderDeckManage() {
-        const count = loadoutState.deck.length;
-
+        const presetsGrid = document.getElementById('deck-presets-grid');
         const badge = document.getElementById('deck-size-badge');
-        badge.textContent = `${count} / ${MAX_DECK_SIZE}`;
-        badge.className = 'deck-size-badge' +
-            (count < MIN_DECK_SIZE ? ' invalid' : count >= MAX_DECK_SIZE ? ' full' : '');
+        const decks = getDecksForVenue(loadoutState.venueId);
 
-        const msgEl = document.getElementById('deck-validity-msg');
-        if (count < MIN_DECK_SIZE) {
-            msgEl.textContent = `Need at least ${MIN_DECK_SIZE} cards to play`;
-            msgEl.className = 'deck-validity-msg';
-            msgEl.style.display = '';
-        } else if (count >= MAX_DECK_SIZE) {
-            msgEl.textContent = 'Deck full — remove a guest to add another';
-            msgEl.className = 'deck-validity-msg info';
-            msgEl.style.display = '';
-        } else {
-            msgEl.style.display = 'none';
-        }
+        badge.textContent = `${decks.length} presets`;
+        badge.className = 'deck-size-badge';
 
-        const deckGrid = document.getElementById('deck-cards-grid');
-        deckGrid.innerHTML = '';
-        loadoutState.deck.forEach((guestId, index) => {
-            deckGrid.appendChild(createDeckManageCard(guestId, 'deck', index));
+        presetsGrid.innerHTML = '';
+        decks.forEach(([id, deck]) => {
+            const card = document.createElement('div');
+            const selected = id === loadoutState.selectedDeckId;
+            card.className = 'venue-type-card' + (selected ? ' selected' : '');
+            const emojis = deck.guests.map(g => Game.GUESTS[g].emoji).join('');
+            card.innerHTML = `
+                <div class="guest-list-card-leading">
+                    ${selected ? '<span class="equipped-badge">EQUIPPED</span>' : ''}
+                    <div class="venue-type-emoji">🃏</div>
+                </div>
+                <div>
+                    <h3>${deck.name}</h3>
+                    <p>${deck.description}</p>
+                    <div class="venue-stats-preview">
+                        <span class="stat-tag">${deck.guests.length} guests</span>
+                        <span class="guest-list-card-emojis">${emojis}</span>
+                    </div>
+                </div>
+            `;
+            card.addEventListener('click', () => {
+                applyDeck(id);
+                renderDeckManage();
+                checkStartEnabled();
+            });
+            presetsGrid.appendChild(card);
         });
+
+        renderDeckPreview(loadoutState.selectedDeckId);
     }
 
     function createDeckManageCard(guestId) {
@@ -1051,6 +1084,25 @@
 
         previewEmpty.style.display = 'none';
         list.guests.forEach((guestId) => {
+            const card = createDeckManageCard(guestId);
+            card.addEventListener('click', () => showGuestAbilityPopup(guestId));
+            previewGrid.appendChild(card);
+        });
+    }
+
+    function renderDeckPreview(deckId) {
+        const previewGrid = document.getElementById('deck-preview-grid');
+        const previewEmpty = document.getElementById('deck-preview-empty');
+        const deck = Game.DECKS[deckId];
+
+        previewGrid.innerHTML = '';
+        if (!deck) {
+            previewEmpty.style.display = '';
+            return;
+        }
+
+        previewEmpty.style.display = 'none';
+        deck.guests.forEach((guestId) => {
             const card = createDeckManageCard(guestId);
             card.addEventListener('click', () => showGuestAbilityPopup(guestId));
             previewGrid.appendChild(card);

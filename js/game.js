@@ -126,6 +126,27 @@ const Game = (() => {
         },
     };
 
+    const DECKS = {
+        velvetClassic: {
+            name: 'Velvet Standard',
+            venueId: 'velvetRoom',
+            description: 'Balanced VIP lineup with strong close potential.',
+            guests: [...VENUES.velvetRoom.startingDeck],
+        },
+        marketCore: {
+            name: 'Market Standard',
+            venueId: 'nightMarket',
+            description: 'Flexible economy core built for steady scaling.',
+            guests: [...VENUES.nightMarket.startingDeck],
+        },
+        alleyPressure: {
+            name: 'Alley Standard',
+            venueId: 'backAlley',
+            description: 'Control-heavy trouble package with strong tempo.',
+            guests: [...VENUES.backAlley.startingDeck],
+        },
+    };
+
     // === Utilities ===
     function shuffle(arr) {
         const a = [...arr];
@@ -376,6 +397,7 @@ const Game = (() => {
         GUESTS,
         VENUES,
         GUEST_LISTS,
+        DECKS,
         TOTAL_ROUNDS: DEFAULT_TOTAL_ROUNDS,
         BUST_PENALTY,
         shuffle,

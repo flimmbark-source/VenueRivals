@@ -125,18 +125,25 @@
         <div class="loadout-overlay" id="deck-manage-overlay" style="display:none">
             <div class="loadout-overlay-panel">
                 <div class="loadout-overlay-top">
-                    <h3>Manage Deck</h3>
+                    <h3>Select Deck</h3>
                     <span class="deck-size-badge" id="deck-size-badge"></span>
                     <button class="loadout-overlay-close" id="btn-close-deck-manage">&times;</button>
                 </div>
-                <div class="deck-validity-msg" id="deck-validity-msg" style="display:none"></div>
                 <div class="deck-manage-body">
                     <div class="deck-manage-section">
                         <div class="deck-manage-section-header">
-                            <h4>Your Deck</h4>
-                            <span class="deck-manage-hint">Tap to remove</span>
+                            <h4>Preset Decks</h4>
+                            <span class="deck-manage-hint">Tap to equip</span>
                         </div>
-                        <div class="deck-manage-grid" id="deck-cards-grid"></div>
+                        <div class="venue-type-grid" id="deck-presets-grid"></div>
+                    </div>
+                    <div class="deck-manage-section">
+                        <div class="deck-manage-section-header">
+                            <h4>Deck Preview</h4>
+                            <span class="deck-manage-hint">Tap an equipped deck to inspect</span>
+                        </div>
+                        <div class="deck-manage-grid" id="deck-preview-grid"></div>
+                        <div class="deck-manage-empty" id="deck-preview-empty">Select a deck to preview guests</div>
                     </div>
                 </div>
             </div>
