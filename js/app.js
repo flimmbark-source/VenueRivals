@@ -895,13 +895,9 @@
         const count = loadoutState.guestList.length;
         const valid = count >= MIN_DECK_SIZE;
 
-        const counts = {};
-        loadoutState.guestList.forEach(id => {
-            counts[id] = (counts[id] || 0) + 1;
-        });
-        const tags = Object.entries(counts).map(([id, n]) => {
+        const tags = loadoutState.guestList.map((id) => {
             const guest = Game.GUESTS[id];
-            return `<span class="loadout-deck-tag">${guest.emoji}${n > 1 ? ' ×' + n : ''}</span>`;
+            return `<span class="loadout-deck-tag">${guest.emoji}</span>`;
         }).join('');
 
         body.innerHTML = `
