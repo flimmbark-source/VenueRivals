@@ -1233,10 +1233,11 @@ body {
     gap: 12px;
     margin-bottom: 20px;
     width: 100%;
+    flex-wrap: wrap;
 }
 
 .loadout-card {
-    flex: 1;
+    flex: 1 1 220px;
     background: var(--bg-medium);
     border: 2px solid var(--bg-light);
     border-radius: var(--radius-lg);
@@ -1246,6 +1247,14 @@ body {
     text-align: left;
     display: flex;
     flex-direction: column;
+}
+
+.loadout-card-primary {
+    flex: 1 1 calc(50% - 6px);
+}
+
+.loadout-card-secondary {
+    flex: 1 1 100%;
 }
 
 .loadout-card:hover {
