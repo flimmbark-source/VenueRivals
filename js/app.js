@@ -911,19 +911,9 @@
 
         const emojis = loadoutState.guestList.map(id => Game.GUESTS[id].emoji).join('');
 
-        const counts = {};
-        loadoutState.guestList.forEach(id => {
-            counts[id] = (counts[id] || 0) + 1;
-        });
-        const tags = Object.entries(counts).map(([id, n]) => {
-            const guest = Game.GUESTS[id];
-            return `<span class="loadout-deck-tag">${guest.emoji}${n > 1 ? ' ×' + n : ''}</span>`;
-        }).join('');
-
         body.innerHTML = `
             <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${count} card${count !== 1 ? 's' : ''}</div>
             <div class="loadout-deck-preview">${emojis}</div>
-            <div class="loadout-deck-composition">${tags}</div>
             ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
         `;
     }
