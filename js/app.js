@@ -22,9 +22,9 @@
     const MAX_DECK_SIZE = 15;
 
     const VENUE_POOL_DESC = {
-        underground: 'Cash-heavy guests & big earners',
-        spotlight: 'Point-scoring stars & entertainers',
-        velvet: 'Refined guests with heat control',
+        velvetRoom: 'Protect-and-close stars with lane locks',
+        nightMarket: 'Queue sculpting, stash economy, and tags',
+        backAlley: 'Outlaw exits, pressure, and complaint traps',
     };
 
     const VENUE_STYLE_LABEL = {
@@ -839,14 +839,33 @@
     }
 
     // === Loadout Management ===
+    function getGuestListsForVenue(venueId) {
+        return Object.entries(Game.GUEST_LISTS).filter(([, list]) => list.venueId === venueId);
+    }
+
+    function getDefaultGuestListId(venueId) {
+        const lists = getGuestListsForVenue(venueId);
+        return lists.length ? lists[0][0] : null;
+    }
+
+    function applyGuestList(listId) {
+        const list = Game.GUEST_LISTS[listId];
+        if (!list) return;
+        loadoutState.selectedGuestListId = listId;
+        loadoutState.previewGuestListId = listId;
+        loadoutState.guestList = [...list.guests];
+    }
+
     function initLoadout() {
-        const defaultVenue = 'underground';
+        const defaultVenue = 'velvetRoom';
+        const defaultGuestListId = getDefaultGuestListId(defaultVenue);
         loadoutState = {
             venueId: defaultVenue,
             deck: [...Game.VENUES[defaultVenue].startingDeck],
             inventory: [...Game.VENUES[defaultVenue].market],
-            guestList: [...Game.VENUES[defaultVenue].startingDeck],
-            guestInventory: [...Game.VENUES[defaultVenue].market],
+            selectedGuestListId: defaultGuestListId,
+            previewGuestListId: defaultGuestListId,
+            guestList: defaultGuestListId ? [...Game.GUEST_LISTS[defaultGuestListId].guests] : [...Game.VENUES[defaultVenue].startingDeck],
         };
         selectedVenueType = defaultVenue;
         renderLoadout();
@@ -889,31 +908,17 @@
         `;
     }
 
-
     function renderLoadoutGuestList() {
         const body = document.getElementById('loadout-guest-list-body');
         const count = loadoutState.guestList.length;
         const valid = count >= MIN_DECK_SIZE;
-
+        const selectedList = Game.GUEST_LISTS[loadoutState.selectedGuestListId];
         const emojis = loadoutState.guestList.map(id => Game.GUESTS[id].emoji).join('');
 
         body.innerHTML = `
             <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${count} card${count !== 1 ? 's' : ''}</div>
             <div class="loadout-deck-preview">${emojis}</div>
-            ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
-        `;
-    }
-
-    function renderLoadoutGuestList() {
-        const body = document.getElementById('loadout-guest-list-body');
-        const count = loadoutState.guestList.length;
-        const valid = count >= MIN_DECK_SIZE;
-
-        const emojis = loadoutState.guestList.map(id => Game.GUESTS[id].emoji).join('');
-
-        body.innerHTML = `
-            <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${count} card${count !== 1 ? 's' : ''}</div>
-            <div class="loadout-deck-preview">${emojis}</div>
+            <div class="loadout-deck-warning" style="display:block">${selectedList ? selectedList.name : 'Custom Guest List'}</div>
             ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
         `;
     }
@@ -947,8 +952,7 @@
                     loadoutState.venueId = id;
                     loadoutState.deck = [...venue.startingDeck];
                     loadoutState.inventory = [...venue.market];
-                    loadoutState.guestList = [...venue.startingDeck];
-                    loadoutState.guestInventory = [...venue.market];
+                    applyGuestList(getDefaultGuestListId(id));
                     selectedVenueType = id;
                 }
                 closeVenueSelect();
@@ -988,33 +992,29 @@
     function renderDeckManage() {
         const count = loadoutState.deck.length;
 
-        // Update size badge
         const badge = document.getElementById('deck-size-badge');
         badge.textContent = `${count} / ${MAX_DECK_SIZE}`;
         badge.className = 'deck-size-badge' +
             (count < MIN_DECK_SIZE ? ' invalid' : count >= MAX_DECK_SIZE ? ' full' : '');
 
-        // Deck validity message
         const msgEl = document.getElementById('deck-validity-msg');
         if (count < MIN_DECK_SIZE) {
             msgEl.textContent = `Need at least ${MIN_DECK_SIZE} cards to play`;
             msgEl.className = 'deck-validity-msg';
             msgEl.style.display = '';
         } else if (count >= MAX_DECK_SIZE) {
-            msgEl.textContent = 'Deck ready';
+            msgEl.textContent = 'Deck full — remove a guest to add another';
             msgEl.className = 'deck-validity-msg info';
             msgEl.style.display = '';
         } else {
             msgEl.style.display = 'none';
         }
 
-        // Render deck cards
         const deckGrid = document.getElementById('deck-cards-grid');
         deckGrid.innerHTML = '';
-        loadoutState.deck.forEach((guestId) => {
-            deckGrid.appendChild(createDeckManageCard(guestId));
+        loadoutState.deck.forEach((guestId, index) => {
+            deckGrid.appendChild(createDeckManageCard(guestId, 'deck', index));
         });
-
     }
 
     function createDeckManageCard(guestId) {
@@ -1024,156 +1024,72 @@
 
         card.innerHTML = `
             <div class="deck-card-visual">
-                <span class="deck-card-stat deck-card-heat">\u{1F525} ${guest.heat}</span>
+                <span class="deck-card-stat deck-card-heat">🔥 ${guest.heat}</span>
                 <span class="deck-card-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
                 <span class="deck-card-stat deck-card-money">${guest.money}</span>
                 <span class="deck-card-stat deck-card-points">${guest.points}</span>
             </div>
             <div class="deck-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
-            ${guest.ability ? '<div class="deck-card-ability">\u26A1 ' + guest.ability.name + '</div>' : ''}
+            ${guest.ability ? '<div class="deck-card-ability">⚡ ' + guest.ability.name + '</div>' : ''}
         `;
 
         return card;
     }
 
-    function renderGuestListManage() {
-        const count = loadoutState.guestList.length;
+    function renderGuestListPreview(listId) {
+        const previewGrid = document.getElementById('guest-list-preview-grid');
+        const previewEmpty = document.getElementById('guest-list-preview-empty');
+        const list = Game.GUEST_LISTS[listId];
 
-        const badge = document.getElementById('guest-list-size-badge');
-        badge.textContent = `${count} / ${MAX_DECK_SIZE}`;
-        badge.className = 'deck-size-badge' +
-            (count < MIN_DECK_SIZE ? ' invalid' : count >= MAX_DECK_SIZE ? ' full' : '');
-
-        const msgEl = document.getElementById('guest-list-validity-msg');
-        if (count < MIN_DECK_SIZE) {
-            msgEl.textContent = `Need at least ${MIN_DECK_SIZE} cards to play`;
-            msgEl.className = 'deck-validity-msg';
-            msgEl.style.display = '';
-        } else if (count >= MAX_DECK_SIZE) {
-            msgEl.textContent = 'Guest list full — remove a guest to add another';
-            msgEl.className = 'deck-validity-msg info';
-            msgEl.style.display = '';
-        } else {
-            msgEl.style.display = 'none';
+        previewGrid.innerHTML = '';
+        if (!list) {
+            previewEmpty.style.display = '';
+            return;
         }
 
-        const listGrid = document.getElementById('guest-list-cards-grid');
-        listGrid.innerHTML = '';
-        loadoutState.guestList.forEach((guestId) => {
-            listGrid.appendChild(createGuestListManageCard(guestId));
+        previewEmpty.style.display = 'none';
+        list.guests.forEach((guestId) => {
+            previewGrid.appendChild(createDeckManageCard(guestId));
         });
     }
 
-    function createGuestListManageCard(guestId) {
-        const guest = Game.GUESTS[guestId];
-        const card = document.createElement('div');
-        card.className = 'deck-manage-card tier-' + guest.tier;
-
-        card.innerHTML = `
-            <div class="deck-card-visual">
-                <span class="deck-card-stat deck-card-heat">\u{1F525} ${guest.heat}</span>
-                <span class="deck-card-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
-                <span class="deck-card-stat deck-card-money">${guest.money}</span>
-                <span class="deck-card-stat deck-card-points">${guest.points}</span>
-            </div>
-            <div class="deck-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
-            ${guest.ability ? '<div class="deck-card-ability">\u26A1 ' + guest.ability.name + '</div>' : ''}
-        `;
-
-        return card;
-    }
-
     function renderGuestListManage() {
-        const count = loadoutState.guestList.length;
-
-        const badge = document.getElementById('guest-list-size-badge');
-        badge.textContent = `${count} / ${MAX_DECK_SIZE}`;
-        badge.className = 'deck-size-badge' +
-            (count < MIN_DECK_SIZE ? ' invalid' : count >= MAX_DECK_SIZE ? ' full' : '');
-
+        const presetsGrid = document.getElementById('guest-list-presets-grid');
         const msgEl = document.getElementById('guest-list-validity-msg');
-        if (count < MIN_DECK_SIZE) {
-            msgEl.textContent = `Need at least ${MIN_DECK_SIZE} cards to play`;
-            msgEl.className = 'deck-validity-msg';
-            msgEl.style.display = '';
-        } else if (count >= MAX_DECK_SIZE) {
-            msgEl.textContent = 'Guest list full — remove a guest to add another';
-            msgEl.className = 'deck-validity-msg info';
-            msgEl.style.display = '';
-        } else {
-            msgEl.style.display = 'none';
-        }
+        const badge = document.getElementById('guest-list-size-badge');
+        const lists = getGuestListsForVenue(loadoutState.venueId);
 
-        const listGrid = document.getElementById('guest-list-cards-grid');
-        listGrid.innerHTML = '';
-        loadoutState.guestList.forEach((guestId, index) => {
-            listGrid.appendChild(createGuestListManageCard(guestId, 'list', index));
-        });
+        badge.textContent = `${lists.length} presets`;
+        badge.className = 'deck-size-badge';
+        msgEl.textContent = `Tap a list to equip it. The preview below always shows your equipped guest list.`;
+        msgEl.style.display = '';
 
-        const invGrid = document.getElementById('guest-list-inventory-cards-grid');
-        invGrid.innerHTML = '';
-        const invEmpty = document.getElementById('guest-list-inventory-empty');
-
-        if (loadoutState.guestInventory.length === 0) {
-            invEmpty.style.display = '';
-        } else {
-            invEmpty.style.display = 'none';
-            loadoutState.guestInventory.forEach((guestId, index) => {
-                invGrid.appendChild(createGuestListManageCard(guestId, 'inventory', index));
+        presetsGrid.innerHTML = '';
+        lists.forEach(([id, list]) => {
+            const card = document.createElement('div');
+            const selected = id === loadoutState.selectedGuestListId;
+            card.className = 'venue-type-card' + (selected ? ' selected' : '');
+            const emojis = list.guests.map(g => Game.GUESTS[g].emoji).join('');
+            card.innerHTML = `
+                <div class="venue-type-emoji">📜</div>
+                <div>
+                    <h3>${list.name}${selected ? ' <span class="equipped-badge">EQUIPPED</span>' : ''}</h3>
+                    <p>${list.description}</p>
+                    <div class="venue-stats-preview">
+                        <span class="stat-tag">${list.guests.length} guests</span>
+                    </div>
+                    <div class="venue-select-pool">${emojis}</div>
+                </div>
+            `;
+            card.addEventListener('click', () => {
+                applyGuestList(id);
+                renderGuestListManage();
+                checkStartEnabled();
             });
-        }
-    }
-
-    function createGuestListManageCard(guestId, source, index) {
-        const guest = Game.GUESTS[guestId];
-        const card = document.createElement('div');
-        const isList = source === 'list';
-        card.className = 'deck-manage-card tier-' + guest.tier;
-
-        let actionHTML;
-        if (isList) {
-            actionHTML = '<div class="deck-card-action remove">Remove</div>';
-        } else if (loadoutState.guestList.length < MAX_DECK_SIZE) {
-            actionHTML = '<div class="deck-card-action add">Add</div>';
-        } else {
-            actionHTML = '<div class="deck-card-action disabled">Full</div>';
-        }
-
-        card.innerHTML = `
-            <div class="deck-card-visual">
-                <span class="deck-card-stat deck-card-heat">\u{1F525} ${guest.heat}</span>
-                <span class="deck-card-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
-                <span class="deck-card-stat deck-card-money">${guest.money}</span>
-                <span class="deck-card-stat deck-card-points">${guest.points}</span>
-            </div>
-            <div class="deck-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
-            ${guest.ability ? '<div class="deck-card-ability">\u26A1 ' + guest.ability.name + '</div>' : ''}
-            ${actionHTML}
-        `;
-
-        card.addEventListener('click', () => {
-            if (isList) {
-                removeFromGuestList(index);
-            } else if (loadoutState.guestList.length < MAX_DECK_SIZE) {
-                addToGuestList(index);
-            }
+            presetsGrid.appendChild(card);
         });
 
-        return card;
-    }
-
-    function removeFromGuestList(index) {
-        const removed = loadoutState.guestList.splice(index, 1)[0];
-        loadoutState.guestInventory.push(removed);
-        renderGuestListManage();
-        checkStartEnabled();
-    }
-
-    function addToGuestList(index) {
-        const added = loadoutState.guestInventory.splice(index, 1)[0];
-        loadoutState.guestList.push(added);
-        renderGuestListManage();
-        checkStartEnabled();
+        renderGuestListPreview(loadoutState.selectedGuestListId);
     }
 
     // === Event Listeners ===

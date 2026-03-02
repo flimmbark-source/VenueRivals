@@ -146,47 +146,26 @@
         <div class="loadout-overlay" id="guest-list-manage-overlay" style="display:none">
             <div class="loadout-overlay-panel">
                 <div class="loadout-overlay-top">
-                    <h3>Your Guest List</h3>
+                    <h3>Select Guest List</h3>
                     <span class="deck-size-badge" id="guest-list-size-badge"></span>
                     <button class="loadout-overlay-close" id="btn-close-guest-list-manage">&times;</button>
                 </div>
-                <div class="deck-validity-msg" id="guest-list-validity-msg" style="display:none"></div>
+                <div class="deck-validity-msg info" id="guest-list-validity-msg" style="display:none"></div>
                 <div class="deck-manage-body">
                     <div class="deck-manage-section">
                         <div class="deck-manage-section-header">
-                            <h4>Your Guest List</h4>
-                            <span class="deck-manage-hint">Selected by venue</span>
+                            <h4>Preset Lists</h4>
+                            <span class="deck-manage-hint">Tap to equip</span>
                         </div>
-                        <div class="deck-manage-grid" id="guest-list-cards-grid"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Guest List Management Overlay -->
-        <div class="loadout-overlay" id="guest-list-manage-overlay" style="display:none">
-            <div class="loadout-overlay-panel">
-                <div class="loadout-overlay-top">
-                    <h3>Manage Guest List</h3>
-                    <span class="deck-size-badge" id="guest-list-size-badge"></span>
-                    <button class="loadout-overlay-close" id="btn-close-guest-list-manage">&times;</button>
-                </div>
-                <div class="deck-validity-msg" id="guest-list-validity-msg" style="display:none"></div>
-                <div class="deck-manage-body">
-                    <div class="deck-manage-section">
-                        <div class="deck-manage-section-header">
-                            <h4>Your Guest List</h4>
-                            <span class="deck-manage-hint">Tap to remove</span>
-                        </div>
-                        <div class="deck-manage-grid" id="guest-list-cards-grid"></div>
+                        <div class="venue-type-grid" id="guest-list-presets-grid"></div>
                     </div>
                     <div class="deck-manage-section">
                         <div class="deck-manage-section-header">
-                            <h4>Available Guests</h4>
-                            <span class="deck-manage-hint">Tap to add</span>
+                            <h4>Guest List Preview</h4>
+                            <span class="deck-manage-hint">Tap an equipped list to inspect</span>
                         </div>
-                        <div class="deck-manage-grid" id="guest-list-inventory-cards-grid"></div>
-                        <div class="deck-manage-empty" id="guest-list-inventory-empty" style="display:none">No guests available</div>
+                        <div class="deck-manage-grid" id="guest-list-preview-grid"></div>
+                        <div class="deck-manage-empty" id="guest-list-preview-empty">Select a list to preview guests</div>
                     </div>
                 </div>
             </div>
