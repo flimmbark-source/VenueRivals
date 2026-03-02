@@ -1249,6 +1249,14 @@ body {
     flex-direction: column;
 }
 
+.loadout-card-primary {
+    flex: 1 1 calc(50% - 6px);
+}
+
+.loadout-card-secondary {
+    flex: 1 1 100%;
+}
+
 .loadout-card:hover {
     border-color: var(--accent-secondary);
     transform: translateY(-2px);
