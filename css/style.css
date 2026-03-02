@@ -1116,9 +1116,9 @@ body {
 }
 
 .shop-grid {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 80px));
     gap: 6px;
-    flex-wrap: wrap;
     margin-bottom: 10px;
     justify-content: center;
 }

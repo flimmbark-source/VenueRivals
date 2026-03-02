@@ -357,7 +357,26 @@ const Game = (() => {
 
     function bothDone(state){ return state.player.phaseComplete && state.rival.phaseComplete; }
     function endGuestPhase(state){ applyCloseEffects(state.player, state.rival, VENUES[state.player.venueId]); applyCloseEffects(state.rival, state.player, VENUES[state.rival.venueId]); [state.player,state.rival].forEach(p=>{ p.money += p.roundMoney; p.points += p.roundPoints; }); }
-    function getMarket(venueId){ return shuffle([...VENUES[venueId].market]).slice(0,5); }
+    function getMarket(venueId){
+        const venue = VENUES[venueId];
+        if (!venue) return [];
+
+        const neutralGuests = Object.keys(GUESTS).filter(guestId => {
+            const guest = GUESTS[guestId];
+            return guest.venue === 'Neutral' && guest.cost < 99;
+        });
+
+        const marketPool = [...new Set([...venue.market, ...neutralGuests])]
+            .filter(guestId => !!GUESTS[guestId]);
+
+        return marketPool
+            .sort((a, b) => {
+                const costDiff = GUESTS[a].cost - GUESTS[b].cost;
+                if (costDiff !== 0) return costDiff;
+                return GUESTS[a].name.localeCompare(GUESTS[b].name);
+            })
+            .slice(0, 8);
+    }
     function buyGuest(player, guestId) { const guest=GUESTS[guestId]; if (!guest) return false; const hasTagDiscount = player.buyDiscountTag && (guest.tags||[]).includes(player.buyDiscountTag); const cost = Math.max(0, guest.cost - (hasTagDiscount ? 1 : 0)); if (player.money < cost) return false; player.money -= cost; player.fullDeck.push(guestId); return true; }
     function endBuyPhase(state){ if (state.round>=state.totalRounds){ state.phase='gameover'; state.winner=state.player.points===state.rival.points ? (state.player.money>=state.rival.money?'player':'rival') : (state.player.points>state.rival.points?'player':'rival'); } else { state.round++; state.phase='guest'; } }
 
