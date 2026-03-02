@@ -363,14 +363,28 @@
 
     function animateExitGuest(who, guestId) {
         const exitDoor = document.querySelector(`#${who}-area .exit-door`);
-        if (!exitDoor) return;
+        const sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
+        if (!exitDoor || !sourceSlot) return;
+
         const ghost = createGuestSlot(guestId, false);
         ghost.classList.add('exit-ghost');
-        const rect = exitDoor.getBoundingClientRect();
-        ghost.style.left = `${rect.left + rect.width / 2 - 19}px`;
-        ghost.style.top = `${rect.top + rect.height / 2 - 23}px`;
+
+        const sourceRect = sourceSlot.getBoundingClientRect();
+        const exitRect = exitDoor.getBoundingClientRect();
+        const sourceCenterX = sourceRect.left + sourceRect.width / 2;
+        const sourceCenterY = sourceRect.top + sourceRect.height / 2;
+        const exitCenterX = exitRect.left + exitRect.width / 2;
+        const exitCenterY = exitRect.top + exitRect.height / 2;
+
+        ghost.style.left = `${sourceCenterX - sourceRect.width / 2}px`;
+        ghost.style.top = `${sourceCenterY - sourceRect.height / 2}px`;
         document.body.appendChild(ghost);
-        requestAnimationFrame(() => ghost.classList.add('leaving'));
+
+        requestAnimationFrame(() => {
+            ghost.style.transform = `translate(${exitCenterX - sourceCenterX}px, ${exitCenterY - sourceCenterY}px)`;
+            ghost.classList.add('leaving');
+        });
+
         setTimeout(() => ghost.remove(), 380);
     }
 
@@ -603,6 +617,10 @@
         if (!result) return;
 
         showFeedback(`⚡ ${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
+
+        if (result.pushedOut) {
+            animateExitGuest(selfKey, result.pushedOut);
+        }
 
         renderHouseGrid(selfKey);
         renderHouseGrid(opponentKey);
