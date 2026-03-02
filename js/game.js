@@ -16,6 +16,11 @@ const Game = (() => {
         floorRunner: { name: 'Floor Runner', emoji: '🏃', heat: 2, money: 1, points: 1, cost: 3, venue: 'Neutral', tags: ['Scout'], desc: 'Flash: Push the Leftmost. Exit: +1 Point.', tier: 'common', ability: { name: 'Flash', icon: '⚡', desc: 'Admit then push leftmost', trigger: 'flash', type: 'pushLeftmost' }, exit: { points: 1 } },
         bookkeeper: { name: 'Bookkeeper', emoji: '📒', heat: 1, money: 2, points: 1, cost: 3, venue: 'Neutral', tags: ['Broker'], desc: 'Close: Stash your Rightmost. Close: +1 Money.', tier: 'common', close: { type: 'bookkeeperClose' } },
         partyPromoter: { name: 'Party Promoter', emoji: '📣', heat: 3, money: 2, points: 1, cost: 4, venue: 'Neutral', tags: ['Broker'], desc: 'Enter: Choose a Tag. Close: Chosen tag costs 1 less.', tier: 'uncommon', enter: { type: 'chooseTag', target: 'self' }, close: { type: 'promoterDiscount' } },
+        regular: { name: 'Regular', emoji: '🙂', heat: 0, money: 0, points: 1, cost: 2, venue: 'Neutral', tags: ['VIP'], desc: 'Reliable VIP body that keeps your close points stable.', tier: 'common' },
+        tipper: { name: 'Tipper', emoji: '💵', heat: 0, money: 1, points: 0, cost: 2, venue: 'Neutral', tags: ['Broker'], desc: 'Steady early cash to support round 1 buys.', tier: 'common' },
+        hypeFriend: { name: 'Hype Friend', emoji: '🙌', heat: 1, money: 0, points: 2, cost: 3, venue: 'Neutral', tags: ['Performer'], desc: 'Low-risk performer that introduces heat pressure.', tier: 'common' },
+        bigSpender: { name: 'Big Spender', emoji: '🛍️', heat: 2, money: 2, points: 0, cost: 4, venue: 'Neutral', tags: ['VIP'], desc: 'Big money now, but enough heat to force tough closes.', tier: 'uncommon' },
+        celebrity: { name: 'Celebrity', emoji: '🎬', heat: 2, money: 0, points: 4, cost: 5, venue: 'Neutral', tags: ['VIP', 'Performer'], desc: 'Huge close points if you can time a safe close around the heat.', tier: 'rare' },
 
         headliner: { name: 'Headliner', emoji: '🌟', heat: 3, money: 1, points: 5, cost: 6, venue: 'Velvet Room', tags: ['VIP', 'Performer'], desc: 'Resident: Adjacent guests are Locked. Close: +3 if still inside.', tier: 'rare', resident: { type: 'lockAdjacent' }, close: { type: 'selfStillInside', points: 3 } },
         champagneHost: { name: 'Champagne Host', emoji: '🥂', heat: 2, money: 2, points: 3, cost: 5, venue: 'Velvet Room', tags: ['VIP'], desc: 'Enter: Pull a VIP or Performer. Close: +2 if Exact Full.', tier: 'uncommon', enter: { type: 'pullByTag', tags: ['VIP', 'Performer'] }, close: { type: 'exactFull', points: 2 } },
@@ -93,6 +98,12 @@ const Game = (() => {
     };
 
     const DECKS = {
+        standardPlayerStatOnly: {
+            name: 'Standard Player Deck (Stat-only)',
+            venueId: 'velvetRoom',
+            description: 'A 12-card fundamentals deck: safe points, early money, and manageable push-your-luck heat.',
+            guests: ['regular', 'regular', 'regular', 'tipper', 'tipper', 'hypeFriend', 'hypeFriend', 'bigSpender', 'bigSpender', 'celebrity'],
+        },
         velvetClassic: { name: 'Velvet Standard', venueId: 'velvetRoom', description: 'Balanced VIP lineup with strong close potential.', guests: [...VENUES.velvetRoom.startingDeck] },
         marketCore: { name: 'Market Standard', venueId: 'nightMarket', description: 'Flexible economy core built for steady scaling.', guests: [...VENUES.nightMarket.startingDeck] },
         alleyPressure: { name: 'Alley Standard', venueId: 'backAlley', description: 'Control-heavy trouble package with strong tempo.', guests: [...VENUES.backAlley.startingDeck] },
