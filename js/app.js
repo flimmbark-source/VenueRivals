@@ -19,9 +19,13 @@
     let guestAbilityPopupEl = null;
     let guestAbilityPopupBackdropEl = null;
     let loadoutState = null;
+    let multiplayerSession = null;
+    let multiplayerMode = 'single';
+    let multiplayerRole = 'host';
 
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
+    const ABLY_API_KEY = '_tDhUg.HYf2eA:VPJbNYIBgqUrolL5QzcLSyj4XRCheq3cizKtHVAtGCA';
 
     const VENUE_POOL_DESC = {
         velvetRoom: 'Protect-and-close stars with lane locks',
@@ -86,6 +90,52 @@
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
+    }
+
+    function isMultiplayer() {
+        return multiplayerMode === 'multiplayer';
+    }
+
+    function setMultiplayerStatus(text) {
+        const el = document.getElementById('multiplayer-status');
+        if (el) el.textContent = text;
+    }
+
+    function publishState() {
+        if (!isMultiplayer() || multiplayerRole !== 'host' || !multiplayerSession || !gameState) return;
+        multiplayerSession.publish('state-sync', { gameState, currentMarket });
+    }
+
+    function refreshAll() {
+        if (!gameState) return;
+        renderHouseGrid('player');
+        renderHouseGrid('rival');
+        renderArrivingGuest('player');
+        renderArrivingGuest('rival');
+        updateGuestDetail();
+        updateVenueStatus('player');
+        updateVenueStatus('rival');
+        updateHUD();
+    }
+
+    function handleRemoteEvent(evt) {
+        if (!evt || !evt.type) return;
+
+        if (evt.type === 'state-sync' && evt.payload?.gameState) {
+            gameState = evt.payload.gameState;
+            currentMarket = evt.payload.currentMarket || currentMarket;
+            refreshAll();
+            return;
+        }
+
+        if (multiplayerRole !== 'host') return;
+        if (evt.type !== 'request-action') return;
+
+        const action = evt.payload?.action;
+        if (action === 'admit') handleAdmit();
+        else if (action === 'ability') handleAbility();
+        else if (action === 'close') handleCloseDoor();
+        else if (action === 'done-shopping') handleDoneShopping();
     }
 
     // === HUD Update ===
@@ -430,6 +480,10 @@
 
     // === Guest Phase Actions ===
     function handleAdmit() {
+        if (isMultiplayer() && multiplayerRole === 'join') {
+            multiplayerSession?.publish('request-action', { action: 'admit' });
+            return;
+        }
         if (!gameState || gameState.phase !== 'guest') return;
         const p = gameState.player;
         if (!p.arrivingGuest || p.doorClosed || p.busted) return;
@@ -459,9 +513,14 @@
         }
 
         checkGuestPhaseDone();
+        publishState();
     }
 
     function handleAbility() {
+        if (isMultiplayer() && multiplayerRole === 'join') {
+            multiplayerSession?.publish('request-action', { action: 'ability' });
+            return;
+        }
         if (!gameState || gameState.phase !== 'guest') return;
         const p = gameState.player;
         const r = gameState.rival;
@@ -497,9 +556,14 @@
         }
 
         checkGuestPhaseDone();
+        publishState();
     }
 
     function handleCloseDoor() {
+        if (isMultiplayer() && multiplayerRole === 'join') {
+            multiplayerSession?.publish('request-action', { action: 'close' });
+            return;
+        }
         if (!gameState || gameState.phase !== 'guest') return;
         const p = gameState.player;
         if (p.doorClosed || p.busted) return;
@@ -519,10 +583,12 @@
 
         showFeedback('You closed the door safely', 'money', 2000);
         checkGuestPhaseDone();
+        publishState();
     }
 
     // === AI Guest Phase ===
     function startAITimer() {
+        if (isMultiplayer()) return;
         if (aiTimerId) clearInterval(aiTimerId);
         const baseDelay = 1200;
         const variance = 600;
@@ -623,6 +689,7 @@
 
         // Small delay for last animation
         setTimeout(showRoundResults, 600);
+        publishState();
     }
 
     function showRoundResults() {
@@ -655,6 +722,7 @@
         document.getElementById('round-results-panel').style.display = '';
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
+        publishState();
     }
 
     function handleNextPhase() {
@@ -677,13 +745,14 @@
         const playerMarket = Game.getMarket(gameState.player.venueId);
         const rivalMarket = Game.getMarket(gameState.rival.venueId);
 
-        // AI buys
-        const aiBuys = AI.decideBuyPhaseActions(gameState, rivalMarket);
-        aiBuys.forEach(guestId => Game.buyGuest(gameState.rival, guestId));
+        if (!isMultiplayer()) {
+            const aiBuys = AI.decideBuyPhaseActions(gameState, rivalMarket);
+            aiBuys.forEach(guestId => Game.buyGuest(gameState.rival, guestId));
 
-        if (aiBuys.length > 0) {
-            const names = aiBuys.map(id => Game.GUESTS[id].name).join(', ');
-            showFeedback(`${gameState.rival.name} bought: ${names}`, 'disruption', 3000);
+            if (aiBuys.length > 0) {
+                const names = aiBuys.map(id => Game.GUESTS[id].name).join(', ');
+                showFeedback(`${gameState.rival.name} bought: ${names}`, 'disruption', 3000);
+            }
         }
 
         currentMarket = playerMarket;
@@ -703,9 +772,10 @@
         const grid = document.getElementById('shop-grid');
         grid.innerHTML = '';
 
+        const readOnlyShop = isMultiplayer() && multiplayerRole === 'join';
         currentMarket.forEach(guestId => {
             const guest = Game.GUESTS[guestId];
-            const canAfford = gameState.player.money >= guest.cost;
+            const canAfford = !readOnlyShop && gameState.player.money >= guest.cost;
 
             const card = document.createElement('div');
             card.className = 'shop-card' + (canAfford ? '' : ' disabled');
@@ -742,6 +812,12 @@
     }
 
     function handleDoneShopping() {
+        if (isMultiplayer() && multiplayerRole === 'join') {
+            multiplayerSession?.publish('request-action', { action: 'done-shopping' });
+            showFeedback('Waiting for host to continue…', 'points', 1500);
+            return;
+        }
+
         Game.endBuyPhase(gameState);
 
         if (gameState.phase === 'gameover') {
@@ -749,6 +825,7 @@
         } else {
             startNewRound();
         }
+        publishState();
     }
 
     // === Game Flow ===
@@ -794,6 +871,7 @@
 
         // Start AI
         setTimeout(() => startAITimer(), 800);
+        publishState();
     }
 
     // === Game Over ===
@@ -1226,10 +1304,49 @@
 
         document.getElementById('venue-name-input').addEventListener('input', checkStartEnabled);
 
-        document.getElementById('btn-start-game').addEventListener('click', () => {
+        const modeInput = document.getElementById('game-mode-input');
+        const roleInput = document.getElementById('multiplayer-role-input');
+        const multiplayerFields = document.getElementById('multiplayer-fields');
+        modeInput?.addEventListener('change', () => {
+            multiplayerFields.style.display = modeInput.value === 'multiplayer' ? '' : 'none';
+        });
+
+        document.getElementById('btn-start-game').addEventListener('click', async () => {
             const rawName = document.getElementById('venue-name-input').value.trim() || 'My Venue';
             const roundCount = parseInt(document.getElementById('round-count-input').value, 10) || Game.TOTAL_ROUNDS;
-            startGame(escapeHtml(rawName), loadoutState.venueId, roundCount);
+            multiplayerMode = modeInput?.value || 'single';
+            multiplayerRole = roleInput?.value || 'host';
+
+            if (!isMultiplayer()) {
+                startGame(escapeHtml(rawName), loadoutState.venueId, roundCount);
+                return;
+            }
+
+            const roomCode = document.getElementById('room-code-input').value.trim();
+            if (!roomCode) {
+                setMultiplayerStatus('Room code is required.');
+                return;
+            }
+
+            try {
+                setMultiplayerStatus('Connecting to Ably…');
+                multiplayerSession = await Multiplayer.createSession({
+                    apiKey: ABLY_API_KEY,
+                    roomCode,
+                    role: multiplayerRole,
+                    onEvent: handleRemoteEvent,
+                });
+                setMultiplayerStatus('Connected.');
+
+                if (multiplayerRole === 'host') {
+                    startGame(escapeHtml(rawName), loadoutState.venueId, roundCount);
+                } else {
+                    switchScreen('game');
+                    setMultiplayerStatus('Connected. Waiting for host…');
+                }
+            } catch (err) {
+                setMultiplayerStatus(err?.message || 'Unable to connect to Ably.');
+            }
         });
 
         // Guest phase controls
@@ -1252,6 +1369,8 @@
             Renderer.resetAnimState();
             gameState = null;
             currentMarket = null;
+            if (multiplayerSession) { multiplayerSession.close(); multiplayerSession = null; }
+            multiplayerMode = 'single';
             document.getElementById('venue-name-input').value = '';
             document.getElementById('round-count-input').value = String(Game.TOTAL_ROUNDS);
             initLoadout();

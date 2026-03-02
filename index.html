@@ -92,8 +92,9 @@
                     <div class="loadout-deck-body" id="loadout-guest-list-body"></div>
                 </div>
             </div>
-            <div class="setup-rounds-section">
-                <label for="round-count-input">Rounds (1-10)</label>
+            <div class="setup-rounds-section multiplayer-settings">
+                <label for="round-count-input">Rounds</label>
+                <label for="game-mode-input">Mode</label>
                 <select id="round-count-input">
                     <option value="1">1</option>
                     <option value="2">2</option>
@@ -106,6 +107,20 @@
                     <option value="9">9</option>
                     <option value="10">10</option>
                 </select>
+                <select id="game-mode-input">
+                    <option value="single" selected>Single Player</option>
+                    <option value="multiplayer">Multiplayer (Ably)</option>
+                </select>
+                <div id="multiplayer-fields" style="display:none; margin-top:10px;">
+                    <label for="multiplayer-role-input">Role</label>
+                    <select id="multiplayer-role-input">
+                        <option value="host" selected>Host Match</option>
+                        <option value="join">Join Match</option>
+                    </select>
+                    <label for="room-code-input">Room Code</label>
+                    <input type="text" id="room-code-input" maxlength="32" placeholder="e.g. rivals-room-1">
+                    <div id="multiplayer-status" class="setup-help">Enter details, then press Start Match.</div>
+                </div>
             </div>
             <button class="btn btn-primary btn-large" id="btn-start-game" disabled>Start Match</button>
         </div>
@@ -310,6 +325,8 @@
     <script src="js/renderer.js"></script>
     <script src="js/game.js"></script>
     <script src="js/ai.js"></script>
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    <script src="js/multiplayer.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
