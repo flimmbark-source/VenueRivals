@@ -65,26 +65,32 @@
     <!-- Setup Screen (Loadout) -->
     <div id="setup-screen" class="screen">
         <div class="setup-container">
-            <h2 class="loadout-title">Your Loadout</h2>
+            <div class="setup-name-section setup-name-section-top">
+                <label for="venue-name-input">Name Your Venue</label>
+                <input type="text" id="venue-name-input" placeholder="Enter venue name..." maxlength="16">
+            </div>
             <div class="loadout-area">
-                <div class="loadout-card" id="loadout-venue-card">
+                <div class="loadout-card loadout-card-primary" id="loadout-venue-card">
                     <div class="loadout-card-header">
                         <span class="loadout-card-label">VENUE</span>
                         <span class="loadout-card-change">Change</span>
                     </div>
                     <div class="loadout-venue-body" id="loadout-venue-body"></div>
                 </div>
-                <div class="loadout-card" id="loadout-deck-card">
+                <div class="loadout-card loadout-card-primary" id="loadout-deck-card">
                     <div class="loadout-card-header">
                         <span class="loadout-card-label">DECK</span>
                         <span class="loadout-card-change">Edit</span>
                     </div>
                     <div class="loadout-deck-body" id="loadout-deck-body"></div>
                 </div>
-            </div>
-            <div class="setup-name-section">
-                <label for="venue-name-input">Name Your Venue</label>
-                <input type="text" id="venue-name-input" placeholder="Enter venue name..." maxlength="16">
+                <div class="loadout-card loadout-card-secondary" id="loadout-guest-list-card">
+                    <div class="loadout-card-header">
+                        <span class="loadout-card-label">GUEST LIST</span>
+                        <span class="loadout-card-change">Edit</span>
+                    </div>
+                    <div class="loadout-deck-body" id="loadout-guest-list-body"></div>
+                </div>
             </div>
             <div class="setup-rounds-section">
                 <label for="round-count-input">Rounds (1-10)</label>
@@ -139,6 +145,35 @@
                         </div>
                         <div class="deck-manage-grid" id="inventory-cards-grid"></div>
                         <div class="deck-manage-empty" id="inventory-empty" style="display:none">No guests available</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guest List Management Overlay -->
+        <div class="loadout-overlay" id="guest-list-manage-overlay" style="display:none">
+            <div class="loadout-overlay-panel">
+                <div class="loadout-overlay-top">
+                    <h3>Manage Guest List</h3>
+                    <span class="deck-size-badge" id="guest-list-size-badge"></span>
+                    <button class="loadout-overlay-close" id="btn-close-guest-list-manage">&times;</button>
+                </div>
+                <div class="deck-validity-msg" id="guest-list-validity-msg" style="display:none"></div>
+                <div class="deck-manage-body">
+                    <div class="deck-manage-section">
+                        <div class="deck-manage-section-header">
+                            <h4>Your Guest List</h4>
+                            <span class="deck-manage-hint">Tap to remove</span>
+                        </div>
+                        <div class="deck-manage-grid" id="guest-list-cards-grid"></div>
+                    </div>
+                    <div class="deck-manage-section">
+                        <div class="deck-manage-section-header">
+                            <h4>Available Guests</h4>
+                            <span class="deck-manage-hint">Tap to add</span>
+                        </div>
+                        <div class="deck-manage-grid" id="guest-list-inventory-cards-grid"></div>
+                        <div class="deck-manage-empty" id="guest-list-inventory-empty" style="display:none">No guests available</div>
                     </div>
                 </div>
             </div>

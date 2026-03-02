@@ -96,6 +96,7 @@ const Game = (() => {
             venueId,
             isAI,
             fullDeck: [...venue.startingDeck],
+            guestList: [...venue.startingDeck],
             roundDeck: [],
             house: [],
             arrivingGuest: null,
@@ -125,8 +126,13 @@ const Game = (() => {
     // === Guest Phase ===
     function startGuestPhase(state) {
         state.phase = 'guest';
+        const combinedGuestList = [
+            ...(state.player.guestList || state.player.fullDeck),
+            ...(state.rival.guestList || state.rival.fullDeck),
+        ];
+
         [state.player, state.rival].forEach(p => {
-            p.roundDeck = shuffle(p.fullDeck);
+            p.roundDeck = shuffle(combinedGuestList);
             p.house = [];
             p.arrivingGuest = null;
             p.roundMoney = 0;
