@@ -123,8 +123,20 @@ const Game = (() => {
 
     function startGuestPhase(state) {
         state.phase = 'guest';
-        const combined = [...(state.player.guestList||state.player.fullDeck), ...(state.rival.guestList||state.rival.fullDeck)];
-        [state.player,state.rival].forEach(p=>{ p.roundDeck=shuffle(combined); p.house=[]; p.arrivingGuest=null; p.roundMoney=0; p.roundPoints=0; p.heat=0; p.doorClosed=false; p.busted=false; p.phaseComplete=false; p.stashCount=0; p.buyDiscountTag=null; });
+        [state.player, state.rival].forEach((p) => {
+            const equippedDeck = p.fullDeck?.length ? p.fullDeck : p.guestList;
+            p.roundDeck = shuffle(equippedDeck || []);
+            p.house = [];
+            p.arrivingGuest = null;
+            p.roundMoney = 0;
+            p.roundPoints = 0;
+            p.heat = 0;
+            p.doorClosed = false;
+            p.busted = false;
+            p.phaseComplete = false;
+            p.stashCount = 0;
+            p.buyDiscountTag = null;
+        });
         drawNextGuest(state.player, VENUES[state.player.venueId]);
         drawNextGuest(state.rival, VENUES[state.rival.venueId]);
     }
