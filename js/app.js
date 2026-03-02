@@ -904,6 +904,30 @@
         `;
     }
 
+    function renderLoadoutGuestList() {
+        const body = document.getElementById('loadout-guest-list-body');
+        const count = loadoutState.guestList.length;
+        const valid = count >= MIN_DECK_SIZE;
+
+        const emojis = loadoutState.guestList.map(id => Game.GUESTS[id].emoji).join('');
+
+        const counts = {};
+        loadoutState.guestList.forEach(id => {
+            counts[id] = (counts[id] || 0) + 1;
+        });
+        const tags = Object.entries(counts).map(([id, n]) => {
+            const guest = Game.GUESTS[id];
+            return `<span class="loadout-deck-tag">${guest.emoji}${n > 1 ? ' ×' + n : ''}</span>`;
+        }).join('');
+
+        body.innerHTML = `
+            <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${count} card${count !== 1 ? 's' : ''}</div>
+            <div class="loadout-deck-preview">${emojis}</div>
+            <div class="loadout-deck-composition">${tags}</div>
+            ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
+        `;
+    }
+
     function openVenueSelect() {
         const overlay = document.getElementById('venue-select-overlay');
         const grid = document.getElementById('venue-select-grid');
@@ -1067,6 +1091,99 @@
         `;
 
         return card;
+    }
+
+    function renderGuestListManage() {
+        const count = loadoutState.guestList.length;
+
+        const badge = document.getElementById('guest-list-size-badge');
+        badge.textContent = `${count} / ${MAX_DECK_SIZE}`;
+        badge.className = 'deck-size-badge' +
+            (count < MIN_DECK_SIZE ? ' invalid' : count >= MAX_DECK_SIZE ? ' full' : '');
+
+        const msgEl = document.getElementById('guest-list-validity-msg');
+        if (count < MIN_DECK_SIZE) {
+            msgEl.textContent = `Need at least ${MIN_DECK_SIZE} cards to play`;
+            msgEl.className = 'deck-validity-msg';
+            msgEl.style.display = '';
+        } else if (count >= MAX_DECK_SIZE) {
+            msgEl.textContent = 'Guest list full — remove a guest to add another';
+            msgEl.className = 'deck-validity-msg info';
+            msgEl.style.display = '';
+        } else {
+            msgEl.style.display = 'none';
+        }
+
+        const listGrid = document.getElementById('guest-list-cards-grid');
+        listGrid.innerHTML = '';
+        loadoutState.guestList.forEach((guestId, index) => {
+            listGrid.appendChild(createGuestListManageCard(guestId, 'list', index));
+        });
+
+        const invGrid = document.getElementById('guest-list-inventory-cards-grid');
+        invGrid.innerHTML = '';
+        const invEmpty = document.getElementById('guest-list-inventory-empty');
+
+        if (loadoutState.guestInventory.length === 0) {
+            invEmpty.style.display = '';
+        } else {
+            invEmpty.style.display = 'none';
+            loadoutState.guestInventory.forEach((guestId, index) => {
+                invGrid.appendChild(createGuestListManageCard(guestId, 'inventory', index));
+            });
+        }
+    }
+
+    function createGuestListManageCard(guestId, source, index) {
+        const guest = Game.GUESTS[guestId];
+        const card = document.createElement('div');
+        const isList = source === 'list';
+        card.className = 'deck-manage-card tier-' + guest.tier;
+
+        let actionHTML;
+        if (isList) {
+            actionHTML = '<div class="deck-card-action remove">Remove</div>';
+        } else if (loadoutState.guestList.length < MAX_DECK_SIZE) {
+            actionHTML = '<div class="deck-card-action add">Add</div>';
+        } else {
+            actionHTML = '<div class="deck-card-action disabled">Full</div>';
+        }
+
+        card.innerHTML = `
+            <div class="deck-card-visual">
+                <span class="deck-card-stat deck-card-heat">\u{1F525} ${guest.heat}</span>
+                <span class="deck-card-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
+                <span class="deck-card-stat deck-card-money">${guest.money}</span>
+                <span class="deck-card-stat deck-card-points">${guest.points}</span>
+            </div>
+            <div class="deck-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
+            ${guest.ability ? '<div class="deck-card-ability">\u26A1 ' + guest.ability.name + '</div>' : ''}
+            ${actionHTML}
+        `;
+
+        card.addEventListener('click', () => {
+            if (isList) {
+                removeFromGuestList(index);
+            } else if (loadoutState.guestList.length < MAX_DECK_SIZE) {
+                addToGuestList(index);
+            }
+        });
+
+        return card;
+    }
+
+    function removeFromGuestList(index) {
+        const removed = loadoutState.guestList.splice(index, 1)[0];
+        loadoutState.guestInventory.push(removed);
+        renderGuestListManage();
+        checkStartEnabled();
+    }
+
+    function addToGuestList(index) {
+        const added = loadoutState.guestInventory.splice(index, 1)[0];
+        loadoutState.guestList.push(added);
+        renderGuestListManage();
+        checkStartEnabled();
     }
 
     // === Event Listeners ===
