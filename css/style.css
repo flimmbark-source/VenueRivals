@@ -239,6 +239,21 @@ body {
     margin-bottom: 24px;
 }
 
+#guest-list-presets-grid {
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+#guest-list-presets-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+#guest-list-presets-grid::-webkit-scrollbar-thumb {
+    background: var(--bg-card);
+    border-radius: 6px;
+}
+
 .venue-type-card {
     background: var(--bg-medium);
     border: 2px solid transparent;
@@ -1391,6 +1406,16 @@ body {
     align-items: center;
     justify-content: center;
     animation: fadeIn 0.2s ease;
+}
+
+#guest-list-manage-overlay {
+    background: rgba(8, 8, 18, 0.985);
+    backdrop-filter: blur(4px);
+}
+
+#guest-list-manage-overlay .loadout-overlay-panel {
+    background: #191a2e;
+    border-color: #2d3060;
 }
 
 .loadout-overlay-panel {

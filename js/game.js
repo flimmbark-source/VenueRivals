@@ -11,70 +11,118 @@ const Game = (() => {
 
     // === Guest Definitions ===
     const GUESTS = {
-        // Common tier
-        regular:     { name: 'Regular',     emoji: '\u{1F60A}', heat: 2, money: 1, points: 1, cost: 2, desc: 'A reliable patron',     tier: 'common' },
-        tipper:      { name: 'Tipper',      emoji: '\u{1F4B5}', heat: 3, money: 3, points: 0, cost: 3, desc: 'Generous with cash',    tier: 'common' },
-        fan:         { name: 'Fan',         emoji: '\u{1F929}', heat: 3, money: 0, points: 3, cost: 3, desc: 'Loves the vibe',        tier: 'common' },
-        wallflower:  { name: 'Wallflower',  emoji: '\u{1F338}', heat: 1, money: 1, points: 1, cost: 2, desc: 'Quiet but pleasant',    tier: 'common' },
+        // Neutral / shared
+        standIn:            { name: 'Stand-In', emoji: '🎭', heat: 2, money: 1, points: 2, cost: 3, desc: 'Tag bridge that stabilizes your build.', tier: 'common' },
+        usher:              { name: 'Usher', emoji: '🧤', heat: 1, money: 1, points: 2, cost: 3, desc: 'Rescues key guests from the exit edge.', tier: 'common' },
+        rovingCritic:       { name: 'Roving Critic', emoji: '🧐', heat: 2, money: 0, points: 3, cost: 4, desc: 'Marks endangered guests for payoff.', tier: 'uncommon' },
+        floorRunner:        { name: 'Floor Runner', emoji: '🏃', heat: 2, money: 1, points: 1, cost: 3, desc: 'Starts intentional cash-out exits.', tier: 'common' },
+        bookkeeper:         { name: 'Bookkeeper', emoji: '📒', heat: 1, money: 2, points: 1, cost: 3, desc: 'Converts close timing into economy.', tier: 'common' },
+        partyPromoter:      { name: 'Party Promoter', emoji: '📣', heat: 3, money: 2, points: 1, cost: 4, desc: 'Shapes your buy phase by chosen tag.', tier: 'uncommon' },
 
-        // Uncommon tier
-        vip:         { name: 'VIP',         emoji: '\u{1F451}', heat: 4, money: 2, points: 4, cost: 5, desc: 'High-value guest',      tier: 'uncommon' },
-        performer:   { name: 'Performer',   emoji: '\u{1F3A4}', heat: 3, money: 1, points: 5, cost: 5, desc: 'Draws a crowd',        tier: 'uncommon' },
-        promoter:    { name: 'Promoter',    emoji: '\u{1F4E2}', heat: 5, money: 5, points: 1, cost: 5, desc: 'Brings business',      tier: 'uncommon' },
-        bouncer:     { name: 'Bouncer',     emoji: '\u{1F6E1}', heat: 0, money: 0, points: 0, cost: 4, desc: 'Keeps things calm',    tier: 'uncommon',
-                       ability: { name: 'Cool Down', desc: 'Remove 3 heat', icon: '\u2744', type: 'reduceHeat', value: 3 } },
-        hustler:     { name: 'Hustler',     emoji: '\u{1F3B2}', heat: 4, money: 4, points: 0, cost: 4, desc: 'Always working angles', tier: 'uncommon' },
-        socialite:   { name: 'Socialite',   emoji: '\u{1F483}', heat: 2, money: 2, points: 3, cost: 4, desc: 'Knows everyone',       tier: 'uncommon' },
-        hypeman:     { name: 'Hype Man',    emoji: '\u{1F4E3}', heat: 3, money: 0, points: 2, cost: 4, desc: 'Gets the crowd going', tier: 'uncommon',
-                       ability: { name: 'Hype Up', desc: '+2 bonus points', icon: '\u2B50', type: 'bonusPoints', value: 2 } },
-        concierge:   { name: 'Concierge',   emoji: '\u{1F3A9}', heat: 0, money: 1, points: 1, cost: 4, desc: 'Keeps order',         tier: 'uncommon',
-                       ability: { name: 'Manage', desc: 'Remove 2 heat', icon: '\u2744', type: 'reduceHeat', value: 2 } },
+        // Velvet Room
+        headliner:          { name: 'Headliner', emoji: '🌟', heat: 3, money: 1, points: 5, cost: 6, desc: 'Protected star with big close payoff.', tier: 'rare' },
+        champagneHost:      { name: 'Champagne Host', emoji: '🥂', heat: 2, money: 2, points: 3, cost: 5, desc: 'Exact-full closer for VIP lines.', tier: 'uncommon' },
+        velvetBouncer:      { name: 'Velvet Bouncer', emoji: '🛡️', heat: 1, money: 1, points: 1, cost: 4, desc: 'Bodyguard support that later cashes out.', tier: 'uncommon', ability: { name: 'Guard', desc: 'Remove 2 heat', icon: '❄', type: 'reduceHeat', value: 2 } },
+        spotlightPhotographer: { name: 'Spotlight Photographer', emoji: '📸', heat: 2, money: 1, points: 4, cost: 5, desc: 'Turns preserved marks into points.', tier: 'uncommon' },
 
-        // Rare tier
-        celebrity:   { name: 'Celebrity',   emoji: '\u{1F31F}', heat: 6, money: 3, points: 8, cost: 8, desc: 'The biggest name',         tier: 'rare' },
-        influencer:  { name: 'Influencer',  emoji: '\u{1F4F1}', heat: 4, money: 4, points: 4, cost: 7, desc: 'Trending tonight',         tier: 'rare' },
-        instigator:  { name: 'Instigator',  emoji: '\u{1F608}', heat: 2, money: 2, points: 2, cost: 6, desc: 'Causes trouble elsewhere', tier: 'rare',
-                       ability: { name: 'Provoke', desc: '+4 heat to opponent', icon: '\u{1F525}', type: 'addOpponentHeat', value: 4 } },
-        inspector:   { name: 'Inspector',   emoji: '\u{1F50D}', heat: 0, money: 0, points: 0, cost: 6, desc: 'Official business',        tier: 'rare',
-                       ability: { name: 'Inspect', desc: '-5 your heat, +3 opponent', icon: '\u{1F4CB}', type: 'inspect', selfReduce: 5, oppAdd: 3 } },
-        dj:          { name: 'DJ',          emoji: '\u{1F3A7}', heat: 3, money: 2, points: 6, cost: 7, desc: 'Drops the beat',           tier: 'rare' },
-        investor:    { name: 'Investor',    emoji: '\u{1F48E}', heat: 5, money: 7, points: 0, cost: 7, desc: 'Deep pockets',             tier: 'rare' },
+        // Night Market
+        galleryScout:       { name: 'Gallery Scout', emoji: '🔭', heat: 1, money: 2, points: 1, cost: 4, desc: 'Queue sculpting plus stash setup.', tier: 'common' },
+        trendBroker:        { name: 'Trend Broker', emoji: '📈', heat: 2, money: 3, points: 1, cost: 5, desc: 'Rewards Most Common Tag planning.', tier: 'uncommon' },
+        curioDealer:        { name: 'Curio Dealer', emoji: '🗃️', heat: 1, money: 3, points: 0, cost: 4, desc: 'Converts left-edge risk into economy.', tier: 'common' },
+        stylist:            { name: 'Stylist', emoji: '🧵', heat: 2, money: 1, points: 3, cost: 4, desc: 'Bends adjacent tags into your plan.', tier: 'uncommon' },
+
+        // Back Alley (trouble 1)
+        gateRunner:         { name: 'Gate Runner', emoji: '🚨', heat: 1, money: 1, points: 2, cost: 4, desc: 'Queues Gatecrasher pressure on entry.', tier: 'common' },
+        wheelman:           { name: 'Wheelman', emoji: '🚗', heat: 1, money: 3, points: 1, cost: 4, desc: 'General shove engine and cash-out body.', tier: 'common' },
+        fence:              { name: 'Fence', emoji: '🧰', heat: 1, money: 3, points: 0, cost: 4, desc: 'Outlaw exit economy anchor.', tier: 'common' },
+        provocateur:        { name: 'Provocateur', emoji: '😈', heat: 1, money: 1, points: 3, cost: 5, desc: 'Punishes opponents for overextending.', tier: 'uncommon' },
     };
 
     // === Venue Definitions ===
     const VENUES = {
-        underground: {
-            name: 'The Underground',
-            emoji: '\u{1F37A}',
+        velvetRoom: {
+            name: 'Velvet Room',
+            emoji: '🥂',
             gridSize: 5,
             bustThreshold: 6,
-            desc: 'Gritty bar. Larger grid, money-focused.',
-            style: 'money',
+            desc: 'Protect the star and close on exact-full snapshots.',
+            style: 'points',
             color: '#c9884c',
-            startingDeck: ['regular','regular','regular','tipper','tipper','hustler','bouncer','promoter'],
-            market: ['tipper','hustler','promoter','bouncer','investor','instigator','regular'],
+            startingDeck: ['usher', 'rovingCritic', 'headliner', 'champagneHost', 'velvetBouncer', 'spotlightPhotographer', 'standIn', 'floorRunner'],
+            market: ['headliner', 'champagneHost', 'velvetBouncer', 'spotlightPhotographer', 'usher', 'rovingCritic', 'partyPromoter'],
         },
-        spotlight: {
-            name: 'The Spotlight',
-            emoji: '\u{1F3AD}',
+        nightMarket: {
+            name: 'Night Market',
+            emoji: '🏮',
             gridSize: 4,
             bustThreshold: 5,
-            desc: 'Flashy club. Smaller grid, points-focused.',
-            style: 'points',
+            desc: 'Queue sculpting, stash economy, and tag-majority builds.',
+            style: 'money',
             color: '#7f5af0',
-            startingDeck: ['regular','regular','regular','fan','fan','performer','hypeman','tipper'],
-            market: ['fan','performer','hypeman','vip','dj','celebrity','regular'],
+            startingDeck: ['galleryScout', 'trendBroker', 'curioDealer', 'stylist', 'standIn', 'bookkeeper', 'partyPromoter', 'usher'],
+            market: ['galleryScout', 'trendBroker', 'curioDealer', 'stylist', 'standIn', 'bookkeeper', 'partyPromoter'],
         },
-        velvet: {
-            name: 'The Velvet Room',
-            emoji: '\u{1F378}',
+        backAlley: {
+            name: 'Back Alley',
+            emoji: '🕳️',
             gridSize: 6,
             bustThreshold: 7,
-            desc: 'Upscale lounge. Biggest grid, control-focused.',
+            desc: 'Intentional exits, outlaw cash-outs, and opponent heat pressure.',
             style: 'control',
             color: '#2cb67d',
-            startingDeck: ['regular','regular','regular','wallflower','wallflower','socialite','concierge','vip'],
-            market: ['wallflower','socialite','concierge','vip','influencer','inspector','regular'],
+            startingDeck: ['gateRunner', 'wheelman', 'fence', 'provocateur', 'floorRunner', 'usher', 'bookkeeper', 'partyPromoter'],
+            market: ['gateRunner', 'wheelman', 'fence', 'provocateur', 'floorRunner', 'bookkeeper', 'standIn'],
+        },
+    };
+
+    const GUEST_LISTS = {
+        rescueMarkedStar: {
+            name: 'Red Carpet Gala',
+            venueId: 'velvetRoom',
+            description: 'An elegant spotlight gala where marked VIPs must be protected until the final curtain call.',
+            guests: ['rovingCritic', 'usher', 'headliner', 'velvetBouncer', 'champagneHost', 'spotlightPhotographer', 'standIn', 'partyPromoter'],
+        },
+        exactFullVelvetSnap: {
+            name: 'Champagne Countdown',
+            venueId: 'velvetRoom',
+            description: 'A packed-house party that peaks at the perfect moment—close right as every seat is full.',
+            guests: ['champagneHost', 'headliner', 'standIn', 'usher', 'spotlightPhotographer', 'velvetBouncer', 'rovingCritic', 'bookkeeper'],
+        },
+        protectStarSpendBouncer: {
+            name: 'Headliner Afterparty',
+            venueId: 'velvetRoom',
+            description: 'Keep the star safe while the crew cycles through the lane to keep the party profitable.',
+            guests: ['headliner', 'velvetBouncer', 'floorRunner', 'usher', 'spotlightPhotographer', 'champagneHost', 'rovingCritic', 'standIn'],
+        },
+        leftEdgeEconomy: {
+            name: 'Bazaar Night',
+            venueId: 'nightMarket',
+            description: 'A curated market soirée where every close call gets turned into tomorrow\'s shopping leverage.',
+            guests: ['curioDealer', 'galleryScout', 'bookkeeper', 'partyPromoter', 'trendBroker', 'stylist', 'standIn', 'floorRunner'],
+        },
+        brokerStack: {
+            name: 'Trendsetter Mixer',
+            venueId: 'nightMarket',
+            description: 'A fashion-forward mixer focused on one social vibe and doubling down on the hottest tag.',
+            guests: ['trendBroker', 'stylist', 'standIn', 'partyPromoter', 'bookkeeper', 'galleryScout', 'curioDealer', 'usher'],
+        },
+        cashOutHitAndRun: {
+            name: 'Smuggler\'s Run',
+            venueId: 'backAlley',
+            description: 'A high-velocity outlaw party—cause chaos fast, cash out, and keep moving.',
+            guests: ['gateRunner', 'wheelman', 'floorRunner', 'fence', 'provocateur', 'bookkeeper', 'usher', 'partyPromoter'],
+        },
+        fenceRegister: {
+            name: 'Black Market Bash',
+            venueId: 'backAlley',
+            description: 'A gritty underground bash where one fixer stays inside while the rest rotate out for profit.',
+            guests: ['fence', 'gateRunner', 'wheelman', 'floorRunner', 'provocateur', 'bookkeeper', 'standIn', 'usher'],
+        },
+        complaintTrap: {
+            name: 'Riot Night',
+            venueId: 'backAlley',
+            description: 'A volatile street party built to overload rivals with trouble, complaints, and panic closes.',
+            guests: ['gateRunner', 'provocateur', 'wheelman', 'fence', 'floorRunner', 'partyPromoter', 'standIn', 'bookkeeper'],
         },
     };
 
@@ -327,6 +375,7 @@ const Game = (() => {
     return {
         GUESTS,
         VENUES,
+        GUEST_LISTS,
         TOTAL_ROUNDS: DEFAULT_TOTAL_ROUNDS,
         BUST_PENALTY,
         shuffle,
