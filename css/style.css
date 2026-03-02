@@ -446,6 +446,33 @@ body {
     gap: 6px;
 }
 
+
+
+.multiplayer-popup-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 12, 28, 0.62);
+    z-index: 2500;
+}
+
+.multiplayer-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 190px;
+    padding: 18px 24px;
+    border-radius: 14px;
+    border: 1px solid rgba(77, 184, 255, 0.75);
+    background: rgba(15, 18, 38, 0.95);
+    color: #bce8ff;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-align: center;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+    z-index: 2600;
+}
 #setup-screen #multiplayer-status {
     font-size: 0.66rem;
     line-height: 1.25;

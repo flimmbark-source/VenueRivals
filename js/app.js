@@ -22,6 +22,9 @@
     let multiplayerSession = null;
     let multiplayerMode = 'single';
     let multiplayerRole = 'host';
+    let waitingPopupEl = null;
+    let waitingPopupBackdropEl = null;
+    let pendingHostMatchConfig = null;
 
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
@@ -101,6 +104,33 @@
         if (el) el.textContent = text;
     }
 
+    function showWaitingPopup(message) {
+        closeWaitingPopup();
+        waitingPopupBackdropEl = document.createElement('div');
+        waitingPopupBackdropEl.className = 'multiplayer-popup-backdrop';
+        waitingPopupEl = document.createElement('div');
+        waitingPopupEl.className = 'multiplayer-popup';
+        waitingPopupEl.textContent = message;
+        document.body.appendChild(waitingPopupBackdropEl);
+        document.body.appendChild(waitingPopupEl);
+    }
+
+    function updateWaitingPopup(message) {
+        if (!waitingPopupEl) return;
+        waitingPopupEl.textContent = message;
+    }
+
+    function closeWaitingPopup() {
+        if (waitingPopupEl) {
+            waitingPopupEl.remove();
+            waitingPopupEl = null;
+        }
+        if (waitingPopupBackdropEl) {
+            waitingPopupBackdropEl.remove();
+            waitingPopupBackdropEl = null;
+        }
+    }
+
     function publishState() {
         if (!isMultiplayer() || multiplayerRole !== 'host' || !multiplayerSession || !gameState) return;
         multiplayerSession.publish('state-sync', { gameState, currentMarket });
@@ -121,6 +151,36 @@
     function handleRemoteEvent(evt) {
         if (!evt || !evt.type) return;
 
+        if (evt.type === 'player-joined' && multiplayerRole === 'host' && pendingHostMatchConfig) {
+            const profile = evt.payload?.profile || {};
+            updateWaitingPopup('Connected!');
+            setMultiplayerStatus('Connected! Starting match...');
+            startGame(pendingHostMatchConfig.name, pendingHostMatchConfig.venueType, pendingHostMatchConfig.totalRounds, {
+                rivalName: profile.name || 'Challenger',
+                rivalVenue: profile.venueId,
+                rivalDeck: profile.deck,
+                rivalGuestList: profile.guestList,
+            });
+            multiplayerSession?.publish('match-start', { hostConfig: pendingHostMatchConfig });
+            pendingHostMatchConfig = null;
+            setTimeout(closeWaitingPopup, 700);
+            return;
+        }
+
+        if (evt.type === 'match-start' && multiplayerRole === 'join') {
+            closeWaitingPopup();
+            const hostConfig = evt.payload?.hostConfig;
+            if (!hostConfig) return;
+            startGame(hostConfig.name, hostConfig.venueType, hostConfig.totalRounds, {
+                rivalName: 'You',
+                rivalVenue: loadoutState?.venueId,
+                rivalDeck: loadoutState?.deck,
+                rivalGuestList: loadoutState?.guestList,
+            });
+            setMultiplayerStatus('Connected!');
+            return;
+        }
+
         if (evt.type === 'state-sync' && evt.payload?.gameState) {
             gameState = evt.payload.gameState;
             currentMarket = evt.payload.currentMarket || currentMarket;
@@ -132,10 +192,19 @@
         if (evt.type !== 'request-action') return;
 
         const action = evt.payload?.action;
-        if (action === 'admit') handleAdmit();
-        else if (action === 'ability') handleAbility();
-        else if (action === 'close') handleCloseDoor();
-        else if (action === 'done-shopping') handleDoneShopping();
+        const actor = evt.payload?.actor || 'rival';
+        if (action === 'admit') runAdmit(actor);
+        else if (action === 'ability') runAbility(actor);
+        else if (action === 'close') runCloseDoor(actor);
+        else if (action === 'done-shopping') runDoneShopping(actor);
+        else if (action === 'buy') runBuyGuest(actor, evt.payload?.guestId);
+    }
+
+    function getActorState(actor) {
+        if (actor === 'rival') {
+            return { self: gameState.rival, opponent: gameState.player, selfKey: 'rival', opponentKey: 'player' };
+        }
+        return { self: gameState.player, opponent: gameState.rival, selfKey: 'player', opponentKey: 'rival' };
     }
 
     // === HUD Update ===
@@ -480,36 +549,76 @@
     }
 
     // === Guest Phase Actions ===
-    function handleAdmit() {
-        if (isMultiplayer() && multiplayerRole === 'join') {
-            multiplayerSession?.publish('request-action', { action: 'admit' });
-            return;
-        }
+    function runAdmit(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
-        const p = gameState.player;
-        if (!p.arrivingGuest || p.doorClosed || p.busted) return;
+        const { self, opponent, selfKey } = getActorState(actor);
+        if (!self.arrivingGuest || self.doorClosed || self.busted) return;
 
-        const venue = Game.VENUES[p.venueId];
-        const result = Game.admitGuest(p, venue, gameState.rival, Game.VENUES[gameState.rival.venueId]);
+        const venue = Game.VENUES[self.venueId];
+        const result = Game.admitGuest(self, venue, opponent, Game.VENUES[opponent.venueId]);
         if (!result) return;
 
         if (result.pushedOut) {
-            animateExitGuest('player', result.pushedOut);
+            animateExitGuest(selfKey, result.pushedOut);
         }
-        renderHouseGrid('player');
-
-        renderArrivingGuest('player');
+        renderHouseGrid(selfKey);
+        renderArrivingGuest(selfKey);
         updateGuestDetail();
-        updateVenueStatus('player');
+        updateVenueStatus(selfKey);
         updateHUD();
         removeTooltip();
         removeIconTooltip();
 
         if (result.busted) {
-            document.getElementById('player-area').classList.add('bust-flash');
+            document.getElementById(`${selfKey}-area`).classList.add('bust-flash');
             showFeedback('YOU BUSTED!', 'bust', 3000);
             setTimeout(() => {
-                document.getElementById('player-area').classList.remove('bust-flash');
+                document.getElementById(`${selfKey}-area`).classList.remove('bust-flash');
+            }, 500);
+        }
+
+        checkGuestPhaseDone();
+        publishState();
+    }
+
+    function handleAdmit() {
+        if (isMultiplayer() && multiplayerRole === 'join') {
+            multiplayerSession?.publish('request-action', { action: 'admit', actor: 'rival' });
+            return;
+        }
+        runAdmit('player');
+    }
+
+    function runAbility(actor = 'player') {
+        if (!gameState || gameState.phase !== 'guest') return;
+        const { self, opponent, selfKey, opponentKey } = getActorState(actor);
+        if (!self.arrivingGuest || self.doorClosed || self.busted) return;
+
+        const guest = Game.GUESTS[self.arrivingGuest];
+        if (!guest.ability) return;
+
+        const selfVenue = Game.VENUES[self.venueId];
+        const opponentVenue = Game.VENUES[opponent.venueId];
+        const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue);
+        if (!result) return;
+
+        showFeedback(`⚡ ${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
+
+        renderHouseGrid(selfKey);
+        renderHouseGrid(opponentKey);
+        renderArrivingGuest(selfKey);
+        renderArrivingGuest(opponentKey);
+        updateGuestDetail();
+        updateVenueStatus(selfKey);
+        updateVenueStatus(opponentKey);
+        updateHUD();
+        removeTooltip();
+        removeIconTooltip();
+
+        if (opponent.busted) {
+            document.getElementById(`${opponentKey}-area`).classList.add('bust-flash');
+            setTimeout(() => {
+                document.getElementById(`${opponentKey}-area`).classList.remove('bust-flash');
             }, 500);
         }
 
@@ -519,65 +628,26 @@
 
     function handleAbility() {
         if (isMultiplayer() && multiplayerRole === 'join') {
-            multiplayerSession?.publish('request-action', { action: 'ability' });
+            multiplayerSession?.publish('request-action', { action: 'ability', actor: 'rival' });
             return;
         }
-        if (!gameState || gameState.phase !== 'guest') return;
-        const p = gameState.player;
-        const r = gameState.rival;
-        if (!p.arrivingGuest || p.doorClosed || p.busted) return;
-
-        const guest = Game.GUESTS[p.arrivingGuest];
-        if (!guest.ability) return;
-
-        const pVenue = Game.VENUES[p.venueId];
-        const rVenue = Game.VENUES[r.venueId];
-        const result = Game.activateAbility(p, r, pVenue, rVenue);
-        if (!result) return;
-
-        showFeedback(`\u26A1 ${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
-
-        renderHouseGrid('player');
-        renderHouseGrid('rival');
-        renderArrivingGuest('player');
-        renderArrivingGuest('rival');
-        updateGuestDetail();
-        updateVenueStatus('player');
-        updateVenueStatus('rival');
-        updateHUD();
-        removeTooltip();
-        removeIconTooltip();
-
-        // Check if opponent was busted by the ability
-        if (r.busted) {
-            document.getElementById('rival-area').classList.add('bust-flash');
-            setTimeout(() => {
-                document.getElementById('rival-area').classList.remove('bust-flash');
-            }, 500);
-        }
-
-        checkGuestPhaseDone();
-        publishState();
+        runAbility('player');
     }
 
-    function handleCloseDoor() {
-        if (isMultiplayer() && multiplayerRole === 'join') {
-            multiplayerSession?.publish('request-action', { action: 'close' });
-            return;
-        }
+    function runCloseDoor(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
-        const p = gameState.player;
-        if (p.doorClosed || p.busted) return;
+        const { self, opponent, selfKey } = getActorState(actor);
+        if (self.doorClosed || self.busted) return;
 
-        const venue = Game.VENUES[p.venueId];
-        const result = Game.closeDoor(p, venue, gameState.rival);
+        const venue = Game.VENUES[self.venueId];
+        const result = Game.closeDoor(self, venue, opponent);
         if (result?.pushedOut) {
-            animateExitGuest('player', result.pushedOut);
+            animateExitGuest(selfKey, result.pushedOut);
         }
-        renderHouseGrid('player');
-        renderArrivingGuest('player');
+        renderHouseGrid(selfKey);
+        renderArrivingGuest(selfKey);
         updateGuestDetail();
-        updateVenueStatus('player');
+        updateVenueStatus(selfKey);
         updateHUD();
         removeTooltip();
         removeIconTooltip();
@@ -585,6 +655,14 @@
         showFeedback('You closed the door safely', 'money', 2000);
         checkGuestPhaseDone();
         publishState();
+    }
+
+    function handleCloseDoor() {
+        if (isMultiplayer() && multiplayerRole === 'join') {
+            multiplayerSession?.publish('request-action', { action: 'close', actor: 'rival' });
+            return;
+        }
+        runCloseDoor('player');
     }
 
     // === AI Guest Phase ===
@@ -768,15 +846,17 @@
 
     function renderShop() {
         const shopMoney = document.getElementById('shop-money');
-        shopMoney.textContent = `\u{1F4B0} $${gameState.player.money}`;
+        const shopPlayer = isMultiplayer() && multiplayerRole === 'join' ? gameState.rival : gameState.player;
+        shopMoney.textContent = `\u{1F4B0} $${shopPlayer.money}`;
 
         const grid = document.getElementById('shop-grid');
         grid.innerHTML = '';
 
-        const readOnlyShop = isMultiplayer() && multiplayerRole === 'join';
+        const readOnlyShop = false;
         currentMarket.forEach(guestId => {
             const guest = Game.GUESTS[guestId];
-            const canAfford = !readOnlyShop && gameState.player.money >= guest.cost;
+            const shopPlayer = isMultiplayer() && multiplayerRole === 'join' ? gameState.rival : gameState.player;
+            const canAfford = !readOnlyShop && shopPlayer.money >= guest.cost;
 
             const card = document.createElement('div');
             card.className = 'shop-card' + (canAfford ? '' : ' disabled');
@@ -800,10 +880,16 @@
 
             if (canAfford) {
                 card.addEventListener('click', () => {
+                    if (isMultiplayer() && multiplayerRole === 'join') {
+                        multiplayerSession?.publish('request-action', { action: 'buy', actor: 'rival', guestId });
+                        showFeedback(`Bought ${guest.name}!`, 'money', 1500);
+                        return;
+                    }
                     if (Game.buyGuest(gameState.player, guestId)) {
                         showFeedback(`Bought ${guest.name}!`, 'money', 1500);
                         renderShop();
                         updateHUD();
+                        publishState();
                     }
                 });
             }
@@ -812,10 +898,10 @@
         });
     }
 
-    function handleDoneShopping() {
-        if (isMultiplayer() && multiplayerRole === 'join') {
-            multiplayerSession?.publish('request-action', { action: 'done-shopping' });
-            showFeedback('Waiting for host to continue…', 'points', 1500);
+    function runDoneShopping(actor = 'player') {
+        if (actor === 'rival' && isMultiplayer()) {
+            gameState.rival.phaseComplete = true;
+            publishState();
             return;
         }
 
@@ -829,14 +915,33 @@
         publishState();
     }
 
+    function runBuyGuest(actor, guestId) {
+        if (!gameState || gameState.phase !== 'buy' || !guestId) return;
+        const { self } = getActorState(actor);
+        if (Game.buyGuest(self, guestId)) {
+            updateHUD();
+            publishState();
+        }
+    }
+
+    function handleDoneShopping() {
+        if (isMultiplayer() && multiplayerRole === 'join') {
+            multiplayerSession?.publish('request-action', { action: 'done-shopping', actor: 'rival' });
+            showFeedback('Waiting for host to continue…', 'points', 1500);
+            return;
+        }
+
+        runDoneShopping('player');
+    }
+
     // === Game Flow ===
-    function startGame(name, venueType, totalRounds) {
+    function startGame(name, venueType, totalRounds, options = {}) {
         Renderer.resetAnimState();
 
         // Pick rival
         const venueKeys = Object.keys(Game.VENUES).filter(k => k !== venueType);
-        const rivalVenue = venueKeys[Math.floor(Math.random() * venueKeys.length)];
-        const rivalName = RIVAL_NAMES[Math.floor(Math.random() * RIVAL_NAMES.length)];
+        const rivalVenue = options.rivalVenue || venueKeys[Math.floor(Math.random() * venueKeys.length)];
+        const rivalName = options.rivalName || RIVAL_NAMES[Math.floor(Math.random() * RIVAL_NAMES.length)];
 
         gameState = Game.createGameState(name, venueType, rivalName, rivalVenue, totalRounds);
 
@@ -845,6 +950,8 @@
             gameState.player.fullDeck = [...loadoutState.deck];
             gameState.player.guestList = [...loadoutState.guestList];
         }
+        if (options.rivalDeck?.length) gameState.rival.fullDeck = [...options.rivalDeck];
+        if (options.rivalGuestList?.length) gameState.rival.guestList = [...options.rivalGuestList];
 
         switchScreen('game');
         startNewRound();
@@ -1340,10 +1447,23 @@
                 setMultiplayerStatus('Connected.');
 
                 if (multiplayerRole === 'host') {
-                    startGame(escapeHtml(rawName), loadoutState.venueId, roundCount);
+                    pendingHostMatchConfig = {
+                        name: escapeHtml(rawName),
+                        venueType: loadoutState.venueId,
+                        totalRounds: roundCount,
+                    };
+                    showWaitingPopup('Waiting');
+                    setMultiplayerStatus('Waiting for another player...');
                 } else {
-                    switchScreen('game');
                     setMultiplayerStatus('Connected. Waiting for host…');
+                    multiplayerSession.publish('player-joined', {
+                        profile: {
+                            name: escapeHtml(rawName),
+                            venueId: loadoutState.venueId,
+                            deck: [...(loadoutState?.deck || [])],
+                            guestList: [...(loadoutState?.guestList || [])],
+                        },
+                    });
                 }
             } catch (err) {
                 setMultiplayerStatus(err?.message || 'Unable to connect to Ably.');
@@ -1371,6 +1491,8 @@
             gameState = null;
             currentMarket = null;
             if (multiplayerSession) { multiplayerSession.close(); multiplayerSession = null; }
+            closeWaitingPopup();
+            pendingHostMatchConfig = null;
             multiplayerMode = 'single';
             document.getElementById('venue-name-input').value = '';
             document.getElementById('round-count-input').value = String(Game.TOTAL_ROUNDS);
