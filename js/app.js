@@ -994,7 +994,7 @@
             msgEl.className = 'deck-validity-msg';
             msgEl.style.display = '';
         } else if (count >= MAX_DECK_SIZE) {
-            msgEl.textContent = 'Deck full \u2014 remove a card to add another';
+            msgEl.textContent = 'Deck ready';
             msgEl.className = 'deck-validity-msg info';
             msgEl.style.display = '';
         } else {
@@ -1004,40 +1004,16 @@
         // Render deck cards
         const deckGrid = document.getElementById('deck-cards-grid');
         deckGrid.innerHTML = '';
-        loadoutState.deck.forEach((guestId, index) => {
-            deckGrid.appendChild(createDeckManageCard(guestId, 'deck', index));
+        loadoutState.deck.forEach((guestId) => {
+            deckGrid.appendChild(createDeckManageCard(guestId));
         });
-
-        // Render inventory cards
-        const invGrid = document.getElementById('inventory-cards-grid');
-        invGrid.innerHTML = '';
-        const invEmpty = document.getElementById('inventory-empty');
-
-        if (loadoutState.inventory.length === 0) {
-            invEmpty.style.display = '';
-        } else {
-            invEmpty.style.display = 'none';
-            loadoutState.inventory.forEach((guestId, index) => {
-                invGrid.appendChild(createDeckManageCard(guestId, 'inventory', index));
-            });
-        }
 
     }
 
-    function createDeckManageCard(guestId, source, index) {
+    function createDeckManageCard(guestId) {
         const guest = Game.GUESTS[guestId];
         const card = document.createElement('div');
-        const isDeck = source === 'deck';
         card.className = 'deck-manage-card tier-' + guest.tier;
-
-        let actionHTML;
-        if (isDeck) {
-            actionHTML = '<div class="deck-card-action remove">Remove</div>';
-        } else if (loadoutState.deck.length < MAX_DECK_SIZE) {
-            actionHTML = '<div class="deck-card-action add">Add</div>';
-        } else {
-            actionHTML = '<div class="deck-card-action disabled">Full</div>';
-        }
 
         card.innerHTML = `
             <div class="deck-card-visual">
@@ -1048,32 +1024,9 @@
             </div>
             <div class="deck-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
             ${guest.ability ? '<div class="deck-card-ability">\u26A1 ' + guest.ability.name + '</div>' : ''}
-            ${actionHTML}
         `;
 
-        card.addEventListener('click', () => {
-            if (isDeck) {
-                removeFromDeck(index);
-            } else if (loadoutState.deck.length < MAX_DECK_SIZE) {
-                addToDeck(index);
-            }
-        });
-
         return card;
-    }
-
-    function removeFromDeck(index) {
-        const removed = loadoutState.deck.splice(index, 1)[0];
-        loadoutState.inventory.push(removed);
-        renderDeckManage();
-        checkStartEnabled();
-    }
-
-    function addToDeck(index) {
-        const added = loadoutState.inventory.splice(index, 1)[0];
-        loadoutState.deck.push(added);
-        renderDeckManage();
-        checkStartEnabled();
     }
 
     function renderGuestListManage() {
