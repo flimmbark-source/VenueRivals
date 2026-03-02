@@ -786,6 +786,19 @@ body {
     color: #ffd166;
 }
 
+
+.ability-icon-badge {
+    position: absolute;
+    left: 50%;
+    bottom: 3px;
+    transform: translateX(-50%);
+    font-size: 0.55rem;
+    line-height: 1;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+    filter: drop-shadow(0 0 2px rgba(255, 209, 102, 0.5));
+    pointer-events: none;
+}
+
 .guest-slot .slot-emoji.has-ability {
     filter: drop-shadow(0 0 4px rgba(255, 209, 102, 0.45));
 }
@@ -1196,6 +1209,11 @@ body {
     right: 0;
     bottom: 0;
     color: #ffd166;
+}
+
+.shop-card-visual .ability-icon-badge {
+    bottom: 0;
+    font-size: 0.5rem;
 }
 
 .shop-card-name {
@@ -1892,6 +1910,11 @@ body {
     right: 0;
     bottom: 0;
     color: #ffd166;
+}
+
+.deck-card-visual .ability-icon-badge {
+    bottom: 0;
+    font-size: 0.48rem;
 }
 
 .deck-card-name {

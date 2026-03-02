@@ -250,6 +250,13 @@
         text.textContent = `\u{1F525} ${heat}/${max}`;
     }
 
+    function renderAbilityBadge(guest) {
+        if (!guest.ability) return '';
+        const icon = escapeHtml(guest.ability.icon || '⚡');
+        return `<span class="ability-icon-badge" aria-label="${escapeHtml(guest.ability.name || 'Ability')}" title="${escapeHtml(guest.ability.name || 'Ability')}">${icon}</span>`;
+    }
+
+
     // === Guest Slot Rendering ===
     function createGuestSlot(guestId, animate) {
         const guest = Game.GUESTS[guestId];
@@ -260,6 +267,7 @@
             <span class="slot-stat slot-heat">🔥 ${guest.heat}</span>
             <span class="slot-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
             <span class="slot-stat slot-money">${guest.money}</span>
+            ${renderAbilityBadge(guest)}
             <span class="slot-stat slot-points">${guest.points}</span>
         `;
         el.title = `${guest.name} - ${guest.desc}`;
@@ -309,6 +317,7 @@
                 <span class="arriving-stat arriving-heat">🔥 ${guest.heat}</span>
                 <button class="arriving-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
                 <span class="arriving-stat arriving-money">${guest.money}</span>
+                ${renderAbilityBadge(guest)}
                 <span class="arriving-stat arriving-points">${guest.points}</span>
             `;
             card.title = `${guest.name}: ${guest.desc}`;
@@ -884,6 +893,7 @@
                     <span class="shop-card-stat shop-card-heat">🔥 ${guest.heat}</span>
                     <button class="shop-card-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
                     <span class="shop-card-stat shop-card-money">${guest.money}</span>
+                    ${renderAbilityBadge(guest)}
                     <span class="shop-card-stat shop-card-points">${guest.points}</span>
                 </div>
                 <div class="shop-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
@@ -1266,6 +1276,7 @@
                 <span class="deck-card-stat deck-card-heat">🔥 ${guest.heat}</span>
                 <span class="deck-card-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
                 <span class="deck-card-stat deck-card-money">${guest.money}</span>
+                ${renderAbilityBadge(guest)}
                 <span class="deck-card-stat deck-card-points">${guest.points}</span>
             </div>
             <div class="deck-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
