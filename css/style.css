@@ -1574,6 +1574,68 @@ body {
     transform: translateY(-2px);
 }
 
+#guest-list-preview-grid .deck-manage-card {
+    cursor: pointer;
+}
+
+.guest-ability-popup-backdrop {
+    position: fixed;
+    inset: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.58);
+    z-index: 240;
+}
+
+.guest-ability-popup {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(340px, calc(100vw - 36px));
+    background: rgba(16, 16, 26, 0.97);
+    border: 2px solid rgba(127, 90, 240, 0.8);
+    border-radius: var(--radius-lg);
+    padding: 16px 16px 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+    z-index: 250;
+}
+
+.guest-ability-popup-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.guest-ability-popup-name {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    padding-right: 20px;
+}
+
+.guest-ability-popup-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    margin-bottom: 4px;
+}
+
+.guest-ability-popup-desc {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
 .deck-manage-card.tier-common { border-color: #444; }
 .deck-manage-card.tier-uncommon { border-color: rgba(76, 201, 240, 0.4); }
 .deck-manage-card.tier-rare { border-color: rgba(127, 90, 240, 0.5); }

@@ -16,6 +16,8 @@
     let currentMarket = null;
     let tooltipEl = null;
     let iconTooltipEl = null;
+    let guestAbilityPopupEl = null;
+    let guestAbilityPopupBackdropEl = null;
     let loadoutState = null;
 
     const MIN_DECK_SIZE = 4;
@@ -1049,8 +1051,54 @@
 
         previewEmpty.style.display = 'none';
         list.guests.forEach((guestId) => {
-            previewGrid.appendChild(createDeckManageCard(guestId));
+            const card = createDeckManageCard(guestId);
+            card.addEventListener('click', () => showGuestAbilityPopup(guestId));
+            previewGrid.appendChild(card);
         });
+    }
+
+    function closeGuestAbilityPopup() {
+        if (guestAbilityPopupEl) {
+            guestAbilityPopupEl.remove();
+            guestAbilityPopupEl = null;
+        }
+        if (guestAbilityPopupBackdropEl) {
+            guestAbilityPopupBackdropEl.remove();
+            guestAbilityPopupBackdropEl = null;
+        }
+    }
+
+    function showGuestAbilityPopup(guestId) {
+        const guest = Game.GUESTS[guestId];
+        if (!guest) return;
+
+        closeGuestAbilityPopup();
+
+        guestAbilityPopupBackdropEl = document.createElement('button');
+        guestAbilityPopupBackdropEl.type = 'button';
+        guestAbilityPopupBackdropEl.className = 'guest-ability-popup-backdrop';
+        guestAbilityPopupBackdropEl.setAttribute('aria-label', 'Close guest ability popup');
+        guestAbilityPopupBackdropEl.addEventListener('click', closeGuestAbilityPopup);
+
+        guestAbilityPopupEl = document.createElement('div');
+        guestAbilityPopupEl.className = 'guest-ability-popup';
+
+        const abilityHtml = guest.ability
+            ? `<div class="guest-ability-popup-title">${guest.ability.icon} ${guest.ability.name}</div>
+               <div class="guest-ability-popup-desc">${guest.ability.desc}</div>`
+            : '<div class="guest-ability-popup-desc">No special ability.</div>';
+
+        guestAbilityPopupEl.innerHTML = `
+            <button type="button" class="guest-ability-popup-close" aria-label="Close">✕</button>
+            <div class="guest-ability-popup-name">${guest.emoji} ${guest.name}</div>
+            ${abilityHtml}
+        `;
+
+        const closeBtn = guestAbilityPopupEl.querySelector('.guest-ability-popup-close');
+        if (closeBtn) closeBtn.addEventListener('click', closeGuestAbilityPopup);
+
+        document.body.appendChild(guestAbilityPopupBackdropEl);
+        document.body.appendChild(guestAbilityPopupEl);
     }
 
     function renderGuestListManage() {
@@ -1165,6 +1213,12 @@
             }
             if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.shop-card-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
                 removeIconTooltip();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && guestAbilityPopupEl) {
+                closeGuestAbilityPopup();
             }
         });
     }
