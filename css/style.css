@@ -1233,10 +1233,11 @@ body {
     gap: 12px;
     margin-bottom: 20px;
     width: 100%;
+    flex-wrap: wrap;
 }
 
 .loadout-card {
-    flex: 1;
+    flex: 1 1 220px;
     background: var(--bg-medium);
     border: 2px solid var(--bg-light);
     border-radius: var(--radius-lg);
