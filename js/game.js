@@ -14,7 +14,7 @@ const Game = (() => {
     regular: {
       name: "Regular",
       emoji: "🙂",
-      heat: 0,
+      heat: 1,
       money: 0,
       points: 1,
       cost: 2,
@@ -26,7 +26,7 @@ const Game = (() => {
     chiller: {
       name: "Chiller",
       emoji: "❄️",
-      heat: 0,
+      heat: 1,
       money: 0,
       points: 1,
       cost: 2,
@@ -46,7 +46,7 @@ const Game = (() => {
     tipper: {
       name: "Tipper",
       emoji: "💵",
-      heat: 0,
+      heat: 1,
       money: 1,
       points: 0,
       cost: 2,
@@ -58,7 +58,7 @@ const Game = (() => {
     tipOffArtist: {
       name: "Tip-Off Artist",
       emoji: "👀",
-      heat: 0,
+      heat: 2,
       money: 1,
       points: 0,
       cost: 2,
