@@ -354,7 +354,8 @@
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
 
-        for (let i = 0; i < venue.gridSize - player.house.length; i++) {
+        const houseCapacity = Math.max(0, venue.gridSize - 1);
+        for (let i = 0; i < houseCapacity - player.house.length; i++) {
             const empty = document.createElement('div');
             empty.className = 'guest-slot empty-slot';
             slotsEl.appendChild(empty);
@@ -1287,7 +1288,7 @@
             <div class="loadout-venue-name">${venue.name}</div>
             <div class="loadout-venue-desc">${venue.desc}</div>
             <div class="loadout-venue-stats">
-                <span class="stat-tag">Grid: ${venue.gridSize}</span>
+                <span class="stat-tag">Slots: ${Math.max(0, venue.gridSize - 1)} (+ exit)</span>
                 <span class="stat-tag">Bust: ${venue.bustThreshold}</span>
                 <span class="stat-tag">${VENUE_STYLE_LABEL[venue.style]}</span>
             </div>
@@ -1342,7 +1343,7 @@
                     <h3>${venue.name}${isEquipped ? ' <span class="equipped-badge">EQUIPPED</span>' : ''}</h3>
                     <p>${venue.desc}</p>
                     <div class="venue-stats-preview">
-                        <span class="stat-tag">Grid: ${venue.gridSize}</span>
+                        <span class="stat-tag">Slots: ${Math.max(0, venue.gridSize - 1)} (+ exit)</span>
                         <span class="stat-tag">Bust: ${venue.bustThreshold}</span>
                         <span class="stat-tag">${VENUE_STYLE_LABEL[venue.style]}</span>
                     </div>

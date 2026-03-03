@@ -789,6 +789,10 @@ const Game = (() => {
     return typeof entry === "string" ? entry : entry.guestId;
   }
 
+  function getHouseCapacity(venue) {
+    return Math.max(0, (venue?.gridSize || 0) - 1);
+  }
+
   function createPlayer(name, venueId, isAI) {
     const venue = VENUES[venueId];
     return {
@@ -890,7 +894,7 @@ const Game = (() => {
     applyGuestImpact(player, player.arrivingGuest);
     let pushedOut = null;
     player.house.unshift(createHouseGuest(player.arrivingGuest));
-    if (player.house.length > venue.gridSize) pushedOut = player.house.pop();
+    if (player.house.length > getHouseCapacity(venue)) pushedOut = player.house.pop();
     return pushedOut;
   }
 
