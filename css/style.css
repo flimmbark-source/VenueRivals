@@ -935,10 +935,13 @@ body {
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(44, 182, 125, 0.4);
+    /* Keep layout spacing but hide the door-adjacent circle affordance. */
+    opacity: 0;
+    pointer-events: none;
 }
 
 .entry-admit-arrow:disabled {
-    opacity: 0.35;
+    opacity: 0;
     cursor: default;
     box-shadow: none;
 }
