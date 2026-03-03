@@ -137,6 +137,48 @@
         multiplayerSession.publish('state-sync', { gameState, currentMarket });
     }
 
+    function getLocalMarket() {
+        if (!Array.isArray(currentMarket) && currentMarket && typeof currentMarket === 'object') {
+            const marketForRole = multiplayerRole === 'join' ? currentMarket.rival : currentMarket.player;
+            return Array.isArray(marketForRole) ? marketForRole : [];
+        }
+        return Array.isArray(currentMarket) ? currentMarket : [];
+    }
+
+    function syncPanelsForState() {
+        if (!gameState) return;
+
+        if (gameState.phase === 'buy') {
+            document.getElementById('guest-phase-panel').style.display = 'none';
+            document.getElementById('round-results-panel').style.display = 'none';
+            document.getElementById('buy-phase-panel').style.display = '';
+            document.getElementById('gameover-panel').style.display = 'none';
+            renderShop();
+            return;
+        }
+
+        if (gameState.phase === 'gameover') {
+            document.getElementById('guest-phase-panel').style.display = 'none';
+            document.getElementById('round-results-panel').style.display = 'none';
+            document.getElementById('buy-phase-panel').style.display = 'none';
+            document.getElementById('gameover-panel').style.display = '';
+            return;
+        }
+
+        if (Game.bothDone(gameState)) {
+            document.getElementById('guest-phase-panel').style.display = 'none';
+            document.getElementById('round-results-panel').style.display = '';
+            document.getElementById('buy-phase-panel').style.display = 'none';
+            document.getElementById('gameover-panel').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('guest-phase-panel').style.display = '';
+        document.getElementById('round-results-panel').style.display = 'none';
+        document.getElementById('buy-phase-panel').style.display = 'none';
+        document.getElementById('gameover-panel').style.display = 'none';
+    }
+
     function mapStateToJoinPerspective(state) {
         if (!state || multiplayerRole !== 'join') return state;
 
@@ -156,6 +198,7 @@
 
     function refreshAll() {
         if (!gameState) return;
+        syncPanelsForState();
         renderHouseGrid('player');
         renderHouseGrid('rival');
         renderArrivingGuest('player');
@@ -980,7 +1023,9 @@
             }
         }
 
-        currentMarket = playerMarket;
+        currentMarket = isMultiplayer()
+            ? { player: playerMarket, rival: rivalMarket }
+            : playerMarket;
         renderShop();
 
         // Show buy panel
@@ -992,16 +1037,16 @@
 
     function renderShop() {
         const shopMoney = document.getElementById('shop-money');
-        const shopPlayer = isMultiplayer() && multiplayerRole === 'join' ? gameState.rival : gameState.player;
+        const shopPlayer = gameState.player;
         shopMoney.textContent = `\u{1F4B0} $${shopPlayer.money}`;
 
         const grid = document.getElementById('shop-grid');
         grid.innerHTML = '';
 
         const readOnlyShop = false;
-        currentMarket.forEach(guestId => {
+        getLocalMarket().forEach(guestId => {
             const guest = Game.GUESTS[guestId];
-            const shopPlayer = isMultiplayer() && multiplayerRole === 'join' ? gameState.rival : gameState.player;
+            const shopPlayer = gameState.player;
             const canAfford = !readOnlyShop && shopPlayer.money >= guest.cost;
 
             const card = document.createElement('div');
