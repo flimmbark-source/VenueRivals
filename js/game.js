@@ -790,7 +790,7 @@ const Game = (() => {
   }
 
   function getHouseCapacity(venue) {
-    return Math.max(0, venue?.gridSize || 0);
+    return Math.max(0, (venue?.gridSize || 0) - 1);
   }
 
   function createPlayer(name, venueId, isAI) {
