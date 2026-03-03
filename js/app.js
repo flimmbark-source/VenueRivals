@@ -1059,12 +1059,12 @@
         return Object.entries(Game.GUEST_LISTS).filter(([, list]) => list.venueId === venueId);
     }
 
-    function getDecksForVenue(venueId) {
-        return Object.entries(Game.DECKS).filter(([, deck]) => deck.venueId === venueId);
+    function getAllDecks() {
+        return Object.entries(Game.DECKS);
     }
 
-    function getDefaultDeckId(venueId) {
-        const decks = getDecksForVenue(venueId);
+    function getDefaultDeckId() {
+        const decks = getAllDecks();
         return decks.length ? decks[0][0] : null;
     }
 
@@ -1091,7 +1091,7 @@
 
     function initLoadout() {
         const defaultVenue = 'velvetRoom';
-        const defaultDeckId = getDefaultDeckId(defaultVenue);
+        const defaultDeckId = getDefaultDeckId();
         const defaultGuestListId = getDefaultGuestListId(defaultVenue);
         loadoutState = {
             venueId: defaultVenue,
@@ -1188,7 +1188,6 @@
             card.addEventListener('click', () => {
                 if (id !== loadoutState.venueId) {
                     loadoutState.venueId = id;
-                    applyDeck(getDefaultDeckId(id));
                     loadoutState.inventory = [...venue.market];
                     applyGuestList(getDefaultGuestListId(id));
                     selectedVenueType = id;
@@ -1230,7 +1229,7 @@
     function renderDeckManage() {
         const presetsGrid = document.getElementById('deck-presets-grid');
         const badge = document.getElementById('deck-size-badge');
-        const decks = getDecksForVenue(loadoutState.venueId);
+        const decks = getAllDecks();
 
         badge.textContent = `${decks.length} presets`;
         badge.className = 'deck-size-badge';
