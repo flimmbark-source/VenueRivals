@@ -335,7 +335,7 @@
         el.className = `guest-slot occupied-slot tier-${guest.tier}`;
         if (animate) el.classList.add('entering');
         el.innerHTML = `
-            <span class="slot-stat slot-heat">🔥 ${guest.heat}</span>
+            <span class="slot-stat slot-heat">🔥${guest.heat}</span>
             <span class="slot-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
             <span class="slot-stat slot-money">${guest.money}</span>
             ${renderAbilityBadge(guest)}
@@ -354,8 +354,12 @@
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
 
-        const houseCapacity = Math.max(0, venue.gridSize - 1);
-        for (let i = 0; i < houseCapacity - player.house.length; i++) {
+        const houseCapacity = Math.max(0, venue.gridSize);
+        // Count occupied slots: house + arriving guest
+        const occupiedCount = player.house.length + (player.arrivingGuest ? 1 : 0);
+        
+        // Render empty slots for remaining capacity
+        for (let i = 0; i < houseCapacity - occupiedCount; i++) {
             const empty = document.createElement('div');
             empty.className = 'guest-slot empty-slot';
             slotsEl.appendChild(empty);
@@ -368,63 +372,22 @@
             const slot = createGuestSlot(guestId, false);
             slotsEl.appendChild(slot);
         });
+
+        // Render arriving guest as the rightmost/newest slot
+        if (player.arrivingGuest) {
+            const slot = createGuestSlot(player.arrivingGuest, false);
+            slot.classList.add('arriving-in-grid');
+            slotsEl.appendChild(slot);
+        }
     }
 
     function renderArrivingGuest(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const arrivingEl = document.getElementById(`${who}-arriving`);
-        const arrivingKey = `${player.arrivingGuest || 'none'}:${player.doorClosed ? 'closed' : 'open'}:${player.busted ? 'busted' : 'active'}`;
-
-        // Avoid re-building identical DOM every tick so the door card does not visually refresh.
-        if (arrivingEl.dataset.renderKey === arrivingKey) {
-            renderRevealDoorIntel(who);
-            return;
-        }
-
-        arrivingEl.dataset.renderKey = arrivingKey;
+        
+        // Arriving guest is now rendered as part of the house grid, so clear the entry area
         arrivingEl.innerHTML = '';
-
-        if (player.arrivingGuest && !player.doorClosed) {
-            const guest = Game.GUESTS[player.arrivingGuest];
-            const card = document.createElement('div');
-            card.className = `arriving-guest-card${player.busted ? ' busted' : ''}`;
-            card.innerHTML = `
-                <span class="arriving-stat arriving-heat">🔥 ${guest.heat}</span>
-                <button class="arriving-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
-                <span class="arriving-stat arriving-money">${guest.money}</span>
-                ${renderAbilityBadge(guest)}
-                <span class="arriving-stat arriving-points">${guest.points}</span>
-            `;
-            card.title = `${guest.name}: ${guest.desc}`;
-
-            const emojiButton = card.querySelector('.arriving-emoji');
-            if (emojiButton && guest.ability) {
-                const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
-                bindAbilityTooltipInteractions(emojiButton, abilityMessage);
-            }
-
-            if (who === 'player' && !player.busted) {
-                card.addEventListener('click', () => handleAbility());
-            }
-            arrivingEl.appendChild(card);
-
-            if (!player.busted) {
-                const arrow = document.createElement('button');
-                arrow.className = 'entry-admit-arrow';
-                arrow.innerHTML = '←';
-                arrow.title = who === 'player' ? 'Admit guest' : 'Rival can admit this guest';
-                if (who === 'player') {
-                    arrow.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        handleAdmit();
-                    });
-                } else {
-                    arrow.disabled = true;
-                }
-                arrivingEl.appendChild(arrow);
-            }
-        }
-        renderRevealDoorIntel(who);
+        arrivingEl.dataset.renderKey = '';
     }
 
     function updateVenueStatus(who) {
@@ -522,6 +485,7 @@
 
     // === Tooltip ===
     function showTooltip(e, guestId) {
+        e.stopPropagation();
         removeTooltip();
         const guest = Game.GUESTS[guestId];
         const el = document.createElement('div');
@@ -529,16 +493,15 @@
 
         let abilityHTML = '';
         if (guest.ability) {
-            abilityHTML = `<div class="tt-ability">\u26A1 ${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
+            abilityHTML = `<div class="tt-ability">${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
         }
 
         el.innerHTML = `
             <div class="tt-name">${guest.emoji} ${guest.name}</div>
-            <div class="tt-desc">${guest.desc}</div>
             <div class="tt-stats">
-                <span class="stat-money">\u{1F4B0}${guest.money}</span>
-                <span class="stat-points">\u2B50${guest.points}</span>
-                <span class="stat-heat">\u{1F525}${guest.heat}</span>
+                <span class="stat-money">💰${guest.money}</span>
+                <span class="stat-points">⭐${guest.points}</span>
+                <span class="stat-heat">🔥${guest.heat}</span>
             </div>
             ${abilityHTML}
         `;
@@ -558,7 +521,17 @@
         el.style.left = left + 'px';
         el.style.top = top + 'px';
 
-        setTimeout(removeTooltip, 2000);
+        // Dismiss on click anywhere outside the tooltip
+        // Defer listener attachment to allow current click to finish
+        setTimeout(() => {
+            const dismissTooltip = (clickEvent) => {
+                if (tooltipEl && !el.contains(clickEvent.target)) {
+                    removeTooltip();
+                    document.removeEventListener('click', dismissTooltip);
+                }
+            };
+            document.addEventListener('click', dismissTooltip);
+        }, 0);
     }
 
     function removeTooltip() {
@@ -1288,7 +1261,7 @@
             <div class="loadout-venue-name">${venue.name}</div>
             <div class="loadout-venue-desc">${venue.desc}</div>
             <div class="loadout-venue-stats">
-                <span class="stat-tag">Slots: ${Math.max(0, venue.gridSize - 1)}</span>
+                <span class="stat-tag">Slots: ${Math.max(0, venue.gridSize)}</span>
                 <span class="stat-tag">Bust: ${venue.bustThreshold}</span>
                 <span class="stat-tag">${VENUE_STYLE_LABEL[venue.style]}</span>
             </div>
@@ -1343,7 +1316,7 @@
                     <h3>${venue.name}${isEquipped ? ' <span class="equipped-badge">EQUIPPED</span>' : ''}</h3>
                     <p>${venue.desc}</p>
                     <div class="venue-stats-preview">
-                        <span class="stat-tag">Slots: ${Math.max(0, venue.gridSize - 1)}</span>
+                        <span class="stat-tag">Slots: ${Math.max(0, venue.gridSize)}</span>
                         <span class="stat-tag">Bust: ${venue.bustThreshold}</span>
                         <span class="stat-tag">${VENUE_STYLE_LABEL[venue.style]}</span>
                     </div>
