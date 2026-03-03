@@ -31,9 +31,9 @@
     const ABLY_API_KEY = '_tDhUg.HYf2eA:VPJbNYIBgqUrolL5QzcLSyj4XRCheq3cizKtHVAtGCA';
 
     const VENUE_POOL_DESC = {
-        velvetRoom: 'Protect-and-close stars with lane locks',
-        nightMarket: 'Queue sculpting, stash economy, and tags',
-        backAlley: 'Outlaw exits, pressure, and complaint traps',
+        velvetRoom: 'Lock stars in place and close at the right moment',
+        nightMarket: 'Peek at the queue, bounce and score smart',
+        backAlley: 'Push guests out, taunt opponents, stay cool',
     };
 
     const VENUE_STYLE_LABEL = {

@@ -144,42 +144,53 @@ const AI = (() => {
     function estimateAbilityValue(rival, player, venue, playerVenue, guest) {
         if (!guest?.ability) return Number.NEGATIVE_INFINITY;
 
-        // Activating an ability consumes the current guest's baseline contribution.
-        let nextHeat = rival.heat - guest.heat;
-        let nextMoney = rival.roundMoney - guest.money;
-        let nextPoints = rival.roundPoints - guest.points;
+        // Baseline: current round value (ability includes admission).
+        let value = scoreRoundValue(rival.roundMoney, rival.roundPoints, venue);
 
         switch (guest.ability.type) {
-            case 'reduceHeat':
-                nextHeat = Math.max(0, nextHeat - guest.ability.value);
+            case 'coolHeat': {
+                // More valuable when close to busting.
+                const headroom = venue.bustThreshold - rival.heat;
+                value += headroom <= 1 ? guest.ability.value * 5 : guest.ability.value * 1.5;
                 break;
-            case 'bonusPoints':
-                nextPoints += guest.ability.value;
-                break;
-            case 'inspect':
-                nextHeat = Math.max(0, nextHeat - guest.ability.selfReduce);
-                break;
-            case 'addOpponentHeat':
-                // No direct self stat change beyond consuming the guest.
-                break;
-        }
-
-        if (nextHeat > venue.bustThreshold) {
-            nextMoney = Math.floor(nextMoney * 0.25);
-            nextPoints = Math.floor(nextPoints * 0.25);
-        }
-
-        let value = scoreRoundValue(nextMoney, nextPoints, venue);
-
-        // Add tactical pressure value for disruptive abilities.
-        if (guest.ability.type === 'addOpponentHeat' || guest.ability.type === 'inspect') {
-            const oppHeatDelta = guest.ability.oppAdd ?? guest.ability.value ?? 0;
-            const projectedOpponentHeat = player.heat + oppHeatDelta;
-            const projectedRatio = projectedOpponentHeat / playerVenue.bustThreshold;
-            value += projectedRatio * 3;
-            if (!player.doorClosed && !player.busted && projectedOpponentHeat > playerVenue.bustThreshold) {
-                value += 6;
             }
+            case 'addOpponentHeat': {
+                if (!player.doorClosed && !player.busted) {
+                    const projected = player.heat + guest.ability.value;
+                    const ratio = projected / playerVenue.bustThreshold;
+                    value += ratio * 3;
+                    if (projected > playerVenue.bustThreshold) value += 6;
+                }
+                break;
+            }
+            case 'scoreNow':
+                value += guest.ability.value * 1.5;
+                break;
+            case 'queueGatecrasher': {
+                if (!player.doorClosed && !player.busted) {
+                    const projected = player.heat + 2;
+                    const ratio = projected / playerVenue.bustThreshold;
+                    value += ratio * 3;
+                    if (projected > playerVenue.bustThreshold) value += 6;
+                }
+                break;
+            }
+            case 'revealNext':
+            case 'revealAndReorder':
+                value += 1.5;
+                break;
+            case 'pullForward':
+            case 'bounceLeftmost':
+                value += 1;
+                break;
+            case 'pushLeftmost':
+            case 'pushAnother':
+                value += 1.5;
+                break;
+            case 'lockAnother':
+            case 'lockAdjacent':
+                value += 2;
+                break;
         }
 
         return value;
@@ -194,7 +205,7 @@ const AI = (() => {
 
         // Already over threshold while this guest is at the door.
         if (rival.heat > venue.bustThreshold) {
-            if (guest.ability && (guest.ability.type === 'reduceHeat' || guest.ability.type === 'inspect')) {
+            if (guest.ability && guest.ability.type === 'coolHeat') {
                 return 'ability';
             }
             return 'close';
