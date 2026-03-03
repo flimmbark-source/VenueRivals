@@ -137,6 +137,23 @@
         multiplayerSession.publish('state-sync', { gameState, currentMarket });
     }
 
+    function mapStateToJoinPerspective(state) {
+        if (!state || multiplayerRole !== 'join') return state;
+
+        const winner = state.winner === 'player'
+            ? 'rival'
+            : state.winner === 'rival'
+                ? 'player'
+                : state.winner;
+
+        return {
+            ...state,
+            player: state.rival,
+            rival: state.player,
+            winner,
+        };
+    }
+
     function refreshAll() {
         if (!gameState) return;
         renderHouseGrid('player');
@@ -162,7 +179,11 @@
                 rivalDeck: profile.deck,
                 rivalGuestList: profile.guestList,
             });
-            multiplayerSession?.publish('match-start', { hostConfig: pendingHostMatchConfig });
+            multiplayerSession?.publish('match-start', {
+                hostConfig: pendingHostMatchConfig,
+                stateSnapshot: gameState,
+                marketSnapshot: currentMarket,
+            });
             pendingHostMatchConfig = null;
             setTimeout(closeWaitingPopup, 700);
             return;
@@ -172,18 +193,24 @@
             closeWaitingPopup();
             const hostConfig = evt.payload?.hostConfig;
             if (!hostConfig) return;
-            startGame(hostConfig.name, hostConfig.venueType, hostConfig.totalRounds, {
-                rivalName: 'You',
-                rivalVenue: loadoutState?.venueId,
-                rivalDeck: loadoutState?.deck,
-                rivalGuestList: loadoutState?.guestList,
+            const localName = document.getElementById('venue-name-input')?.value.trim() || 'My Venue';
+            startGame(escapeHtml(localName), loadoutState?.venueId || hostConfig.venueType, hostConfig.totalRounds, {
+                rivalName: hostConfig.name,
+                rivalVenue: hostConfig.venueType,
             });
+
+            if (evt.payload?.stateSnapshot) {
+                gameState = mapStateToJoinPerspective(evt.payload.stateSnapshot);
+                currentMarket = evt.payload.marketSnapshot || currentMarket;
+                refreshAll();
+            }
+
             setMultiplayerStatus('Connected!');
             return;
         }
 
         if (evt.type === 'state-sync' && evt.payload?.gameState) {
-            gameState = evt.payload.gameState;
+            gameState = mapStateToJoinPerspective(evt.payload.gameState);
             currentMarket = evt.payload.currentMarket || currentMarket;
             refreshAll();
             return;
