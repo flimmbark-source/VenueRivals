@@ -853,13 +853,15 @@ const Game = (() => {
       return false;
     }
     player.arrivingGuest = player.roundDeck.pop();
-    const guest = GUESTS[player.arrivingGuest];
+    return true;
+  }
+
+  function applyGuestImpact(player, guestId) {
+    const guest = GUESTS[guestId];
+    if (!guest) return;
     player.heat += guest.heat;
     player.roundMoney += guest.money;
     player.roundPoints += guest.points;
-    if (!skipBustCheck && venue && player.heat > venue.bustThreshold)
-      applyBustState(player);
-    return true;
   }
 
   function applyBustState(player) {
@@ -879,6 +881,7 @@ const Game = (() => {
 
   function moveArrivingGuestIntoHouse(player, venue) {
     if (!player.arrivingGuest) return null;
+    applyGuestImpact(player, player.arrivingGuest);
     let pushedOut = null;
     player.house.unshift(createHouseGuest(player.arrivingGuest));
     if (player.house.length > venue.gridSize) pushedOut = player.house.pop();
@@ -1074,10 +1077,15 @@ const Game = (() => {
   function closeDoor(player, venue, opponent = null) {
     if (player.doorClosed || player.busted) return false;
     const pushed = moveArrivingGuestIntoHouse(player, venue);
+    if (player.heat > venue.bustThreshold) applyBustState(player);
     player.doorClosed = true;
     player.phaseComplete = true;
     player.arrivingGuest = null;
-    return { closed: true, pushedOut: pushed ? getGuestId(pushed) : null };
+    return {
+      closed: true,
+      pushedOut: pushed ? getGuestId(pushed) : null,
+      busted: player.busted,
+    };
   }
 
   function bothDone(state) {
