@@ -776,14 +776,14 @@ body {
 
 .guest-slot .slot-money {
     left: 4px;
-    top: 50%;
+    top: 80%;
     transform: translateY(-50%);
     color: #2cb67d;
 }
 
 .guest-slot .slot-points {
     right: 4px;
-    top: 50%;
+    top: 80%;
     transform: translateY(-50%);
     color: #ffd166;
 }
@@ -873,14 +873,14 @@ body {
 
 .arriving-money {
     left: 4px;
-    top: 50%;
+    top: 80%;
     transform: translateY(-50%);
     color: #2cb67d;
 }
 
 .arriving-points {
     right: 4px;
-    top: 50%;
+    top: 80%;
     transform: translateY(-50%);
     color: #ffd166;
 }
