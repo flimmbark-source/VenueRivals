@@ -368,6 +368,12 @@
             const slot = createGuestSlot(guestId, false);
             slotsEl.appendChild(slot);
         });
+
+        // Mark the final slot in queue order (left-most / oldest position) with a visual X.
+        const lastSlot = slotsEl.firstElementChild;
+        if (lastSlot) {
+            lastSlot.classList.add('venue-grid-last-slot');
+        }
     }
 
     function renderArrivingGuest(who) {
