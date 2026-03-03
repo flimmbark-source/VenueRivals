@@ -560,6 +560,43 @@
         el.addEventListener('touchmove', clearPressTimer, { passive: true });
     }
 
+    function clearRevealIntel() {
+        const panel = document.getElementById('reveal-intel');
+        const body = document.getElementById('reveal-intel-body');
+        if (panel) panel.style.display = 'none';
+        if (body) body.innerHTML = '';
+    }
+
+    function showRevealIntel(actorKey, guestIds, abilityName) {
+        const panel = document.getElementById('reveal-intel');
+        const body = document.getElementById('reveal-intel-body');
+        if (!panel || !body) return;
+
+        const ids = Array.isArray(guestIds) ? guestIds.filter(Boolean) : [];
+        const label = actorKey === 'player' ? 'You' : (gameState?.rival?.name || 'Rival');
+        if (!ids.length) {
+            body.innerHTML = `<div class="reveal-intel-empty">${escapeHtml(label)} used ${escapeHtml(abilityName)}. Queue empty.</div>`;
+            panel.style.display = '';
+            return;
+        }
+
+        const cards = ids.map((guestId, idx) => {
+            const guest = Game.GUESTS[guestId];
+            if (!guest) return '';
+            return `<div class="reveal-card tier-${guest.tier}">
+                <div class="reveal-pos">${idx + 1}</div>
+                <div class="reveal-emoji">${guest.emoji}</div>
+                <div class="reveal-name">${escapeHtml(guest.name)}</div>
+            </div>`;
+        }).join('');
+
+        body.innerHTML = `
+            <div class="reveal-intel-summary">${escapeHtml(label)} used ${escapeHtml(abilityName)}.</div>
+            <div class="reveal-card-row">${cards}</div>
+        `;
+        panel.style.display = '';
+    }
+
     // === Center Feedback ===
     function showFeedback(text, type, duration) {
         const el = document.getElementById('center-feedback');
@@ -626,6 +663,7 @@
         if (!result) return;
 
         showFeedback(`⚡ ${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
+        if (result.revealedGuests) showRevealIntel(selfKey, result.revealedGuests, result.ability.name);
 
         if (result.pushedOut) {
             animateExitGuest(selfKey, result.pushedOut);
@@ -754,6 +792,7 @@
             const result = Game.activateAbility(r, p, rVenue, pVenue);
             if (!result) return;
             showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500);
+            if (result.revealedGuests) showRevealIntel('rival', result.revealedGuests, result.ability.name);
 
             // Check if player was busted
             if (p.busted) {
@@ -987,6 +1026,7 @@
 
     function startNewRound() {
         Game.startGuestPhase(gameState);
+        clearRevealIntel();
 
         showFeedback(`ROUND ${gameState.round}`, 'points', 1500);
 

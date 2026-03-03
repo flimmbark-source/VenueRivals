@@ -980,6 +980,69 @@ body {
     font-size: 0.85rem;
 }
 
+.reveal-intel {
+    margin: 2px 12px 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(76, 201, 240, 0.35);
+    background: rgba(76, 201, 240, 0.08);
+}
+
+.reveal-intel-header {
+    font-size: 0.68rem;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    color: var(--accent-blue);
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.reveal-intel-summary {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.reveal-card-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.reveal-card {
+    min-width: 82px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(15, 14, 23, 0.72);
+    border: 1px solid rgba(255,255,255,0.12);
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    gap: 6px;
+}
+
+.reveal-pos {
+    font-size: 0.7rem;
+    color: var(--accent-gold);
+    font-weight: 700;
+}
+
+.reveal-emoji {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.reveal-name {
+    font-size: 0.72rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.reveal-intel-empty {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
 /* === Bottom Panel === */
 .bottom-panel {
     flex: 1;
