@@ -1086,16 +1086,10 @@ const Game = (() => {
 
   function closeDoor(player, venue, opponent = null) {
     if (player.doorClosed || player.busted) return false;
-    const pushed = moveArrivingGuestIntoHouse(player, venue);
-    if (player.heat > venue.bustThreshold) applyBustState(player);
+    player.arrivingGuest = null;
     player.doorClosed = true;
     player.phaseComplete = true;
-    player.arrivingGuest = null;
-    return {
-      closed: true,
-      pushedOut: pushed ? getGuestId(pushed) : null,
-      busted: player.busted,
-    };
+    return { closed: true, pushedOut: null, busted: false };
   }
 
   function bothDone(state) {
