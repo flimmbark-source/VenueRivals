@@ -853,13 +853,19 @@ const Game = (() => {
       return false;
     }
     player.arrivingGuest = player.roundDeck.pop();
+    const guest = GUESTS[player.arrivingGuest];
+    if (guest) {
+      player.heat += guest.heat;
+      if (!skipBustCheck && player.heat > venue.bustThreshold) {
+        applyBustState(player);
+      }
+    }
     return true;
   }
 
   function applyGuestImpact(player, guestId) {
     const guest = GUESTS[guestId];
     if (!guest) return;
-    player.heat += guest.heat;
     player.roundMoney += guest.money;
     player.roundPoints += guest.points;
   }
