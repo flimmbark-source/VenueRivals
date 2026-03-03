@@ -31,8 +31,6 @@ const AI = (() => {
             let heat = 0;
             let money = 0;
             let points = 0;
-            let activeGuests = 0;
-
             for (let j = 0; j < drawOrder.length; j++) {
                 const guest = Game.GUESTS[drawOrder[j]];
                 heat += guest.heat;
@@ -44,9 +42,6 @@ const AI = (() => {
                     points = Math.floor(points * 0.25);
                     break;
                 }
-
-                activeGuests += 1;
-                if (activeGuests >= venue.gridSize) break;
             }
 
             totalScore += scoreRoundValue(money, points, venue);
