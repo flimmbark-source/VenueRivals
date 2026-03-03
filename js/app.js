@@ -354,11 +354,6 @@
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
 
-        const exitSlot = document.createElement('div');
-        exitSlot.className = 'guest-slot empty-slot exit-slot';
-        exitSlot.title = 'Exit slot';
-        slotsEl.appendChild(exitSlot);
-
         const houseCapacity = Math.max(0, venue.gridSize - 1);
         for (let i = 0; i < houseCapacity - player.house.length; i++) {
             const empty = document.createElement('div');
