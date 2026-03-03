@@ -107,11 +107,10 @@ const AI = (() => {
         return scoreRoundValue(money, points, venue);
     }
 
-    function estimateAdmitVsCloseValue(rival, venue) {
+    function estimateAdmitVsCloseValue(rival, venue, guest) {
         const closeValue = scoreRoundValue(rival.roundMoney, rival.roundPoints, venue);
 
-        // If no deck remains, admitting and closing are equivalent.
-        if (rival.roundDeck.length === 0) {
+        if (!guest) {
             return { closeValue, admitValue: closeValue };
         }
 
@@ -119,10 +118,9 @@ const AI = (() => {
         for (let i = 0; i < MONTE_CARLO_RUNS; i++) {
             const orderedDeck = shuffleCopy(rival.roundDeck);
 
-            const nextGuest = Game.GUESTS[orderedDeck[0]];
-            let heat = rival.heat + nextGuest.heat;
-            let money = rival.roundMoney + nextGuest.money;
-            let points = rival.roundPoints + nextGuest.points;
+            let heat = rival.heat + guest.heat;
+            let money = rival.roundMoney + guest.money;
+            let points = rival.roundPoints + guest.points;
 
             if (heat > venue.bustThreshold) {
                 money = Math.floor(money * 0.25);
@@ -131,8 +129,7 @@ const AI = (() => {
                 continue;
             }
 
-            const remainder = orderedDeck.slice(1);
-            admitTotal += estimateRolloutFromDoorState({ heat, money, points }, remainder, venue);
+            admitTotal += estimateRolloutFromDoorState({ heat, money, points }, orderedDeck, venue);
         }
 
         return {
@@ -140,6 +137,7 @@ const AI = (() => {
             admitValue: admitTotal / MONTE_CARLO_RUNS,
         };
     }
+
 
     function estimateAbilityValue(rival, player, venue, playerVenue, guest) {
         if (!guest?.ability) return Number.NEGATIVE_INFINITY;
@@ -204,7 +202,7 @@ const AI = (() => {
         if (!guest) return 'close';
 
         // Already over threshold while this guest is at the door.
-        if (rival.heat > venue.bustThreshold) {
+        if ((rival.heat + guest.heat) > venue.bustThreshold) {
             if (guest.ability && guest.ability.type === 'coolHeat') {
                 return 'ability';
             }
@@ -212,13 +210,13 @@ const AI = (() => {
         }
 
         // Early-round tempo: avoid closing immediately unless pressure is already high.
-        const remainingHeatBuffer = venue.bustThreshold - rival.heat;
+        const remainingHeatBuffer = venue.bustThreshold - (rival.heat + guest.heat);
         if (rival.house.length < 2 && remainingHeatBuffer >= 2) {
             return 'admit';
         }
 
         // Monte Carlo decision between admitting, ability usage, and banking current value.
-        const values = estimateAdmitVsCloseValue(rival, venue);
+        const values = estimateAdmitVsCloseValue(rival, venue, guest);
         const abilityValue = estimateAbilityValue(rival, player, venue, playerVenue, guest);
 
         if (abilityValue >= values.admitValue && abilityValue >= values.closeValue) {
