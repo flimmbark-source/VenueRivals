@@ -445,7 +445,7 @@ const Game = (() => {
     wheelman: {
       name: "Wheelman",
       emoji: "🚗",
-      heat: 1,
+      heat: 3,
       money: 4,
       points: 1,
       cost: 8,
@@ -464,7 +464,7 @@ const Game = (() => {
     fence: {
       name: "Fence",
       emoji: "🧰",
-      heat: 1,
+      heat: 3,
       money: 3,
       points: 0,
       cost: 5,
@@ -484,7 +484,7 @@ const Game = (() => {
     provocateur: {
       name: "Provocateur",
       emoji: "😈",
-      heat: 1,
+      heat: 2,
       money: 1,
       points: 3,
       cost: 5,
@@ -515,13 +515,41 @@ const Game = (() => {
       desc: "Trouble. No special move.",
       tier: "common",
     },
+
+    // === SHOP ITEMS ===
+    slotIncrease: {
+      name: "+1 Slot",
+      emoji: "📦",
+      money: 0,
+      heat: 0,
+      points: 0,
+      cost: 3,
+      venue: "Shop",
+      tags: [],
+      desc: "Increase your house capacity by 1.",
+      tier: "shop",
+      isShopItem: true,
+    },
+    heatCapIncrease: {
+      name: "+1 🔥 Cap",
+      emoji: "🌡️",
+      money: 0,
+      heat: 0,
+      points: 0,
+      cost: 4,
+      venue: "Shop",
+      tags: [],
+      desc: "Increase your heat capacity by 1.",
+      tier: "shop",
+      isShopItem: true,
+    },
   };
 
   const VENUES = {
     velvetRoom: {
       name: "Velvet Room",
       emoji: "🥂",
-      gridSize: 5,
+      gridSize: 2,
       bustThreshold: 6,
       desc: "Lock the star in place and close at the perfect moment.",
       style: "points",
@@ -549,7 +577,7 @@ const Game = (() => {
     nightMarket: {
       name: "Night Market",
       emoji: "🏮",
-      gridSize: 4,
+      gridSize: 3,
       bustThreshold: 5,
       desc: "Peek at the queue, reorder guests, and score at the right time.",
       style: "money",
@@ -577,8 +605,8 @@ const Game = (() => {
     backAlley: {
       name: "Back Alley",
       emoji: "🕳️",
-      gridSize: 6,
-      bustThreshold: 7,
+      gridSize: 4,
+      bustThreshold: 4,
       desc: "Push guests out, taunt opponents with heat, and stay cool under fire.",
       style: "control",
       color: "#2cb67d",
@@ -750,8 +778,6 @@ const Game = (() => {
         "hypeFriend",
         "hypeFriend",
         "bigSpender",
-        "bigSpender",
-        "celebrity",
       ],
     },
     velvetClassic: {
@@ -789,10 +815,13 @@ const Game = (() => {
     return typeof entry === "string" ? entry : entry.guestId;
   }
 
-  function getHouseCapacity(venue) {
+  function getHouseCapacity(venue, player) {
     // House capacity matches the visible grid size; arriving guest is
     // rendered into the grid now, so don't subtract 1.
-    return Math.max(0, (venue?.gridSize || 0));
+    // Add any permanent slot increases the player has purchased.
+    const baseCapacity = Math.max(0, (venue?.gridSize || 0));
+    const slotBonus = player?.slotIncrease || 0;
+    return baseCapacity + slotBonus;
   }
 
   function createPlayer(name, venueId, isAI) {
@@ -814,6 +843,9 @@ const Game = (() => {
       doorClosed: false,
       busted: false,
       phaseComplete: false,
+      slotIncrease: 0,
+      heatCapBonus: 0,
+      shopItemPurchases: { slotIncrease: 0, heatCapIncrease: 0 },
     };
   }
   function createGameState(
@@ -847,17 +879,30 @@ const Game = (() => {
       p.busted = false;
       p.phaseComplete = false;
     });
+    // ignore pendingOut at round start; there should be none
     drawNextGuest(state.player, VENUES[state.player.venueId]);
     drawNextGuest(state.rival, VENUES[state.rival.venueId]);
   }
 
+  // returns object indicating whether a card was drawn and, if the house
+  // is already full, the ID of the guest who will be pushed out the next time
+  // the arriving guest is admitted.
   function drawNextGuest(player, venue, skipBustCheck = false) {
     if (player.roundDeck.length === 0) {
       player.arrivingGuest = null;
       player.phaseComplete = true;
       player.doorClosed = true;
-      return false;
+      return { success: false, pendingOut: null };
     }
+
+    // determine potential overflow candidate before drawing
+    let pendingOut = null;
+    const capacity = getHouseCapacity(venue, player);
+    if (player.house.length >= capacity) {
+      const lastEntry = player.house[player.house.length - 1];
+      pendingOut = getGuestId(lastEntry);
+    }
+
     player.arrivingGuest = player.roundDeck.pop();
     const guest = GUESTS[player.arrivingGuest];
     if (guest) {
@@ -866,7 +911,7 @@ const Game = (() => {
         applyBustState(player);
       }
     }
-    return true;
+    return { success: true, pendingOut };
   }
 
   function applyGuestImpact(player, guestId) {
@@ -883,21 +928,16 @@ const Game = (() => {
     player.roundPoints = Math.floor(player.roundPoints * BUST_PENALTY);
   }
 
-  function getLockedIndexes(player) {
-    const locked = new Set();
-    player.house.forEach((entry, idx) => {
-      if (entry.lockUntilClose) locked.add(idx);
-    });
-    return locked;
-  }
-
   function moveArrivingGuestIntoHouse(player, venue) {
-    if (!player.arrivingGuest) return null;
+    if (!player.arrivingGuest) return [];
     applyGuestImpact(player, player.arrivingGuest);
-    let pushedOut = null;
+    const popped = [];
     player.house.unshift(createHouseGuest(player.arrivingGuest));
-    if (player.house.length > getHouseCapacity(venue)) pushedOut = player.house.pop();
-    return pushedOut;
+    // trim to capacity, collecting every removed guest
+    while (player.house.length > getHouseCapacity(venue, player)) {
+      popped.push(player.house.pop());
+    }
+    return popped;
   }
 
   function getEffectiveTagsForEntry(player, index) {
@@ -930,19 +970,23 @@ const Game = (() => {
     const guestId = player.arrivingGuest;
     const result = {
       admitted: guestId,
-      pushedOut: null,
+      pushedOut: [],
+      pendingOut: null,
       busted: false,
       effects: [],
     };
     const pushed = moveArrivingGuestIntoHouse(player, venue);
-    if (pushed) result.pushedOut = getGuestId(pushed);
+    if (pushed.length) result.pushedOut = pushed.map(getGuestId);
     if (player.heat > venue.bustThreshold) {
       result.busted = true;
       applyBustState(player);
     }
     player.arrivingGuest = null;
     if (!result.busted) {
-      drawNextGuest(player, venue);
+      const drawRes = drawNextGuest(player, venue);
+      if (drawRes.pendingOut) {
+        result.pendingOut = drawRes.pendingOut;
+      }
       if (player.busted) result.busted = true;
     }
     return result;
@@ -961,6 +1005,7 @@ const Game = (() => {
       ability: guest.ability,
       effects: [...(admitted.effects || [])],
       pushedOut: admitted.pushedOut,
+      pendingOut: admitted.pendingOut,
       busted: admitted.busted,
     };
 
@@ -1096,7 +1141,7 @@ const Game = (() => {
     player.arrivingGuest = null;
     return {
       closed: true,
-      pushedOut: pushed ? getGuestId(pushed) : null,
+      pushedOut: pushed.map(getGuestId),
       busted: player.busted,
     };
   }
@@ -1112,6 +1157,11 @@ const Game = (() => {
         p.house.unshift(createHouseGuest(p.arrivingGuest));
         applyGuestImpact(p, p.arrivingGuest);
         p.arrivingGuest = null;
+        // Remove guests exceeding capacity
+        const venue = VENUES[p.venueId];
+        while (p.house.length > getHouseCapacity(venue, p)) {
+          p.house.pop();
+        }
       }
       p.money += p.roundMoney;
       p.points += p.roundPoints;
@@ -1127,23 +1177,43 @@ const Game = (() => {
     });
 
     const marketPool = [...new Set([...venue.market, ...neutralGuests])].filter(
-      (guestId) => !!GUESTS[guestId],
+      (guestId) => !!GUESTS[guestId] && !GUESTS[guestId].isShopItem,
     );
 
-    return marketPool
-      .sort((a, b) => {
-        const costDiff = GUESTS[a].cost - GUESTS[b].cost;
-        if (costDiff !== 0) return costDiff;
-        return GUESTS[a].name.localeCompare(GUESTS[b].name);
-      })
-      .slice(0, 8);
+    // Shuffle and take 6 random guests from the pool
+    const shuffled = shuffle(marketPool);
+    const randomGuests = shuffled.slice(0, 6);
+
+    // Always add the two shop items at the end
+    return [...randomGuests, 'slotIncrease', 'heatCapIncrease'];
   }
   function buyGuest(player, guestId) {
     const guest = GUESTS[guestId];
     if (!guest) return false;
-    if (player.money < guest.cost) return false;
-    player.money -= guest.cost;
-    player.fullDeck.push(guestId);
+
+    // Calculate cost for shop items (dynamic pricing)
+    let cost = guest.cost;
+    if (guestId === 'slotIncrease') {
+      cost = 3 + (player.shopItemPurchases.slotIncrease * 2);
+    } else if (guestId === 'heatCapIncrease') {
+      cost = 4 + (player.shopItemPurchases.heatCapIncrease * 3);
+    }
+
+    if (player.money < cost) return false;
+    player.money -= cost;
+
+    // Handle shop items specially
+    if (guest.isShopItem) {
+      if (guestId === 'slotIncrease') {
+        player.slotIncrease += 1;
+        player.shopItemPurchases.slotIncrease += 1;
+      } else if (guestId === 'heatCapIncrease') {
+        player.heatCapBonus += 1;
+        player.shopItemPurchases.heatCapIncrease += 1;
+      }
+    } else {
+      player.fullDeck.push(guestId);
+    }
     return true;
   }
   function endBuyPhase(state) {
@@ -1189,5 +1259,6 @@ const Game = (() => {
     getMarket,
     buyGuest,
     endBuyPhase,
+    getHouseCapacity,
   };
 })();

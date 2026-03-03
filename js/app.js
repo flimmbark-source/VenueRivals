@@ -365,6 +365,7 @@
         const guest = Game.GUESTS[guestId];
         const el = document.createElement('div');
         el.className = `guest-slot occupied-slot tier-${guest.tier}`;
+        el.dataset.guestId = guestId;
         if (animate) el.classList.add('entering');
         el.innerHTML = `
             <span class="slot-stat slot-heat">🔥${guest.heat}</span>
@@ -386,9 +387,9 @@
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
 
-        const houseCapacity = Math.max(0, venue.gridSize);
-        // Count occupied slots: house + arriving guest
-        const occupiedCount = player.house.length + (player.arrivingGuest ? 1 : 0);
+        const houseCapacity = Game.getHouseCapacity(venue, player);
+        // Count occupied slots: house + arriving guest (cap to capacity for empties)
+        const occupiedCount = Math.min(player.house.length, houseCapacity) + (player.arrivingGuest ? 1 : 0);
         
         // Render empty slots for remaining capacity
         for (let i = 0; i < houseCapacity - occupiedCount; i++) {
@@ -397,8 +398,11 @@
             slotsEl.appendChild(empty);
         }
 
-        // Render oldest to newest (house[0] is newest, so reverse)
-        const guests = [...player.house].reverse();
+        // Render oldest-to-newest but only up to capacity
+        let guests = [...player.house].reverse();
+        if (guests.length > houseCapacity) {
+            guests = guests.slice(guests.length - houseCapacity);
+        }
         guests.forEach((entry) => {
             const guestId = entry.guestId || entry;
             const slot = createGuestSlot(guestId, false);
@@ -443,7 +447,9 @@
 
     function animateExitGuest(who, guestId) {
         const exitDoor = document.querySelector(`#${who}-area .exit-door`);
-        const sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
+        // try to find the slot containing the specific guestId; fall back to first occupied
+        let sourceSlot = document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`);
+        if (!sourceSlot) sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
         if (!exitDoor || !sourceSlot) return;
 
         const ghost = createGuestSlot(guestId, false);
@@ -781,8 +787,8 @@
         const result = Game.admitGuest(self, venue, opponent, Game.VENUES[opponent.venueId]);
         if (!result) return;
 
-        if (result.pushedOut) {
-            animateExitGuest(selfKey, result.pushedOut);
+        if (result.pushedOut && result.pushedOut.length) {
+            result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
         }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
@@ -910,8 +916,8 @@
             roundPoints: gameState.player.roundPoints,
         };
         const result = Game.closeDoor(self, venue, opponent);
-        if (result?.pushedOut) {
-            animateExitGuest(selfKey, result.pushedOut);
+        if (result?.pushedOut && result.pushedOut.length) {
+            result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
         }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
@@ -996,8 +1002,8 @@
             const result = Game.admitGuest(r, rVenue, gameState.player, Game.VENUES[gameState.player.venueId]);
             if (!result) return;
 
-            if (result.pushedOut) {
-                animateExitGuest('rival', result.pushedOut);
+            if (result.pushedOut && result.pushedOut.length) {
+                result.pushedOut.forEach(id => animateExitGuest('rival', id));
             }
             // Only re-render rival grid if their house visibly changed
             if (gameState.rival.house.length !== rivalHouseSnapshot) {
@@ -1176,7 +1182,16 @@
         getLocalMarket().forEach(guestId => {
             const guest = Game.GUESTS[guestId];
             const shopPlayer = gameState.player;
-            const canAfford = !readOnlyShop && shopPlayer.money >= guest.cost;
+
+            // Calculate cost for shop items (dynamic pricing)
+            let cost = guest.cost;
+            if (guestId === 'slotIncrease') {
+                cost = 3 + (shopPlayer.shopItemPurchases.slotIncrease * 2);
+            } else if (guestId === 'heatCapIncrease') {
+                cost = 4 + (shopPlayer.shopItemPurchases.heatCapIncrease * 3);
+            }
+
+            const canAfford = !readOnlyShop && shopPlayer.money >= cost;
 
             const card = document.createElement('div');
             card.className = 'shop-card' + (canAfford ? '' : ' disabled');
@@ -1190,7 +1205,7 @@
                     <span class="shop-card-stat shop-card-points">${guest.points}</span>
                 </div>
                 <div class="shop-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
-                <div class="shop-card-cost">$${guest.cost}</div>
+                <div class="shop-card-cost">$${cost}</div>
             `;
 
             const shopEmoji = card.querySelector('.shop-card-emoji');
