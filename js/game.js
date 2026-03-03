@@ -833,7 +833,7 @@ const Game = (() => {
     [state.player, state.rival].forEach((p) => {
       const equippedDeck = p.fullDeck?.length ? p.fullDeck : p.guestList;
       p.roundDeck = shuffle(equippedDeck || []);
-      p.house = [];
+      // Don't clear house - preserve guests from previous round
       p.arrivingGuest = null;
       p.roundMoney = 0;
       p.roundPoints = 0;
@@ -927,6 +927,13 @@ const Game = (() => {
       effects: [],
     };
     moveArrivingGuestIntoHouse(player);
+    // If house exceeds venue capacity, remove the rightmost (oldest) guest
+    // and mark it as pushed out so the UI can animate the exit.
+    const capacity = venue?.gridSize || 0;
+    if (capacity > 0 && player.house.length > capacity) {
+      const exited = player.house.pop();
+      result.pushedOut = getGuestId(exited);
+    }
     if (player.heat > venue.bustThreshold) {
       result.busted = true;
       applyBustState(player);
@@ -1030,8 +1037,10 @@ const Game = (() => {
       }
       case "pushLeftmost": {
         const exiting = pushLeftmost(player);
-        if (exiting)
+        if (exiting) {
           result.effects.push(`pushed ${GUESTS[getGuestId(exiting)].name}`);
+          result.pushedOut = getGuestId(exiting);
+        }
         break;
       }
       case "pushAnother": {
@@ -1041,6 +1050,7 @@ const Game = (() => {
           if (locked.has(i)) continue;
           const exiting = player.house.splice(i, 1)[0];
           result.effects.push(`pushed ${GUESTS[getGuestId(exiting)].name}`);
+          result.pushedOut = getGuestId(exiting);
           pushed = true;
           break;
         }
@@ -1077,7 +1087,12 @@ const Game = (() => {
 
   function closeDoor(player, venue, opponent = null) {
     if (player.doorClosed || player.busted) return false;
-    player.arrivingGuest = null;
+    // Move arriving guest into the house before closing so it stays in the grid
+    if (player.arrivingGuest) {
+      player.house.unshift(createHouseGuest(player.arrivingGuest));
+      applyGuestImpact(player, player.arrivingGuest);
+      player.arrivingGuest = null;
+    }
     player.doorClosed = true;
     player.phaseComplete = true;
     return { closed: true, pushedOut: null, busted: false };
@@ -1088,6 +1103,13 @@ const Game = (() => {
   }
   function endGuestPhase(state) {
     [state.player, state.rival].forEach((p) => {
+      // If there's an arriving guest still waiting, move them into the house
+      // so they persist to the next round
+      if (p.arrivingGuest) {
+        p.house.unshift(createHouseGuest(p.arrivingGuest));
+        applyGuestImpact(p, p.arrivingGuest);
+        p.arrivingGuest = null;
+      }
       p.money += p.roundMoney;
       p.points += p.roundPoints;
     });
@@ -1133,6 +1155,12 @@ const Game = (() => {
             ? "player"
             : "rival";
     } else {
+      // Clear venue grids just before the next round begins so guests
+      // are removed from the house at the round boundary.
+      [state.player, state.rival].forEach((p) => {
+        p.house = [];
+        p.arrivingGuest = null;
+      });
       state.round++;
       state.phase = "guest";
     }
