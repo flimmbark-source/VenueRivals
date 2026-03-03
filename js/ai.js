@@ -139,6 +139,13 @@ const AI = (() => {
     function estimateAbilityValue(rival, player, venue, playerVenue, guest) {
         if (!guest?.ability) return Number.NEGATIVE_INFINITY;
 
+        // Flash abilities trigger only after the guest is admitted. If admitting this
+        // guest would bust immediately, the ability cannot save the round value.
+        const projectedHeat = rival.heat + guest.heat;
+        if (projectedHeat > venue.bustThreshold) {
+            return Number.NEGATIVE_INFINITY;
+        }
+
         // Baseline: current round value (ability includes admission).
         let value = scoreRoundValue(rival.roundMoney, rival.roundPoints, venue);
 
@@ -203,6 +210,11 @@ const AI = (() => {
             if (guest.ability && guest.ability.type === 'coolHeat') {
                 return 'ability';
             }
+            return 'close';
+        }
+
+        // Never intentionally admit a guest that causes an immediate bust.
+        if ((rival.heat + guest.heat) > venue.bustThreshold) {
             return 'close';
         }
 
