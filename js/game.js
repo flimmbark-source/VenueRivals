@@ -895,12 +895,14 @@ const Game = (() => {
       return { success: false, pendingOut: null };
     }
 
-    // determine potential overflow candidate before drawing
+    // If the house is currently full, the oldest visible guest has already
+    // reached the exit slot. Remove them immediately so the arriving guest can
+    // occupy that grid slot.
     let pendingOut = null;
     const capacity = getHouseCapacity(venue, player);
-    if (player.house.length >= capacity) {
-      const lastEntry = player.house[player.house.length - 1];
-      pendingOut = getGuestId(lastEntry);
+    if (capacity >= 0 && player.house.length >= capacity && player.house.length) {
+      const exiting = player.house.pop();
+      pendingOut = getGuestId(exiting);
     }
 
     player.arrivingGuest = player.roundDeck.pop();

@@ -790,6 +790,9 @@
         if (result.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
         }
+        if (result.pendingOut) {
+            animateExitGuest(selfKey, result.pendingOut);
+        }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
         // Only refresh player detail if the action was by the player, or
@@ -854,6 +857,9 @@
 
         if (result.pushedOut) {
             animateExitGuest(selfKey, result.pushedOut);
+        }
+        if (result.pendingOut) {
+            animateExitGuest(selfKey, result.pendingOut);
         }
 
         renderHouseGrid(selfKey);
@@ -1005,6 +1011,9 @@
             if (result.pushedOut && result.pushedOut.length) {
                 result.pushedOut.forEach(id => animateExitGuest('rival', id));
             }
+            if (result.pendingOut) {
+                animateExitGuest('rival', result.pendingOut);
+            }
             // Only re-render rival grid if their house visibly changed
             if (gameState.rival.house.length !== rivalHouseSnapshot) {
                 renderHouseGrid('rival');
@@ -1022,6 +1031,12 @@
             if (!result) return;
             showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500);
             if (result.revealedGuests) setRevealDoorIntel('rival', result.revealedGuests);
+            if (result.pushedOut) {
+                animateExitGuest('rival', result.pushedOut);
+            }
+            if (result.pendingOut) {
+                animateExitGuest('rival', result.pendingOut);
+            }
 
             // Check if player was busted
             if (p.busted) {
