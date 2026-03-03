@@ -354,7 +354,7 @@
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
 
-        const houseCapacity = Math.max(0, venue.gridSize - 1);
+        const houseCapacity = Game.getHouseCapacity(venue);
         for (let i = 0; i < houseCapacity - player.house.length; i++) {
             const empty = document.createElement('div');
             empty.className = 'guest-slot empty-slot';
@@ -369,11 +369,6 @@
             slotsEl.appendChild(slot);
         });
 
-        // Mark the final slot in queue order (left-most / oldest position) with a visual X.
-        const lastSlot = slotsEl.firstElementChild;
-        if (lastSlot) {
-            lastSlot.classList.add('venue-grid-last-slot');
-        }
     }
 
     function renderArrivingGuest(who) {
@@ -1294,7 +1289,7 @@
             <div class="loadout-venue-name">${venue.name}</div>
             <div class="loadout-venue-desc">${venue.desc}</div>
             <div class="loadout-venue-stats">
-                <span class="stat-tag">Slots: ${Math.max(0, venue.gridSize - 1)}</span>
+                <span class="stat-tag">Slots: ${Game.getHouseCapacity(venue)}</span>
                 <span class="stat-tag">Bust: ${venue.bustThreshold}</span>
                 <span class="stat-tag">${VENUE_STYLE_LABEL[venue.style]}</span>
             </div>
@@ -1349,7 +1344,7 @@
                     <h3>${venue.name}${isEquipped ? ' <span class="equipped-badge">EQUIPPED</span>' : ''}</h3>
                     <p>${venue.desc}</p>
                     <div class="venue-stats-preview">
-                        <span class="stat-tag">Slots: ${Math.max(0, venue.gridSize - 1)}</span>
+                        <span class="stat-tag">Slots: ${Game.getHouseCapacity(venue)}</span>
                         <span class="stat-tag">Bust: ${venue.bustThreshold}</span>
                         <span class="stat-tag">${VENUE_STYLE_LABEL[venue.style]}</span>
                     </div>
