@@ -789,9 +789,6 @@ const Game = (() => {
     return typeof entry === "string" ? entry : entry.guestId;
   }
 
-  function getHouseCapacity(venue) {
-    return Math.max(0, (venue?.gridSize || 0) - 1);
-  }
 
   function createPlayer(name, venueId, isAI) {
     const venue = VENUES[venueId];
@@ -889,13 +886,10 @@ const Game = (() => {
     return locked;
   }
 
-  function moveArrivingGuestIntoHouse(player, venue) {
-    if (!player.arrivingGuest) return null;
+  function moveArrivingGuestIntoHouse(player) {
+    if (!player.arrivingGuest) return;
     applyGuestImpact(player, player.arrivingGuest);
-    let pushedOut = null;
     player.house.unshift(createHouseGuest(player.arrivingGuest));
-    if (player.house.length > getHouseCapacity(venue)) pushedOut = player.house.pop();
-    return pushedOut;
   }
 
   function getEffectiveTagsForEntry(player, index) {
@@ -932,10 +926,7 @@ const Game = (() => {
       busted: false,
       effects: [],
     };
-    const pushed = moveArrivingGuestIntoHouse(player, venue);
-    if (pushed) {
-      result.pushedOut = getGuestId(pushed);
-    }
+    moveArrivingGuestIntoHouse(player);
     if (player.heat > venue.bustThreshold) {
       result.busted = true;
       applyBustState(player);
