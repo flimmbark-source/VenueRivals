@@ -19,6 +19,8 @@
     let guestAbilityPopupEl = null;
     let guestAbilityPopupBackdropEl = null;
     let loadoutState = null;
+    // cache the last rendered guest detail to avoid unnecessary refreshes
+    let _lastGuestDetailKey = null;
     let multiplayerSession = null;
     let multiplayerMode = 'single';
     let multiplayerRole = 'host';
@@ -253,9 +255,39 @@
         }
 
         if (evt.type === 'state-sync' && evt.payload?.gameState) {
-            gameState = mapStateToJoinPerspective(evt.payload.gameState);
+            const incoming = mapStateToJoinPerspective(evt.payload.gameState);
+            const prevPlayerKey = gameState ? `${gameState.player.arrivingGuest || ''}|${gameState.player.doorClosed}|${gameState.player.busted}|${gameState.player.heat}|${gameState.player.roundMoney}|${gameState.player.roundPoints}|${gameState.player.house.length}` : null;
+            const prevRivalKey = gameState ? `${gameState.rival.arrivingGuest || ''}|${gameState.rival.doorClosed}|${gameState.rival.busted}|${gameState.rival.heat}|${gameState.rival.house.length}` : null;
+            const prevPhase = gameState ? gameState.phase : null;
+            const newPlayerKey = `${incoming.player.arrivingGuest || ''}|${incoming.player.doorClosed}|${incoming.player.busted}|${incoming.player.heat}|${incoming.player.roundMoney}|${incoming.player.roundPoints}|${incoming.player.house.length}`;
+            const newRivalKey = `${incoming.rival.arrivingGuest || ''}|${incoming.rival.doorClosed}|${incoming.rival.busted}|${incoming.rival.heat}|${incoming.rival.house.length}`;
+
+            gameState = incoming;
             currentMarket = evt.payload.currentMarket || currentMarket;
-            refreshAll();
+
+            // Only sync panels if phase actually changed (can trigger layout recalcs)
+            if (prevPhase !== gameState.phase) {
+                syncPanelsForState();
+            }
+
+            // Only update HUD if game structure or round changed
+            if (prevRivalKey !== newRivalKey || prevPhase !== gameState.phase) {
+                updateHUD();
+            }
+
+            // Only re-render rival UI if their state actually changed
+            if (prevRivalKey !== newRivalKey) {
+                renderHouseGrid('rival');
+                updateVenueStatus('rival');
+            }
+
+            // Only re-render player UI if their state actually changed
+            if (prevPlayerKey !== newPlayerKey) {
+                renderHouseGrid('player');
+                renderArrivingGuest('player');
+                updateGuestDetail();
+                updateVenueStatus('player');
+            }
             return;
         }
 
@@ -323,7 +355,7 @@
 
     function renderAbilityBadge(guest) {
         if (!guest.ability) return '';
-        const icon = escapeHtml(guest.ability.icon || '⚡');
+        const icon = escapeHtml(guest.ability.icon || '');
         return `<span class="ability-icon-badge" aria-label="${escapeHtml(guest.ability.name || 'Ability')}" title="${escapeHtml(guest.ability.name || 'Ability')}">${icon}</span>`;
     }
 
@@ -440,12 +472,23 @@
     function updateGuestDetail() {
         const detailEl = document.getElementById('guest-detail');
         const p = gameState.player;
+        // Avoid re-rendering if player's arriving state and visible stats haven't changed
+        const key = `${p.arrivingGuest || ''}|${p.doorClosed}|${p.busted}|${p.heat}|${p.roundMoney}|${p.roundPoints}`;
+        if (key === _lastGuestDetailKey) return;
+        _lastGuestDetailKey = key;
 
         if (!p.arrivingGuest || p.doorClosed || p.busted) {
-            detailEl.innerHTML = '<div class="guest-detail-empty">' +
-                (p.busted ? 'You busted! Round over.' :
-                 p.doorClosed ? 'Door closed. Waiting for rival...' :
-                 'No more guests.') + '</div>';
+            const emptyText = p.busted ? 'You busted! Round over.' :
+                p.doorClosed ? 'Door closed. Waiting for rival...' :
+                'No more guests.';
+            const curEmpty = detailEl.querySelector('.guest-detail-empty');
+            if (curEmpty && curEmpty.textContent === emptyText) {
+                document.getElementById('btn-admit').disabled = true;
+                document.getElementById('btn-ability').disabled = true;
+                document.getElementById('btn-close-door').disabled = true;
+                return;
+            }
+            detailEl.innerHTML = '<div class="guest-detail-empty">' + emptyText + '</div>';
             document.getElementById('btn-admit').disabled = true;
             document.getElementById('btn-ability').disabled = true;
             document.getElementById('btn-close-door').disabled = true;
@@ -461,12 +504,26 @@
             abilityHTML = `<div class="guest-detail-ability">\u26A1 ${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
         }
 
+        // If DOM already shows the same guest info, skip replacing innerHTML
+        const existingName = detailEl.querySelector('.guest-detail-name')?.textContent;
+        const existingMoney = detailEl.querySelector('.stat-money')?.textContent;
+        const existingPoints = detailEl.querySelector('.stat-points')?.textContent;
+        const existingHeat = detailEl.querySelector('.stat-heat')?.textContent || detailEl.querySelector('.stat-heat.danger')?.textContent;
+        const expectedMoney = `\u{1F4B0} ${guest.money}`;
+        const expectedPoints = `\u2B50 ${guest.points}`;
+        const expectedHeat = `\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}`;
+        if (existingName === guest.name && existingMoney === expectedMoney && existingPoints === expectedPoints && existingHeat === expectedHeat) {
+            document.getElementById('btn-admit').disabled = false;
+            document.getElementById('btn-ability').disabled = !guest.ability;
+            document.getElementById('btn-close-door').disabled = false;
+            return;
+        }
+
         detailEl.innerHTML = `
             <div class="guest-detail-content">
                 <div class="guest-detail-emoji">${guest.emoji}</div>
                 <div class="guest-detail-info">
                     <div class="guest-detail-name">${guest.name}</div>
-                    <div class="guest-detail-desc">${guest.desc}</div>
                     <div class="guest-detail-stats">
                         <span class="stat-money">\u{1F4B0} ${guest.money}</span>
                         <span class="stat-points">\u2B50 ${guest.points}</span>
@@ -712,6 +769,15 @@
         if (!self.arrivingGuest || self.doorClosed || self.busted) return;
 
         const venue = Game.VENUES[self.venueId];
+        // Snapshot player's visible state so we can avoid unnecessary re-renders
+        const playerSnapshot = {
+            arrivingGuest: gameState.player.arrivingGuest,
+            doorClosed: gameState.player.doorClosed,
+            busted: gameState.player.busted,
+            heat: gameState.player.heat,
+            roundMoney: gameState.player.roundMoney,
+            roundPoints: gameState.player.roundPoints,
+        };
         const result = Game.admitGuest(self, venue, opponent, Game.VENUES[opponent.venueId]);
         if (!result) return;
 
@@ -720,7 +786,16 @@
         }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
-        updateGuestDetail();
+        // Only refresh player detail if the action was by the player, or
+        // if the opponent's action changed the player's visible state.
+        if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
+            arrivingGuest: gameState.player.arrivingGuest,
+            doorClosed: gameState.player.doorClosed,
+            busted: gameState.player.busted,
+            heat: gameState.player.heat,
+            roundMoney: gameState.player.roundMoney,
+            roundPoints: gameState.player.roundPoints,
+        })) updateGuestDetail();
         updateVenueStatus(selfKey);
         updateHUD();
         removeTooltip();
@@ -756,10 +831,19 @@
 
         const selfVenue = Game.VENUES[self.venueId];
         const opponentVenue = Game.VENUES[opponent.venueId];
+        // Snapshot player's visible state
+        const playerSnapshot = {
+            arrivingGuest: gameState.player.arrivingGuest,
+            doorClosed: gameState.player.doorClosed,
+            busted: gameState.player.busted,
+            heat: gameState.player.heat,
+            roundMoney: gameState.player.roundMoney,
+            roundPoints: gameState.player.roundPoints,
+        };
         const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue);
         if (!result) return;
 
-        showFeedback(`⚡ ${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
+        showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
         if (result.revealedGuests) setRevealDoorIntel(selfKey, result.revealedGuests);
 
         if (result.pushedOut) {
@@ -769,8 +853,23 @@
         renderHouseGrid(selfKey);
         renderHouseGrid(opponentKey);
         renderArrivingGuest(selfKey);
-        renderArrivingGuest(opponentKey);
-        updateGuestDetail();
+        // Only re-render the opponent's arriving area if the player's visible arriving state changed
+        if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
+            arrivingGuest: gameState.player.arrivingGuest,
+            doorClosed: gameState.player.doorClosed,
+            busted: gameState.player.busted,
+            heat: gameState.player.heat,
+            roundMoney: gameState.player.roundMoney,
+            roundPoints: gameState.player.roundPoints,
+        })) renderArrivingGuest(opponentKey);
+        if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
+            arrivingGuest: gameState.player.arrivingGuest,
+            doorClosed: gameState.player.doorClosed,
+            busted: gameState.player.busted,
+            heat: gameState.player.heat,
+            roundMoney: gameState.player.roundMoney,
+            roundPoints: gameState.player.roundPoints,
+        })) updateGuestDetail();
         updateVenueStatus(selfKey);
         updateVenueStatus(opponentKey);
         updateHUD();
@@ -802,13 +901,28 @@
         if (self.doorClosed || self.busted) return;
 
         const venue = Game.VENUES[self.venueId];
+        const playerSnapshot = {
+            arrivingGuest: gameState.player.arrivingGuest,
+            doorClosed: gameState.player.doorClosed,
+            busted: gameState.player.busted,
+            heat: gameState.player.heat,
+            roundMoney: gameState.player.roundMoney,
+            roundPoints: gameState.player.roundPoints,
+        };
         const result = Game.closeDoor(self, venue, opponent);
         if (result?.pushedOut) {
             animateExitGuest(selfKey, result.pushedOut);
         }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
-        updateGuestDetail();
+        if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
+            arrivingGuest: gameState.player.arrivingGuest,
+            doorClosed: gameState.player.doorClosed,
+            busted: gameState.player.busted,
+            heat: gameState.player.heat,
+            roundMoney: gameState.player.roundMoney,
+            roundPoints: gameState.player.roundPoints,
+        })) updateGuestDetail();
         updateVenueStatus(selfKey);
         updateHUD();
         removeTooltip();
@@ -868,6 +982,15 @@
         const p = gameState.player;
         const rVenue = Game.VENUES[r.venueId];
         const pVenue = Game.VENUES[p.venueId];
+        const playerSnapshot = {
+            arrivingGuest: gameState.player.arrivingGuest,
+            doorClosed: gameState.player.doorClosed,
+            busted: gameState.player.busted,
+            heat: gameState.player.heat,
+            roundMoney: gameState.player.roundMoney,
+            roundPoints: gameState.player.roundPoints,
+        };
+        const rivalHouseSnapshot = gameState.rival.house.length;
 
         if (action === 'admit') {
             const result = Game.admitGuest(r, rVenue, gameState.player, Game.VENUES[gameState.player.venueId]);
@@ -876,7 +999,10 @@
             if (result.pushedOut) {
                 animateExitGuest('rival', result.pushedOut);
             }
-            renderHouseGrid('rival');
+            // Only re-render rival grid if their house visibly changed
+            if (gameState.rival.house.length !== rivalHouseSnapshot) {
+                renderHouseGrid('rival');
+            }
 
             if (result.busted) {
                 document.getElementById('rival-area').classList.add('bust-flash');
@@ -901,23 +1027,52 @@
                 }, 500);
             }
 
-            renderHouseGrid('player');
-            renderHouseGrid('rival');
+            // Only re-render player grid if their visible state actually changed
+            if (JSON.stringify(playerSnapshot) !== JSON.stringify({
+                arrivingGuest: gameState.player.arrivingGuest,
+                doorClosed: gameState.player.doorClosed,
+                busted: gameState.player.busted,
+                heat: gameState.player.heat,
+                roundMoney: gameState.player.roundMoney,
+                roundPoints: gameState.player.roundPoints,
+            })) renderHouseGrid('player');
+            // Only re-render rival grid if their house visibly changed
+            if (gameState.rival.house.length !== rivalHouseSnapshot) {
+                renderHouseGrid('rival');
+            }
         } else if (action === 'close') {
             const result = Game.closeDoor(r, rVenue, gameState.player);
             if (result?.pushedOut) {
                 animateExitGuest('rival', result.pushedOut);
             }
-            renderHouseGrid('rival');
+            // Only re-render if house changed
+            if (gameState.rival.house.length !== rivalHouseSnapshot) {
+                renderHouseGrid('rival');
+            }
             showFeedback(`${r.name} closed their door`, 'money', 2000);
         }
 
         renderArrivingGuest('rival');
-        renderArrivingGuest('player');
+        // Only update player's arriving area if their visible arriving state changed
+        if (JSON.stringify(playerSnapshot) !== JSON.stringify({
+            arrivingGuest: gameState.player.arrivingGuest,
+            doorClosed: gameState.player.doorClosed,
+            busted: gameState.player.busted,
+            heat: gameState.player.heat,
+            roundMoney: gameState.player.roundMoney,
+            roundPoints: gameState.player.roundPoints,
+        })) renderArrivingGuest('player');
         updateVenueStatus('rival');
-        // AI abilities can change player heat/bust state as well, so always refresh player UI.
+        // Refresh player UI only if their visible state changed
         updateVenueStatus('player');
-        updateGuestDetail();
+        if (JSON.stringify(playerSnapshot) !== JSON.stringify({
+            arrivingGuest: gameState.player.arrivingGuest,
+            doorClosed: gameState.player.doorClosed,
+            busted: gameState.player.busted,
+            heat: gameState.player.heat,
+            roundMoney: gameState.player.roundMoney,
+            roundPoints: gameState.player.roundPoints,
+        })) updateGuestDetail();
         updateHUD();
     }
 
@@ -1418,7 +1573,7 @@
                 <span class="deck-card-stat deck-card-points">${guest.points}</span>
             </div>
             <div class="deck-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
-            ${guest.ability ? '<div class="deck-card-ability">⚡ ' + guest.ability.name + '</div>' : ''}
+            ${guest.ability ? '<div class="deck-card-ability"> ' + guest.ability.name + '</div>' : ''}
         `;
 
         return card;

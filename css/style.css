@@ -779,7 +779,7 @@ body {
     display: flex;
     gap: 3px;
     flex: 1;
-    justify-content: center;
+    justify-content: flex-end;
     min-height: 46px;
     align-items: center;
 }

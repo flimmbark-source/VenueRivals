@@ -59,9 +59,9 @@ const Game = (() => {
       name: "Tip-Off Artist",
       emoji: "👀",
       heat: 2,
-      money: 1,
+      money: 2,
       points: 0,
-      cost: 3,
+      cost: 4,
       venue: "Neutral",
       tags: ["Broker"],
       desc: "Tip-Off: Reveal the next guest.",
@@ -90,8 +90,8 @@ const Game = (() => {
     hypester: {
       name: "Hypester",
       emoji: "🔥",
-      heat: 1,
-      money: 0,
+      heat: 2,
+      money: 2,
       points: 2,
       cost: 6,
       venue: "Neutral",
@@ -110,7 +110,7 @@ const Game = (() => {
     standIn: {
       name: "Stand-In",
       emoji: "🎭",
-      heat: 2,
+      heat: 3,
       money: 1,
       points: 2,
       cost: 5,
@@ -129,8 +129,8 @@ const Game = (() => {
     usher: {
       name: "Usher",
       emoji: "🧤",
-      heat: 1,
-      money: 1,
+      heat: 2,
+      money: 0,
       points: 2,
       cost: 5,
       venue: "Neutral",
@@ -149,7 +149,7 @@ const Game = (() => {
       name: "Floor Runner",
       emoji: "🏃",
       heat: 2,
-      money: 1,
+      money: 0,
       points: 2,
       cost: 7,
       venue: "Neutral",
@@ -168,7 +168,7 @@ const Game = (() => {
       name: "Bookkeeper",
       emoji: "📒",
       heat: 1,
-      money: 2,
+      money: 3,
       points: 1,
       cost: 5,
       venue: "Neutral",
@@ -208,8 +208,8 @@ const Game = (() => {
       name: "Party Promoter",
       emoji: "📣",
       heat: 3,
-      money: 2,
-      points: 1,
+      money: 4,
+      points: 0,
       cost: 8,
       venue: "Neutral",
       tags: ["Broker"],
@@ -269,8 +269,8 @@ const Game = (() => {
       name: "Headliner",
       emoji: "🌟",
       heat: 3,
-      money: 1,
-      points: 7,
+      money: 0,
+      points: 4,
       cost: 6,
       venue: "Velvet Room",
       tags: ["VIP", "Performer"],
@@ -306,9 +306,9 @@ const Game = (() => {
     velvetBouncer: {
       name: "Velvet Bouncer",
       emoji: "🛡️",
-      heat: 1,
+      heat: 3,
       money: 2,
-      points: 1,
+      points: 2,
       cost: 4,
       venue: "Velvet Room",
       tags: ["VIP"],
@@ -325,7 +325,7 @@ const Game = (() => {
     spotlightPhotographer: {
       name: "Spotlight Photographer",
       emoji: "📸",
-      heat: 2,
+      heat: 3,
       money: 1,
       points: 4,
       cost: 5,
@@ -348,8 +348,8 @@ const Game = (() => {
       name: "Gallery Scout",
       emoji: "🔭",
       heat: 1,
-      money: 2,
-      points: 1,
+      money: 0,
+      points: 2,
       cost: 4,
       venue: "Night Market",
       tags: ["Scout"],
@@ -368,7 +368,7 @@ const Game = (() => {
       emoji: "📈",
       heat: 2,
       money: 3,
-      points: 1,
+      points: 0,
       cost: 5,
       venue: "Night Market",
       tags: ["Broker"],
@@ -790,7 +790,9 @@ const Game = (() => {
   }
 
   function getHouseCapacity(venue) {
-    return Math.max(0, (venue?.gridSize || 0) - 1);
+    // House capacity matches the visible grid size; arriving guest is
+    // rendered into the grid now, so don't subtract 1.
+    return Math.max(0, (venue?.gridSize || 0));
   }
 
   function createPlayer(name, venueId, isAI) {
@@ -932,14 +934,8 @@ const Game = (() => {
       busted: false,
       effects: [],
     };
-    moveArrivingGuestIntoHouse(player);
-    // If house exceeds venue capacity, remove the rightmost (oldest) guest
-    // and mark it as pushed out so the UI can animate the exit.
-    const capacity = venue?.gridSize || 0;
-    if (capacity > 0 && player.house.length > capacity) {
-      const exited = player.house.pop();
-      result.pushedOut = getGuestId(exited);
-    }
+    const pushed = moveArrivingGuestIntoHouse(player, venue);
+    if (pushed) result.pushedOut = getGuestId(pushed);
     if (player.heat > venue.bustThreshold) {
       result.busted = true;
       applyBustState(player);
@@ -1094,11 +1090,7 @@ const Game = (() => {
   function closeDoor(player, venue, opponent = null) {
     if (player.doorClosed || player.busted) return false;
     // Move arriving guest into the house before closing so it stays in the grid
-    if (player.arrivingGuest) {
-      player.house.unshift(createHouseGuest(player.arrivingGuest));
-      applyGuestImpact(player, player.arrivingGuest);
-      player.arrivingGuest = null;
-    }
+    const pushed = moveArrivingGuestIntoHouse(player, venue);
     player.doorClosed = true;
     player.phaseComplete = true;
     player.arrivingGuest = null;
