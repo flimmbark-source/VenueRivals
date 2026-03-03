@@ -25,6 +25,7 @@
     let waitingPopupEl = null;
     let waitingPopupBackdropEl = null;
     let pendingHostMatchConfig = null;
+    const revealDoorIntel = { player: null, rival: null };
 
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
@@ -303,6 +304,7 @@
 
         // Avoid re-building identical DOM every tick so the door card does not visually refresh.
         if (arrivingEl.dataset.renderKey === arrivingKey) {
+            renderRevealDoorIntel(who);
             return;
         }
 
@@ -349,6 +351,7 @@
                 arrivingEl.appendChild(arrow);
             }
         }
+        renderRevealDoorIntel(who);
     }
 
     function updateVenueStatus(who) {
@@ -560,41 +563,84 @@
         el.addEventListener('touchmove', clearPressTimer, { passive: true });
     }
 
-    function clearRevealIntel() {
-        const panel = document.getElementById('reveal-intel');
-        const body = document.getElementById('reveal-intel-body');
-        if (panel) panel.style.display = 'none';
-        if (body) body.innerHTML = '';
+    function getQueuedGuestPreview(player, count) {
+        if (!player || !Array.isArray(player.roundDeck) || count <= 0) return [];
+        const previewCount = Math.min(count, player.roundDeck.length);
+        const ids = [];
+        for (let i = player.roundDeck.length - 1; i >= player.roundDeck.length - previewCount; i--) {
+            ids.push(player.roundDeck[i]);
+        }
+        return ids;
     }
 
-    function showRevealIntel(actorKey, guestIds, abilityName) {
-        const panel = document.getElementById('reveal-intel');
-        const body = document.getElementById('reveal-intel-body');
-        if (!panel || !body) return;
+    function clearRevealDoorIntel(who = null) {
+        if (who) {
+            revealDoorIntel[who] = null;
+            renderRevealDoorIntel(who);
+            return;
+        }
+        revealDoorIntel.player = null;
+        revealDoorIntel.rival = null;
+        renderRevealDoorIntel('player');
+        renderRevealDoorIntel('rival');
+    }
 
+    function setRevealDoorIntel(who, guestIds) {
         const ids = Array.isArray(guestIds) ? guestIds.filter(Boolean) : [];
-        const label = actorKey === 'player' ? 'You' : (gameState?.rival?.name || 'Rival');
         if (!ids.length) {
-            body.innerHTML = `<div class="reveal-intel-empty">${escapeHtml(label)} used ${escapeHtml(abilityName)}. Queue empty.</div>`;
-            panel.style.display = '';
+            clearRevealDoorIntel(who);
+            return;
+        }
+        revealDoorIntel[who] = {
+            count: ids.length,
+            index: 0,
+        };
+        renderRevealDoorIntel(who);
+    }
+
+    function renderRevealDoorIntel(who) {
+        if (!gameState) return;
+        const doorEl = document.getElementById(`${who}-door`);
+        if (!doorEl) return;
+
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        const intel = revealDoorIntel[who];
+
+        const existing = doorEl.querySelector('.reveal-door-card');
+        if (existing) existing.remove();
+
+        if (!intel) return;
+
+        const queued = getQueuedGuestPreview(player, intel.count);
+        if (!queued.length) {
+            clearRevealDoorIntel(who);
             return;
         }
 
-        const cards = ids.map((guestId, idx) => {
-            const guest = Game.GUESTS[guestId];
-            if (!guest) return '';
-            return `<div class="reveal-card tier-${guest.tier}">
-                <div class="reveal-pos">${idx + 1}</div>
-                <div class="reveal-emoji">${guest.emoji}</div>
-                <div class="reveal-name">${escapeHtml(guest.name)}</div>
-            </div>`;
-        }).join('');
+        intel.index = intel.index % queued.length;
+        const shownIndex = intel.index;
+        const guestId = queued[shownIndex];
+        const guest = Game.GUESTS[guestId];
+        if (!guest) return;
 
-        body.innerHTML = `
-            <div class="reveal-intel-summary">${escapeHtml(label)} used ${escapeHtml(abilityName)}.</div>
-            <div class="reveal-card-row">${cards}</div>
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `reveal-door-card tier-${guest.tier}`;
+        card.innerHTML = `
+            <span class="reveal-door-emoji">${guest.emoji}</span>
+            <span class="reveal-door-index">${shownIndex + 1}/${queued.length}</span>
         `;
-        panel.style.display = '';
+        card.title = `${guest.name} (${shownIndex + 1}/${queued.length})`;
+
+        if (queued.length > 1) {
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                intel.index = (intel.index + 1) % queued.length;
+                renderRevealDoorIntel(who);
+            });
+        }
+
+        doorEl.appendChild(card);
     }
 
     // === Center Feedback ===
@@ -663,7 +709,7 @@
         if (!result) return;
 
         showFeedback(`⚡ ${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
-        if (result.revealedGuests) showRevealIntel(selfKey, result.revealedGuests, result.ability.name);
+        if (result.revealedGuests) setRevealDoorIntel(selfKey, result.revealedGuests);
 
         if (result.pushedOut) {
             animateExitGuest(selfKey, result.pushedOut);
@@ -792,7 +838,7 @@
             const result = Game.activateAbility(r, p, rVenue, pVenue);
             if (!result) return;
             showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500);
-            if (result.revealedGuests) showRevealIntel('rival', result.revealedGuests, result.ability.name);
+            if (result.revealedGuests) setRevealDoorIntel('rival', result.revealedGuests);
 
             // Check if player was busted
             if (p.busted) {
@@ -1026,7 +1072,7 @@
 
     function startNewRound() {
         Game.startGuestPhase(gameState);
-        clearRevealIntel();
+        clearRevealDoorIntel();
 
         showFeedback(`ROUND ${gameState.round}`, 'points', 1500);
 

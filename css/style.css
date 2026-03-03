@@ -719,6 +719,45 @@ body {
 
 .player-venue .entry-door:hover { transform: scale(1.1); }
 
+.reveal-door-card {
+    width: 30px;
+    height: 38px;
+    border-radius: 7px;
+    border: 1px solid rgba(255, 209, 102, 0.85);
+    background: rgba(15, 14, 23, 0.95);
+    box-shadow: 0 0 8px rgba(255, 209, 102, 0.28);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    cursor: pointer;
+    padding: 1px;
+}
+
+.reveal-door-card.tier-uncommon {
+    border-color: rgba(76, 201, 240, 0.85);
+    box-shadow: 0 0 8px rgba(76, 201, 240, 0.28);
+}
+
+.reveal-door-card.tier-rare {
+    border-color: rgba(127, 90, 240, 0.9);
+    box-shadow: 0 0 8px rgba(127, 90, 240, 0.3);
+}
+
+.reveal-door-emoji {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.reveal-door-index {
+    font-size: 0.5rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    line-height: 1;
+}
+
 .entry-area {
     display: flex;
     align-items: center;
@@ -978,69 +1017,6 @@ body {
     color: #ff4444;
     border: 1px solid rgba(255, 50, 50, 0.4);
     font-size: 0.85rem;
-}
-
-.reveal-intel {
-    margin: 2px 12px 8px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    border: 1px solid rgba(76, 201, 240, 0.35);
-    background: rgba(76, 201, 240, 0.08);
-}
-
-.reveal-intel-header {
-    font-size: 0.68rem;
-    letter-spacing: 0.9px;
-    text-transform: uppercase;
-    color: var(--accent-blue);
-    font-weight: 700;
-    margin-bottom: 4px;
-}
-
-.reveal-intel-summary {
-    font-size: 0.72rem;
-    color: var(--text-secondary);
-    margin-bottom: 6px;
-}
-
-.reveal-card-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.reveal-card {
-    min-width: 82px;
-    padding: 6px 8px;
-    border-radius: 8px;
-    background: rgba(15, 14, 23, 0.72);
-    border: 1px solid rgba(255,255,255,0.12);
-    display: grid;
-    grid-template-columns: auto auto 1fr;
-    align-items: center;
-    gap: 6px;
-}
-
-.reveal-pos {
-    font-size: 0.7rem;
-    color: var(--accent-gold);
-    font-weight: 700;
-}
-
-.reveal-emoji {
-    font-size: 0.95rem;
-    line-height: 1;
-}
-
-.reveal-name {
-    font-size: 0.72rem;
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-.reveal-intel-empty {
-    font-size: 0.72rem;
-    color: var(--text-secondary);
 }
 
 /* === Bottom Panel === */
