@@ -851,6 +851,8 @@ body {
 
 /* === Arriving Guest Slot === */
 .arriving-slot {
+    min-width: 40px;
+    min-height: 46px;
     display: flex;
     align-items: center;
     justify-content: center;
