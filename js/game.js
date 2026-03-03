@@ -790,7 +790,7 @@ const Game = (() => {
   }
 
   function getHouseCapacity(venue) {
-    return Math.max(0, (venue?.gridSize || 0) - 2);
+    return Math.max(0, (venue?.gridSize || 0) - 1);
   }
 
   function createPlayer(name, venueId, isAI) {
@@ -1086,14 +1086,12 @@ const Game = (() => {
 
   function closeDoor(player, venue, opponent = null) {
     if (player.doorClosed || player.busted) return false;
-    const pushed = moveArrivingGuestIntoHouse(player, venue);
-    if (player.heat > venue.bustThreshold) applyBustState(player);
     player.doorClosed = true;
     player.phaseComplete = true;
     player.arrivingGuest = null;
     return {
       closed: true,
-      pushedOut: pushed ? getGuestId(pushed) : null,
+      pushedOut: null,
       busted: player.busted,
     };
   }
