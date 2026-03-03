@@ -715,47 +715,48 @@ body {
 .entry-door {
     cursor: pointer;
     transition: var(--transition);
+    position: relative;
 }
 
 .player-venue .entry-door:hover { transform: scale(1.1); }
 
-.reveal-door-card {
-    width: 30px;
-    height: 38px;
-    border-radius: 7px;
-    border: 1px solid rgba(255, 209, 102, 0.85);
-    background: rgba(15, 14, 23, 0.95);
-    box-shadow: 0 0 8px rgba(255, 209, 102, 0.28);
-    color: var(--text-primary);
+.reveal-door-overlay {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 4px);
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 1px;
+    gap: 2px;
+    border: 0;
+    background: transparent;
+    padding: 0;
     cursor: pointer;
-    padding: 1px;
+    z-index: 5;
 }
 
-.reveal-door-card.tier-uncommon {
-    border-color: rgba(76, 201, 240, 0.85);
-    box-shadow: 0 0 8px rgba(76, 201, 240, 0.28);
+.reveal-door-overlay .reveal-door-card {
+    box-shadow: 0 0 10px rgba(255, 209, 102, 0.45);
 }
 
-.reveal-door-card.tier-rare {
-    border-color: rgba(127, 90, 240, 0.9);
-    box-shadow: 0 0 8px rgba(127, 90, 240, 0.3);
+.reveal-door-overlay .reveal-door-card.tier-uncommon {
+    box-shadow: 0 0 10px rgba(76, 201, 240, 0.45);
 }
 
-.reveal-door-emoji {
-    font-size: 0.95rem;
-    line-height: 1;
+.reveal-door-overlay .reveal-door-card.tier-rare {
+    box-shadow: 0 0 10px rgba(127, 90, 240, 0.45);
 }
 
 .reveal-door-index {
-    font-size: 0.5rem;
+    font-size: 0.55rem;
     font-weight: 700;
     color: var(--text-secondary);
     line-height: 1;
+    background: rgba(15, 14, 23, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    padding: 1px 5px;
 }
 
 .entry-area {

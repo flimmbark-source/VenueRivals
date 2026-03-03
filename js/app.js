@@ -259,7 +259,7 @@
 
 
     // === Guest Slot Rendering ===
-    function createGuestSlot(guestId, animate) {
+    function createGuestSlot(guestId, animate, options = {}) {
         const guest = Game.GUESTS[guestId];
         const el = document.createElement('div');
         el.className = `guest-slot occupied-slot tier-${guest.tier}`;
@@ -272,7 +272,9 @@
             <span class="slot-stat slot-points">${guest.points}</span>
         `;
         el.title = `${guest.name} - ${guest.desc}`;
-        el.addEventListener('click', (e) => showTooltip(e, guestId));
+        if (options.interactive !== false) {
+            el.addEventListener('click', (e) => showTooltip(e, guestId));
+        }
         return el;
     }
 
@@ -606,7 +608,7 @@
         const player = who === 'player' ? gameState.player : gameState.rival;
         const intel = revealDoorIntel[who];
 
-        const existing = doorEl.querySelector('.reveal-door-card');
+        const existing = doorEl.querySelector('.reveal-door-overlay');
         if (existing) existing.remove();
 
         if (!intel) return;
@@ -623,24 +625,29 @@
         const guest = Game.GUESTS[guestId];
         if (!guest) return;
 
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = `reveal-door-card tier-${guest.tier}`;
-        card.innerHTML = `
-            <span class="reveal-door-emoji">${guest.emoji}</span>
-            <span class="reveal-door-index">${shownIndex + 1}/${queued.length}</span>
-        `;
-        card.title = `${guest.name} (${shownIndex + 1}/${queued.length})`;
+        const overlay = document.createElement('button');
+        overlay.type = 'button';
+        overlay.className = 'reveal-door-overlay';
+        overlay.title = `${guest.name} (${shownIndex + 1}/${queued.length})`;
 
-        if (queued.length > 1) {
-            card.addEventListener('click', (e) => {
-                e.stopPropagation();
-                intel.index = (intel.index + 1) % queued.length;
-                renderRevealDoorIntel(who);
-            });
-        }
+        const card = createGuestSlot(guestId, false, { interactive: false });
+        card.classList.add('reveal-door-card');
 
-        doorEl.appendChild(card);
+        const idx = document.createElement('span');
+        idx.className = 'reveal-door-index';
+        idx.textContent = `${shownIndex + 1}/${queued.length}`;
+
+        overlay.appendChild(card);
+        overlay.appendChild(idx);
+
+        overlay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (queued.length <= 1) return;
+            intel.index = (intel.index + 1) % queued.length;
+            renderRevealDoorIntel(who);
+        });
+
+        doorEl.appendChild(overlay);
     }
 
     // === Center Feedback ===
