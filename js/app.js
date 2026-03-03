@@ -420,7 +420,7 @@
 
         const guest = Game.GUESTS[p.arrivingGuest];
         const venue = Game.VENUES[p.venueId];
-        const wouldBust = p.heat > venue.bustThreshold;
+        const wouldBust = (p.heat + guest.heat) > venue.bustThreshold;
 
         let abilityHTML = '';
         if (guest.ability) {

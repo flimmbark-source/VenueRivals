@@ -841,11 +841,11 @@ const Game = (() => {
       p.busted = false;
       p.phaseComplete = false;
     });
-    drawNextGuest(state.player, VENUES[state.player.venueId]);
-    drawNextGuest(state.rival, VENUES[state.rival.venueId]);
+    drawNextGuest(state.player);
+    drawNextGuest(state.rival);
   }
 
-  function drawNextGuest(player, venue, skipBustCheck = false) {
+  function drawNextGuest(player) {
     if (player.roundDeck.length === 0) {
       player.arrivingGuest = null;
       player.phaseComplete = true;
@@ -853,13 +853,15 @@ const Game = (() => {
       return false;
     }
     player.arrivingGuest = player.roundDeck.pop();
-    const guest = GUESTS[player.arrivingGuest];
+    return true;
+  }
+
+  function applyGuestEntryValue(player, guestId) {
+    const guest = GUESTS[guestId];
+    if (!guest) return;
     player.heat += guest.heat;
     player.roundMoney += guest.money;
     player.roundPoints += guest.points;
-    if (!skipBustCheck && venue && player.heat > venue.bustThreshold)
-      applyBustState(player);
-    return true;
   }
 
   function applyBustState(player) {
@@ -920,6 +922,7 @@ const Game = (() => {
       effects: [],
     };
     const pushed = moveArrivingGuestIntoHouse(player, venue);
+    applyGuestEntryValue(player, guestId);
     if (pushed) {
       result.pushedOut = getGuestId(pushed);
     }
@@ -929,7 +932,7 @@ const Game = (() => {
     }
     player.arrivingGuest = null;
     if (!result.busted) {
-      drawNextGuest(player, venue);
+      drawNextGuest(player);
       if (player.busted) result.busted = true;
     }
     return result;
@@ -1073,7 +1076,14 @@ const Game = (() => {
 
   function closeDoor(player, venue, opponent = null) {
     if (player.doorClosed || player.busted) return false;
+    const guestId = player.arrivingGuest;
     const pushed = moveArrivingGuestIntoHouse(player, venue);
+    if (guestId) {
+      applyGuestEntryValue(player, guestId);
+      if (player.heat > venue.bustThreshold) {
+        applyBustState(player);
+      }
+    }
     player.doorClosed = true;
     player.phaseComplete = true;
     player.arrivingGuest = null;
