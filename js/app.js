@@ -25,6 +25,7 @@
     let waitingPopupEl = null;
     let waitingPopupBackdropEl = null;
     let pendingHostMatchConfig = null;
+    const revealDoorIntel = { player: null, rival: null };
 
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
@@ -258,7 +259,7 @@
 
 
     // === Guest Slot Rendering ===
-    function createGuestSlot(guestId, animate) {
+    function createGuestSlot(guestId, animate, options = {}) {
         const guest = Game.GUESTS[guestId];
         const el = document.createElement('div');
         el.className = `guest-slot occupied-slot tier-${guest.tier}`;
@@ -271,7 +272,9 @@
             <span class="slot-stat slot-points">${guest.points}</span>
         `;
         el.title = `${guest.name} - ${guest.desc}`;
-        el.addEventListener('click', (e) => showTooltip(e, guestId));
+        if (options.interactive !== false) {
+            el.addEventListener('click', (e) => showTooltip(e, guestId));
+        }
         return el;
     }
 
@@ -303,6 +306,7 @@
 
         // Avoid re-building identical DOM every tick so the door card does not visually refresh.
         if (arrivingEl.dataset.renderKey === arrivingKey) {
+            renderRevealDoorIntel(who);
             return;
         }
 
@@ -349,6 +353,7 @@
                 arrivingEl.appendChild(arrow);
             }
         }
+        renderRevealDoorIntel(who);
     }
 
     function updateVenueStatus(who) {
@@ -560,6 +565,91 @@
         el.addEventListener('touchmove', clearPressTimer, { passive: true });
     }
 
+    function getQueuedGuestPreview(player, count) {
+        if (!player || !Array.isArray(player.roundDeck) || count <= 0) return [];
+        const previewCount = Math.min(count, player.roundDeck.length);
+        const ids = [];
+        for (let i = player.roundDeck.length - 1; i >= player.roundDeck.length - previewCount; i--) {
+            ids.push(player.roundDeck[i]);
+        }
+        return ids;
+    }
+
+    function clearRevealDoorIntel(who = null) {
+        if (who) {
+            revealDoorIntel[who] = null;
+            renderRevealDoorIntel(who);
+            return;
+        }
+        revealDoorIntel.player = null;
+        revealDoorIntel.rival = null;
+        renderRevealDoorIntel('player');
+        renderRevealDoorIntel('rival');
+    }
+
+    function setRevealDoorIntel(who, guestIds) {
+        const ids = Array.isArray(guestIds) ? guestIds.filter(Boolean) : [];
+        if (!ids.length) {
+            clearRevealDoorIntel(who);
+            return;
+        }
+        revealDoorIntel[who] = {
+            count: ids.length,
+            index: 0,
+        };
+        renderRevealDoorIntel(who);
+    }
+
+    function renderRevealDoorIntel(who) {
+        if (!gameState) return;
+        const doorEl = document.getElementById(`${who}-door`);
+        if (!doorEl) return;
+
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        const intel = revealDoorIntel[who];
+
+        const existing = doorEl.querySelector('.reveal-door-overlay');
+        if (existing) existing.remove();
+
+        if (!intel) return;
+
+        const queued = getQueuedGuestPreview(player, intel.count);
+        if (!queued.length) {
+            clearRevealDoorIntel(who);
+            return;
+        }
+
+        intel.index = intel.index % queued.length;
+        const shownIndex = intel.index;
+        const guestId = queued[shownIndex];
+        const guest = Game.GUESTS[guestId];
+        if (!guest) return;
+
+        const overlay = document.createElement('button');
+        overlay.type = 'button';
+        overlay.className = 'reveal-door-overlay';
+        overlay.title = `${guest.name} (${shownIndex + 1}/${queued.length})`;
+
+        const card = createGuestSlot(guestId, false, { interactive: false });
+        card.classList.add('reveal-door-card');
+
+        const idx = document.createElement('span');
+        idx.className = 'reveal-door-index';
+        idx.textContent = `${shownIndex + 1}/${queued.length}`;
+
+        overlay.appendChild(card);
+        overlay.appendChild(idx);
+
+        overlay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (queued.length <= 1) return;
+            intel.index = (intel.index + 1) % queued.length;
+            renderRevealDoorIntel(who);
+        });
+
+        doorEl.appendChild(overlay);
+    }
+
     // === Center Feedback ===
     function showFeedback(text, type, duration) {
         const el = document.getElementById('center-feedback');
@@ -626,6 +716,7 @@
         if (!result) return;
 
         showFeedback(`⚡ ${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
+        if (result.revealedGuests) setRevealDoorIntel(selfKey, result.revealedGuests);
 
         if (result.pushedOut) {
             animateExitGuest(selfKey, result.pushedOut);
@@ -754,6 +845,7 @@
             const result = Game.activateAbility(r, p, rVenue, pVenue);
             if (!result) return;
             showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500);
+            if (result.revealedGuests) setRevealDoorIntel('rival', result.revealedGuests);
 
             // Check if player was busted
             if (p.busted) {
@@ -987,6 +1079,7 @@
 
     function startNewRound() {
         Game.startGuestPhase(gameState);
+        clearRevealDoorIntel();
 
         showFeedback(`ROUND ${gameState.round}`, 'points', 1500);
 

@@ -236,15 +236,19 @@ const Game = (() => {
                 const count = Math.min(guest.ability.value, player.roundDeck.length);
                 const revealed = [];
                 for (let i = player.roundDeck.length - 1; i >= player.roundDeck.length - count; i--) {
-                    revealed.push(GUESTS[player.roundDeck[i]].name);
+                    const revealId = player.roundDeck[i];
+                    revealed.push({ id: revealId, name: GUESTS[revealId].name });
                 }
-                result.effects.push(revealed.length ? `next up: ${revealed.join(', ')}` : 'queue empty');
+                result.revealedGuests = revealed.map(entry => entry.id);
+                result.effects.push(revealed.length ? `next up: ${revealed.map(entry => entry.name).join(', ')}` : 'queue empty');
                 break;
             }
             case 'revealAndReorder': {
+                const revealed = [];
                 if (player.roundDeck.length >= 2) {
                     const a = player.roundDeck.pop();
                     const b = player.roundDeck.pop();
+                    revealed.push(a, b);
                     const aVal = GUESTS[a].points + GUESTS[a].money - GUESTS[a].heat;
                     const bVal = GUESTS[b].points + GUESTS[b].money - GUESTS[b].heat;
                     if (aVal >= bVal) {
@@ -256,8 +260,10 @@ const Game = (() => {
                     }
                     result.effects.push(`peeked: ${GUESTS[a].name}, ${GUESTS[b].name}`);
                 } else if (player.roundDeck.length === 1) {
+                    revealed.push(player.roundDeck[0]);
                     result.effects.push(`peeked: ${GUESTS[player.roundDeck[0]].name}`);
                 }
+                if (revealed.length) result.revealedGuests = revealed;
                 break;
             }
             case 'bounceLeftmost': {
