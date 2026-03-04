@@ -1666,22 +1666,25 @@
 
     function createDeckManageCard(guestId) {
         const guest = Game.GUESTS[guestId];
-        const card = document.createElement('div');
-        card.className = 'deck-manage-card tier-' + guest.tier;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'deck-manage-card';
 
-        card.innerHTML = `
-            <div class="deck-card-visual">
-                <span class="deck-card-stat deck-card-heat">🔥 ${guest.heat}</span>
-                <span class="deck-card-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
-                <span class="deck-card-stat deck-card-money">${guest.money}</span>
-                ${renderAbilityBadge(guest)}
-                <span class="deck-card-stat deck-card-points">${guest.points}</span>
-            </div>
-            <div class="deck-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
-            ${guest.ability ? '<div class="deck-card-ability"> ' + guest.ability.name + '</div>' : ''}
-        `;
+        const slot = createGuestSlot(guestId, false, { interactive: false });
+        wrapper.appendChild(slot);
 
-        return card;
+        const nameEl = document.createElement('div');
+        nameEl.className = 'deck-card-name' + (guest.ability ? ' has-ability' : '');
+        nameEl.textContent = guest.name;
+        wrapper.appendChild(nameEl);
+
+        if (guest.ability) {
+            const abilityEl = document.createElement('div');
+            abilityEl.className = 'deck-card-ability';
+            abilityEl.textContent = guest.ability.name;
+            wrapper.appendChild(abilityEl);
+        }
+
+        return wrapper;
     }
 
     function renderGuestListPreview(listId) {

@@ -1186,7 +1186,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 3px;
 }
 
 .shop-title {
@@ -1214,14 +1214,14 @@ body {
 .shop-grid {
     display: grid;
     grid-template-columns: repeat(5, auto);
-    gap: 16px 10px;
+    gap: 22px 10px;
     justify-content: center;
 }
 
 .shop-upgrades {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 22px;
     align-items: center;
 }
 
@@ -1843,24 +1843,15 @@ body {
 }
 
 .deck-manage-card {
-    background: var(--bg-card);
-    border: 2px solid var(--bg-light);
-    border-radius: var(--radius-sm);
-    padding: 6px;
-    width: 72px;
-    text-align: center;
-    cursor: pointer;
-    transition: var(--transition);
     display: flex;
     flex-direction: column;
-}
-
-.deck-manage-card:hover {
-    transform: translateY(-2px);
-}
-
-#guest-list-preview-grid .deck-manage-card {
+    align-items: center;
     cursor: pointer;
+    transition: var(--transition);
+}
+
+.deck-manage-card:hover .guest-slot {
+    transform: scale(1.08);
 }
 
 .guest-ability-popup-backdrop {
@@ -1919,61 +1910,6 @@ body {
     font-size: 0.74rem;
     color: var(--text-secondary);
     line-height: 1.4;
-}
-
-.deck-manage-card.tier-common { border-color: #444; }
-.deck-manage-card.tier-uncommon { border-color: rgba(76, 201, 240, 0.4); }
-.deck-manage-card.tier-rare { border-color: rgba(127, 90, 240, 0.5); }
-
-.deck-card-visual {
-    position: relative;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 4px;
-}
-
-.deck-card-emoji {
-    font-size: 1.3rem;
-    line-height: 1;
-}
-
-.deck-card-emoji.has-ability {
-    filter: drop-shadow(0 0 4px rgba(255, 209, 102, 0.45));
-}
-
-.deck-card-stat {
-    position: absolute;
-    font-size: 0.55rem;
-    font-weight: 700;
-    line-height: 1;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
-}
-
-.deck-card-heat {
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #ff5c5c;
-    white-space: nowrap;
-}
-
-.deck-card-money {
-    left: 0;
-    bottom: 0;
-    color: #2cb67d;
-}
-
-.deck-card-points {
-    right: 0;
-    bottom: 0;
-    color: #ffd166;
-}
-
-.deck-card-visual .ability-icon-badge {
-    bottom: 0;
-    font-size: 0.48rem;
 }
 
 .deck-card-name {
