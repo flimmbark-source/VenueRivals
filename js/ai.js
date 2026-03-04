@@ -193,6 +193,21 @@ const AI = (() => {
             case 'lockAdjacent':
                 value += 2;
                 break;
+            case 'gainMoney':
+                value += guest.ability.value * 1.2;
+                break;
+            case 'stealMoney':
+                value += guest.ability.value * 2;
+                break;
+            case 'discardNext':
+                value += 1.5;
+                break;
+            case 'scorePerGuest':
+                value += rival.house.length * guest.ability.value * 1.2;
+                break;
+            case 'boostAdjacent':
+                value += rival.house.length > 0 ? guest.ability.value * 1.5 : 0;
+                break;
         }
 
         return value;
