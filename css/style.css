@@ -2077,3 +2077,26 @@ body {
         padding: 4px;
     }
 }
+
+@media (max-width: 500px) {
+    .house-lane {
+        gap: 2px;
+        padding: 3px;
+    }
+
+    .exit-door,
+    .entry-door {
+        width: 24px;
+    }
+
+    .guest-slots {
+        gap: 2px;
+        min-height: 42px;
+    }
+
+    .guest-slot {
+        width: 34px;
+        height: 42px;
+        font-size: 16px;
+    }
+}
