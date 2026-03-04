@@ -1648,6 +1648,17 @@ body {
     color: var(--accent-primary);
 }
 
+#loadout-deck-card .loadout-deck-body,
+#loadout-guest-list-card .loadout-deck-body {
+    margin-top: -18px;
+}
+
+#loadout-deck-card .loadout-deck-count,
+#loadout-guest-list-card .loadout-deck-count {
+    font-size: 0.95rem;
+    min-height: 14px;
+}
+
 .loadout-deck-preview-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(40px, 40px));
