@@ -374,32 +374,49 @@
         const includeProjectedRoundTotals =
         gameState.phase === 'guest' && gameState.guestPhaseScoredRound !== gameState.round;
 
+        const hudRoundNumEl = document.getElementById('hud-round-num');
+        const hudRoundTotalEl = document.getElementById('hud-round-total');
+        const hudPhaseEl = document.getElementById('hud-phase');
+        const hudPlayerPtsEl = document.getElementById('hud-player-pts');
+        const hudRivalPtsEl = document.getElementById('hud-rival-pts');
+        const playerVenueNameEl = document.getElementById('player-venue-name');
+        const playerMoneyEl = document.getElementById('player-money');
+        const playerPtsBadgeEl = document.getElementById('player-pts-badge');
+        const rivalVenueNameEl = document.getElementById('rival-venue-name');
+        const rivalMoneyEl = document.getElementById('rival-money');
+        const rivalPtsBadgeEl = document.getElementById('rival-pts-badge');
 
-        document.getElementById('hud-round-num').textContent = gameState.round;
-        document.getElementById('hud-round-total').textContent = gameState.totalRounds;
-        document.getElementById('hud-phase').textContent =
+        if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl || !hudPlayerPtsEl || !hudRivalPtsEl ||
+            !playerVenueNameEl || !playerMoneyEl || !playerPtsBadgeEl || !rivalVenueNameEl || !rivalMoneyEl || !rivalPtsBadgeEl) {
+            return;
+        }
+
+        hudRoundNumEl.textContent = gameState.round;
+        hudRoundTotalEl.textContent = gameState.totalRounds;
+        hudPhaseEl.textContent =
             gameState.phase === 'guest' ? 'GUEST PHASE' :
             gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
-        document.getElementById('hud-player-pts').textContent = `You: ${p.points} pts`;
-        document.getElementById('hud-rival-pts').textContent = `Rival: ${r.points} pts`;
+        hudPlayerPtsEl.textContent = `You: ${p.points} pts`;
+        hudRivalPtsEl.textContent = `Rival: ${r.points} pts`;
 
         // Player venue
-        document.getElementById('player-venue-name').textContent = p.name;
-        document.getElementById('player-money').textContent = `\u{1F4B5} $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
-        document.getElementById('player-pts-badge').textContent = `\u2B50 ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
+        playerVenueNameEl.textContent = p.name;
+        playerMoneyEl.textContent = `💵 $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
+        playerPtsBadgeEl.textContent = `⭐ ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
         updateHeatBar('player', p.heat, pVenue.bustThreshold);
 
         // Rival venue
-        document.getElementById('rival-venue-name').textContent = r.name;
-        document.getElementById('rival-money').textContent = `\u{1F4B5} $${r.money + (includeProjectedRoundTotals ? r.roundMoney : 0)}`;
-        document.getElementById('rival-pts-badge').textContent = `\u2B50 ${r.points + (includeProjectedRoundTotals ? r.roundPoints : 0)}`;
+        rivalVenueNameEl.textContent = r.name;
+        rivalMoneyEl.textContent = `💵 $${r.money + (includeProjectedRoundTotals ? r.roundMoney : 0)}`;
+        rivalPtsBadgeEl.textContent = `⭐ ${r.points + (includeProjectedRoundTotals ? r.roundPoints : 0)}`;
         updateHeatBar('rival', r.heat, rVenue.bustThreshold);
     }
 
     function updateHeatBar(who, heat, max) {
         const fill = document.getElementById(`${who}-heat-fill`);
         const text = document.getElementById(`${who}-heat-text`);
+        if (!fill || !text) return;
         const pct = Math.min(100, (heat / max) * 100);
         fill.style.width = pct + '%';
         fill.className = 'heat-fill';
