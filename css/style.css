@@ -1872,16 +1872,28 @@ body {
 
 .deck-manage-grid {
     display: flex;
-    gap: 18px 8px;
+    gap: 24px 10px;
     flex-wrap: wrap;
     justify-content: center;
-    padding-bottom: 12px
+    align-content: flex-start;
+    padding-bottom: 18px;
+}
+
+#guest-list-preview-grid {
+    justify-content: center;
+    margin-top: -4px;
+}
+
+#deck-preview-grid {
+    gap: 28px 10px;
 }
 
 .deck-manage-card {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-start;
+    gap: 2px;
     width: 40px;
     cursor: pointer;
     transition: var(--transition);
@@ -1954,7 +1966,12 @@ body {
     font-size: 0.5rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 3px;
+    margin-bottom: 0;
+    min-height: 10px;
+    line-height: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
     width: 40px;
     white-space: nowrap;
     overflow: hidden;
