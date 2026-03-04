@@ -19,6 +19,7 @@
     let guestAbilityPopupEl = null;
     let guestAbilityPopupBackdropEl = null;
     let loadoutState = null;
+    let selectedGridGuest = null;
     // cache the last rendered guest detail to avoid unnecessary refreshes
     let _lastGuestDetailKey = null;
     let multiplayerSession = null;
@@ -200,6 +201,7 @@
 
     function refreshAll() {
         if (!gameState) return;
+        syncSelectedGridGuest();
         syncPanelsForState();
         renderHouseGrid('player');
         renderHouseGrid('rival');
@@ -209,6 +211,37 @@
         updateVenueStatus('player');
         updateVenueStatus('rival');
         updateHUD();
+    }
+
+    function syncSelectedGridGuest() {
+        if (!gameState) {
+            selectedGridGuest = null;
+            return;
+        }
+        const p = gameState.player;
+        if (!p.arrivingGuest || p.doorClosed || p.busted) {
+            selectedGridGuest = null;
+            return;
+        }
+        if (!selectedGridGuest) {
+            selectedGridGuest = { guestId: p.arrivingGuest, source: 'arriving' };
+            return;
+        }
+        if (selectedGridGuest.source === 'arriving' && selectedGridGuest.guestId !== p.arrivingGuest) {
+            selectedGridGuest = { guestId: p.arrivingGuest, source: 'arriving' };
+            return;
+        }
+        if (selectedGridGuest.source === 'house') {
+            const inHouse = p.house.some((entry) => {
+                if (selectedGridGuest.instanceId != null && typeof entry !== 'string') {
+                    return entry.instanceId === selectedGridGuest.instanceId;
+                }
+                return (entry.guestId || entry) === selectedGridGuest.guestId;
+            });
+            if (!inHouse) {
+                selectedGridGuest = { guestId: p.arrivingGuest, source: 'arriving' };
+            }
+        }
     }
 
     function handleRemoteEvent(evt) {
@@ -409,6 +442,22 @@
         guests.forEach((entry) => {
             const guestId = entry.guestId || entry;
             const slot = createGuestSlot(guestId, false);
+            if (who === 'player') {
+                const instanceId = typeof entry === 'string' ? null : entry.instanceId;
+                slot.dataset.slotSource = 'house';
+                if (instanceId != null) slot.dataset.instanceId = String(instanceId);
+                if (selectedGridGuest?.source === 'house' &&
+                    selectedGridGuest.guestId === guestId &&
+                    (selectedGridGuest.instanceId == null || selectedGridGuest.instanceId === instanceId)) {
+                    slot.classList.add('selected');
+                }
+                slot.addEventListener('click', () => {
+                    selectedGridGuest = { guestId, source: 'house', instanceId };
+                    _lastGuestDetailKey = null;
+                    renderHouseGrid('player');
+                    updateGuestDetail();
+                });
+            }
             slotsEl.appendChild(slot);
         });
 
@@ -416,6 +465,18 @@
         if (player.arrivingGuest) {
             const slot = createGuestSlot(player.arrivingGuest, false);
             slot.classList.add('arriving-in-grid');
+            if (who === 'player') {
+                slot.dataset.slotSource = 'arriving';
+                if (selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === player.arrivingGuest) {
+                    slot.classList.add('selected');
+                }
+                slot.addEventListener('click', () => {
+                    selectedGridGuest = { guestId: player.arrivingGuest, source: 'arriving' };
+                    _lastGuestDetailKey = null;
+                    renderHouseGrid('player');
+                    updateGuestDetail();
+                });
+            }
             slotsEl.appendChild(slot);
         }
     }
@@ -481,8 +542,11 @@
     function updateGuestDetail() {
         const detailEl = document.getElementById('guest-detail');
         const p = gameState.player;
+        syncSelectedGridGuest();
+        const selectedGuestId = selectedGridGuest?.guestId || p.arrivingGuest;
+        const selectedGuestSource = selectedGridGuest?.source || 'arriving';
         // Avoid re-rendering if player's arriving state and visible stats haven't changed
-        const key = `${p.arrivingGuest || ''}|${p.doorClosed}|${p.busted}|${p.heat}|${p.roundMoney}|${p.roundPoints}`;
+        const key = `${p.arrivingGuest || ''}|${p.doorClosed}|${p.busted}|${p.heat}|${p.roundMoney}|${p.roundPoints}|${selectedGuestId || ''}|${selectedGuestSource}`;
         if (key === _lastGuestDetailKey) return;
         _lastGuestDetailKey = key;
 
@@ -504,9 +568,21 @@
             return;
         }
 
-        const guest = Game.GUESTS[p.arrivingGuest];
+        const guest = Game.GUESTS[selectedGuestId];
         const venue = Game.VENUES[p.venueId];
         const wouldBust = p.heat > venue.bustThreshold;
+        let selectedHouseEntry = null;
+        if (selectedGuestSource === 'house') {
+            selectedHouseEntry = p.house.find((entry) => {
+                if (selectedGridGuest?.instanceId != null && typeof entry !== 'string') {
+                    return entry.instanceId === selectedGridGuest.instanceId;
+                }
+                return (entry.guestId || entry) === selectedGuestId;
+            }) || null;
+        }
+        const canUseSelectedAbility = !!guest.ability && (
+            selectedGuestSource !== 'house' || !selectedHouseEntry || !selectedHouseEntry.abilityUsed
+        );
 
         let abilityHTML = '';
         if (guest.ability) {
@@ -523,7 +599,7 @@
         const expectedHeat = `\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}`;
         if (existingName === guest.name && existingMoney === expectedMoney && existingPoints === expectedPoints && existingHeat === expectedHeat) {
             document.getElementById('btn-admit').disabled = false;
-            document.getElementById('btn-ability').disabled = !guest.ability;
+            document.getElementById('btn-ability').disabled = !canUseSelectedAbility;
             document.getElementById('btn-close-door').disabled = false;
             return;
         }
@@ -545,7 +621,7 @@
 
         // Update buttons
         document.getElementById('btn-admit').disabled = false;
-        document.getElementById('btn-ability').disabled = !guest.ability;
+        document.getElementById('btn-ability').disabled = !canUseSelectedAbility;
         document.getElementById('btn-close-door').disabled = false;
     }
 
@@ -881,10 +957,7 @@
     function runAbility(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
         const { self, opponent, selfKey, opponentKey } = getActorState(actor);
-        if (!self.arrivingGuest || self.doorClosed || self.busted) return;
-
-        const guest = Game.GUESTS[self.arrivingGuest];
-        if (!guest.ability) return;
+        if (self.doorClosed || self.busted) return;
 
         const selfVenue = Game.VENUES[self.venueId];
         const opponentVenue = Game.VENUES[opponent.venueId];
@@ -897,7 +970,7 @@
             roundMoney: gameState.player.roundMoney,
             roundPoints: gameState.player.roundPoints,
         };
-        const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue);
+        const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue, selfKey === 'player' ? selectedGridGuest : null);
         if (!result) return;
 
         showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);

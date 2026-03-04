@@ -870,6 +870,12 @@ body {
 .guest-slot.tier-uncommon { border-color: rgba(76, 201, 240, 0.5); }
 .guest-slot.tier-rare { border-color: rgba(127, 90, 240, 0.6); }
 
+
+.guest-slot.selected {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 0 12px rgba(127, 90, 240, 0.5);
+}
+
 .guest-slot.arriving-in-grid {
     border-color: var(--accent-gold);
     box-shadow: 0 0 10px rgba(255, 209, 102, 0.3);
