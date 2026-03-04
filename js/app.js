@@ -443,6 +443,7 @@
         const slotsEl = document.getElementById(`${who}-slots`);
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
+        const allowGridTooltip = who === 'rival';
 
         const houseCapacity = Game.getHouseCapacity(venue, player);
         // Count occupied slots: house + arriving guest (cap to capacity for empties)
@@ -462,7 +463,7 @@
         }
         guests.forEach((entry) => {
             const guestId = entry.guestId || entry;
-            const slot = createGuestSlot(guestId, false, { interactive: who !== 'player' });
+            const slot = createGuestSlot(guestId, false, { interactive: allowGridTooltip });
             if (who === 'player') {
                 const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
@@ -484,7 +485,7 @@
 
         // Render arriving guest as the rightmost/newest slot
         if (player.arrivingGuest) {
-            const slot = createGuestSlot(player.arrivingGuest, false, { interactive: who !== 'player' });
+            const slot = createGuestSlot(player.arrivingGuest, false, { interactive: allowGridTooltip });
             slot.classList.add('arriving-in-grid');
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
