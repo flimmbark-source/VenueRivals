@@ -244,6 +244,27 @@
         }
     }
 
+
+    function refreshSelectedGridSlotVisual() {
+        const slotsEl = document.getElementById('player-slots');
+        if (!slotsEl) return;
+
+        slotsEl.querySelectorAll('.guest-slot.selected').forEach((slot) => slot.classList.remove('selected'));
+        if (!selectedGridGuest) return;
+
+        const occupiedSlots = slotsEl.querySelectorAll('.occupied-slot[data-guest-id]');
+        occupiedSlots.forEach((slot) => {
+            const sameSource = (slot.dataset.slotSource || '') === selectedGridGuest.source;
+            const sameGuest = (slot.dataset.guestId || '') === selectedGridGuest.guestId;
+            if (!sameSource || !sameGuest) return;
+
+            if (selectedGridGuest.source === 'house' && selectedGridGuest.instanceId != null) {
+                if ((slot.dataset.instanceId || '') !== String(selectedGridGuest.instanceId)) return;
+            }
+            slot.classList.add('selected');
+        });
+    }
+
     function handleRemoteEvent(evt) {
         if (!evt || !evt.type) return;
 
@@ -454,7 +475,7 @@
                 slot.addEventListener('click', () => {
                     selectedGridGuest = { guestId, source: 'house', instanceId };
                     _lastGuestDetailKey = null;
-                    renderHouseGrid('player');
+                    refreshSelectedGridSlotVisual();
                     updateGuestDetail();
                 });
             }
@@ -473,7 +494,7 @@
                 slot.addEventListener('click', () => {
                     selectedGridGuest = { guestId: player.arrivingGuest, source: 'arriving' };
                     _lastGuestDetailKey = null;
-                    renderHouseGrid('player');
+                    refreshSelectedGridSlotVisual();
                     updateGuestDetail();
                 });
             }
@@ -545,6 +566,7 @@
         syncSelectedGridGuest();
         const selectedGuestId = selectedGridGuest?.guestId || p.arrivingGuest;
         const selectedGuestSource = selectedGridGuest?.source || 'arriving';
+        refreshSelectedGridSlotVisual();
         // Avoid re-rendering if player's arriving state and visible stats haven't changed
         const key = `${p.arrivingGuest || ''}|${p.doorClosed}|${p.busted}|${p.heat}|${p.roundMoney}|${p.roundPoints}|${selectedGuestId || ''}|${selectedGuestSource}`;
         if (key === _lastGuestDetailKey) return;
