@@ -640,7 +640,7 @@ body {
     background: rgba(255,255,255,0.06);
 }
 
-.money-badge { color: var(--accent-gold); }
+.money-badge { color: var(--accent-tertiary); }
 .pts-badge { color: var(--accent-blue); }
 
 /* === Heat Bar === */
@@ -1040,7 +1040,7 @@ body {
 
 .feedback-msg.money {
     background: rgba(255, 209, 102, 0.12);
-    color: var(--accent-gold);
+    color: var(--accent-tertiary);
     border: 1px solid rgba(255, 209, 102, 0.3);
 }
 
@@ -1118,7 +1118,7 @@ body {
     font-weight: 600;
 }
 
-.stat-money { color: var(--accent-gold); }
+.stat-money { color: var(--accent-tertiary); }
 .stat-points { color: var(--accent-blue); }
 .stat-heat { color: var(--accent-primary); }
 
@@ -1200,7 +1200,7 @@ body {
 .shop-money {
     font-weight: 700;
     font-size: 0.85rem;
-    color: var(--accent-gold);
+    color: var(--accent-tertiary);
 }
 
 .shop-grid {

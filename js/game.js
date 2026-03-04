@@ -3,7 +3,7 @@
    ============================================ */
 
 const Game = (() => {
-  const DEFAULT_TOTAL_ROUNDS = 3;
+  const DEFAULT_TOTAL_ROUNDS = 7;
   const BUST_PENALTY = 0.25;
   const TAGS = ["VIP", "Performer", "Scout", "Broker", "Outlaw"];
 
@@ -46,8 +46,8 @@ const Game = (() => {
     tipper: {
       name: "Tipper",
       emoji: "💵",
-      heat: 1,
-      money: 1,
+      heat: 2,
+      money: 2,
       points: 0,
       cost: 2,
       venue: "Neutral",
@@ -59,7 +59,7 @@ const Game = (() => {
       name: "Tip-Off Artist",
       emoji: "👀",
       heat: 2,
-      money: 2,
+      money: 3,
       points: 0,
       cost: 4,
       venue: "Neutral",
@@ -78,8 +78,8 @@ const Game = (() => {
     hypeFriend: {
       name: "Hype Friend",
       emoji: "🙌",
-      heat: 1,
-      money: 0,
+      heat: 3,
+      money: 1,
       points: 2,
       cost: 3,
       venue: "Neutral",
@@ -168,9 +168,9 @@ const Game = (() => {
       name: "Bookkeeper",
       emoji: "📒",
       heat: 1,
-      money: 3,
+      money: 4,
       points: 1,
-      cost: 5,
+      cost: 6,
       venue: "Neutral",
       tags: ["Broker"],
       desc: "Audit: Cool 2 Heat.",
@@ -187,7 +187,7 @@ const Game = (() => {
     rovingCritic: {
       name: "Roving Critic",
       emoji: "🧐",
-      heat: 2,
+      heat: 3,
       money: 0,
       points: 3,
       cost: 5,
@@ -228,21 +228,13 @@ const Game = (() => {
       name: "Big Spender",
       emoji: "🛍️",
       heat: 2,
-      money: 1,
+      money: 3,
       points: 0,
       cost: 6,
       venue: "Neutral",
       tags: ["VIP"],
-      desc: "Splurge: Score 2 Points immediately.",
+      desc: "No special ability.",
       tier: "uncommon",
-      ability: {
-        name: "Splurge",
-        icon: "💎",
-        desc: "Score 2 Points immediately",
-        trigger: "flash",
-        type: "scoreNow",
-        value: 2,
-      },
     },
     celebrity: {
       name: "Celebrity",
@@ -765,7 +757,7 @@ const Game = (() => {
 
   const DECKS = {
     standardPlayerStatOnly: {
-      name: "Standard Player Deck",
+      name: "The Regulars",
       venueId: "velvetRoom",
       description:
         "A starter deck built around strong baseline stats with no basic-guest abilities.",
@@ -781,19 +773,19 @@ const Game = (() => {
       ],
     },
     velvetClassic: {
-      name: "Velvet Standard",
+      name: "VIP Lineup",
       venueId: "velvetRoom",
       description: "VIP lineup with locks, pulls, and scoring.",
       guests: [...VENUES.velvetRoom.startingDeck],
     },
     marketCore: {
-      name: "Market Standard",
+      name: "Thrifty Buisness",
       venueId: "nightMarket",
       description: "Peek, bounce, pull, and score at the right time.",
       guests: [...VENUES.nightMarket.startingDeck],
     },
     alleyPressure: {
-      name: "Alley Standard",
+      name: "Rowdy Crew",
       venueId: "backAlley",
       description: "Push, taunt, raid, and stay cool under pressure.",
       guests: [...VENUES.backAlley.startingDeck],
@@ -859,6 +851,7 @@ const Game = (() => {
       round: 1,
       totalRounds,
       phase: "guest",
+      guestPhaseScoredRound: null,
       player: createPlayer(playerName, playerVenue, false),
       rival: createPlayer(rivalName, rivalVenue, true),
       winner: null,
@@ -867,6 +860,7 @@ const Game = (() => {
 
   function startGuestPhase(state) {
     state.phase = "guest";
+    state.guestPhaseScoredRound = null;
     [state.player, state.rival].forEach((p) => {
       const equippedDeck = p.fullDeck?.length ? p.fullDeck : p.guestList;
       p.roundDeck = shuffle(equippedDeck || []);
@@ -895,12 +889,14 @@ const Game = (() => {
       return { success: false, pendingOut: null };
     }
 
-    // determine potential overflow candidate before drawing
+    // If the house is currently full, the oldest visible guest has already
+    // reached the exit slot. Remove them immediately so the arriving guest can
+    // occupy that grid slot.
     let pendingOut = null;
     const capacity = getHouseCapacity(venue, player);
-    if (player.house.length >= capacity) {
-      const lastEntry = player.house[player.house.length - 1];
-      pendingOut = getGuestId(lastEntry);
+    if (capacity >= 0 && player.house.length >= capacity && player.house.length) {
+      const exiting = player.house.pop();
+      pendingOut = getGuestId(exiting);
     }
 
     player.arrivingGuest = player.roundDeck.pop();
@@ -1150,6 +1146,7 @@ const Game = (() => {
     return state.player.phaseComplete && state.rival.phaseComplete;
   }
   function endGuestPhase(state) {
+    if (state.guestPhaseScoredRound === state.round) return;
     [state.player, state.rival].forEach((p) => {
       // If there's an arriving guest still waiting, move them into the house
       // so they persist to the next round
@@ -1166,6 +1163,7 @@ const Game = (() => {
       p.money += p.roundMoney;
       p.points += p.roundPoints;
     });
+    state.guestPhaseScoredRound = state.round;
   }
   function getMarket(venueId) {
     const venue = VENUES[venueId];
