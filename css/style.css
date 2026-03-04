@@ -1261,6 +1261,11 @@ body {
     cursor: inherit;
 }
 
+.shop-upgrades .slot-stat,
+.shop-upgrades .ability-icon-badge {
+    display: none;
+}
+
 .shop-card-cost {
     font-size: 0.7rem;
     color: var(--accent-gold);
