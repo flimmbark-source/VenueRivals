@@ -462,7 +462,7 @@
         }
         guests.forEach((entry) => {
             const guestId = entry.guestId || entry;
-            const slot = createGuestSlot(guestId, false);
+            const slot = createGuestSlot(guestId, false, { interactive: who !== 'player' });
             if (who === 'player') {
                 const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
@@ -484,7 +484,7 @@
 
         // Render arriving guest as the rightmost/newest slot
         if (player.arrivingGuest) {
-            const slot = createGuestSlot(player.arrivingGuest, false);
+            const slot = createGuestSlot(player.arrivingGuest, false, { interactive: who !== 'player' });
             slot.classList.add('arriving-in-grid');
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
