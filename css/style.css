@@ -391,7 +391,7 @@ body {
 }
 
 #setup-screen .loadout-card {
-    padding: 10px 12px;
+    padding: 10px 12px 18px;
     border-radius: 10px;
     flex: 0 0 auto;
     width: 100%;
@@ -413,6 +413,10 @@ body {
 #setup-screen .loadout-card-label {
     font-size: 0.62rem;
     letter-spacing: 1px;
+}
+
+#setup-screen .loadout-card-name {
+    font-size: 0.7rem;
 }
 
 #setup-screen .loadout-card-change {
@@ -456,10 +460,6 @@ body {
     gap: 6px;
     align-items: center;
     width: 100%;
-}
-
-#setup-screen .loadout-deck-count {
-    font-size: 0.85rem;
 }
 
 #setup-screen .loadout-deck-preview-grid {
@@ -1640,6 +1640,15 @@ body {
     color: var(--accent-gold);
     letter-spacing: 2px;
     text-transform: uppercase;
+}
+
+.loadout-card-name {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    flex: 1;
+    text-align: center;
 }
 
 .loadout-card-change {
