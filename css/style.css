@@ -1538,7 +1538,7 @@ body {
     background: var(--bg-medium);
     border: 2px solid var(--bg-light);
     border-radius: var(--radius-lg);
-    padding: 12px;
+    padding: 14px 14px 16px;
     cursor: pointer;
     transition: var(--transition);
     text-align: left;
@@ -1553,6 +1553,12 @@ body {
 .loadout-card-secondary {
     flex: 1 1 100%;
 }
+
+#loadout-deck-card,
+#loadout-guest-list-card {
+    min-height: 196px;
+}
+
 
 .loadout-card:hover {
     border-color: var(--accent-secondary);
@@ -1629,7 +1635,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    justify-content: flex-start;
+    gap: 8px;
     text-align: center;
     flex: 1;
 }
@@ -1639,26 +1646,54 @@ body {
     font-weight: 700;
     font-size: 1.2rem;
     color: var(--text-primary);
+    line-height: 1.15;
+    margin-top: 0;
 }
 
 .loadout-deck-count.invalid {
     color: var(--accent-primary);
 }
 
+#loadout-deck-card .loadout-deck-body,
+#loadout-guest-list-card .loadout-deck-body {
+    margin-top: -8px;
+}
+
+#loadout-deck-card .loadout-deck-count,
+#loadout-guest-list-card .loadout-deck-count {
+    font-size: 0.98rem;
+    min-height: 18px;
+    margin-bottom: 2px;
+}
+
 .loadout-deck-preview-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(auto-fit, minmax(40px, 40px));
+    column-gap: 10px;
+    row-gap: 22px;
     width: 100%;
-    max-height: 112px;
-    overflow: hidden;
+    max-height: none;
+    overflow: visible;
+    padding: 4px 4px 16px;
     justify-items: center;
+    justify-content: center;
+}
+
+#loadout-guest-list-preview-grid {
+    margin-top: -2px;
+    padding-bottom: 18px;
 }
 
 .loadout-deck-preview-grid .guest-slot.loadout-preview-card {
     cursor: default;
     margin: 0;
 }
+
+#loadout-deck-preview-grid .guest-slot.loadout-preview-card,
+#loadout-guest-list-preview-grid .guest-slot.loadout-preview-card {
+    margin-bottom: 4px;
+}
+
 
 .loadout-deck-preview-grid .guest-slot.loadout-preview-card:hover {
     transform: none;
