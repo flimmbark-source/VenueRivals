@@ -1247,6 +1247,13 @@
         const slot = createGuestSlot(guestId, false, { interactive: false });
         wrapper.appendChild(slot);
 
+        if (guest.isShopItem) {
+            const nameLabel = document.createElement('div');
+            nameLabel.className = 'shop-card-name';
+            nameLabel.textContent = guest.name;
+            wrapper.appendChild(nameLabel);
+        }
+
         bindGuestTooltipHoldInteractions(wrapper, guestId);
 
         const slotEmoji = slot.querySelector('.slot-emoji');
