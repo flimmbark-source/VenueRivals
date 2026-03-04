@@ -348,10 +348,16 @@ body {
 }
 
 #setup-screen.active {
+    flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding-top: 12px;
-    padding-bottom: 12px;
+    padding: 0;
+}
+
+#setup-screen .setup-container {
+    margin: auto;
+    padding-top: 16px;
+    padding-bottom: 16px;
 }
 
 #setup-screen .setup-name-section {
@@ -457,13 +463,15 @@ body {
 }
 
 #setup-screen .loadout-deck-preview-grid {
-    max-height: 56px;
+    max-height: 64px;
     overflow: hidden;
     row-gap: 20px;
-    padding: 2px 4px 14px;
+    padding: 4px 4px 16px;
     grid-template-columns: repeat(auto-fit, minmax(32px, 32px));
-    column-gap: 6px;
+    column-gap: 12px;
     justify-content: center;
+    align-items: center;
+    align-content: center;
 }
 
 #setup-screen .loadout-deck-preview {
