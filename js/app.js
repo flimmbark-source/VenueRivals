@@ -1651,6 +1651,8 @@
 
     function renderLoadoutVenue() {
         const venue = Game.VENUES[loadoutState.venueId];
+        const venueNameEl = document.getElementById('loadout-venue-name');
+        if (venueNameEl) venueNameEl.textContent = venue.name;
         const body = document.getElementById('loadout-venue-body');
         body.innerHTML = `
             <div class="loadout-venue-icon">${venue.emoji}</div>
@@ -1672,8 +1674,10 @@
         const selectedDeck = Game.DECKS[loadoutState.selectedDeckId];
         const deckName = selectedDeck ? selectedDeck.name : `${count} card${count !== 1 ? 's' : ''}`;
 
+        const deckNameEl = document.getElementById('loadout-deck-name');
+        if (deckNameEl) deckNameEl.textContent = deckName;
+
         body.innerHTML = `
-            <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${deckName}</div>
             <div class="loadout-deck-preview-grid" id="loadout-deck-preview-grid"></div>
             ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
         `;
@@ -1687,8 +1691,10 @@
         const selectedList = Game.GUEST_LISTS[loadoutState.selectedGuestListId];
         const guestListName = selectedList ? selectedList.name : 'Custom Guest List';
 
+        const guestListNameEl = document.getElementById('loadout-guest-list-name');
+        if (guestListNameEl) guestListNameEl.textContent = guestListName;
+
         body.innerHTML = `
-            <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${guestListName}</div>
             <div class="loadout-deck-preview-grid" id="loadout-guest-list-preview-grid"></div>
             ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
         `;
