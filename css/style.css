@@ -640,7 +640,7 @@ body {
     background: rgba(255,255,255,0.06);
 }
 
-.money-badge { color: var(--accent-gold); }
+.money-badge { color: var(--accent-tertiary); }
 .pts-badge { color: var(--accent-blue); }
 
 /* === Heat Bar === */
@@ -817,7 +817,7 @@ body {
 }
 
 .guest-slot .slot-heat {
-    top: 115%;
+    top: 121%;
     right: 10px;
     left: auto;
     transform: none;
@@ -869,6 +869,12 @@ body {
 .guest-slot.tier-common { border-color: #444; }
 .guest-slot.tier-uncommon { border-color: rgba(76, 201, 240, 0.5); }
 .guest-slot.tier-rare { border-color: rgba(127, 90, 240, 0.6); }
+
+
+.guest-slot.selected {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 0 12px rgba(127, 90, 240, 0.5);
+}
 
 .guest-slot.arriving-in-grid {
     border-color: var(--accent-gold);
@@ -1040,7 +1046,7 @@ body {
 
 .feedback-msg.money {
     background: rgba(255, 209, 102, 0.12);
-    color: var(--accent-gold);
+    color: var(--accent-tertiary);
     border: 1px solid rgba(255, 209, 102, 0.3);
 }
 
@@ -1118,7 +1124,7 @@ body {
     font-weight: 600;
 }
 
-.stat-money { color: var(--accent-gold); }
+.stat-money { color: var(--accent-tertiary); }
 .stat-points { color: var(--accent-blue); }
 .stat-heat { color: var(--accent-primary); }
 
@@ -1186,7 +1192,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 3px;
 }
 
 .shop-title {
@@ -1200,116 +1206,100 @@ body {
 .shop-money {
     font-weight: 700;
     font-size: 0.85rem;
-    color: var(--accent-gold);
+    color: var(--accent-tertiary);
+}
+
+.shop-layout {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    justify-content: center;
+    align-items: flex-start;
 }
 
 .shop-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 80px));
-    gap: 6px;
-    margin-bottom: 10px;
+    grid-template-columns: repeat(5, auto);
+    gap: 22px 10px;
     justify-content: center;
 }
 
-.shop-card {
-    background: var(--bg-medium);
-    border: 2px solid var(--bg-light);
-    border-radius: var(--radius-sm);
-    padding: 8px;
-    width: 80px;
-    text-align: center;
-    cursor: pointer;
-    transition: var(--transition);
+.shop-upgrades {
     display: flex;
     flex-direction: column;
+    gap: 22px;
+    align-items: center;
 }
 
-.shop-card:hover:not(.disabled) {
+.shop-upgrades-label {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.6rem;
+    color: var(--accent-gold);
+    letter-spacing: 1px;
+    text-align: center;
+    padding-top: 2px;
+    border-top: 1px solid var(--bg-light);
+    width: 100%;
+}
+
+.shop-card-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+
+.shop-card-wrapper:hover .guest-slot {
+    transform: scale(1.08);
     border-color: var(--accent-gold);
-    transform: translateY(-2px);
 }
 
-.shop-card.disabled {
+.shop-card-wrapper.disabled {
     opacity: 0.35;
     cursor: not-allowed;
 }
 
-.shop-card-visual {
-    position: relative;
-    min-height: 54px;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 6px;
+.shop-card-wrapper.disabled .guest-slot {
+    cursor: not-allowed;
 }
 
-.shop-card-emoji {
-    border: none;
-    background: transparent;
-    padding: 0;
-    font-size: 1.5rem;
-    line-height: 1;
+.shop-card-wrapper .guest-slot {
     cursor: inherit;
 }
 
-.shop-card-emoji.has-ability {
-    cursor: pointer;
-    filter: drop-shadow(0 0 4px rgba(255, 209, 102, 0.45));
+.shop-upgrades .slot-stat,
+.shop-upgrades .ability-icon-badge {
+    display: none;
 }
 
-.shop-card-stat {
-    position: absolute;
-    font-size: 0.6rem;
-    font-weight: 700;
-    line-height: 1;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.65);
-}
-
-.shop-card-heat {
-    top: 0;
+.shop-upgrades .slot-emoji {
     left: 50%;
-    transform: translateX(-50%);
-    color: #ff5c5c;
-    white-space: nowrap;
-}
-
-.shop-card-money {
-    left: 0;
-    bottom: 0;
-    color: #2cb67d;
-}
-
-.shop-card-points {
-    right: 0;
-    bottom: 0;
-    color: #ffd166;
-}
-
-.shop-card-visual .ability-icon-badge {
-    bottom: 0;
-    font-size: 0.5rem;
+    top: 40%;
+    transform: translate(-50%, -50%);
 }
 
 .shop-card-name {
+    position: absolute;
+    bottom: 3px;
+    left: 0;
+    right: 0;
     font-family: 'Poppins', sans-serif;
-    font-size: 0.65rem;
+    font-size: 0.5rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 2px;
+    text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.shop-card-name.has-ability {
-    color: #A020F0;
+    pointer-events: none;
 }
 
 .shop-card-cost {
     font-size: 0.7rem;
     color: var(--accent-gold);
     font-weight: 700;
+    margin-bottom: 2px;
 }
 
 #buy-phase-panel .btn { width: 100%; }
@@ -1854,29 +1844,21 @@ body {
 
 .deck-manage-grid {
     display: flex;
-    gap: 6px;
+    gap: 18px 8px;
     flex-wrap: wrap;
 }
 
 .deck-manage-card {
-    background: var(--bg-card);
-    border: 2px solid var(--bg-light);
-    border-radius: var(--radius-sm);
-    padding: 6px;
-    width: 72px;
-    text-align: center;
-    cursor: pointer;
-    transition: var(--transition);
     display: flex;
     flex-direction: column;
-}
-
-.deck-manage-card:hover {
-    transform: translateY(-2px);
-}
-
-#guest-list-preview-grid .deck-manage-card {
+    align-items: center;
+    width: 40px;
     cursor: pointer;
+    transition: var(--transition);
+}
+
+.deck-manage-card:hover .guest-slot {
+    transform: scale(1.08);
 }
 
 .guest-ability-popup-backdrop {
@@ -1937,70 +1919,17 @@ body {
     line-height: 1.4;
 }
 
-.deck-manage-card.tier-common { border-color: #444; }
-.deck-manage-card.tier-uncommon { border-color: rgba(76, 201, 240, 0.4); }
-.deck-manage-card.tier-rare { border-color: rgba(127, 90, 240, 0.5); }
-
-.deck-card-visual {
-    position: relative;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 4px;
-}
-
-.deck-card-emoji {
-    font-size: 1.3rem;
-    line-height: 1;
-}
-
-.deck-card-emoji.has-ability {
-    filter: drop-shadow(0 0 4px rgba(255, 209, 102, 0.45));
-}
-
-.deck-card-stat {
-    position: absolute;
-    font-size: 0.55rem;
-    font-weight: 700;
-    line-height: 1;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
-}
-
-.deck-card-heat {
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #ff5c5c;
-    white-space: nowrap;
-}
-
-.deck-card-money {
-    left: 0;
-    bottom: 0;
-    color: #2cb67d;
-}
-
-.deck-card-points {
-    right: 0;
-    bottom: 0;
-    color: #ffd166;
-}
-
-.deck-card-visual .ability-icon-badge {
-    bottom: 0;
-    font-size: 0.48rem;
-}
-
 .deck-card-name {
     font-family: 'Poppins', sans-serif;
-    font-size: 0.6rem;
+    font-size: 0.5rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 2px;
+    margin-bottom: 3px;
+    width: 40px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: center;
 }
 
 .deck-card-name.has-ability {

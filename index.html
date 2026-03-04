@@ -96,13 +96,9 @@
                 <label for="round-count-input">Rounds</label>
                 <label for="game-mode-input">Mode</label>
                 <select id="round-count-input">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3" selected>3</option>
-                    <option value="4">4</option>
                     <option value="5">5</option>
                     <option value="6">6</option>
-                    <option value="7">7</option>
+                    <option value="7"selected>7</option>
                     <option value="8">8</option>
                     <option value="9">9</option>
                     <option value="10">10</option>
@@ -202,10 +198,6 @@
                     <span class="hud-round">ROUND <span id="hud-round-num">1</span>/<span id="hud-round-total">3</span></span>
                     <span class="hud-phase" id="hud-phase">GUEST PHASE</span>
                 </div>
-                <div class="hud-right">
-                    <span class="hud-score player-color" id="hud-player-pts">You: 0 pts</span>
-                    <span class="hud-score rival-color" id="hud-rival-pts">Rival: 0 pts</span>
-                </div>
             </div>
 
             <!-- Opponent Venue Area -->
@@ -213,7 +205,7 @@
                 <div class="venue-header">
                     <span class="venue-label rival-color" id="rival-venue-name">Rival</span>
                     <div class="venue-stats">
-                        <span class="money-badge" id="rival-money">💰 $0</span>
+                        <span class="money-badge" id="rival-money">💵 $0</span>
                         <span class="pts-badge" id="rival-pts-badge">⭐ 0</span>
                     </div>
                 </div>
@@ -247,7 +239,7 @@
                 <div class="venue-header">
                     <span class="venue-label player-color" id="player-venue-name">You</span>
                     <div class="venue-stats">
-                        <span class="money-badge" id="player-money">💰 $0</span>
+                        <span class="money-badge" id="player-money">💵 $0</span>
                         <span class="pts-badge" id="player-pts-badge">⭐ 0</span>
                     </div>
                 </div>
@@ -304,9 +296,12 @@
                 <div id="buy-phase-panel" style="display: none;">
                     <div class="shop-header">
                         <span class="shop-title">SHOP</span>
-                        <span class="shop-money" id="shop-money">💰 $0</span>
+                        <span class="shop-money" id="shop-money">💵 $0</span>
                     </div>
-                    <div class="shop-grid" id="shop-grid"></div>
+                    <div class="shop-layout">
+                        <div class="shop-grid" id="shop-grid"></div>
+                        <div class="shop-upgrades" id="shop-upgrades"></div>
+                    </div>
                     <button class="btn btn-primary" id="btn-done-shopping">Done Shopping</button>
                 </div>
 

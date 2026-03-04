@@ -22,6 +22,10 @@ const AI = (() => {
         return result;
     }
 
+    function getHeatCapacity(venue, player) {
+        return Game.getHeatCapacity(venue, player);
+    }
+
     function estimateRoundValueForGuest(rival, venue, guestId) {
         const sampledDeck = [...rival.fullDeck, guestId];
         let totalScore = 0;
@@ -37,7 +41,7 @@ const AI = (() => {
                 money += guest.money;
                 points += guest.points;
 
-                if (heat > venue.bustThreshold) {
+                if (heat > getHeatCapacity(venue, rival)) {
                     money = Math.floor(money * 0.25);
                     points = Math.floor(points * 0.25);
                     break;
@@ -63,7 +67,7 @@ const AI = (() => {
         });
     }
 
-    function estimateRolloutFromDoorState(baseState, orderedDeck, venue) {
+    function estimateRolloutFromDoorState(baseState, orderedDeck, venue, heatCap) {
         let heat = baseState.heat;
         let money = baseState.money;
         let points = baseState.points;
@@ -75,14 +79,14 @@ const AI = (() => {
             const nextMoney = money + nextGuest.money;
             const nextPoints = points + nextGuest.points;
 
-            if (nextHeat > venue.bustThreshold) {
+            if (nextHeat > heatCap) {
                 const bustedMoney = Math.floor(nextMoney * 0.25);
                 const bustedPoints = Math.floor(nextPoints * 0.25);
                 return scoreRoundValue(bustedMoney, bustedPoints, venue);
             }
 
             const continueScore = scoreRoundValue(nextMoney, nextPoints, venue);
-            const heatPressure = nextHeat / venue.bustThreshold;
+            const heatPressure = nextHeat / heatCap;
             const nearEnd = i >= orderedDeck.length - 1;
 
             // Rollout policy: only close under very high pressure after we've
@@ -119,7 +123,7 @@ const AI = (() => {
             let money = rival.roundMoney + nextGuest.money;
             let points = rival.roundPoints + nextGuest.points;
 
-            if (heat > venue.bustThreshold) {
+            if (heat > getHeatCapacity(venue, rival)) {
                 money = Math.floor(money * 0.25);
                 points = Math.floor(points * 0.25);
                 admitTotal += scoreRoundValue(money, points, venue);
@@ -127,7 +131,8 @@ const AI = (() => {
             }
 
             const remainder = orderedDeck.slice(1);
-            admitTotal += estimateRolloutFromDoorState({ heat, money, points }, remainder, venue);
+            const heatCap = getHeatCapacity(venue, rival);
+            admitTotal += estimateRolloutFromDoorState({ heat, money, points }, remainder, venue, heatCap);
         }
 
         return {
@@ -142,7 +147,8 @@ const AI = (() => {
         // Flash abilities trigger only after the guest is admitted. If admitting this
         // guest would bust immediately, the ability cannot save the round value.
         const projectedHeat = rival.heat + guest.heat;
-        if (projectedHeat > venue.bustThreshold) {
+        const rivalHeatCap = getHeatCapacity(venue, rival);
+        if (projectedHeat > rivalHeatCap) {
             return Number.NEGATIVE_INFINITY;
         }
 
@@ -152,16 +158,17 @@ const AI = (() => {
         switch (guest.ability.type) {
             case 'coolHeat': {
                 // More valuable when close to busting.
-                const headroom = venue.bustThreshold - rival.heat;
+                const headroom = rivalHeatCap - rival.heat;
                 value += headroom <= 1 ? guest.ability.value * 5 : guest.ability.value * 1.5;
                 break;
             }
             case 'addOpponentHeat': {
                 if (!player.doorClosed && !player.busted) {
                     const projected = player.heat + guest.ability.value;
-                    const ratio = projected / playerVenue.bustThreshold;
+                    const playerHeatCap = getHeatCapacity(playerVenue, player);
+                    const ratio = projected / playerHeatCap;
                     value += ratio * 3;
-                    if (projected > playerVenue.bustThreshold) value += 6;
+                    if (projected > playerHeatCap) value += 6;
                 }
                 break;
             }
@@ -171,9 +178,10 @@ const AI = (() => {
             case 'queueGatecrasher': {
                 if (!player.doorClosed && !player.busted) {
                     const projected = player.heat + 2;
-                    const ratio = projected / playerVenue.bustThreshold;
+                    const playerHeatCap = getHeatCapacity(playerVenue, player);
+                    const ratio = projected / playerHeatCap;
                     value += ratio * 3;
-                    if (projected > playerVenue.bustThreshold) value += 6;
+                    if (projected > playerHeatCap) value += 6;
                 }
                 break;
             }
@@ -193,6 +201,21 @@ const AI = (() => {
             case 'lockAdjacent':
                 value += 2;
                 break;
+            case 'gainMoney':
+                value += guest.ability.value * 1.2;
+                break;
+            case 'stealMoney':
+                value += guest.ability.value * 2;
+                break;
+            case 'discardNext':
+                value += 1.5;
+                break;
+            case 'scorePerGuest':
+                value += rival.house.length * guest.ability.value * 1.2;
+                break;
+            case 'boostAdjacent':
+                value += rival.house.length > 0 ? guest.ability.value * 1.5 : 0;
+                break;
         }
 
         return value;
@@ -206,7 +229,8 @@ const AI = (() => {
         if (!guest) return 'close';
 
         // Already over threshold while this guest is at the door.
-        if (rival.heat > venue.bustThreshold) {
+        const rivalHeatCap = getHeatCapacity(venue, rival);
+        if (rival.heat > rivalHeatCap) {
             if (guest.ability && guest.ability.type === 'coolHeat') {
                 return 'ability';
             }
@@ -214,12 +238,12 @@ const AI = (() => {
         }
 
         // Never intentionally admit a guest that causes an immediate bust.
-        if ((rival.heat + guest.heat) > venue.bustThreshold) {
+        if ((rival.heat + guest.heat) > rivalHeatCap) {
             return 'close';
         }
 
         // Early-round tempo: avoid closing immediately unless pressure is already high.
-        const remainingHeatBuffer = venue.bustThreshold - rival.heat;
+        const remainingHeatBuffer = rivalHeatCap - rival.heat;
         if (rival.house.length < 2 && remainingHeatBuffer >= 2) {
             return 'admit';
         }

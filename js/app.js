@@ -19,6 +19,7 @@
     let guestAbilityPopupEl = null;
     let guestAbilityPopupBackdropEl = null;
     let loadoutState = null;
+    let selectedGridGuest = null;
     // cache the last rendered guest detail to avoid unnecessary refreshes
     let _lastGuestDetailKey = null;
     let multiplayerSession = null;
@@ -40,7 +41,7 @@
     };
 
     const VENUE_STYLE_LABEL = {
-        money: '\u{1F4B0} Money',
+        money: '\u{1F4B5}U+ Money',
         points: '\u2B50 Points',
         control: '\u{1F6E1} Control',
     };
@@ -200,6 +201,7 @@
 
     function refreshAll() {
         if (!gameState) return;
+        syncSelectedGridGuest();
         syncPanelsForState();
         renderHouseGrid('player');
         renderHouseGrid('rival');
@@ -209,6 +211,58 @@
         updateVenueStatus('player');
         updateVenueStatus('rival');
         updateHUD();
+    }
+
+    function syncSelectedGridGuest() {
+        if (!gameState) {
+            selectedGridGuest = null;
+            return;
+        }
+        const p = gameState.player;
+        if (!p.arrivingGuest || p.doorClosed || p.busted) {
+            selectedGridGuest = null;
+            return;
+        }
+        if (!selectedGridGuest) {
+            selectedGridGuest = { guestId: p.arrivingGuest, source: 'arriving' };
+            return;
+        }
+        if (selectedGridGuest.source === 'arriving' && selectedGridGuest.guestId !== p.arrivingGuest) {
+            selectedGridGuest = { guestId: p.arrivingGuest, source: 'arriving' };
+            return;
+        }
+        if (selectedGridGuest.source === 'house') {
+            const inHouse = p.house.some((entry) => {
+                if (selectedGridGuest.instanceId != null && typeof entry !== 'string') {
+                    return entry.instanceId === selectedGridGuest.instanceId;
+                }
+                return (entry.guestId || entry) === selectedGridGuest.guestId;
+            });
+            if (!inHouse) {
+                selectedGridGuest = { guestId: p.arrivingGuest, source: 'arriving' };
+            }
+        }
+    }
+
+
+    function refreshSelectedGridSlotVisual() {
+        const slotsEl = document.getElementById('player-slots');
+        if (!slotsEl) return;
+
+        slotsEl.querySelectorAll('.guest-slot.selected').forEach((slot) => slot.classList.remove('selected'));
+        if (!selectedGridGuest) return;
+
+        const occupiedSlots = slotsEl.querySelectorAll('.occupied-slot[data-guest-id]');
+        occupiedSlots.forEach((slot) => {
+            const sameSource = (slot.dataset.slotSource || '') === selectedGridGuest.source;
+            const sameGuest = (slot.dataset.guestId || '') === selectedGridGuest.guestId;
+            if (!sameSource || !sameGuest) return;
+
+            if (selectedGridGuest.source === 'house' && selectedGridGuest.instanceId != null) {
+                if ((slot.dataset.instanceId || '') !== String(selectedGridGuest.instanceId)) return;
+            }
+            slot.classList.add('selected');
+        });
     }
 
     function handleRemoteEvent(evt) {
@@ -317,33 +371,53 @@
         const r = gameState.rival;
         const pVenue = Game.VENUES[p.venueId];
         const rVenue = Game.VENUES[r.venueId];
+        const includeProjectedRoundTotals =
+        gameState.phase === 'guest' && gameState.guestPhaseScoredRound !== gameState.round;
 
-        document.getElementById('hud-round-num').textContent = gameState.round;
-        document.getElementById('hud-round-total').textContent = gameState.totalRounds;
-        document.getElementById('hud-phase').textContent =
+        const hudRoundNumEl = document.getElementById('hud-round-num');
+        const hudRoundTotalEl = document.getElementById('hud-round-total');
+        const hudPhaseEl = document.getElementById('hud-phase');
+        const hudPlayerPtsEl = document.getElementById('hud-player-pts');
+        const hudRivalPtsEl = document.getElementById('hud-rival-pts');
+        const playerVenueNameEl = document.getElementById('player-venue-name');
+        const playerMoneyEl = document.getElementById('player-money');
+        const playerPtsBadgeEl = document.getElementById('player-pts-badge');
+        const rivalVenueNameEl = document.getElementById('rival-venue-name');
+        const rivalMoneyEl = document.getElementById('rival-money');
+        const rivalPtsBadgeEl = document.getElementById('rival-pts-badge');
+
+        if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl ||
+            !playerVenueNameEl || !playerMoneyEl || !playerPtsBadgeEl || !rivalVenueNameEl || !rivalMoneyEl || !rivalPtsBadgeEl) {
+            return;
+        }
+
+        hudRoundNumEl.textContent = gameState.round;
+        hudRoundTotalEl.textContent = gameState.totalRounds;
+        hudPhaseEl.textContent =
             gameState.phase === 'guest' ? 'GUEST PHASE' :
             gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
-        document.getElementById('hud-player-pts').textContent = `You: ${p.points} pts`;
-        document.getElementById('hud-rival-pts').textContent = `Rival: ${r.points} pts`;
+        if (hudPlayerPtsEl) hudPlayerPtsEl.textContent = `You: ${p.points} pts`;
+        if (hudRivalPtsEl) hudRivalPtsEl.textContent = `Rival: ${r.points} pts`;
 
         // Player venue
-        document.getElementById('player-venue-name').textContent = p.name;
-        document.getElementById('player-money').textContent = `\u{1F4B0} $${p.money + p.roundMoney}`;
-        document.getElementById('player-pts-badge').textContent = `\u2B50 ${p.points + p.roundPoints}`;
-        updateHeatBar('player', p.heat, pVenue.bustThreshold);
+        playerVenueNameEl.textContent = p.name;
+        playerMoneyEl.textContent = `💵 $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
+        playerPtsBadgeEl.textContent = `⭐ ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
+        updateHeatBar('player', p.heat, Game.getHeatCapacity(pVenue, p), p.busted);
 
         // Rival venue
-        document.getElementById('rival-venue-name').textContent = r.name;
-        document.getElementById('rival-money').textContent = `\u{1F4B0} $${r.money + r.roundMoney}`;
-        document.getElementById('rival-pts-badge').textContent = `\u2B50 ${r.points + r.roundPoints}`;
-        updateHeatBar('rival', r.heat, rVenue.bustThreshold);
+        rivalVenueNameEl.textContent = r.name;
+        rivalMoneyEl.textContent = `💵 $${r.money + (includeProjectedRoundTotals ? r.roundMoney : 0)}`;
+        rivalPtsBadgeEl.textContent = `⭐ ${r.points + (includeProjectedRoundTotals ? r.roundPoints : 0)}`;
+        updateHeatBar('rival', r.heat, Game.getHeatCapacity(rVenue, r), r.busted);
     }
 
-    function updateHeatBar(who, heat, max) {
+    function updateHeatBar(who, heat, max, busted = false) {
         const fill = document.getElementById(`${who}-heat-fill`);
         const text = document.getElementById(`${who}-heat-text`);
-        const pct = Math.min(100, (heat / max) * 100);
+        if (!fill || !text) return;
+        const pct = busted ? 100 : Math.min(100, (heat / max) * 100);
         fill.style.width = pct + '%';
         fill.className = 'heat-fill';
         if (pct > 85) fill.classList.add('critical');
@@ -363,6 +437,19 @@
     // === Guest Slot Rendering ===
     function createGuestSlot(guestId, animate, options = {}) {
         const guest = Game.GUESTS[guestId];
+        if (!guest) {
+            const fallback = document.createElement('div');
+            fallback.className = 'guest-slot occupied-slot tier-common';
+            if (guestId != null) fallback.dataset.guestId = String(guestId);
+            fallback.innerHTML = `
+                <span class="slot-stat slot-heat">🔥0</span>
+                <span class="slot-emoji">❓</span>
+                <span class="slot-stat slot-money">0</span>
+                <span class="slot-stat slot-points">0</span>
+            `;
+            fallback.title = 'Unknown guest';
+            return fallback;
+        }
         const el = document.createElement('div');
         el.className = `guest-slot occupied-slot tier-${guest.tier}`;
         el.dataset.guestId = guestId;
@@ -386,6 +473,7 @@
         const slotsEl = document.getElementById(`${who}-slots`);
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
+        const allowGridTooltip = who === 'rival';
 
         const houseCapacity = Game.getHouseCapacity(venue, player);
         // Count occupied slots: house + arriving guest (cap to capacity for empties)
@@ -405,14 +493,42 @@
         }
         guests.forEach((entry) => {
             const guestId = entry.guestId || entry;
-            const slot = createGuestSlot(guestId, false);
+            const slot = createGuestSlot(guestId, false, { interactive: allowGridTooltip });
+            if (who === 'player') {
+                const instanceId = typeof entry === 'string' ? null : entry.instanceId;
+                slot.dataset.slotSource = 'house';
+                if (instanceId != null) slot.dataset.instanceId = String(instanceId);
+                if (selectedGridGuest?.source === 'house' &&
+                    selectedGridGuest.guestId === guestId &&
+                    (selectedGridGuest.instanceId == null || selectedGridGuest.instanceId === instanceId)) {
+                    slot.classList.add('selected');
+                }
+                slot.addEventListener('click', () => {
+                    selectedGridGuest = { guestId, source: 'house', instanceId };
+                    _lastGuestDetailKey = null;
+                    refreshSelectedGridSlotVisual();
+                    updateGuestDetail();
+                });
+            }
             slotsEl.appendChild(slot);
         });
 
         // Render arriving guest as the rightmost/newest slot
         if (player.arrivingGuest) {
-            const slot = createGuestSlot(player.arrivingGuest, false);
+            const slot = createGuestSlot(player.arrivingGuest, false, { interactive: allowGridTooltip });
             slot.classList.add('arriving-in-grid');
+            if (who === 'player') {
+                slot.dataset.slotSource = 'arriving';
+                if (selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === player.arrivingGuest) {
+                    slot.classList.add('selected');
+                }
+                slot.addEventListener('click', () => {
+                    selectedGridGuest = { guestId: player.arrivingGuest, source: 'arriving' };
+                    _lastGuestDetailKey = null;
+                    refreshSelectedGridSlotVisual();
+                    updateGuestDetail();
+                });
+            }
             slotsEl.appendChild(slot);
         }
     }
@@ -446,13 +562,20 @@
     }
 
     function animateExitGuest(who, guestId) {
+        if (Array.isArray(guestId)) {
+            guestId.forEach((id) => animateExitGuest(who, id));
+            return;
+        }
         const exitDoor = document.querySelector(`#${who}-area .exit-door`);
         // try to find the slot containing the specific guestId; fall back to first occupied
-        let sourceSlot = document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`);
+        let sourceSlot = guestId ? document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`) : null;
         if (!sourceSlot) sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
         if (!exitDoor || !sourceSlot) return;
 
-        const ghost = createGuestSlot(guestId, false);
+        const resolvedGuestId = guestId || sourceSlot.dataset.guestId;
+        if (!resolvedGuestId || !Game.GUESTS[resolvedGuestId]) return;
+
+        const ghost = createGuestSlot(resolvedGuestId, false);
         ghost.classList.add('exit-ghost');
 
         const sourceRect = sourceSlot.getBoundingClientRect();
@@ -478,8 +601,12 @@
     function updateGuestDetail() {
         const detailEl = document.getElementById('guest-detail');
         const p = gameState.player;
+        syncSelectedGridGuest();
+        const selectedGuestId = selectedGridGuest?.guestId || p.arrivingGuest;
+        const selectedGuestSource = selectedGridGuest?.source || 'arriving';
+        refreshSelectedGridSlotVisual();
         // Avoid re-rendering if player's arriving state and visible stats haven't changed
-        const key = `${p.arrivingGuest || ''}|${p.doorClosed}|${p.busted}|${p.heat}|${p.roundMoney}|${p.roundPoints}`;
+        const key = `${p.arrivingGuest || ''}|${p.doorClosed}|${p.busted}|${p.heat}|${p.roundMoney}|${p.roundPoints}|${selectedGuestId || ''}|${selectedGuestSource}`;
         if (key === _lastGuestDetailKey) return;
         _lastGuestDetailKey = key;
 
@@ -501,9 +628,21 @@
             return;
         }
 
-        const guest = Game.GUESTS[p.arrivingGuest];
+        const guest = Game.GUESTS[selectedGuestId];
         const venue = Game.VENUES[p.venueId];
-        const wouldBust = p.heat > venue.bustThreshold;
+        const wouldBust = p.heat > Game.getHeatCapacity(venue, p);
+        let selectedHouseEntry = null;
+        if (selectedGuestSource === 'house') {
+            selectedHouseEntry = p.house.find((entry) => {
+                if (selectedGridGuest?.instanceId != null && typeof entry !== 'string') {
+                    return entry.instanceId === selectedGridGuest.instanceId;
+                }
+                return (entry.guestId || entry) === selectedGuestId;
+            }) || null;
+        }
+        const canUseSelectedAbility = !!guest.ability && (
+            selectedGuestSource !== 'house' || !selectedHouseEntry || !selectedHouseEntry.abilityUsed
+        );
 
         let abilityHTML = '';
         if (guest.ability) {
@@ -515,12 +654,12 @@
         const existingMoney = detailEl.querySelector('.stat-money')?.textContent;
         const existingPoints = detailEl.querySelector('.stat-points')?.textContent;
         const existingHeat = detailEl.querySelector('.stat-heat')?.textContent || detailEl.querySelector('.stat-heat.danger')?.textContent;
-        const expectedMoney = `\u{1F4B0} ${guest.money}`;
+        const expectedMoney = `\u{1F4B5} ${guest.money}`;
         const expectedPoints = `\u2B50 ${guest.points}`;
         const expectedHeat = `\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}`;
         if (existingName === guest.name && existingMoney === expectedMoney && existingPoints === expectedPoints && existingHeat === expectedHeat) {
             document.getElementById('btn-admit').disabled = false;
-            document.getElementById('btn-ability').disabled = !guest.ability;
+            document.getElementById('btn-ability').disabled = !canUseSelectedAbility;
             document.getElementById('btn-close-door').disabled = false;
             return;
         }
@@ -531,7 +670,7 @@
                 <div class="guest-detail-info">
                     <div class="guest-detail-name">${guest.name}</div>
                     <div class="guest-detail-stats">
-                        <span class="stat-money">\u{1F4B0} ${guest.money}</span>
+                        <span class="stat-money">\u{1F4B5} ${guest.money}</span>
                         <span class="stat-points">\u2B50 ${guest.points}</span>
                         <span class="stat-heat${wouldBust ? ' danger' : ''}">\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}</span>
                     </div>
@@ -542,13 +681,13 @@
 
         // Update buttons
         document.getElementById('btn-admit').disabled = false;
-        document.getElementById('btn-ability').disabled = !guest.ability;
+        document.getElementById('btn-ability').disabled = !canUseSelectedAbility;
         document.getElementById('btn-close-door').disabled = false;
     }
 
     // === Tooltip ===
-    function showTooltip(e, guestId) {
-        e.stopPropagation();
+    function showTooltipForTarget(target, guestId) {
+        if (!target) return;
         removeTooltip();
         const guest = Game.GUESTS[guestId];
         const el = document.createElement('div');
@@ -562,7 +701,7 @@
         el.innerHTML = `
             <div class="tt-name">${guest.emoji} ${guest.name}</div>
             <div class="tt-stats">
-                <span class="stat-money">💰${guest.money}</span>
+                <span class="stat-money">💵${guest.money}</span>
                 <span class="stat-points">⭐${guest.points}</span>
                 <span class="stat-heat">🔥${guest.heat}</span>
             </div>
@@ -573,7 +712,7 @@
         tooltipEl = el;
 
         // Position
-        const rect = e.target.getBoundingClientRect();
+        const rect = target.getBoundingClientRect();
         let left = rect.left + rect.width / 2 - 80;
         let top = rect.top - el.offsetHeight - 8;
         if (top < 10) top = rect.bottom + 8;
@@ -597,6 +736,11 @@
         }, 0);
     }
 
+        function showTooltip(e, guestId) {
+        e.stopPropagation();
+        showTooltipForTarget(e.currentTarget || e.target, guestId);
+    }
+
     function removeTooltip() {
         if (tooltipEl) {
             tooltipEl.remove();
@@ -612,7 +756,7 @@
         document.body.appendChild(el);
         iconTooltipEl = el;
 
-        const rect = e.target.getBoundingClientRect();
+        const rect = target.getBoundingClientRect();
         const left = Math.min(window.innerWidth - el.offsetWidth - 10, Math.max(10, rect.left - 10));
         const top = Math.max(10, rect.top - el.offsetHeight - 8);
         el.style.left = `${left}px`;
@@ -630,14 +774,52 @@
         }
     }
 
+
+    function bindGuestTooltipHoldInteractions(el, guestId) {
+        if (!el || !guestId) return;
+
+        let pressTimer = null;
+        let didLongPress = false;
+
+        const clearPressTimer = () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+        };
+
+        const onPressStart = (e) => {
+            if (e.target.closest('.slot-emoji.has-ability')) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            didLongPress = false;
+            clearPressTimer();
+            pressTimer = setTimeout(() => {
+                showTooltipForTarget(el, guestId);
+                didLongPress = true;
+                pressTimer = null;
+            }, 420);
+        };
+
+        el.addEventListener('pointerdown', onPressStart);
+        el.addEventListener('pointerup', clearPressTimer);
+        el.addEventListener('pointercancel', clearPressTimer);
+        el.addEventListener('pointerleave', clearPressTimer);
+
+        // Swallow the click that fires after a long-press so it doesn't buy immediately.
+        el.addEventListener('click', (e) => {
+            if (!didLongPress) return;
+            e.preventDefault();
+            e.stopPropagation();
+            didLongPress = false;
+        }, true);
+    }
+
     function bindAbilityTooltipInteractions(el, message) {
         if (!el || !message) return;
 
         let pressTimer = null;
         let didLongPress = false;
 
-        el.addEventListener('mouseenter', (e) => showIconTooltip(e, message));
-        el.addEventListener('mouseleave', removeIconTooltip);
         el.addEventListener('click', (e) => {
             e.stopPropagation();
             if (didLongPress) {
@@ -833,10 +1015,7 @@
     function runAbility(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
         const { self, opponent, selfKey, opponentKey } = getActorState(actor);
-        if (!self.arrivingGuest || self.doorClosed || self.busted) return;
-
-        const guest = Game.GUESTS[self.arrivingGuest];
-        if (!guest.ability) return;
+        if (self.doorClosed || self.busted) return;
 
         const selfVenue = Game.VENUES[self.venueId];
         const opponentVenue = Game.VENUES[opponent.venueId];
@@ -849,7 +1028,7 @@
             roundMoney: gameState.player.roundMoney,
             roundPoints: gameState.player.roundPoints,
         };
-        const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue);
+        const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue, selfKey === 'player' ? selectedGridGuest : null);
         if (!result) return;
 
         showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
@@ -977,6 +1156,11 @@
 
             const action = AI.decideGuestAction(gameState);
             if (!action) {
+                // Defensive fallback: if rival still has an active turn, bank safely.
+                if (!r.phaseComplete && !r.doorClosed && !r.busted) {
+                    executeAIAction('close');
+                    return;
+                }
                 clearInterval(aiTimerId);
                 aiTimerId = null;
                 checkGuestPhaseDone();
@@ -1122,14 +1306,14 @@
 
         // Player results
         html += `<div class="results-row"><span class="label player-color">${p.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B0} Money earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+$${p.roundMoney}${p.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+$${p.roundMoney}${p.busted ? ' (busted)' : ''}</span></div>`;
         html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+${p.roundPoints}${p.busted ? ' (busted)' : ''}</span></div>`;
 
         html += '<div class="results-divider"></div>';
 
         // Rival results
         html += `<div class="results-row"><span class="label rival-color">${r.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B0} Money earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+$${r.roundMoney}${r.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+$${r.roundMoney}${r.busted ? ' (busted)' : ''}</span></div>`;
         html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+${r.roundPoints}${r.busted ? ' (busted)' : ''}</span></div>`;
 
         document.getElementById('results-content').innerHTML = html;
@@ -1185,68 +1369,95 @@
         document.getElementById('gameover-panel').style.display = 'none';
     }
 
+    function renderShopCard(guestId, cost, canAfford, container) {
+        const guest = Game.GUESTS[guestId];
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'shop-card-wrapper' + (canAfford ? '' : ' disabled');
+
+        const costLabel = document.createElement('div');
+        costLabel.className = 'shop-card-cost';
+        costLabel.textContent = '$' + cost;
+        wrapper.appendChild(costLabel);
+
+        const slot = createGuestSlot(guestId, false, { interactive: false });
+        wrapper.appendChild(slot);
+
+        if (guest.isShopItem) {
+            const nameLabel = document.createElement('div');
+            nameLabel.className = 'shop-card-name';
+            nameLabel.textContent = guest.name;
+            slot.appendChild(nameLabel);
+        }
+
+        bindGuestTooltipHoldInteractions(wrapper, guestId);
+
+        const slotEmoji = slot.querySelector('.slot-emoji');
+        if (slotEmoji && guest.ability) {
+            const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
+            bindAbilityTooltipInteractions(slotEmoji, abilityMessage);
+        }
+
+        if (canAfford) {
+            wrapper.addEventListener('click', () => {
+                if (isMultiplayer() && multiplayerRole === 'join') {
+                    multiplayerSession?.publish('request-action', { action: 'buy', actor: 'rival', guestId });
+                    showFeedback(`Bought ${guest.name}!`, 'money', 1500);
+                    return;
+                }
+                if (Game.buyGuest(gameState.player, guestId)) {
+                    showFeedback(`Bought ${guest.name}!`, 'money', 1500);
+                    renderShop();
+                    updateHUD();
+                    publishState();
+                }
+            });
+        }
+
+        container.appendChild(wrapper);
+    }
+
     function renderShop() {
         const shopMoney = document.getElementById('shop-money');
         const shopPlayer = gameState.player;
-        shopMoney.textContent = `\u{1F4B0} $${shopPlayer.money}`;
+        shopMoney.textContent = `\u{1F4B5} $${shopPlayer.money}`;
 
         const grid = document.getElementById('shop-grid');
         grid.innerHTML = '';
+        const upgradesPanel = document.getElementById('shop-upgrades');
+        upgradesPanel.innerHTML = '';
 
         const readOnlyShop = false;
-        getLocalMarket().forEach(guestId => {
-            const guest = Game.GUESTS[guestId];
-            const shopPlayer = gameState.player;
 
-            // Calculate cost for shop items (dynamic pricing)
+        // Sort guest cards by cost (cheapest first)
+        const market = getLocalMarket().slice();
+        market.sort((a, b) => Game.GUESTS[a].cost - Game.GUESTS[b].cost);
+
+        // Render guest cards in the main grid
+        market.forEach(guestId => {
+            const guest = Game.GUESTS[guestId];
+            const cost = guest.cost;
+            const canAfford = !readOnlyShop && shopPlayer.money >= cost;
+            renderShopCard(guestId, cost, canAfford, grid);
+        });
+
+        // Render upgrade items in the sidebar
+        const upgradeLabel = document.createElement('div');
+        upgradeLabel.className = 'shop-upgrades-label';
+        upgradeLabel.textContent = 'UPGRADES';
+
+        ['slotIncrease', 'heatCapIncrease'].forEach(guestId => {
+            const guest = Game.GUESTS[guestId];
             let cost = guest.cost;
             if (guestId === 'slotIncrease') {
                 cost = 3 + (shopPlayer.shopItemPurchases.slotIncrease * 2);
             } else if (guestId === 'heatCapIncrease') {
                 cost = 4 + (shopPlayer.shopItemPurchases.heatCapIncrease * 3);
             }
-
             const canAfford = !readOnlyShop && shopPlayer.money >= cost;
-
-            const card = document.createElement('div');
-            card.className = 'shop-card' + (canAfford ? '' : ' disabled');
-
-            card.innerHTML = `
-                <div class="shop-card-visual">
-                    <span class="shop-card-stat shop-card-heat">🔥 ${guest.heat}</span>
-                    <button class="shop-card-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
-                    <span class="shop-card-stat shop-card-money">${guest.money}</span>
-                    ${renderAbilityBadge(guest)}
-                    <span class="shop-card-stat shop-card-points">${guest.points}</span>
-                </div>
-                <div class="shop-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
-                <div class="shop-card-cost">$${cost}</div>
-            `;
-
-            const shopEmoji = card.querySelector('.shop-card-emoji');
-            if (shopEmoji && guest.ability) {
-                const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
-                bindAbilityTooltipInteractions(shopEmoji, abilityMessage);
-            }
-
-            if (canAfford) {
-                card.addEventListener('click', () => {
-                    if (isMultiplayer() && multiplayerRole === 'join') {
-                        multiplayerSession?.publish('request-action', { action: 'buy', actor: 'rival', guestId });
-                        showFeedback(`Bought ${guest.name}!`, 'money', 1500);
-                        return;
-                    }
-                    if (Game.buyGuest(gameState.player, guestId)) {
-                        showFeedback(`Bought ${guest.name}!`, 'money', 1500);
-                        renderShop();
-                        updateHUD();
-                        publishState();
-                    }
-                });
-            }
-
-            grid.appendChild(card);
+            renderShopCard(guestId, cost, canAfford, upgradesPanel);
         });
+        upgradesPanel.appendChild(upgradeLabel);
     }
 
     function runDoneShopping(actor = 'player') {
@@ -1591,22 +1802,18 @@
 
     function createDeckManageCard(guestId) {
         const guest = Game.GUESTS[guestId];
-        const card = document.createElement('div');
-        card.className = 'deck-manage-card tier-' + guest.tier;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'deck-manage-card';
 
-        card.innerHTML = `
-            <div class="deck-card-visual">
-                <span class="deck-card-stat deck-card-heat">🔥 ${guest.heat}</span>
-                <span class="deck-card-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
-                <span class="deck-card-stat deck-card-money">${guest.money}</span>
-                ${renderAbilityBadge(guest)}
-                <span class="deck-card-stat deck-card-points">${guest.points}</span>
-            </div>
-            <div class="deck-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
-            ${guest.ability ? '<div class="deck-card-ability"> ' + guest.ability.name + '</div>' : ''}
-        `;
+        const nameEl = document.createElement('div');
+        nameEl.className = 'deck-card-name' + (guest.ability ? ' has-ability' : '');
+        nameEl.textContent = guest.name;
+        wrapper.appendChild(nameEl);
 
-        return card;
+        const slot = createGuestSlot(guestId, false, { interactive: false });
+        wrapper.appendChild(slot);
+
+        return wrapper;
     }
 
     function renderGuestListPreview(listId) {
@@ -1854,10 +2061,9 @@
 
         // Remove tooltip on any click outside
         document.addEventListener('click', (e) => {
-            if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.guest-tooltip')) {
-                removeTooltip();
+            if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.shop-card-wrapper') && !e.target.closest('.guest-tooltip')) {
             }
-            if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.shop-card-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
+            if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.slot-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
                 removeIconTooltip();
             }
         });

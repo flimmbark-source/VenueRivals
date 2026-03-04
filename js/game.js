@@ -3,7 +3,7 @@
    ============================================ */
 
 const Game = (() => {
-  const DEFAULT_TOTAL_ROUNDS = 3;
+  const DEFAULT_TOTAL_ROUNDS = 7;
   const BUST_PENALTY = 0.25;
   const TAGS = ["VIP", "Performer", "Scout", "Broker", "Outlaw"];
 
@@ -46,8 +46,8 @@ const Game = (() => {
     tipper: {
       name: "Tipper",
       emoji: "💵",
-      heat: 1,
-      money: 1,
+      heat: 2,
+      money: 2,
       points: 0,
       cost: 2,
       venue: "Neutral",
@@ -59,7 +59,7 @@ const Game = (() => {
       name: "Tip-Off Artist",
       emoji: "👀",
       heat: 2,
-      money: 2,
+      money: 3,
       points: 0,
       cost: 4,
       venue: "Neutral",
@@ -78,8 +78,8 @@ const Game = (() => {
     hypeFriend: {
       name: "Hype Friend",
       emoji: "🙌",
-      heat: 1,
-      money: 0,
+      heat: 3,
+      money: 1,
       points: 2,
       cost: 3,
       venue: "Neutral",
@@ -168,9 +168,9 @@ const Game = (() => {
       name: "Bookkeeper",
       emoji: "📒",
       heat: 1,
-      money: 3,
+      money: 4,
       points: 1,
-      cost: 5,
+      cost: 6,
       venue: "Neutral",
       tags: ["Broker"],
       desc: "Audit: Cool 2 Heat.",
@@ -187,7 +187,7 @@ const Game = (() => {
     rovingCritic: {
       name: "Roving Critic",
       emoji: "🧐",
-      heat: 2,
+      heat: 3,
       money: 0,
       points: 3,
       cost: 5,
@@ -213,41 +213,33 @@ const Game = (() => {
       cost: 8,
       venue: "Neutral",
       tags: ["Broker"],
-      desc: "Megaphone: Add 1 Heat to opponent.",
+      desc: "Promo Deal: Gain 3 Money.",
       tier: "uncommon",
       ability: {
-        name: "Megaphone",
-        icon: "📢",
-        desc: "Add 1 Heat to opponent",
+        name: "Promo Deal",
+        icon: "💵",
+        desc: "Gain 3 Money",
         trigger: "flash",
-        type: "addOpponentHeat",
-        value: 1,
+        type: "gainMoney",
+        value: 3,
       },
     },
     bigSpender: {
       name: "Big Spender",
       emoji: "🛍️",
       heat: 2,
-      money: 1,
+      money: 3,
       points: 0,
       cost: 6,
       venue: "Neutral",
       tags: ["VIP"],
-      desc: "Splurge: Score 2 Points immediately.",
+      desc: "No special ability.",
       tier: "uncommon",
-      ability: {
-        name: "Splurge",
-        icon: "💎",
-        desc: "Score 2 Points immediately",
-        trigger: "flash",
-        type: "scoreNow",
-        value: 2,
-      },
     },
     celebrity: {
       name: "Celebrity",
       emoji: "🎬",
-      heat: 2,
+      heat: 3,
       money: 0,
       points: 4,
       cost: 7,
@@ -293,14 +285,15 @@ const Game = (() => {
       cost: 5,
       venue: "Velvet Room",
       tags: ["VIP"],
-      desc: "Toast: Pull 1 guest forward.",
+      desc: "Tab: Steal 2 Money from opponent.",
       tier: "uncommon",
       ability: {
-        name: "Toast",
+        name: "Tab",
         icon: "🥂",
-        desc: "Pull 1 guest forward",
+        desc: "Steal 2 Money from opponent",
         trigger: "flash",
-        type: "pullForward",
+        type: "stealMoney",
+        value: 2,
       },
     },
     velvetBouncer: {
@@ -312,14 +305,14 @@ const Game = (() => {
       cost: 4,
       venue: "Velvet Room",
       tags: ["VIP"],
-      desc: "VIP Rope: Lock 1 guest.",
+      desc: "Card Check: Discard the next queued guest.",
       tier: "uncommon",
       ability: {
-        name: "VIP Rope",
-        icon: "⛓️",
-        desc: "Lock 1 guest",
+        name: "Card Check",
+        icon: "🪪",
+        desc: "Discard the next queued guest",
         trigger: "flash",
-        type: "lockAnother",
+        type: "discardNext",
       },
     },
     spotlightPhotographer: {
@@ -372,15 +365,15 @@ const Game = (() => {
       cost: 5,
       venue: "Night Market",
       tags: ["Broker"],
-      desc: "Cash Out: Score 2 Points immediately.",
+      desc: "Insider Info: Score 1 Point per adjacent guest.",
       tier: "uncommon",
       ability: {
-        name: "Cash Out",
-        icon: "💰",
-        desc: "Score 2 Points immediately",
+        name: "Insider Info",
+        icon: "🔮",
+        desc: "Score 1 Point per adjacent guest",
         trigger: "flash",
-        type: "scoreNow",
-        value: 2,
+        type: "boostAdjacent",
+        value: 1,
       },
     },
     curioDealer: {
@@ -392,14 +385,15 @@ const Game = (() => {
       cost: 4,
       venue: "Night Market",
       tags: ["Broker"],
-      desc: "Trade In: Bounce the Leftmost back to the queue.",
+      desc: "Appraise: Gain 2 Money.",
       tier: "common",
       ability: {
-        name: "Trade In",
-        icon: "🔄",
-        desc: "Bounce the Leftmost back to the queue",
+        name: "Appraise",
+        icon: "🔍",
+        desc: "Gain 2 Money",
         trigger: "flash",
-        type: "bounceLeftmost",
+        type: "gainMoney",
+        value: 2,
       },
     },
     stylist: {
@@ -411,14 +405,15 @@ const Game = (() => {
       cost: 6,
       venue: "Night Market",
       tags: ["Scout", "Broker"],
-      desc: "Makeover: Pull 1 guest forward.",
+      desc: "Runway: Score 1 Point per guest in house.",
       tier: "uncommon",
       ability: {
-        name: "Makeover",
+        name: "Runway",
         icon: "✨",
-        desc: "Pull 1 guest forward",
+        desc: "Score 1 Point per guest in house",
         trigger: "flash",
-        type: "pullForward",
+        type: "scorePerGuest",
+        value: 1,
       },
     },
 
@@ -470,15 +465,15 @@ const Game = (() => {
       cost: 5,
       venue: "Back Alley",
       tags: ["Outlaw", "Broker"],
-      desc: "Lay Low: Cool 2 Heat.",
+      desc: "Black Market: Steal 1 Money from opponent.",
       tier: "common",
       ability: {
-        name: "Lay Low",
-        icon: "🕶️",
-        desc: "Cool 2 Heat",
+        name: "Black Market",
+        icon: "💸",
+        desc: "Steal 1 Money from opponent",
         trigger: "flash",
-        type: "coolHeat",
-        value: 2,
+        type: "stealMoney",
+        value: 1,
       },
     },
     provocateur: {
@@ -531,7 +526,7 @@ const Game = (() => {
       isShopItem: true,
     },
     heatCapIncrease: {
-      name: "+1 🔥 Cap",
+      name: "+1 🔥",
       emoji: "🌡️",
       money: 0,
       heat: 0,
@@ -765,7 +760,7 @@ const Game = (() => {
 
   const DECKS = {
     standardPlayerStatOnly: {
-      name: "Standard Player Deck",
+      name: "The Regulars",
       venueId: "velvetRoom",
       description:
         "A starter deck built around strong baseline stats with no basic-guest abilities.",
@@ -781,19 +776,19 @@ const Game = (() => {
       ],
     },
     velvetClassic: {
-      name: "Velvet Standard",
+      name: "VIP Lineup",
       venueId: "velvetRoom",
       description: "VIP lineup with locks, pulls, and scoring.",
       guests: [...VENUES.velvetRoom.startingDeck],
     },
     marketCore: {
-      name: "Market Standard",
+      name: "Thrifty Buisness",
       venueId: "nightMarket",
       description: "Peek, bounce, pull, and score at the right time.",
       guests: [...VENUES.nightMarket.startingDeck],
     },
     alleyPressure: {
-      name: "Alley Standard",
+      name: "Rowdy Crew",
       venueId: "backAlley",
       description: "Push, taunt, raid, and stay cool under pressure.",
       guests: [...VENUES.backAlley.startingDeck],
@@ -809,7 +804,7 @@ const Game = (() => {
     return a;
   }
   function createHouseGuest(guestId) {
-    return { instanceId: nextInstanceId++, guestId, lockUntilClose: false };
+    return { instanceId: nextInstanceId++, guestId, lockUntilClose: false, abilityUsed: false };
   }
   function getGuestId(entry) {
     return typeof entry === "string" ? entry : entry.guestId;
@@ -822,6 +817,12 @@ const Game = (() => {
     const baseCapacity = Math.max(0, (venue?.gridSize || 0));
     const slotBonus = player?.slotIncrease || 0;
     return baseCapacity + slotBonus;
+  }
+
+  function getHeatCapacity(venue, player) {
+    const baseCapacity = Math.max(0, venue?.bustThreshold || 0);
+    const heatBonus = player?.heatCapBonus || 0;
+    return baseCapacity + heatBonus;
   }
 
   function createPlayer(name, venueId, isAI) {
@@ -859,6 +860,7 @@ const Game = (() => {
       round: 1,
       totalRounds,
       phase: "guest",
+      guestPhaseScoredRound: null,
       player: createPlayer(playerName, playerVenue, false),
       rival: createPlayer(rivalName, rivalVenue, true),
       winner: null,
@@ -867,6 +869,7 @@ const Game = (() => {
 
   function startGuestPhase(state) {
     state.phase = "guest";
+    state.guestPhaseScoredRound = null;
     [state.player, state.rival].forEach((p) => {
       const equippedDeck = p.fullDeck?.length ? p.fullDeck : p.guestList;
       p.roundDeck = shuffle(equippedDeck || []);
@@ -909,7 +912,7 @@ const Game = (() => {
     const guest = GUESTS[player.arrivingGuest];
     if (guest) {
       player.heat += guest.heat;
-      if (!skipBustCheck && player.heat > venue.bustThreshold) {
+      if (!skipBustCheck && player.heat > getHeatCapacity(venue, player)) {
         applyBustState(player);
       }
     }
@@ -948,6 +951,17 @@ const Game = (() => {
     return [...(GUESTS[getGuestId(entry)].tags || [])];
   }
 
+  function getLockedIndexes(player) {
+    const locked = new Set();
+    for (let i = 0; i < player.house.length; i++) {
+      const entry = player.house[i];
+      if (entry && typeof entry !== "string" && entry.lockUntilClose) {
+        locked.add(i);
+      }
+    }
+    return locked;
+  }
+
   function pushLeftmost(player) {
     const idx = player.house.length - 1;
     const locked = getLockedIndexes(player);
@@ -979,7 +993,7 @@ const Game = (() => {
     };
     const pushed = moveArrivingGuestIntoHouse(player, venue);
     if (pushed.length) result.pushedOut = pushed.map(getGuestId);
-    if (player.heat > venue.bustThreshold) {
+    if (player.heat > getHeatCapacity(venue, player)) {
       result.busted = true;
       applyBustState(player);
     }
@@ -994,23 +1008,7 @@ const Game = (() => {
     return result;
   }
 
-  function activateAbility(player, opponent, playerVenue, opponentVenue) {
-    if (!player.arrivingGuest || player.doorClosed || player.busted)
-      return null;
-    const guest = GUESTS[player.arrivingGuest];
-    if (!guest.ability || guest.ability.trigger !== "flash") return null;
-
-    const admitted = admitGuest(player, playerVenue, opponent, opponentVenue);
-    if (!admitted) return null;
-    const result = {
-      activated: guest.name,
-      ability: guest.ability,
-      effects: [...(admitted.effects || [])],
-      pushedOut: admitted.pushedOut,
-      pendingOut: admitted.pendingOut,
-      busted: admitted.busted,
-    };
-
+  function applyAbilityEffects(player, opponent, guest, result) {
     switch (guest.ability.type) {
       case "coolHeat": {
         player.heat = Math.max(0, player.heat - guest.ability.value);
@@ -1129,7 +1127,97 @@ const Game = (() => {
         result.effects.push("queued gatecrasher for opponent");
         break;
       }
+      case "gainMoney": {
+        player.money += guest.ability.value;
+        result.effects.push(`gained ${guest.ability.value} money`);
+        break;
+      }
+      case "stealMoney": {
+        const stolen = Math.min(guest.ability.value, opponent.money);
+        opponent.money -= stolen;
+        player.money += stolen;
+        result.effects.push(
+          stolen ? `stole ${stolen} money` : "nothing to steal",
+        );
+        break;
+      }
+      case "discardNext": {
+        if (player.roundDeck.length > 0) {
+          const discarded = player.roundDeck.pop();
+          result.effects.push(`discarded ${GUESTS[discarded].name}`);
+        } else {
+          result.effects.push("queue empty");
+        }
+        break;
+      }
+      case "scorePerGuest": {
+        const bonus = player.house.length * guest.ability.value;
+        player.points += bonus;
+        result.effects.push(`scored ${bonus} points (${player.house.length} guests)`);
+        break;
+      }
+      case "boostAdjacent": {
+        let adjacent = 0;
+        if (player.house.length > 1) adjacent++;
+        const bonus = adjacent * guest.ability.value;
+        player.points += bonus;
+        result.effects.push(
+          bonus
+            ? `scored ${bonus} from ${adjacent} adjacent`
+            : "no adjacent guests",
+        );
+        break;
+      }
     }
+  }
+
+  function activateAbility(player, opponent, playerVenue, opponentVenue, selectedGuest = null) {
+    if (player.doorClosed || player.busted) return null;
+
+    const selectedSource = selectedGuest?.source;
+    if (selectedSource === "house") {
+      const selectedIndex = player.house.findIndex((entry) => {
+        if (selectedGuest.instanceId != null && typeof entry !== "string") {
+          return entry.instanceId === selectedGuest.instanceId;
+        }
+        return getGuestId(entry) === selectedGuest.guestId;
+      });
+      if (selectedIndex < 0) return null;
+
+      const entry = player.house[selectedIndex];
+      const guestId = getGuestId(entry);
+      const guest = GUESTS[guestId];
+      if (!guest?.ability || guest.ability.trigger !== "flash") return null;
+      if (typeof entry !== "string" && entry.abilityUsed) return null;
+
+      const result = {
+        activated: guest.name,
+        ability: guest.ability,
+        effects: [],
+        pushedOut: [],
+        pendingOut: null,
+        busted: false,
+      };
+      applyAbilityEffects(player, opponent, guest, result);
+      if (typeof entry !== "string") entry.abilityUsed = true;
+      return result;
+    }
+
+    if (!player.arrivingGuest) return null;
+    const guest = GUESTS[player.arrivingGuest];
+    if (!guest.ability || guest.ability.trigger !== "flash") return null;
+
+    const admitted = admitGuest(player, playerVenue, opponent, opponentVenue);
+    if (!admitted) return null;
+    const result = {
+      activated: guest.name,
+      ability: guest.ability,
+      effects: [...(admitted.effects || [])],
+      pushedOut: admitted.pushedOut,
+      pendingOut: admitted.pendingOut,
+      busted: admitted.busted,
+    };
+    applyAbilityEffects(player, opponent, guest, result);
 
     return result;
   }
@@ -1152,6 +1240,7 @@ const Game = (() => {
     return state.player.phaseComplete && state.rival.phaseComplete;
   }
   function endGuestPhase(state) {
+    if (state.guestPhaseScoredRound === state.round) return;
     [state.player, state.rival].forEach((p) => {
       // If there's an arriving guest still waiting, move them into the house
       // so they persist to the next round
@@ -1168,6 +1257,7 @@ const Game = (() => {
       p.money += p.roundMoney;
       p.points += p.roundPoints;
     });
+    state.guestPhaseScoredRound = state.round;
   }
   function getMarket(venueId) {
     const venue = VENUES[venueId];
@@ -1182,12 +1272,11 @@ const Game = (() => {
       (guestId) => !!GUESTS[guestId] && !GUESTS[guestId].isShopItem,
     );
 
-    // Shuffle and take 6 random guests from the pool
+    // Shuffle and take 10 random guests from the pool
     const shuffled = shuffle(marketPool);
-    const randomGuests = shuffled.slice(0, 6);
+    const randomGuests = shuffled.slice(0, 10);
 
-    // Always add the two shop items at the end
-    return [...randomGuests, 'slotIncrease', 'heatCapIncrease'];
+    return randomGuests;
   }
   function buyGuest(player, guestId) {
     const guest = GUESTS[guestId];
@@ -1262,5 +1351,6 @@ const Game = (() => {
     buyGuest,
     endBuyPhase,
     getHouseCapacity,
+    getHeatCapacity,
   };
 })();
