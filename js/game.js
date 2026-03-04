@@ -523,7 +523,7 @@ const Game = (() => {
       isShopItem: true,
     },
     heatCapIncrease: {
-      name: "+1 🔥 Cap",
+      name: "+1 🔥",
       emoji: "🌡️",
       money: 0,
       heat: 0,
