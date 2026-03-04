@@ -1391,6 +1391,8 @@
             slot.appendChild(nameLabel);
         }
 
+        bindGuestTooltipHoldInteractions(wrapper, guestId);
+
         const slotEmoji = slot.querySelector('.slot-emoji');
         if (slotEmoji && guest.ability) {
             const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
