@@ -437,6 +437,19 @@
     // === Guest Slot Rendering ===
     function createGuestSlot(guestId, animate, options = {}) {
         const guest = Game.GUESTS[guestId];
+        if (!guest) {
+            const fallback = document.createElement('div');
+            fallback.className = 'guest-slot occupied-slot tier-common';
+            if (guestId != null) fallback.dataset.guestId = String(guestId);
+            fallback.innerHTML = `
+                <span class="slot-stat slot-heat">🔥0</span>
+                <span class="slot-emoji">❓</span>
+                <span class="slot-stat slot-money">0</span>
+                <span class="slot-stat slot-points">0</span>
+            `;
+            fallback.title = 'Unknown guest';
+            return fallback;
+        }
         const el = document.createElement('div');
         el.className = `guest-slot occupied-slot tier-${guest.tier}`;
         el.dataset.guestId = guestId;
@@ -549,13 +562,20 @@
     }
 
     function animateExitGuest(who, guestId) {
+        if (Array.isArray(guestId)) {
+            guestId.forEach((id) => animateExitGuest(who, id));
+            return;
+        }
         const exitDoor = document.querySelector(`#${who}-area .exit-door`);
         // try to find the slot containing the specific guestId; fall back to first occupied
-        let sourceSlot = document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`);
+        let sourceSlot = guestId ? document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`) : null;
         if (!sourceSlot) sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
         if (!exitDoor || !sourceSlot) return;
 
-        const ghost = createGuestSlot(guestId, false);
+        const resolvedGuestId = guestId || sourceSlot.dataset.guestId;
+        if (!resolvedGuestId || !Game.GUESTS[resolvedGuestId]) return;
+
+        const ghost = createGuestSlot(resolvedGuestId, false);
         ghost.classList.add('exit-ghost');
 
         const sourceRect = sourceSlot.getBoundingClientRect();
