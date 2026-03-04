@@ -40,7 +40,7 @@
     };
 
     const VENUE_STYLE_LABEL = {
-        money: '\u{1F4B0} Money',
+        money: '\u{1F4B5}U+ Money',
         points: '\u2B50 Points',
         control: '\u{1F6E1} Control',
     };
@@ -317,6 +317,9 @@
         const r = gameState.rival;
         const pVenue = Game.VENUES[p.venueId];
         const rVenue = Game.VENUES[r.venueId];
+        const includeProjectedRoundTotals =
+        gameState.phase === 'guest' && gameState.guestPhaseScoredRound !== gameState.round;
+
 
         document.getElementById('hud-round-num').textContent = gameState.round;
         document.getElementById('hud-round-total').textContent = gameState.totalRounds;
@@ -329,14 +332,14 @@
 
         // Player venue
         document.getElementById('player-venue-name').textContent = p.name;
-        document.getElementById('player-money').textContent = `\u{1F4B0} $${p.money + p.roundMoney}`;
-        document.getElementById('player-pts-badge').textContent = `\u2B50 ${p.points + p.roundPoints}`;
+        document.getElementById('player-money').textContent = `\u{1F4B5} $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
+        document.getElementById('player-pts-badge').textContent = `\u2B50 ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
         updateHeatBar('player', p.heat, pVenue.bustThreshold);
 
         // Rival venue
         document.getElementById('rival-venue-name').textContent = r.name;
-        document.getElementById('rival-money').textContent = `\u{1F4B0} $${r.money + r.roundMoney}`;
-        document.getElementById('rival-pts-badge').textContent = `\u2B50 ${r.points + r.roundPoints}`;
+        document.getElementById('rival-money').textContent = `\u{1F4B5} $${r.money + (includeProjectedRoundTotals ? r.roundMoney : 0)}`;
+        document.getElementById('rival-pts-badge').textContent = `\u2B50 ${r.points + (includeProjectedRoundTotals ? r.roundPoints : 0)}`;
         updateHeatBar('rival', r.heat, rVenue.bustThreshold);
     }
 
@@ -515,7 +518,7 @@
         const existingMoney = detailEl.querySelector('.stat-money')?.textContent;
         const existingPoints = detailEl.querySelector('.stat-points')?.textContent;
         const existingHeat = detailEl.querySelector('.stat-heat')?.textContent || detailEl.querySelector('.stat-heat.danger')?.textContent;
-        const expectedMoney = `\u{1F4B0} ${guest.money}`;
+        const expectedMoney = `\u{1F4B5} ${guest.money}`;
         const expectedPoints = `\u2B50 ${guest.points}`;
         const expectedHeat = `\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}`;
         if (existingName === guest.name && existingMoney === expectedMoney && existingPoints === expectedPoints && existingHeat === expectedHeat) {
@@ -531,7 +534,7 @@
                 <div class="guest-detail-info">
                     <div class="guest-detail-name">${guest.name}</div>
                     <div class="guest-detail-stats">
-                        <span class="stat-money">\u{1F4B0} ${guest.money}</span>
+                        <span class="stat-money">\u{1F4B5} ${guest.money}</span>
                         <span class="stat-points">\u2B50 ${guest.points}</span>
                         <span class="stat-heat${wouldBust ? ' danger' : ''}">\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}</span>
                     </div>
@@ -547,8 +550,8 @@
     }
 
     // === Tooltip ===
-    function showTooltip(e, guestId) {
-        e.stopPropagation();
+    function showTooltipForTarget(target, guestId) {
+        if (!target) return;
         removeTooltip();
         const guest = Game.GUESTS[guestId];
         const el = document.createElement('div');
@@ -562,7 +565,7 @@
         el.innerHTML = `
             <div class="tt-name">${guest.emoji} ${guest.name}</div>
             <div class="tt-stats">
-                <span class="stat-money">💰${guest.money}</span>
+                <span class="stat-money">💵${guest.money}</span>
                 <span class="stat-points">⭐${guest.points}</span>
                 <span class="stat-heat">🔥${guest.heat}</span>
             </div>
@@ -573,7 +576,7 @@
         tooltipEl = el;
 
         // Position
-        const rect = e.target.getBoundingClientRect();
+        const rect = target.getBoundingClientRect();
         let left = rect.left + rect.width / 2 - 80;
         let top = rect.top - el.offsetHeight - 8;
         if (top < 10) top = rect.bottom + 8;
@@ -597,6 +600,11 @@
         }, 0);
     }
 
+        function showTooltip(e, guestId) {
+        e.stopPropagation();
+        showTooltipForTarget(e.currentTarget || e.target, guestId);
+    }
+
     function removeTooltip() {
         if (tooltipEl) {
             tooltipEl.remove();
@@ -612,7 +620,7 @@
         document.body.appendChild(el);
         iconTooltipEl = el;
 
-        const rect = e.target.getBoundingClientRect();
+        const rect = target.getBoundingClientRect();
         const left = Math.min(window.innerWidth - el.offsetWidth - 10, Math.max(10, rect.left - 10));
         const top = Math.max(10, rect.top - el.offsetHeight - 8);
         el.style.left = `${left}px`;
@@ -628,6 +636,46 @@
             iconTooltipEl.remove();
             iconTooltipEl = null;
         }
+    }
+
+
+    function bindGuestTooltipHoldInteractions(el, guestId) {
+        if (!el || !guestId) return;
+
+        let pressTimer = null;
+        let didLongPress = false;
+
+        const clearPressTimer = () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+        };
+
+        const onPressStart = (e) => {
+            if (e.target.closest('.shop-card-emoji.has-ability')) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            didLongPress = false;
+            clearPressTimer();
+            pressTimer = setTimeout(() => {
+                showTooltipForTarget(el, guestId);
+                didLongPress = true;
+                pressTimer = null;
+            }, 420);
+        };
+
+        el.addEventListener('pointerdown', onPressStart);
+        el.addEventListener('pointerup', clearPressTimer);
+        el.addEventListener('pointercancel', clearPressTimer);
+        el.addEventListener('pointerleave', clearPressTimer);
+
+        // Swallow the click that fires after a long-press so it doesn't buy immediately.
+        el.addEventListener('click', (e) => {
+            if (!didLongPress) return;
+            e.preventDefault();
+            e.stopPropagation();
+            didLongPress = false;
+        }, true);
     }
 
     function bindAbilityTooltipInteractions(el, message) {
@@ -1122,14 +1170,14 @@
 
         // Player results
         html += `<div class="results-row"><span class="label player-color">${p.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B0} Money earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+$${p.roundMoney}${p.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+$${p.roundMoney}${p.busted ? ' (busted)' : ''}</span></div>`;
         html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+${p.roundPoints}${p.busted ? ' (busted)' : ''}</span></div>`;
 
         html += '<div class="results-divider"></div>';
 
         // Rival results
         html += `<div class="results-row"><span class="label rival-color">${r.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B0} Money earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+$${r.roundMoney}${r.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+$${r.roundMoney}${r.busted ? ' (busted)' : ''}</span></div>`;
         html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+${r.roundPoints}${r.busted ? ' (busted)' : ''}</span></div>`;
 
         document.getElementById('results-content').innerHTML = html;
@@ -1188,7 +1236,7 @@
     function renderShop() {
         const shopMoney = document.getElementById('shop-money');
         const shopPlayer = gameState.player;
-        shopMoney.textContent = `\u{1F4B0} $${shopPlayer.money}`;
+        shopMoney.textContent = `\u{1F4B5} $${shopPlayer.money}`;
 
         const grid = document.getElementById('shop-grid');
         grid.innerHTML = '';
@@ -1222,6 +1270,8 @@
                 <div class="shop-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
                 <div class="shop-card-cost">$${cost}</div>
             `;
+
+            bindGuestTooltipHoldInteractions(card, guestId);
 
             const shopEmoji = card.querySelector('.shop-card-emoji');
             if (shopEmoji && guest.ability) {
@@ -1854,8 +1904,7 @@
 
         // Remove tooltip on any click outside
         document.addEventListener('click', (e) => {
-            if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.guest-tooltip')) {
-                removeTooltip();
+            if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.shop-card') && !e.target.closest('.guest-tooltip')) {
             }
             if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.shop-card-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
                 removeIconTooltip();
