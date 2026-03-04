@@ -783,8 +783,6 @@
         let pressTimer = null;
         let didLongPress = false;
 
-        el.addEventListener('mouseenter', (e) => showIconTooltip(e, message));
-        el.addEventListener('mouseleave', removeIconTooltip);
         el.addEventListener('click', (e) => {
             e.stopPropagation();
             if (didLongPress) {
