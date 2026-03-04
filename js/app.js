@@ -653,7 +653,7 @@
         };
 
         const onPressStart = (e) => {
-            if (e.target.closest('.shop-card-emoji.has-ability')) return;
+            if (e.target.closest('.slot-emoji.has-ability')) return;
             if (e.pointerType === 'mouse' && e.button !== 0) return;
             didLongPress = false;
             clearPressTimer();
@@ -1236,31 +1236,27 @@
     function renderShopCard(guestId, cost, canAfford, container) {
         const guest = Game.GUESTS[guestId];
 
-        const card = document.createElement('div');
-        card.className = 'shop-card' + (canAfford ? '' : ' disabled');
+        const wrapper = document.createElement('div');
+        wrapper.className = 'shop-card-wrapper' + (canAfford ? '' : ' disabled');
 
-        card.innerHTML = `
-            <div class="shop-card-visual">
-                <span class="shop-card-stat shop-card-heat">🔥 ${guest.heat}</span>
-                <button class="shop-card-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
-                <span class="shop-card-stat shop-card-money">${guest.money}</span>
-                ${renderAbilityBadge(guest)}
-                <span class="shop-card-stat shop-card-points">${guest.points}</span>
-            </div>
-            <div class="shop-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
-            <div class="shop-card-cost">$${cost}</div>
-        `;
+        const costLabel = document.createElement('div');
+        costLabel.className = 'shop-card-cost';
+        costLabel.textContent = '$' + cost;
+        wrapper.appendChild(costLabel);
 
-        bindGuestTooltipHoldInteractions(card, guestId);
+        const slot = createGuestSlot(guestId, false, { interactive: false });
+        wrapper.appendChild(slot);
 
-        const shopEmoji = card.querySelector('.shop-card-emoji');
-        if (shopEmoji && guest.ability) {
+        bindGuestTooltipHoldInteractions(wrapper, guestId);
+
+        const slotEmoji = slot.querySelector('.slot-emoji');
+        if (slotEmoji && guest.ability) {
             const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
-            bindAbilityTooltipInteractions(shopEmoji, abilityMessage);
+            bindAbilityTooltipInteractions(slotEmoji, abilityMessage);
         }
 
         if (canAfford) {
-            card.addEventListener('click', () => {
+            wrapper.addEventListener('click', () => {
                 if (isMultiplayer() && multiplayerRole === 'join') {
                     multiplayerSession?.publish('request-action', { action: 'buy', actor: 'rival', guestId });
                     showFeedback(`Bought ${guest.name}!`, 'money', 1500);
@@ -1275,7 +1271,7 @@
             });
         }
 
-        container.appendChild(card);
+        container.appendChild(wrapper);
     }
 
     function renderShop() {
@@ -1926,9 +1922,9 @@
 
         // Remove tooltip on any click outside
         document.addEventListener('click', (e) => {
-            if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.shop-card') && !e.target.closest('.guest-tooltip')) {
+            if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.shop-card-wrapper') && !e.target.closest('.guest-tooltip')) {
             }
-            if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.shop-card-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
+            if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.slot-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
                 removeIconTooltip();
             }
         });
