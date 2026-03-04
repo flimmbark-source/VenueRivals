@@ -1178,12 +1178,11 @@ const Game = (() => {
       (guestId) => !!GUESTS[guestId] && !GUESTS[guestId].isShopItem,
     );
 
-    // Shuffle and take 6 random guests from the pool
+    // Shuffle and take 10 random guests from the pool
     const shuffled = shuffle(marketPool);
-    const randomGuests = shuffled.slice(0, 6);
+    const randomGuests = shuffled.slice(0, 10);
 
-    // Always add the two shop items at the end
-    return [...randomGuests, 'slotIncrease', 'heatCapIncrease'];
+    return randomGuests;
   }
   function buyGuest(player, guestId) {
     const guest = GUESTS[guestId];

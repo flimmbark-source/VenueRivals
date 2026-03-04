@@ -1203,20 +1203,44 @@ body {
     color: var(--accent-tertiary);
 }
 
-.shop-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 80px));
-    gap: 6px;
+.shop-layout {
+    display: flex;
+    gap: 10px;
     margin-bottom: 10px;
     justify-content: center;
+}
+
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 72px));
+    gap: 6px;
+    justify-content: center;
+}
+
+.shop-upgrades {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 72px;
+}
+
+.shop-upgrades-label {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.6rem;
+    color: var(--accent-gold);
+    letter-spacing: 1px;
+    text-align: center;
+    padding-bottom: 2px;
+    border-bottom: 1px solid var(--bg-light);
 }
 
 .shop-card {
     background: var(--bg-medium);
     border: 2px solid var(--bg-light);
     border-radius: var(--radius-sm);
-    padding: 8px;
-    width: 80px;
+    padding: 6px;
+    width: 72px;
     text-align: center;
     cursor: pointer;
     transition: var(--transition);

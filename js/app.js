@@ -1233,6 +1233,51 @@
         document.getElementById('gameover-panel').style.display = 'none';
     }
 
+    function renderShopCard(guestId, cost, canAfford, container) {
+        const guest = Game.GUESTS[guestId];
+
+        const card = document.createElement('div');
+        card.className = 'shop-card' + (canAfford ? '' : ' disabled');
+
+        card.innerHTML = `
+            <div class="shop-card-visual">
+                <span class="shop-card-stat shop-card-heat">🔥 ${guest.heat}</span>
+                <button class="shop-card-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
+                <span class="shop-card-stat shop-card-money">${guest.money}</span>
+                ${renderAbilityBadge(guest)}
+                <span class="shop-card-stat shop-card-points">${guest.points}</span>
+            </div>
+            <div class="shop-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
+            <div class="shop-card-cost">$${cost}</div>
+        `;
+
+        bindGuestTooltipHoldInteractions(card, guestId);
+
+        const shopEmoji = card.querySelector('.shop-card-emoji');
+        if (shopEmoji && guest.ability) {
+            const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
+            bindAbilityTooltipInteractions(shopEmoji, abilityMessage);
+        }
+
+        if (canAfford) {
+            card.addEventListener('click', () => {
+                if (isMultiplayer() && multiplayerRole === 'join') {
+                    multiplayerSession?.publish('request-action', { action: 'buy', actor: 'rival', guestId });
+                    showFeedback(`Bought ${guest.name}!`, 'money', 1500);
+                    return;
+                }
+                if (Game.buyGuest(gameState.player, guestId)) {
+                    showFeedback(`Bought ${guest.name}!`, 'money', 1500);
+                    renderShop();
+                    updateHUD();
+                    publishState();
+                }
+            });
+        }
+
+        container.appendChild(card);
+    }
+
     function renderShop() {
         const shopMoney = document.getElementById('shop-money');
         const shopPlayer = gameState.player;
@@ -1240,62 +1285,39 @@
 
         const grid = document.getElementById('shop-grid');
         grid.innerHTML = '';
+        const upgradesPanel = document.getElementById('shop-upgrades');
+        upgradesPanel.innerHTML = '';
 
         const readOnlyShop = false;
-        getLocalMarket().forEach(guestId => {
-            const guest = Game.GUESTS[guestId];
-            const shopPlayer = gameState.player;
 
-            // Calculate cost for shop items (dynamic pricing)
+        // Sort guest cards by cost (cheapest first)
+        const market = getLocalMarket().slice();
+        market.sort((a, b) => Game.GUESTS[a].cost - Game.GUESTS[b].cost);
+
+        // Render guest cards in the main grid
+        market.forEach(guestId => {
+            const guest = Game.GUESTS[guestId];
+            const cost = guest.cost;
+            const canAfford = !readOnlyShop && shopPlayer.money >= cost;
+            renderShopCard(guestId, cost, canAfford, grid);
+        });
+
+        // Render upgrade items in the sidebar
+        const upgradeLabel = document.createElement('div');
+        upgradeLabel.className = 'shop-upgrades-label';
+        upgradeLabel.textContent = 'UPGRADES';
+        upgradesPanel.appendChild(upgradeLabel);
+
+        ['slotIncrease', 'heatCapIncrease'].forEach(guestId => {
+            const guest = Game.GUESTS[guestId];
             let cost = guest.cost;
             if (guestId === 'slotIncrease') {
                 cost = 3 + (shopPlayer.shopItemPurchases.slotIncrease * 2);
             } else if (guestId === 'heatCapIncrease') {
                 cost = 4 + (shopPlayer.shopItemPurchases.heatCapIncrease * 3);
             }
-
             const canAfford = !readOnlyShop && shopPlayer.money >= cost;
-
-            const card = document.createElement('div');
-            card.className = 'shop-card' + (canAfford ? '' : ' disabled');
-
-            card.innerHTML = `
-                <div class="shop-card-visual">
-                    <span class="shop-card-stat shop-card-heat">🔥 ${guest.heat}</span>
-                    <button class="shop-card-emoji${guest.ability ? ' has-ability' : ''}" title="${guest.name}">${guest.emoji}</button>
-                    <span class="shop-card-stat shop-card-money">${guest.money}</span>
-                    ${renderAbilityBadge(guest)}
-                    <span class="shop-card-stat shop-card-points">${guest.points}</span>
-                </div>
-                <div class="shop-card-name${guest.ability ? ' has-ability' : ''}">${guest.name}</div>
-                <div class="shop-card-cost">$${cost}</div>
-            `;
-
-            bindGuestTooltipHoldInteractions(card, guestId);
-
-            const shopEmoji = card.querySelector('.shop-card-emoji');
-            if (shopEmoji && guest.ability) {
-                const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
-                bindAbilityTooltipInteractions(shopEmoji, abilityMessage);
-            }
-
-            if (canAfford) {
-                card.addEventListener('click', () => {
-                    if (isMultiplayer() && multiplayerRole === 'join') {
-                        multiplayerSession?.publish('request-action', { action: 'buy', actor: 'rival', guestId });
-                        showFeedback(`Bought ${guest.name}!`, 'money', 1500);
-                        return;
-                    }
-                    if (Game.buyGuest(gameState.player, guestId)) {
-                        showFeedback(`Bought ${guest.name}!`, 'money', 1500);
-                        renderShop();
-                        updateHUD();
-                        publishState();
-                    }
-                });
-            }
-
-            grid.appendChild(card);
+            renderShopCard(guestId, cost, canAfford, upgradesPanel);
         });
     }
 
