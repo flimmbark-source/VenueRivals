@@ -463,10 +463,10 @@ body {
 }
 
 #setup-screen .loadout-deck-preview-grid {
-    max-height: 64px;
+    max-height: 88px;
     overflow: hidden;
     row-gap: 20px;
-    padding: 4px 4px 16px;
+    padding: 28px 4px 16px;
     grid-template-columns: repeat(auto-fit, minmax(32px, 32px));
     column-gap: 12px;
     justify-content: center;
