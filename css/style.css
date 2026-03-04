@@ -250,6 +250,12 @@ body {
     padding-right: 4px;
 }
 
+#deck-presets-grid {
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
 #guest-list-manage-overlay #guest-list-presets-grid {
     margin-bottom: 8px;
 }
@@ -263,6 +269,15 @@ body {
 }
 
 #guest-list-presets-grid::-webkit-scrollbar-thumb {
+    background: var(--bg-card);
+    border-radius: 6px;
+}
+
+#deck-presets-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+#deck-presets-grid::-webkit-scrollbar-thumb {
     background: var(--bg-card);
     border-radius: 6px;
 }
@@ -1846,6 +1861,7 @@ body {
     display: flex;
     gap: 18px 8px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .deck-manage-card {
