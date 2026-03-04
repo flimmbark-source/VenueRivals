@@ -1,0 +1,268 @@
+/* ============================================
+   VENUE RIVALS - Top-Down Party View Styles
+   ============================================ */
+
+/* === Top-Down Game Layout === */
+.game-topdown-layout {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0f0e17;
+}
+
+.venue-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* === Party HUD === */
+.party-hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.hud-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: linear-gradient(180deg, rgba(15, 14, 23, 0.95) 0%, rgba(15, 14, 23, 0) 100%);
+}
+
+.hud-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.hud-label {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #ffd166;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.hud-value {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fffffe;
+}
+
+.hud-stats {
+    padding: 6px 12px 8px;
+    background: linear-gradient(180deg, rgba(15, 14, 23, 0.7) 0%, rgba(15, 14, 23, 0) 100%);
+}
+
+.hud-stat-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.hud-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-icon {
+    font-size: 1rem;
+}
+
+.stat-value {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fffffe;
+}
+
+.stat-bar-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-bar {
+    width: 60px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.stat-bar-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: #ff6e6e;
+    border-radius: 3px;
+    transition: width 0.3s ease, background 0.3s ease;
+    width: 0%;
+}
+
+.stat-text {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #fffffe;
+    min-width: 35px;
+}
+
+/* === Guest Focus Panel === */
+.guest-focus-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: linear-gradient(0deg, rgba(15, 14, 23, 0.98) 60%, rgba(15, 14, 23, 0) 100%);
+    padding: 16px 12px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    pointer-events: auto;
+}
+
+.focus-guest-info {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    background: #1a1932;
+    border-radius: 12px;
+    padding: 10px 12px;
+    border: 2px solid #7f5af0;
+}
+
+.focus-guest-portrait {
+    font-size: 3rem;
+    flex-shrink: 0;
+}
+
+.focus-guest-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.focus-guest-name {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fffffe;
+    margin-bottom: 4px;
+}
+
+.focus-guest-stats {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.focus-stat {
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.heat-focus {
+    color: #ff6e6e;
+}
+
+.money-focus {
+    color: #2cb67d;
+}
+
+.points-focus {
+    color: #4cc9f0;
+}
+
+.focus-guest-ability {
+    font-size: 0.72rem;
+    color: #ffd166;
+    background: rgba(255, 209, 102, 0.1);
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.focus-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.focus-actions .btn {
+    flex: 1;
+    font-size: 0.8rem;
+    padding: 10px 8px;
+}
+
+/* === Overlay Panels === */
+.overlay-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    background: rgba(15, 14, 23, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    pointer-events: auto;
+}
+
+.panel-content {
+    background: #1a1932;
+    border-radius: 16px;
+    padding: 20px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.buy-phase-overlay .panel-content {
+    max-width: 600px;
+}
+
+@media (max-width: 360px) {
+    .hud-stat-group {
+        gap: 8px;
+    }
+
+    .focus-guest-portrait {
+        font-size: 2.5rem;
+    }
+
+    .stat-bar {
+        width: 50px;
+    }
+}
+
+@media (max-height: 640px) {
+    .guest-focus-panel {
+        padding: 12px 10px;
+    }
+
+    .focus-guest-info {
+        margin-bottom: 8px;
+        padding: 8px 10px;
+    }
+
+    .focus-guest-portrait {
+        font-size: 2.5rem;
+    }
+}
