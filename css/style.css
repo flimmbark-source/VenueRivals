@@ -1267,6 +1267,12 @@ body {
     display: none;
 }
 
+.shop-upgrades .slot-emoji {
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
 .shop-card-name {
     font-family: 'Poppins', sans-serif;
     font-size: 0.6rem;
