@@ -819,6 +819,12 @@ const Game = (() => {
     return baseCapacity + slotBonus;
   }
 
+  function getHeatCapacity(venue, player) {
+    const baseCapacity = Math.max(0, venue?.bustThreshold || 0);
+    const heatBonus = player?.heatCapBonus || 0;
+    return baseCapacity + heatBonus;
+  }
+
   function createPlayer(name, venueId, isAI) {
     const venue = VENUES[venueId];
     return {
@@ -906,7 +912,7 @@ const Game = (() => {
     const guest = GUESTS[player.arrivingGuest];
     if (guest) {
       player.heat += guest.heat;
-      if (!skipBustCheck && player.heat > venue.bustThreshold) {
+      if (!skipBustCheck && player.heat > getHeatCapacity(venue, player)) {
         applyBustState(player);
       }
     }
@@ -987,7 +993,7 @@ const Game = (() => {
     };
     const pushed = moveArrivingGuestIntoHouse(player, venue);
     if (pushed.length) result.pushedOut = pushed.map(getGuestId);
-    if (player.heat > venue.bustThreshold) {
+    if (player.heat > getHeatCapacity(venue, player)) {
       result.busted = true;
       applyBustState(player);
     }
@@ -1345,5 +1351,6 @@ const Game = (() => {
     buyGuest,
     endBuyPhase,
     getHouseCapacity,
+    getHeatCapacity,
   };
 })();
