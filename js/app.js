@@ -381,8 +381,8 @@
             gameState.phase === 'guest' ? 'GUEST PHASE' :
             gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
-        document.getElementById('hud-player-pts').textContent = `You: ${p.points} pts`;
-        document.getElementById('hud-rival-pts').textContent = `Rival: ${r.points} pts`;
+        document.getElementById('hud-player-pts').textContent = `You: ${p.points} ⭐`;
+        document.getElementById('hud-rival-pts').textContent = `Rival: ${r.points} ⭐`;
 
         // Player venue
         document.getElementById('player-venue-name').textContent = p.name;
