@@ -222,12 +222,11 @@ body {
 .setup-container {
     text-align: center;
     padding: 14px 14px 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
     max-width: 500px;
     width: 95%;
-    min-height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     gap: 10px;
 }
 
@@ -343,11 +342,16 @@ body {
 }
 
 #setup-screen {
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 #setup-screen.active {
-    align-items: stretch;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 12px;
+    padding-bottom: 12px;
 }
 
 #setup-screen .setup-name-section {
@@ -376,11 +380,19 @@ body {
 #setup-screen .loadout-area {
     margin-bottom: 0;
     gap: 8px;
+    flex-direction: column;
+    flex-wrap: nowrap;
 }
 
 #setup-screen .loadout-card {
-    padding: 8px;
+    padding: 10px 12px;
     border-radius: 10px;
+    flex: 0 0 auto;
+}
+
+#setup-screen .loadout-card-primary,
+#setup-screen .loadout-card-secondary {
+    flex: 0 0 auto;
 }
 
 #setup-screen .loadout-card-header {
@@ -396,30 +408,55 @@ body {
     font-size: 0.58rem;
 }
 
+#setup-screen .loadout-venue-body {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+}
+
 #setup-screen .loadout-venue-icon {
-    font-size: 1.6rem;
+    font-size: 1.8rem;
+    flex-shrink: 0;
 }
 
 #setup-screen .loadout-venue-name {
-    font-size: 0.74rem;
+    font-size: 0.8rem;
 }
 
 #setup-screen .loadout-venue-desc {
     font-size: 0.62rem;
     line-height: 1.2;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+#setup-screen .loadout-venue-stats {
+    justify-content: flex-start;
 }
 
 #setup-screen .loadout-venue-pool {
     display: none;
 }
 
+#setup-screen .loadout-deck-body {
+    gap: 6px;
+}
+
 #setup-screen .loadout-deck-count {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
+}
+
+#setup-screen .loadout-deck-preview-grid {
+    max-height: 56px;
+    overflow: hidden;
+    row-gap: 20px;
+    padding: 2px 4px 14px;
+    grid-template-columns: repeat(auto-fit, minmax(32px, 32px));
+    column-gap: 6px;
 }
 
 #setup-screen .loadout-deck-preview {
@@ -432,6 +469,15 @@ body {
 #setup-screen .loadout-deck-tag {
     font-size: 0.55rem;
     padding: 1px 5px;
+}
+
+#setup-screen #loadout-deck-card .loadout-deck-body,
+#setup-screen #loadout-guest-list-card .loadout-deck-body {
+    margin-top: 0;
+}
+
+#setup-screen #loadout-guest-list-preview-grid {
+    margin-top: 0;
 }
 
 #setup-screen .setup-rounds-section.multiplayer-settings {
@@ -2042,10 +2088,11 @@ body {
     border: 1px dashed rgba(148, 161, 178, 0.25);
 }
 
+/* Small phones */
 @media (max-width: 360px) {
     #setup-screen .setup-container {
         padding: 10px 10px 8px;
-        gap: 8px;
+        gap: 6px;
     }
 
     #setup-screen .loadout-area {
@@ -2053,7 +2100,15 @@ body {
     }
 
     #setup-screen .loadout-card {
-        padding: 7px 6px;
+        padding: 8px 8px;
+    }
+
+    #setup-screen .loadout-venue-icon {
+        font-size: 1.5rem;
+    }
+
+    #setup-screen .loadout-venue-name {
+        font-size: 0.72rem;
     }
 
     #setup-screen .setup-rounds-section.multiplayer-settings {
@@ -2066,6 +2121,11 @@ body {
         font-size: 0.84rem;
     }
 
+    #setup-screen .setup-name-section label,
+    #setup-screen .setup-rounds-section label {
+        font-size: 0.68rem;
+    }
+
     .loadout-area {
         gap: 8px;
     }
@@ -2075,5 +2135,25 @@ body {
     .deck-manage-card {
         width: 64px;
         padding: 4px;
+    }
+}
+
+/* Short phones (landscape-ish or small viewport height) */
+@media (max-height: 640px) {
+    #setup-screen.active {
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+
+    #setup-screen .setup-container {
+        gap: 6px;
+    }
+
+    #setup-screen .loadout-deck-preview-grid {
+        max-height: 40px;
+    }
+
+    #setup-screen .loadout-venue-desc {
+        display: none;
     }
 }
