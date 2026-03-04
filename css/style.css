@@ -391,7 +391,7 @@ body {
 }
 
 #setup-screen .loadout-card {
-    padding: 10px 12px 18px;
+    padding: 10px 12px 24px;
     border-radius: 10px;
     flex: 0 0 auto;
     width: 100%;
@@ -463,10 +463,10 @@ body {
 }
 
 #setup-screen .loadout-deck-preview-grid {
-    max-height: 88px;
+    max-height: 110px;
     overflow: hidden;
     row-gap: 20px;
-    padding: 28px 4px 16px;
+    padding: 28px 4px 24px;
     grid-template-columns: repeat(auto-fit, minmax(32px, 32px));
     column-gap: 12px;
     justify-content: center;
@@ -477,7 +477,7 @@ body {
 #setup-screen .loadout-deck-preview {
     font-size: 0.86rem;
     line-height: 1.35;
-    max-height: 42px;
+    max-height: 54px;
 }
 
 #setup-screen .stat-tag,
