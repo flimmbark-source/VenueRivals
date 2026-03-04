@@ -1381,6 +1381,7 @@
         wrapper.appendChild(costLabel);
 
         const slot = createGuestSlot(guestId, false, { interactive: false });
+        slot.removeAttribute('title');
         wrapper.appendChild(slot);
 
         if (guest.isShopItem) {
@@ -1389,8 +1390,6 @@
             nameLabel.textContent = guest.name;
             slot.appendChild(nameLabel);
         }
-
-        bindGuestTooltipHoldInteractions(wrapper, guestId);
 
         const slotEmoji = slot.querySelector('.slot-emoji');
         if (slotEmoji && guest.ability) {
