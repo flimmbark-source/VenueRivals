@@ -213,15 +213,15 @@ const Game = (() => {
       cost: 8,
       venue: "Neutral",
       tags: ["Broker"],
-      desc: "Megaphone: Add 1 Heat to opponent.",
+      desc: "Promo Deal: Gain 3 Money.",
       tier: "uncommon",
       ability: {
-        name: "Megaphone",
-        icon: "📢",
-        desc: "Add 1 Heat to opponent",
+        name: "Promo Deal",
+        icon: "💵",
+        desc: "Gain 3 Money",
         trigger: "flash",
-        type: "addOpponentHeat",
-        value: 1,
+        type: "gainMoney",
+        value: 3,
       },
     },
     bigSpender: {
@@ -285,14 +285,15 @@ const Game = (() => {
       cost: 5,
       venue: "Velvet Room",
       tags: ["VIP"],
-      desc: "Toast: Pull 1 guest forward.",
+      desc: "Tab: Steal 2 Money from opponent.",
       tier: "uncommon",
       ability: {
-        name: "Toast",
+        name: "Tab",
         icon: "🥂",
-        desc: "Pull 1 guest forward",
+        desc: "Steal 2 Money from opponent",
         trigger: "flash",
-        type: "pullForward",
+        type: "stealMoney",
+        value: 2,
       },
     },
     velvetBouncer: {
@@ -304,14 +305,14 @@ const Game = (() => {
       cost: 4,
       venue: "Velvet Room",
       tags: ["VIP"],
-      desc: "VIP Rope: Lock 1 guest.",
+      desc: "Card Check: Discard the next queued guest.",
       tier: "uncommon",
       ability: {
-        name: "VIP Rope",
-        icon: "⛓️",
-        desc: "Lock 1 guest",
+        name: "Card Check",
+        icon: "🪪",
+        desc: "Discard the next queued guest",
         trigger: "flash",
-        type: "lockAnother",
+        type: "discardNext",
       },
     },
     spotlightPhotographer: {
@@ -364,15 +365,15 @@ const Game = (() => {
       cost: 5,
       venue: "Night Market",
       tags: ["Broker"],
-      desc: "Cash Out: Score 2 Points immediately.",
+      desc: "Insider Info: Score 1 Point per adjacent guest.",
       tier: "uncommon",
       ability: {
-        name: "Cash Out",
-        icon: "💰",
-        desc: "Score 2 Points immediately",
+        name: "Insider Info",
+        icon: "🔮",
+        desc: "Score 1 Point per adjacent guest",
         trigger: "flash",
-        type: "scoreNow",
-        value: 2,
+        type: "boostAdjacent",
+        value: 1,
       },
     },
     curioDealer: {
@@ -384,14 +385,15 @@ const Game = (() => {
       cost: 4,
       venue: "Night Market",
       tags: ["Broker"],
-      desc: "Trade In: Bounce the Leftmost back to the queue.",
+      desc: "Appraise: Gain 2 Money.",
       tier: "common",
       ability: {
-        name: "Trade In",
-        icon: "🔄",
-        desc: "Bounce the Leftmost back to the queue",
+        name: "Appraise",
+        icon: "🔍",
+        desc: "Gain 2 Money",
         trigger: "flash",
-        type: "bounceLeftmost",
+        type: "gainMoney",
+        value: 2,
       },
     },
     stylist: {
@@ -403,14 +405,15 @@ const Game = (() => {
       cost: 6,
       venue: "Night Market",
       tags: ["Scout", "Broker"],
-      desc: "Makeover: Pull 1 guest forward.",
+      desc: "Runway: Score 1 Point per guest in house.",
       tier: "uncommon",
       ability: {
-        name: "Makeover",
+        name: "Runway",
         icon: "✨",
-        desc: "Pull 1 guest forward",
+        desc: "Score 1 Point per guest in house",
         trigger: "flash",
-        type: "pullForward",
+        type: "scorePerGuest",
+        value: 1,
       },
     },
 
@@ -462,15 +465,15 @@ const Game = (() => {
       cost: 5,
       venue: "Back Alley",
       tags: ["Outlaw", "Broker"],
-      desc: "Lay Low: Cool 2 Heat.",
+      desc: "Black Market: Steal 1 Money from opponent.",
       tier: "common",
       ability: {
-        name: "Lay Low",
-        icon: "🕶️",
-        desc: "Cool 2 Heat",
+        name: "Black Market",
+        icon: "💸",
+        desc: "Steal 1 Money from opponent",
         trigger: "flash",
-        type: "coolHeat",
-        value: 2,
+        type: "stealMoney",
+        value: 1,
       },
     },
     provocateur: {
@@ -1121,6 +1124,47 @@ const Game = (() => {
       case "queueGatecrasher": {
         opponent.roundDeck.push("gatecrasher");
         result.effects.push("queued gatecrasher for opponent");
+        break;
+      }
+      case "gainMoney": {
+        player.money += guest.ability.value;
+        result.effects.push(`gained ${guest.ability.value} money`);
+        break;
+      }
+      case "stealMoney": {
+        const stolen = Math.min(guest.ability.value, opponent.money);
+        opponent.money -= stolen;
+        player.money += stolen;
+        result.effects.push(
+          stolen ? `stole ${stolen} money` : "nothing to steal",
+        );
+        break;
+      }
+      case "discardNext": {
+        if (player.roundDeck.length > 0) {
+          const discarded = player.roundDeck.pop();
+          result.effects.push(`discarded ${GUESTS[discarded].name}`);
+        } else {
+          result.effects.push("queue empty");
+        }
+        break;
+      }
+      case "scorePerGuest": {
+        const bonus = player.house.length * guest.ability.value;
+        player.points += bonus;
+        result.effects.push(`scored ${bonus} points (${player.house.length} guests)`);
+        break;
+      }
+      case "boostAdjacent": {
+        let adjacent = 0;
+        if (player.house.length > 1) adjacent++;
+        const bonus = adjacent * guest.ability.value;
+        player.points += bonus;
+        result.effects.push(
+          bonus
+            ? `scored ${bonus} from ${adjacent} adjacent`
+            : "no adjacent guests",
+        );
         break;
       }
     }
