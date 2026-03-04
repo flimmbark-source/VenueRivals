@@ -19,6 +19,7 @@
     let guestAbilityPopupEl = null;
     let guestAbilityPopupBackdropEl = null;
     let loadoutState = null;
+    let selectedGridGuest = null;
     // cache the last rendered guest detail to avoid unnecessary refreshes
     let _lastGuestDetailKey = null;
     let multiplayerSession = null;
@@ -200,6 +201,7 @@
 
     function refreshAll() {
         if (!gameState) return;
+        syncSelectedGridGuest();
         syncPanelsForState();
         renderHouseGrid('player');
         renderHouseGrid('rival');
@@ -209,6 +211,58 @@
         updateVenueStatus('player');
         updateVenueStatus('rival');
         updateHUD();
+    }
+
+    function syncSelectedGridGuest() {
+        if (!gameState) {
+            selectedGridGuest = null;
+            return;
+        }
+        const p = gameState.player;
+        if (!p.arrivingGuest || p.doorClosed || p.busted) {
+            selectedGridGuest = null;
+            return;
+        }
+        if (!selectedGridGuest) {
+            selectedGridGuest = { guestId: p.arrivingGuest, source: 'arriving' };
+            return;
+        }
+        if (selectedGridGuest.source === 'arriving' && selectedGridGuest.guestId !== p.arrivingGuest) {
+            selectedGridGuest = { guestId: p.arrivingGuest, source: 'arriving' };
+            return;
+        }
+        if (selectedGridGuest.source === 'house') {
+            const inHouse = p.house.some((entry) => {
+                if (selectedGridGuest.instanceId != null && typeof entry !== 'string') {
+                    return entry.instanceId === selectedGridGuest.instanceId;
+                }
+                return (entry.guestId || entry) === selectedGridGuest.guestId;
+            });
+            if (!inHouse) {
+                selectedGridGuest = { guestId: p.arrivingGuest, source: 'arriving' };
+            }
+        }
+    }
+
+
+    function refreshSelectedGridSlotVisual() {
+        const slotsEl = document.getElementById('player-slots');
+        if (!slotsEl) return;
+
+        slotsEl.querySelectorAll('.guest-slot.selected').forEach((slot) => slot.classList.remove('selected'));
+        if (!selectedGridGuest) return;
+
+        const occupiedSlots = slotsEl.querySelectorAll('.occupied-slot[data-guest-id]');
+        occupiedSlots.forEach((slot) => {
+            const sameSource = (slot.dataset.slotSource || '') === selectedGridGuest.source;
+            const sameGuest = (slot.dataset.guestId || '') === selectedGridGuest.guestId;
+            if (!sameSource || !sameGuest) return;
+
+            if (selectedGridGuest.source === 'house' && selectedGridGuest.instanceId != null) {
+                if ((slot.dataset.instanceId || '') !== String(selectedGridGuest.instanceId)) return;
+            }
+            slot.classList.add('selected');
+        });
     }
 
     function handleRemoteEvent(evt) {
@@ -320,33 +374,50 @@
         const includeProjectedRoundTotals =
         gameState.phase === 'guest' && gameState.guestPhaseScoredRound !== gameState.round;
 
+        const hudRoundNumEl = document.getElementById('hud-round-num');
+        const hudRoundTotalEl = document.getElementById('hud-round-total');
+        const hudPhaseEl = document.getElementById('hud-phase');
+        const hudPlayerPtsEl = document.getElementById('hud-player-pts');
+        const hudRivalPtsEl = document.getElementById('hud-rival-pts');
+        const playerVenueNameEl = document.getElementById('player-venue-name');
+        const playerMoneyEl = document.getElementById('player-money');
+        const playerPtsBadgeEl = document.getElementById('player-pts-badge');
+        const rivalVenueNameEl = document.getElementById('rival-venue-name');
+        const rivalMoneyEl = document.getElementById('rival-money');
+        const rivalPtsBadgeEl = document.getElementById('rival-pts-badge');
 
-        document.getElementById('hud-round-num').textContent = gameState.round;
-        document.getElementById('hud-round-total').textContent = gameState.totalRounds;
-        document.getElementById('hud-phase').textContent =
+        if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl || !hudPlayerPtsEl || !hudRivalPtsEl ||
+            !playerVenueNameEl || !playerMoneyEl || !playerPtsBadgeEl || !rivalVenueNameEl || !rivalMoneyEl || !rivalPtsBadgeEl) {
+            return;
+        }
+
+        hudRoundNumEl.textContent = gameState.round;
+        hudRoundTotalEl.textContent = gameState.totalRounds;
+        hudPhaseEl.textContent =
             gameState.phase === 'guest' ? 'GUEST PHASE' :
             gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
-        document.getElementById('hud-player-pts').textContent = `You: ${p.points} pts`;
-        document.getElementById('hud-rival-pts').textContent = `Rival: ${r.points} pts`;
+        hudPlayerPtsEl.textContent = `You: ${p.points} pts`;
+        hudRivalPtsEl.textContent = `Rival: ${r.points} pts`;
 
         // Player venue
-        document.getElementById('player-venue-name').textContent = p.name;
-        document.getElementById('player-money').textContent = `\u{1F4B5} $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
-        document.getElementById('player-pts-badge').textContent = `\u2B50 ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
-        updateHeatBar('player', p.heat, pVenue.bustThreshold);
+        playerVenueNameEl.textContent = p.name;
+        playerMoneyEl.textContent = `💵 $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
+        playerPtsBadgeEl.textContent = `⭐ ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
+        updateHeatBar('player', p.heat, pVenue.bustThreshold, p.busted);
 
         // Rival venue
-        document.getElementById('rival-venue-name').textContent = r.name;
-        document.getElementById('rival-money').textContent = `\u{1F4B5} $${r.money + (includeProjectedRoundTotals ? r.roundMoney : 0)}`;
-        document.getElementById('rival-pts-badge').textContent = `\u2B50 ${r.points + (includeProjectedRoundTotals ? r.roundPoints : 0)}`;
-        updateHeatBar('rival', r.heat, rVenue.bustThreshold);
+        rivalVenueNameEl.textContent = r.name;
+        rivalMoneyEl.textContent = `💵 $${r.money + (includeProjectedRoundTotals ? r.roundMoney : 0)}`;
+        rivalPtsBadgeEl.textContent = `⭐ ${r.points + (includeProjectedRoundTotals ? r.roundPoints : 0)}`;
+        updateHeatBar('rival', r.heat, rVenue.bustThreshold, r.busted);
     }
 
-    function updateHeatBar(who, heat, max) {
+    function updateHeatBar(who, heat, max, busted = false) {
         const fill = document.getElementById(`${who}-heat-fill`);
         const text = document.getElementById(`${who}-heat-text`);
-        const pct = Math.min(100, (heat / max) * 100);
+        if (!fill || !text) return;
+        const pct = busted ? 100 : Math.min(100, (heat / max) * 100);
         fill.style.width = pct + '%';
         fill.className = 'heat-fill';
         if (pct > 85) fill.classList.add('critical');
@@ -366,6 +437,19 @@
     // === Guest Slot Rendering ===
     function createGuestSlot(guestId, animate, options = {}) {
         const guest = Game.GUESTS[guestId];
+        if (!guest) {
+            const fallback = document.createElement('div');
+            fallback.className = 'guest-slot occupied-slot tier-common';
+            if (guestId != null) fallback.dataset.guestId = String(guestId);
+            fallback.innerHTML = `
+                <span class="slot-stat slot-heat">🔥0</span>
+                <span class="slot-emoji">❓</span>
+                <span class="slot-stat slot-money">0</span>
+                <span class="slot-stat slot-points">0</span>
+            `;
+            fallback.title = 'Unknown guest';
+            return fallback;
+        }
         const el = document.createElement('div');
         el.className = `guest-slot occupied-slot tier-${guest.tier}`;
         el.dataset.guestId = guestId;
@@ -389,6 +473,7 @@
         const slotsEl = document.getElementById(`${who}-slots`);
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
+        const allowGridTooltip = who === 'rival';
 
         const houseCapacity = Game.getHouseCapacity(venue, player);
         // Count occupied slots: house + arriving guest (cap to capacity for empties)
@@ -408,14 +493,42 @@
         }
         guests.forEach((entry) => {
             const guestId = entry.guestId || entry;
-            const slot = createGuestSlot(guestId, false);
+            const slot = createGuestSlot(guestId, false, { interactive: allowGridTooltip });
+            if (who === 'player') {
+                const instanceId = typeof entry === 'string' ? null : entry.instanceId;
+                slot.dataset.slotSource = 'house';
+                if (instanceId != null) slot.dataset.instanceId = String(instanceId);
+                if (selectedGridGuest?.source === 'house' &&
+                    selectedGridGuest.guestId === guestId &&
+                    (selectedGridGuest.instanceId == null || selectedGridGuest.instanceId === instanceId)) {
+                    slot.classList.add('selected');
+                }
+                slot.addEventListener('click', () => {
+                    selectedGridGuest = { guestId, source: 'house', instanceId };
+                    _lastGuestDetailKey = null;
+                    refreshSelectedGridSlotVisual();
+                    updateGuestDetail();
+                });
+            }
             slotsEl.appendChild(slot);
         });
 
         // Render arriving guest as the rightmost/newest slot
         if (player.arrivingGuest) {
-            const slot = createGuestSlot(player.arrivingGuest, false);
+            const slot = createGuestSlot(player.arrivingGuest, false, { interactive: allowGridTooltip });
             slot.classList.add('arriving-in-grid');
+            if (who === 'player') {
+                slot.dataset.slotSource = 'arriving';
+                if (selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === player.arrivingGuest) {
+                    slot.classList.add('selected');
+                }
+                slot.addEventListener('click', () => {
+                    selectedGridGuest = { guestId: player.arrivingGuest, source: 'arriving' };
+                    _lastGuestDetailKey = null;
+                    refreshSelectedGridSlotVisual();
+                    updateGuestDetail();
+                });
+            }
             slotsEl.appendChild(slot);
         }
     }
@@ -449,13 +562,20 @@
     }
 
     function animateExitGuest(who, guestId) {
+        if (Array.isArray(guestId)) {
+            guestId.forEach((id) => animateExitGuest(who, id));
+            return;
+        }
         const exitDoor = document.querySelector(`#${who}-area .exit-door`);
         // try to find the slot containing the specific guestId; fall back to first occupied
-        let sourceSlot = document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`);
+        let sourceSlot = guestId ? document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`) : null;
         if (!sourceSlot) sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
         if (!exitDoor || !sourceSlot) return;
 
-        const ghost = createGuestSlot(guestId, false);
+        const resolvedGuestId = guestId || sourceSlot.dataset.guestId;
+        if (!resolvedGuestId || !Game.GUESTS[resolvedGuestId]) return;
+
+        const ghost = createGuestSlot(resolvedGuestId, false);
         ghost.classList.add('exit-ghost');
 
         const sourceRect = sourceSlot.getBoundingClientRect();
@@ -481,8 +601,12 @@
     function updateGuestDetail() {
         const detailEl = document.getElementById('guest-detail');
         const p = gameState.player;
+        syncSelectedGridGuest();
+        const selectedGuestId = selectedGridGuest?.guestId || p.arrivingGuest;
+        const selectedGuestSource = selectedGridGuest?.source || 'arriving';
+        refreshSelectedGridSlotVisual();
         // Avoid re-rendering if player's arriving state and visible stats haven't changed
-        const key = `${p.arrivingGuest || ''}|${p.doorClosed}|${p.busted}|${p.heat}|${p.roundMoney}|${p.roundPoints}`;
+        const key = `${p.arrivingGuest || ''}|${p.doorClosed}|${p.busted}|${p.heat}|${p.roundMoney}|${p.roundPoints}|${selectedGuestId || ''}|${selectedGuestSource}`;
         if (key === _lastGuestDetailKey) return;
         _lastGuestDetailKey = key;
 
@@ -504,9 +628,21 @@
             return;
         }
 
-        const guest = Game.GUESTS[p.arrivingGuest];
+        const guest = Game.GUESTS[selectedGuestId];
         const venue = Game.VENUES[p.venueId];
         const wouldBust = p.heat > venue.bustThreshold;
+        let selectedHouseEntry = null;
+        if (selectedGuestSource === 'house') {
+            selectedHouseEntry = p.house.find((entry) => {
+                if (selectedGridGuest?.instanceId != null && typeof entry !== 'string') {
+                    return entry.instanceId === selectedGridGuest.instanceId;
+                }
+                return (entry.guestId || entry) === selectedGuestId;
+            }) || null;
+        }
+        const canUseSelectedAbility = !!guest.ability && (
+            selectedGuestSource !== 'house' || !selectedHouseEntry || !selectedHouseEntry.abilityUsed
+        );
 
         let abilityHTML = '';
         if (guest.ability) {
@@ -523,7 +659,7 @@
         const expectedHeat = `\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}`;
         if (existingName === guest.name && existingMoney === expectedMoney && existingPoints === expectedPoints && existingHeat === expectedHeat) {
             document.getElementById('btn-admit').disabled = false;
-            document.getElementById('btn-ability').disabled = !guest.ability;
+            document.getElementById('btn-ability').disabled = !canUseSelectedAbility;
             document.getElementById('btn-close-door').disabled = false;
             return;
         }
@@ -545,7 +681,7 @@
 
         // Update buttons
         document.getElementById('btn-admit').disabled = false;
-        document.getElementById('btn-ability').disabled = !guest.ability;
+        document.getElementById('btn-ability').disabled = !canUseSelectedAbility;
         document.getElementById('btn-close-door').disabled = false;
     }
 
@@ -684,8 +820,6 @@
         let pressTimer = null;
         let didLongPress = false;
 
-        el.addEventListener('mouseenter', (e) => showIconTooltip(e, message));
-        el.addEventListener('mouseleave', removeIconTooltip);
         el.addEventListener('click', (e) => {
             e.stopPropagation();
             if (didLongPress) {
@@ -881,10 +1015,7 @@
     function runAbility(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
         const { self, opponent, selfKey, opponentKey } = getActorState(actor);
-        if (!self.arrivingGuest || self.doorClosed || self.busted) return;
-
-        const guest = Game.GUESTS[self.arrivingGuest];
-        if (!guest.ability) return;
+        if (self.doorClosed || self.busted) return;
 
         const selfVenue = Game.VENUES[self.venueId];
         const opponentVenue = Game.VENUES[opponent.venueId];
@@ -897,7 +1028,7 @@
             roundMoney: gameState.player.roundMoney,
             roundPoints: gameState.player.roundPoints,
         };
-        const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue);
+        const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue, selfKey === 'player' ? selectedGridGuest : null);
         if (!result) return;
 
         showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
@@ -1025,6 +1156,11 @@
 
             const action = AI.decideGuestAction(gameState);
             if (!action) {
+                // Defensive fallback: if rival still has an active turn, bank safely.
+                if (!r.phaseComplete && !r.doorClosed && !r.busted) {
+                    executeAIAction('close');
+                    return;
+                }
                 clearInterval(aiTimerId);
                 aiTimerId = null;
                 checkGuestPhaseDone();
