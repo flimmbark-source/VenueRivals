@@ -2077,3 +2077,20 @@ body {
         padding: 4px;
     }
 }
+
+@media (max-width: 640px) {
+    .loadout-card-primary {
+        flex-basis: 100%;
+    }
+
+    .loadout-deck-preview-grid {
+        grid-template-columns: repeat(auto-fit, minmax(34px, 34px));
+        column-gap: 6px;
+        row-gap: 22px;
+        padding-inline: 2px;
+    }
+
+    .deck-manage-grid {
+        gap: 14px 6px;
+    }
+}
