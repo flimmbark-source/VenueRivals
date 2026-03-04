@@ -1651,6 +1651,8 @@
 
     function renderLoadoutVenue() {
         const venue = Game.VENUES[loadoutState.venueId];
+        const venueNameEl = document.getElementById('loadout-venue-name');
+        if (venueNameEl) venueNameEl.textContent = venue.name;
         const body = document.getElementById('loadout-venue-body');
         body.innerHTML = `
             <div class="loadout-venue-icon">${venue.emoji}</div>
