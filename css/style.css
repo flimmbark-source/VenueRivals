@@ -1556,7 +1556,7 @@ body {
 
 #loadout-deck-card,
 #loadout-guest-list-card {
-    min-height: 196px;
+    min-height: auto;
 }
 
 
@@ -1636,7 +1636,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 8px;
+    gap: 12px;
     text-align: center;
     flex: 1;
 }
@@ -1670,18 +1670,18 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(40px, 40px));
     column-gap: 10px;
-    row-gap: 22px;
+    row-gap: 28px;
     width: 100%;
     max-height: none;
     overflow: visible;
-    padding: 4px 4px 16px;
+    padding: 4px 4px 20px;
     justify-items: center;
     justify-content: center;
 }
 
 #loadout-guest-list-preview-grid {
-    margin-top: -2px;
-    padding-bottom: 18px;
+    margin-top: -12px;
+    padding-bottom: 14px;
 }
 
 .loadout-deck-preview-grid .guest-slot.loadout-preview-card {
