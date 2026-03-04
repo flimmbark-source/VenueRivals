@@ -1269,18 +1269,24 @@ body {
 
 .shop-upgrades .slot-emoji {
     left: 50%;
-    top: 50%;
+    top: 40%;
     transform: translate(-50%, -50%);
 }
 
 .shop-card-name {
+    position: absolute;
+    bottom: 3px;
+    left: 0;
+    right: 0;
     font-family: 'Poppins', sans-serif;
-    font-size: 0.6rem;
+    font-size: 0.5rem;
     font-weight: 600;
     color: var(--text-primary);
     text-align: center;
-    margin-top: 2px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
 }
 
 .shop-card-cost {

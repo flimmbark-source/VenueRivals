@@ -1251,7 +1251,7 @@
             const nameLabel = document.createElement('div');
             nameLabel.className = 'shop-card-name';
             nameLabel.textContent = guest.name;
-            wrapper.appendChild(nameLabel);
+            slot.appendChild(nameLabel);
         }
 
         bindGuestTooltipHoldInteractions(wrapper, guestId);
