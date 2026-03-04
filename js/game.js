@@ -239,7 +239,7 @@ const Game = (() => {
     celebrity: {
       name: "Celebrity",
       emoji: "🎬",
-      heat: 2,
+      heat: 3,
       money: 0,
       points: 4,
       cost: 7,
