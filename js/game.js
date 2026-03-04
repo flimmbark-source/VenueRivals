@@ -945,6 +945,17 @@ const Game = (() => {
     return [...(GUESTS[getGuestId(entry)].tags || [])];
   }
 
+  function getLockedIndexes(player) {
+    const locked = new Set();
+    for (let i = 0; i < player.house.length; i++) {
+      const entry = player.house[i];
+      if (entry && typeof entry !== "string" && entry.lockUntilClose) {
+        locked.add(i);
+      }
+    }
+    return locked;
+  }
+
   function pushLeftmost(player) {
     const idx = player.house.length - 1;
     const locked = getLockedIndexes(player);

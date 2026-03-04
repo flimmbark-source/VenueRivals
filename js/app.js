@@ -1119,6 +1119,11 @@
 
             const action = AI.decideGuestAction(gameState);
             if (!action) {
+                // Defensive fallback: if rival still has an active turn, bank safely.
+                if (!r.phaseComplete && !r.doorClosed && !r.busted) {
+                    executeAIAction('close');
+                    return;
+                }
                 clearInterval(aiTimerId);
                 aiTimerId = null;
                 checkGuestPhaseDone();
