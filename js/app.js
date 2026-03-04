@@ -1672,13 +1672,12 @@
         const selectedDeck = Game.DECKS[loadoutState.selectedDeckId];
         const deckName = selectedDeck ? selectedDeck.name : `${count} card${count !== 1 ? 's' : ''}`;
 
-        const emojis = loadoutState.deck.map(id => Game.GUESTS[id].emoji).join('');
-
         body.innerHTML = `
             <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${deckName}</div>
-            <div class="loadout-deck-preview">${emojis}</div>
+            <div class="loadout-deck-preview-grid" id="loadout-deck-preview-grid"></div>
             ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
         `;
+        renderLoadoutGuestCards('loadout-deck-preview-grid', loadoutState.deck);
     }
 
     function renderLoadoutGuestList() {
@@ -1687,13 +1686,25 @@
         const valid = count >= MIN_DECK_SIZE;
         const selectedList = Game.GUEST_LISTS[loadoutState.selectedGuestListId];
         const guestListName = selectedList ? selectedList.name : 'Custom Guest List';
-        const emojis = loadoutState.guestList.map(id => Game.GUESTS[id].emoji).join('');
 
         body.innerHTML = `
             <div class="loadout-deck-count ${valid ? '' : 'invalid'}">${guestListName}</div>
-            <div class="loadout-deck-preview">${emojis}</div>
+            <div class="loadout-deck-preview-grid" id="loadout-guest-list-preview-grid"></div>
             ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
         `;
+                renderLoadoutGuestCards('loadout-guest-list-preview-grid', loadoutState.guestList);
+    }
+
+    function renderLoadoutGuestCards(containerId, guests) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        container.innerHTML = '';
+        guests.forEach((guestId) => {
+            const slot = createGuestSlot(guestId, false, { interactive: false });
+            slot.classList.add('loadout-preview-card');
+            container.appendChild(slot);
+        });
     }
 
     function openVenueSelect() {

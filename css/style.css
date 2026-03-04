@@ -1645,12 +1645,23 @@ body {
     color: var(--accent-primary);
 }
 
-.loadout-deck-preview {
-    font-size: 1rem;
-    line-height: 1.6;
-    word-break: break-all;
-    max-height: 80px;
+.loadout-deck-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 6px;
+    width: 100%;
+    max-height: 112px;
     overflow: hidden;
+    justify-items: center;
+}
+
+.loadout-deck-preview-grid .guest-slot.loadout-preview-card {
+    cursor: default;
+    margin: 0;
+}
+
+.loadout-deck-preview-grid .guest-slot.loadout-preview-card:hover {
+    transform: none;
 }
 
 .loadout-deck-warning {
