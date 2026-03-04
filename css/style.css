@@ -1214,7 +1214,7 @@ body {
 .shop-grid {
     display: grid;
     grid-template-columns: repeat(5, auto);
-    gap: 8px 10px;
+    gap: 16px 10px;
     justify-content: center;
 }
 
