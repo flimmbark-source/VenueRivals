@@ -804,7 +804,7 @@ const Game = (() => {
     return a;
   }
   function createHouseGuest(guestId) {
-    return { instanceId: nextInstanceId++, guestId, lockUntilClose: false };
+    return { instanceId: nextInstanceId++, guestId, lockUntilClose: false, abilityUsed: false };
   }
   function getGuestId(entry) {
     return typeof entry === "string" ? entry : entry.guestId;
@@ -945,6 +945,17 @@ const Game = (() => {
     return [...(GUESTS[getGuestId(entry)].tags || [])];
   }
 
+  function getLockedIndexes(player) {
+    const locked = new Set();
+    for (let i = 0; i < player.house.length; i++) {
+      const entry = player.house[i];
+      if (entry && typeof entry !== "string" && entry.lockUntilClose) {
+        locked.add(i);
+      }
+    }
+    return locked;
+  }
+
   function pushLeftmost(player) {
     const idx = player.house.length - 1;
     const locked = getLockedIndexes(player);
@@ -991,23 +1002,7 @@ const Game = (() => {
     return result;
   }
 
-  function activateAbility(player, opponent, playerVenue, opponentVenue) {
-    if (!player.arrivingGuest || player.doorClosed || player.busted)
-      return null;
-    const guest = GUESTS[player.arrivingGuest];
-    if (!guest.ability || guest.ability.trigger !== "flash") return null;
-
-    const admitted = admitGuest(player, playerVenue, opponent, opponentVenue);
-    if (!admitted) return null;
-    const result = {
-      activated: guest.name,
-      ability: guest.ability,
-      effects: [...(admitted.effects || [])],
-      pushedOut: admitted.pushedOut,
-      pendingOut: admitted.pendingOut,
-      busted: admitted.busted,
-    };
-
+  function applyAbilityEffects(player, opponent, guest, result) {
     switch (guest.ability.type) {
       case "coolHeat": {
         player.heat = Math.max(0, player.heat - guest.ability.value);
@@ -1168,6 +1163,55 @@ const Game = (() => {
         break;
       }
     }
+  }
+
+  function activateAbility(player, opponent, playerVenue, opponentVenue, selectedGuest = null) {
+    if (player.doorClosed || player.busted) return null;
+
+    const selectedSource = selectedGuest?.source;
+    if (selectedSource === "house") {
+      const selectedIndex = player.house.findIndex((entry) => {
+        if (selectedGuest.instanceId != null && typeof entry !== "string") {
+          return entry.instanceId === selectedGuest.instanceId;
+        }
+        return getGuestId(entry) === selectedGuest.guestId;
+      });
+      if (selectedIndex < 0) return null;
+
+      const entry = player.house[selectedIndex];
+      const guestId = getGuestId(entry);
+      const guest = GUESTS[guestId];
+      if (!guest?.ability || guest.ability.trigger !== "flash") return null;
+      if (typeof entry !== "string" && entry.abilityUsed) return null;
+
+      const result = {
+        activated: guest.name,
+        ability: guest.ability,
+        effects: [],
+        pushedOut: [],
+        pendingOut: null,
+        busted: false,
+      };
+      applyAbilityEffects(player, opponent, guest, result);
+      if (typeof entry !== "string") entry.abilityUsed = true;
+      return result;
+    }
+
+    if (!player.arrivingGuest) return null;
+    const guest = GUESTS[player.arrivingGuest];
+    if (!guest.ability || guest.ability.trigger !== "flash") return null;
+
+    const admitted = admitGuest(player, playerVenue, opponent, opponentVenue);
+    if (!admitted) return null;
+    const result = {
+      activated: guest.name,
+      ability: guest.ability,
+      effects: [...(admitted.effects || [])],
+      pushedOut: admitted.pushedOut,
+      pendingOut: admitted.pendingOut,
+      busted: admitted.busted,
+    };
+    applyAbilityEffects(player, opponent, guest, result);
 
     return result;
   }
