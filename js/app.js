@@ -386,7 +386,7 @@
         const rivalMoneyEl = document.getElementById('rival-money');
         const rivalPtsBadgeEl = document.getElementById('rival-pts-badge');
 
-        if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl || !hudPlayerPtsEl || !hudRivalPtsEl ||
+        if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl ||
             !playerVenueNameEl || !playerMoneyEl || !playerPtsBadgeEl || !rivalVenueNameEl || !rivalMoneyEl || !rivalPtsBadgeEl) {
             return;
         }
@@ -397,8 +397,8 @@
             gameState.phase === 'guest' ? 'GUEST PHASE' :
             gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
-        hudPlayerPtsEl.textContent = `You: ${p.points} pts`;
-        hudRivalPtsEl.textContent = `Rival: ${r.points} pts`;
+        if (hudPlayerPtsEl) hudPlayerPtsEl.textContent = `You: ${p.points} pts`;
+        if (hudRivalPtsEl) hudRivalPtsEl.textContent = `Rival: ${r.points} pts`;
 
         // Player venue
         playerVenueNameEl.textContent = p.name;
