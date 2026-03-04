@@ -365,7 +365,6 @@ body {
 #setup-screen #venue-name-input,
 #setup-screen #round-count-input,
 #setup-screen #game-mode-input,
-#setup-screen #multiplayer-role-input,
 #setup-screen #room-code-input {
     max-width: 100%;
     width: 100%;
@@ -450,10 +449,6 @@ body {
     grid-column: span 1;
 }
 
-#setup-screen #game-mode-input,
-#setup-screen #multiplayer-role-input {
-    grid-column: span 1;
-}
 
 #setup-screen #multiplayer-fields {
     grid-column: 1 / -1;
@@ -489,6 +484,11 @@ body {
     text-align: center;
     box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
     z-index: 2600;
+}
+
+#setup-screen #round-count-input:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 #setup-screen #multiplayer-status {
     font-size: 0.66rem;
@@ -1645,12 +1645,23 @@ body {
     color: var(--accent-primary);
 }
 
-.loadout-deck-preview {
-    font-size: 1rem;
-    line-height: 1.6;
-    word-break: break-all;
-    max-height: 80px;
+.loadout-deck-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 6px;
+    width: 100%;
+    max-height: 112px;
     overflow: hidden;
+    justify-items: center;
+}
+
+.loadout-deck-preview-grid .guest-slot.loadout-preview-card {
+    cursor: default;
+    margin: 0;
+}
+
+.loadout-deck-preview-grid .guest-slot.loadout-preview-card:hover {
+    transform: none;
 }
 
 .loadout-deck-warning {
