@@ -1838,7 +1838,7 @@ body {
 
 .deck-manage-grid {
     display: flex;
-    gap: 6px;
+    gap: 18px 8px;
     flex-wrap: wrap;
 }
 
@@ -1846,6 +1846,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 40px;
     cursor: pointer;
     transition: var(--transition);
 }
@@ -1914,13 +1915,15 @@ body {
 
 .deck-card-name {
     font-family: 'Poppins', sans-serif;
-    font-size: 0.6rem;
+    font-size: 0.5rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 2px;
+    margin-bottom: 3px;
+    width: 40px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: center;
 }
 
 .deck-card-name.has-ability {

@@ -1669,20 +1669,13 @@
         const wrapper = document.createElement('div');
         wrapper.className = 'deck-manage-card';
 
-        const slot = createGuestSlot(guestId, false, { interactive: false });
-        wrapper.appendChild(slot);
-
         const nameEl = document.createElement('div');
         nameEl.className = 'deck-card-name' + (guest.ability ? ' has-ability' : '');
         nameEl.textContent = guest.name;
         wrapper.appendChild(nameEl);
 
-        if (guest.ability) {
-            const abilityEl = document.createElement('div');
-            abilityEl.className = 'deck-card-ability';
-            abilityEl.textContent = guest.ability.name;
-            wrapper.appendChild(abilityEl);
-        }
+        const slot = createGuestSlot(guestId, false, { interactive: false });
+        wrapper.appendChild(slot);
 
         return wrapper;
     }
