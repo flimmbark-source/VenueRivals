@@ -404,13 +404,13 @@
         playerVenueNameEl.textContent = p.name;
         playerMoneyEl.textContent = `💵 $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
         playerPtsBadgeEl.textContent = `⭐ ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
-        updateHeatBar('player', p.heat, pVenue.bustThreshold, p.busted);
+        updateHeatBar('player', p.heat, Game.getHeatCapacity(pVenue, p), p.busted);
 
         // Rival venue
         rivalVenueNameEl.textContent = r.name;
         rivalMoneyEl.textContent = `💵 $${r.money + (includeProjectedRoundTotals ? r.roundMoney : 0)}`;
         rivalPtsBadgeEl.textContent = `⭐ ${r.points + (includeProjectedRoundTotals ? r.roundPoints : 0)}`;
-        updateHeatBar('rival', r.heat, rVenue.bustThreshold, r.busted);
+        updateHeatBar('rival', r.heat, Game.getHeatCapacity(rVenue, r), r.busted);
     }
 
     function updateHeatBar(who, heat, max, busted = false) {
@@ -630,7 +630,7 @@
 
         const guest = Game.GUESTS[selectedGuestId];
         const venue = Game.VENUES[p.venueId];
-        const wouldBust = p.heat > venue.bustThreshold;
+        const wouldBust = p.heat > Game.getHeatCapacity(venue, p);
         let selectedHouseEntry = null;
         if (selectedGuestSource === 'house') {
             selectedHouseEntry = p.house.find((entry) => {
