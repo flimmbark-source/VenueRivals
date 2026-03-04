@@ -1972,17 +1972,25 @@
         document.getElementById('venue-name-input').addEventListener('input', checkStartEnabled);
 
         const modeInput = document.getElementById('game-mode-input');
-        const roleInput = document.getElementById('multiplayer-role-input');
         const multiplayerFields = document.getElementById('multiplayer-fields');
-        modeInput?.addEventListener('change', () => {
-            multiplayerFields.style.display = modeInput.value === 'multiplayer' ? '' : 'none';
-        });
+        const roundsInput = document.getElementById('round-count-input');
+
+        function syncModeSettings() {
+            const selectedMode = modeInput?.value || 'single';
+            const multiplayerSelected = selectedMode === 'host' || selectedMode === 'join';
+            if (multiplayerFields) multiplayerFields.style.display = multiplayerSelected ? '' : 'none';
+            if (roundsInput) roundsInput.disabled = selectedMode === 'join';
+        }
+
+        modeInput?.addEventListener('change', syncModeSettings);
+        syncModeSettings();
 
         document.getElementById('btn-start-game').addEventListener('click', async () => {
             const rawName = document.getElementById('venue-name-input').value.trim() || 'My Venue';
             const roundCount = parseInt(document.getElementById('round-count-input').value, 10) || Game.TOTAL_ROUNDS;
-            multiplayerMode = modeInput?.value || 'single';
-            multiplayerRole = roleInput?.value || 'host';
+            const selectedMode = modeInput?.value || 'single';
+            multiplayerMode = selectedMode === 'single' ? 'single' : 'multiplayer';
+            multiplayerRole = selectedMode === 'join' ? 'join' : 'host';
 
             if (!isMultiplayer()) {
                 startGame(escapeHtml(rawName), loadoutState.venueId, roundCount);
@@ -2055,6 +2063,12 @@
             multiplayerMode = 'single';
             document.getElementById('venue-name-input').value = '';
             document.getElementById('round-count-input').value = String(Game.TOTAL_ROUNDS);
+            const modeSelect = document.getElementById('game-mode-input');
+            if (modeSelect) modeSelect.value = 'single';
+            const roundSelect = document.getElementById('round-count-input');
+            if (roundSelect) roundSelect.disabled = false;
+            const multiplayerFields = document.getElementById('multiplayer-fields');
+            if (multiplayerFields) multiplayerFields.style.display = 'none';
             initLoadout();
             switchScreen('title');
         });

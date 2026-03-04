@@ -365,7 +365,6 @@ body {
 #setup-screen #venue-name-input,
 #setup-screen #round-count-input,
 #setup-screen #game-mode-input,
-#setup-screen #multiplayer-role-input,
 #setup-screen #room-code-input {
     max-width: 100%;
     width: 100%;
@@ -450,10 +449,6 @@ body {
     grid-column: span 1;
 }
 
-#setup-screen #game-mode-input,
-#setup-screen #multiplayer-role-input {
-    grid-column: span 1;
-}
 
 #setup-screen #multiplayer-fields {
     grid-column: 1 / -1;
@@ -489,6 +484,11 @@ body {
     text-align: center;
     box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
     z-index: 2600;
+}
+
+#setup-screen #round-count-input:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 #setup-screen #multiplayer-status {
     font-size: 0.66rem;
