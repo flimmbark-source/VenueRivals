@@ -468,32 +468,45 @@
         return el;
     }
 
+    const VENUE_BEHAVIOR_ZONES = {
+        dance: [{ x: 42, y: 34 }, { x: 56, y: 36 }, { x: 48, y: 46 }, { x: 60, y: 48 }],
+        bar: [{ x: 16, y: 60 }, { x: 24, y: 68 }, { x: 32, y: 62 }, { x: 22, y: 52 }],
+        lounge: [{ x: 64, y: 70 }, { x: 76, y: 66 }, { x: 86, y: 74 }, { x: 72, y: 82 }],
+        mingle: [{ x: 36, y: 74 }, { x: 52, y: 66 }, { x: 70, y: 54 }, { x: 82, y: 42 }],
+    };
+
+    function getActorAnchor(entry, index) {
+        const guestId = entry.guestId || entry;
+        const seed = `${guestId}|${typeof entry === 'string' ? index : (entry.instanceId || index)}`;
+        let hash = 0;
+        for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+        const zones = ['dance', 'bar', 'lounge', 'mingle'];
+        const zone = zones[Math.abs(hash) % zones.length];
+        const points = VENUE_BEHAVIOR_ZONES[zone];
+        return { zone, point: points[Math.abs(hash) % points.length] };
+    }
+
     function renderHouseGrid(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const slotsEl = document.getElementById(`${who}-slots`);
         slotsEl.innerHTML = '';
-        const venue = Game.VENUES[player.venueId];
         const allowGridTooltip = who === 'rival';
 
-        const houseCapacity = Game.getHouseCapacity(venue, player);
-        // Count occupied slots: house + arriving guest (cap to capacity for empties)
-        const occupiedCount = Math.min(player.house.length, houseCapacity) + (player.arrivingGuest ? 1 : 0);
-        
-        // Render empty slots for remaining capacity
-        for (let i = 0; i < houseCapacity - occupiedCount; i++) {
-            const empty = document.createElement('div');
-            empty.className = 'guest-slot empty-slot';
-            slotsEl.appendChild(empty);
-        }
-
-        // Render oldest-to-newest but only up to capacity
-        let guests = [...player.house].reverse();
-        if (guests.length > houseCapacity) {
-            guests = guests.slice(guests.length - houseCapacity);
-        }
-        guests.forEach((entry) => {
+        const guests = [...player.house].reverse();
+        guests.forEach((entry, idx) => {
             const guestId = entry.guestId || entry;
             const slot = createGuestSlot(guestId, false, { interactive: allowGridTooltip });
+            slot.classList.add('venue-actor');
+
+            const anchor = getActorAnchor(entry, idx);
+            const jitterX = ((idx % 3) - 1) * 1.5;
+            const jitterY = ((idx % 2) - 0.5) * 1.8;
+            slot.style.left = `${anchor.point.x + jitterX}%`;
+            slot.style.top = `${anchor.point.y + jitterY}%`;
+            slot.style.setProperty('--wander-x', `${((idx % 4) - 1.5) * 6}px`);
+            slot.style.setProperty('--wander-y', `${((idx % 5) - 2) * 4}px`);
+            slot.style.animationDelay = `${(idx % 7) * 0.35}s`;
+
             if (who === 'player') {
                 const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
@@ -512,34 +525,34 @@
             }
             slotsEl.appendChild(slot);
         });
-
-        // Render arriving guest as the rightmost/newest slot
-        if (player.arrivingGuest) {
-            const slot = createGuestSlot(player.arrivingGuest, false, { interactive: allowGridTooltip });
-            slot.classList.add('arriving-in-grid');
-            if (who === 'player') {
-                slot.dataset.slotSource = 'arriving';
-                if (selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === player.arrivingGuest) {
-                    slot.classList.add('selected');
-                }
-                slot.addEventListener('click', () => {
-                    selectedGridGuest = { guestId: player.arrivingGuest, source: 'arriving' };
-                    _lastGuestDetailKey = null;
-                    refreshSelectedGridSlotVisual();
-                    updateGuestDetail();
-                });
-            }
-            slotsEl.appendChild(slot);
-        }
     }
 
     function renderArrivingGuest(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const arrivingEl = document.getElementById(`${who}-arriving`);
-        
-        // Arriving guest is now rendered as part of the house grid, so clear the entry area
+        const arrivingKey = player.arrivingGuest ? `${player.arrivingGuest}|${player.doorClosed}|${player.busted}` : '';
+        if (arrivingEl.dataset.renderKey === arrivingKey) return;
+
         arrivingEl.innerHTML = '';
-        arrivingEl.dataset.renderKey = '';
+        arrivingEl.dataset.renderKey = arrivingKey;
+
+        if (!player.arrivingGuest || player.doorClosed || player.busted) return;
+
+        const slot = createGuestSlot(player.arrivingGuest, true, { interactive: who === 'rival' });
+        slot.classList.add('arriving-guest-card');
+        if (who === 'player') {
+            slot.dataset.slotSource = 'arriving';
+            if (selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === player.arrivingGuest) {
+                slot.classList.add('selected');
+            }
+            slot.addEventListener('click', () => {
+                selectedGridGuest = { guestId: player.arrivingGuest, source: 'arriving' };
+                _lastGuestDetailKey = null;
+                refreshSelectedGridSlotVisual();
+                updateGuestDetail();
+            });
+        }
+        arrivingEl.appendChild(slot);
     }
 
     function updateVenueStatus(who) {
@@ -566,7 +579,7 @@
             guestId.forEach((id) => animateExitGuest(who, id));
             return;
         }
-        const exitDoor = document.querySelector(`#${who}-area .exit-door`);
+        const exitDoor = document.getElementById(`${who}-door`);
         // try to find the slot containing the specific guestId; fall back to first occupied
         let sourceSlot = guestId ? document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`) : null;
         if (!sourceSlot) sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
