@@ -245,9 +245,17 @@ body {
 }
 
 #guest-list-presets-grid {
-    max-height: 320px;
+    max-height: 280px;
     overflow-y: auto;
     padding-right: 4px;
+    margin-bottom: 10px;
+}
+
+#deck-presets-grid {
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
+    margin-bottom: 10px;
 }
 
 #guest-list-manage-overlay #guest-list-presets-grid {
@@ -263,6 +271,15 @@ body {
 }
 
 #guest-list-presets-grid::-webkit-scrollbar-thumb {
+    background: var(--bg-card);
+    border-radius: 6px;
+}
+
+#deck-presets-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+#deck-presets-grid::-webkit-scrollbar-thumb {
     background: var(--bg-card);
     border-radius: 6px;
 }
@@ -348,7 +365,6 @@ body {
 #setup-screen #venue-name-input,
 #setup-screen #round-count-input,
 #setup-screen #game-mode-input,
-#setup-screen #multiplayer-role-input,
 #setup-screen #room-code-input {
     max-width: 100%;
     width: 100%;
@@ -433,10 +449,6 @@ body {
     grid-column: span 1;
 }
 
-#setup-screen #game-mode-input,
-#setup-screen #multiplayer-role-input {
-    grid-column: span 1;
-}
 
 #setup-screen #multiplayer-fields {
     grid-column: 1 / -1;
@@ -472,6 +484,11 @@ body {
     text-align: center;
     box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
     z-index: 2600;
+}
+
+#setup-screen #round-count-input:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 #setup-screen #multiplayer-status {
     font-size: 0.66rem;
@@ -1521,7 +1538,7 @@ body {
     background: var(--bg-medium);
     border: 2px solid var(--bg-light);
     border-radius: var(--radius-lg);
-    padding: 12px;
+    padding: 14px 14px 16px;
     cursor: pointer;
     transition: var(--transition);
     text-align: left;
@@ -1536,6 +1553,12 @@ body {
 .loadout-card-secondary {
     flex: 1 1 100%;
 }
+
+#loadout-deck-card,
+#loadout-guest-list-card {
+    min-height: auto;
+}
+
 
 .loadout-card:hover {
     border-color: var(--accent-secondary);
@@ -1612,7 +1635,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    justify-content: flex-start;
+    gap: 12px;
     text-align: center;
     flex: 1;
 }
@@ -1622,18 +1646,57 @@ body {
     font-weight: 700;
     font-size: 1.2rem;
     color: var(--text-primary);
+    line-height: 1.15;
+    margin-top: 0;
 }
 
 .loadout-deck-count.invalid {
     color: var(--accent-primary);
 }
 
-.loadout-deck-preview {
-    font-size: 1rem;
-    line-height: 1.6;
-    word-break: break-all;
-    max-height: 80px;
-    overflow: hidden;
+#loadout-deck-card .loadout-deck-body,
+#loadout-guest-list-card .loadout-deck-body {
+    margin-top: -8px;
+}
+
+#loadout-deck-card .loadout-deck-count,
+#loadout-guest-list-card .loadout-deck-count {
+    font-size: 0.98rem;
+    min-height: 18px;
+    margin-bottom: 2px;
+}
+
+.loadout-deck-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(40px, 40px));
+    column-gap: 10px;
+    row-gap: 28px;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding: 4px 4px 20px;
+    justify-items: center;
+    justify-content: center;
+}
+
+#loadout-guest-list-preview-grid {
+    margin-top: -12px;
+    padding-bottom: 14px;
+}
+
+.loadout-deck-preview-grid .guest-slot.loadout-preview-card {
+    cursor: default;
+    margin: 0;
+}
+
+#loadout-deck-preview-grid .guest-slot.loadout-preview-card,
+#loadout-guest-list-preview-grid .guest-slot.loadout-preview-card {
+    margin-bottom: 4px;
+}
+
+
+.loadout-deck-preview-grid .guest-slot.loadout-preview-card:hover {
+    transform: none;
 }
 
 .loadout-deck-warning {
@@ -1846,6 +1909,8 @@ body {
     display: flex;
     gap: 18px 8px;
     flex-wrap: wrap;
+    justify-content: center;
+    padding-bottom: 12px
 }
 
 .deck-manage-card {
