@@ -809,6 +809,7 @@
     function updateVenueStatus(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const statusEl = document.getElementById(`${who}-status`);
+        if (!statusEl) return;
 
         if (player.busted) {
             statusEl.textContent = 'BUSTED!';
