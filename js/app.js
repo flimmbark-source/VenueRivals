@@ -33,6 +33,7 @@
     let actorAnimTimer = null;
     let activePartyView = 'player';
     let swipeStartX = null;
+    let playerFlashWindowInstanceId = null;
 
     const ACTOR_TICK_MS = 50;
     const ACTOR_MIN_SPEED = 0.65;
@@ -419,27 +420,17 @@
     function updateHUD() {
         if (!gameState) return;
         const p = gameState.player;
-        const r = gameState.rival;
         const pVenue = Game.VENUES[p.venueId];
-        const rVenue = Game.VENUES[r.venueId];
         const includeProjectedRoundTotals =
-        gameState.phase === 'guest' && gameState.guestPhaseScoredRound !== gameState.round;
+            gameState.phase === 'guest' && gameState.guestPhaseScoredRound !== gameState.round;
 
         const hudRoundNumEl = document.getElementById('hud-round-num');
         const hudRoundTotalEl = document.getElementById('hud-round-total');
         const hudPhaseEl = document.getElementById('hud-phase');
         const hudPlayerPtsEl = document.getElementById('hud-player-pts');
-        const hudRivalPtsEl = document.getElementById('hud-rival-pts');
-        const hudPlayerInsideEl = document.getElementById('hud-player-inside');
-        const playerVenueNameEl = document.getElementById('player-venue-name');
         const playerMoneyEl = document.getElementById('player-money');
-        const playerPtsBadgeEl = document.getElementById('player-pts-badge');
-        const rivalVenueNameEl = document.getElementById('rival-venue-name');
-        const rivalMoneyEl = document.getElementById('rival-money');
-        const rivalPtsBadgeEl = document.getElementById('rival-pts-badge');
 
-        if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl ||
-            !playerVenueNameEl || !playerMoneyEl || !playerPtsBadgeEl || !rivalVenueNameEl || !rivalMoneyEl || !rivalPtsBadgeEl) {
+        if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl || !hudPlayerPtsEl || !playerMoneyEl) {
             return;
         }
 
@@ -447,23 +438,13 @@
         hudRoundTotalEl.textContent = gameState.totalRounds;
         hudPhaseEl.textContent =
             gameState.phase === 'guest' ? 'GUEST PHASE' :
-            gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
+                gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
-        if (hudPlayerPtsEl) hudPlayerPtsEl.textContent = `You: ${p.points} pts`;
-        if (hudRivalPtsEl) hudRivalPtsEl.textContent = `Rival: ${r.points} pts`;
-        if (hudPlayerInsideEl) hudPlayerInsideEl.textContent = `Inside: ${p.house.length}`;
-
-        // Player venue
-        playerVenueNameEl.textContent = p.name;
+        hudPlayerPtsEl.textContent = `⭐ ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
         playerMoneyEl.textContent = `💵 $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
-        playerPtsBadgeEl.textContent = `⭐ ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
-        updateHeatBar('player', p.heat, Game.getHeatCapacity(pVenue, p), p.busted);
 
-        // Rival venue
-        rivalVenueNameEl.textContent = r.name;
-        rivalMoneyEl.textContent = `💵 $${r.money + (includeProjectedRoundTotals ? r.roundMoney : 0)}`;
-        rivalPtsBadgeEl.textContent = `⭐ ${r.points + (includeProjectedRoundTotals ? r.roundPoints : 0)}`;
-        updateHeatBar('rival', r.heat, Game.getHeatCapacity(rVenue, r), r.busted);
+        updateHeatBar('player', p.heat, Game.getHeatCapacity(pVenue, p), p.busted);
+        updateHeatBar('rival', gameState.rival.heat, Game.getHeatCapacity(Game.VENUES[gameState.rival.venueId], gameState.rival), gameState.rival.busted);
     }
 
     function updateHeatBar(who, heat, max, busted = false) {
@@ -779,6 +760,7 @@
                 const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
                 if (instanceId != null) slot.dataset.instanceId = String(instanceId);
+                if (who === 'player' && instanceId != null && instanceId === playerFlashWindowInstanceId) slot.classList.add('just-entered');
                 if (selectedGridGuest?.source === 'house' &&
                     selectedGridGuest.guestId === guestId &&
                     (selectedGridGuest.instanceId == null || selectedGridGuest.instanceId === instanceId)) {
@@ -879,6 +861,18 @@
         setTimeout(() => ghost.remove(), 380);
     }
 
+    function getPlayerFlashWindowEntry() {
+        if (!gameState || playerFlashWindowInstanceId == null) return null;
+        return gameState.player.house.find((entry) => typeof entry !== 'string' && entry.instanceId === playerFlashWindowInstanceId) || null;
+    }
+
+    function isPlayerFlashAvailable() {
+        const entry = getPlayerFlashWindowEntry();
+        if (!entry) return false;
+        const guest = Game.GUESTS[entry.guestId];
+        return !!(guest?.ability && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
+    }
+
     // === Guest Detail Panel ===
     function updateGuestDetail() {
         const detailEl = document.getElementById('guest-detail');
@@ -922,9 +916,7 @@
                 return (entry.guestId || entry) === selectedGuestId;
             }) || null;
         }
-        const canUseSelectedAbility = !!guest.ability && (
-            selectedGuestSource !== 'house' || !selectedHouseEntry || !selectedHouseEntry.abilityUsed
-        );
+        const canUseSelectedAbility = isPlayerFlashAvailable();
 
         let abilityHTML = '';
         if (guest.ability) {
@@ -957,6 +949,7 @@
                         <span class="stat-heat${wouldBust ? ' danger' : ''}">\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}</span>
                     </div>
                     ${abilityHTML}
+                    ${isPlayerFlashAvailable() ? '<div class="flash-available">FLASH AVAILABLE</div>' : ''}
                 </div>
             </div>
         `;
@@ -1252,6 +1245,9 @@
         };
         const result = Game.admitGuest(self, venue, opponent, Game.VENUES[opponent.venueId]);
         if (!result) return;
+        if (selfKey === 'player') {
+            playerFlashWindowInstanceId = typeof self.house[0] === 'object' ? self.house[0].instanceId : null;
+        }
 
         if (result.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
@@ -1312,7 +1308,11 @@
             roundMoney: gameState.player.roundMoney,
             roundPoints: gameState.player.roundPoints,
         };
-        const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue, selfKey === 'player' ? selectedGridGuest : null);
+        const flashEntry = selfKey === 'player' ? getPlayerFlashWindowEntry() : null;
+        const selectedForAbility = selfKey === 'player'
+            ? (flashEntry ? { source: 'house', guestId: flashEntry.guestId, instanceId: flashEntry.instanceId } : null)
+            : null;
+        const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue, selectedForAbility);
         if (!result) return;
 
         showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
@@ -1385,6 +1385,7 @@
             roundPoints: gameState.player.roundPoints,
         };
         const result = Game.closeDoor(self, venue, opponent);
+        if (selfKey === 'player') playerFlashWindowInstanceId = null;
         if (result?.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
         }
@@ -1808,6 +1809,7 @@
     function startNewRound() {
         Game.startGuestPhase(gameState);
         clearRevealDoorIntel();
+        playerFlashWindowInstanceId = null;
 
         showFeedback(`ROUND ${gameState.round}`, 'points', 1500);
 
