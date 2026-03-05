@@ -185,7 +185,8 @@
             document.getElementById('round-results-panel').style.display = '';
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = 'none';
-            setPhoneBuyPhaseLayout(false);
+            // If buy phase has already started (results being shown before shop opens), keep compact HUD.
+            setPhoneBuyPhaseLayout(gameState.phase === 'buy');
             return;
         }
 
@@ -1654,6 +1655,7 @@
             // Enter buy phase immediately when results appear, but keep results visible
             // until player confirms and opens the shop panel.
             startBuyPhase({ deferPanel: true });
+            setPhoneBuyPhaseLayout(true);
         }
 
         publishState();
