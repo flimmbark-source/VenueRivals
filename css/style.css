@@ -813,12 +813,13 @@ body {
 
 .guest-slots {
     justify-content: flex-start;
-    min-height: 78px;
+    min-height: 72px;
     overflow-x: auto;
     overflow-y: visible;
     align-items: flex-start;
     padding-top: 2px;
-    padding-bottom: 10px;
+    padding-bottom: 8px;
+    position: relative;
 }
 
 .guest-slots .guest-slot {
@@ -922,12 +923,27 @@ body {
     gap: 3px;
     flex: 1;
     justify-content: flex-start;
-    min-height: 78px;
+    min-height: 72px;
     align-items: flex-start;
     overflow-x: auto;
     overflow-y: visible;
     padding-top: 2px;
-    padding-bottom: 10px;
+    padding-bottom: 8px;
+    position: relative;
+}
+
+
+.guest-slots::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 12px;
+    background: linear-gradient(180deg, rgba(7, 10, 20, 0.05), rgba(7, 10, 20, 0.72));
+    pointer-events: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
 }
 
 /* === Guest Slot (in grid) === */
@@ -963,7 +979,7 @@ body {
 }
 
 .guest-slot .slot-heat {
-    top: 121%;
+    top: calc(100% + 7px);
     right: 10px;
     left: auto;
     transform: none;
