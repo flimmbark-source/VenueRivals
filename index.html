@@ -214,18 +214,16 @@
                     </div>
                     <span class="heat-label" id="rival-heat-text">🔥 0/21</span>
                 </div>
-                <div class="house-lane">
-                    <div class="exit-door">
-                        <span class="door-label">EXIT</span>
+                <div class="venue-scene" id="rival-scene">
+                    <div class="venue-zone dance-zone">💃 Dance Floor</div>
+                    <div class="venue-zone bar-zone">🍸 Bar</div>
+                    <div class="venue-zone lounge-zone">🛋️ Lounge</div>
+                    <div class="entry-door" id="rival-door">
+                        <span class="door-label">ENTRY</span>
                         <span class="door-icon">🚪</span>
                     </div>
                     <div class="guest-slots" id="rival-slots"></div>
-                    <div class="entry-area">
-                        <div class="arriving-slot" id="rival-arriving"></div>
-                        <div class="entry-door" id="rival-door">
-                            <span class="door-icon">🚪</span>
-                        </div>
-                    </div>
+                    <div class="arriving-slot" id="rival-arriving"></div>
                 </div>
                 <div class="venue-status" id="rival-status"></div>
             </div>
@@ -248,18 +246,16 @@
                     </div>
                     <span class="heat-label" id="player-heat-text">🔥 0/21</span>
                 </div>
-                <div class="house-lane">
-                    <div class="exit-door" id="player-exit">
-                        <span class="door-label">EXIT</span>
+                <div class="venue-scene" id="player-scene">
+                    <div class="venue-zone dance-zone">💃 Dance Floor</div>
+                    <div class="venue-zone bar-zone">🍸 Bar</div>
+                    <div class="venue-zone lounge-zone">🛋️ Lounge</div>
+                    <div class="entry-door" id="player-door">
+                        <span class="door-label">ENTRY</span>
                         <span class="door-icon">🚪</span>
                     </div>
                     <div class="guest-slots" id="player-slots"></div>
-                    <div class="entry-area">
-                        <div class="arriving-slot" id="player-arriving"></div>
-                        <div class="entry-door" id="player-door">
-                            <span class="door-icon">🚪</span>
-                        </div>
-                    </div>
+                    <div class="arriving-slot" id="player-arriving"></div>
                 </div>
                 <div class="venue-status" id="player-status"></div>
             </div>
@@ -268,19 +264,20 @@
             <div class="bottom-panel" id="bottom-panel">
                 <!-- Guest Phase Controls -->
                 <div id="guest-phase-panel">
+                    <div class="guest-focus-heading">🚪 Door Guest Focus</div>
                     <div class="guest-detail" id="guest-detail">
                         <div class="guest-detail-empty">Waiting for guest...</div>
                     </div>
                     <div class="action-buttons">
                         <button class="btn btn-admit" id="btn-admit" disabled>
-                            <span>ADMIT</span>
+                            <span>Admit</span>
                             <span class="btn-arrow">→</span>
                         </button>
                         <button class="btn btn-ability" id="btn-ability" disabled>
-                            <span>ABILITY</span>
+                            <span>Use Ability</span>
                         </button>
                         <button class="btn btn-close-door" id="btn-close-door" disabled>
-                            <span>🚪 CLOSE</span>
+                            <span>Close Venue</span>
                         </button>
                     </div>
                 </div>
