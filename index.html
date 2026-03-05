@@ -204,80 +204,89 @@
                 </div>
             </div>
 
-            <!-- Opponent Venue Area -->
-            <div class="venue-area rival-venue" id="rival-area">
-                <div class="venue-header">
-                    <span class="venue-label rival-color" id="rival-venue-name">Rival</span>
-                    <div class="venue-stats">
-                        <span class="money-badge" id="rival-money">💵 $0</span>
-                        <span class="pts-badge" id="rival-pts-badge">⭐ 0</span>
-                    </div>
-                </div>
-                <div class="heat-bar-container">
-                    <div class="heat-bar">
-                        <div class="heat-fill" id="rival-heat-fill"></div>
-                    </div>
-                    <span class="heat-label" id="rival-heat-text">🔥 0/21</span>
-                </div>
-                <div class="venue-scene" id="rival-scene">
-                    <div class="scene-zone dance-zone">DANCE</div>
-                    <div class="scene-zone bar-zone">BAR</div>
-                    <div class="scene-zone lounge-zone">LOUNGE</div>
-                    <div class="actor-layer" id="rival-actors"></div>
-                    <div class="scene-door exit-door">
-                        <span class="door-label">EXIT</span>
-                        <span class="door-icon">🚪</span>
-                    </div>
-                    <div class="entry-area">
-                        <div class="arriving-slot" id="rival-arriving"></div>
-                        <div class="scene-door entry-door" id="rival-door" aria-label="Venue entry door">
-                            <span class="door-icon">🚪</span>
-                            <span class="door-label">ENTRY</span>
+            <div class="party-carousel" id="party-carousel" aria-label="Party view carousel">
+                <div class="party-track" id="party-track">
+                    <!-- Player Venue Area -->
+                    <div class="venue-area player-venue party-slide" id="player-area">
+                        <div class="venue-header">
+                            <span class="venue-label player-color" id="player-venue-name">You</span>
+                            <div class="venue-stats">
+                                <span class="money-badge" id="player-money">💵 $0</span>
+                                <span class="pts-badge" id="player-pts-badge">⭐ 0</span>
+                            </div>
                         </div>
+                        <div class="heat-bar-container">
+                            <div class="heat-bar">
+                                <div class="heat-fill" id="player-heat-fill"></div>
+                            </div>
+                            <span class="heat-label" id="player-heat-text">🔥 0/21</span>
+                        </div>
+                        <div class="venue-scene" id="player-scene">
+                            <div class="scene-zone dance-zone">DANCE</div>
+                            <div class="scene-zone bar-zone">BAR</div>
+                            <div class="scene-zone lounge-zone">LOUNGE</div>
+                            <div class="actor-layer" id="player-actors"></div>
+                            <div class="scene-door exit-door" id="player-exit">
+                                <span class="door-label">EXIT</span>
+                                <span class="door-icon">🚪</span>
+                            </div>
+                            <div class="entry-area">
+                                <div class="arriving-slot" id="player-arriving"></div>
+                                <div class="scene-door entry-door" id="player-door" aria-label="Venue entry door">
+                                    <span class="door-icon">🚪</span>
+                                    <span class="door-label">ENTRY</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="guest-slots" id="player-slots"></div>
+                        <div class="venue-status" id="player-status"></div>
+                    </div>
+
+                    <!-- Opponent Venue Area -->
+                    <div class="venue-area rival-venue party-slide" id="rival-area">
+                        <div class="venue-header">
+                            <span class="venue-label rival-color" id="rival-venue-name">Rival</span>
+                            <div class="venue-stats">
+                                <span class="money-badge" id="rival-money">💵 $0</span>
+                                <span class="pts-badge" id="rival-pts-badge">⭐ 0</span>
+                            </div>
+                        </div>
+                        <div class="heat-bar-container">
+                            <div class="heat-bar">
+                                <div class="heat-fill" id="rival-heat-fill"></div>
+                            </div>
+                            <span class="heat-label" id="rival-heat-text">🔥 0/21</span>
+                        </div>
+                        <div class="venue-scene" id="rival-scene">
+                            <div class="scene-zone dance-zone">DANCE</div>
+                            <div class="scene-zone bar-zone">BAR</div>
+                            <div class="scene-zone lounge-zone">LOUNGE</div>
+                            <div class="actor-layer" id="rival-actors"></div>
+                            <div class="scene-door exit-door">
+                                <span class="door-label">EXIT</span>
+                                <span class="door-icon">🚪</span>
+                            </div>
+                            <div class="entry-area">
+                                <div class="arriving-slot" id="rival-arriving"></div>
+                                <div class="scene-door entry-door" id="rival-door" aria-label="Venue entry door">
+                                    <span class="door-icon">🚪</span>
+                                    <span class="door-label">ENTRY</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="guest-slots" id="rival-slots"></div>
+                        <div class="venue-status" id="rival-status"></div>
                     </div>
                 </div>
-                <div class="guest-slots" id="rival-slots"></div>
-                <div class="venue-status" id="rival-status"></div>
+            </div>
+
+            <div class="party-view-controls" id="party-view-controls" aria-label="Switch visible party">
+                <button class="party-view-btn active" id="btn-view-player" type="button">You</button>
+                <button class="party-view-btn" id="btn-view-rival" type="button">Rival</button>
             </div>
 
             <!-- Center Feedback -->
             <div class="center-feedback" id="center-feedback"></div>
-
-            <!-- Player Venue Area -->
-            <div class="venue-area player-venue" id="player-area">
-                <div class="venue-header">
-                    <span class="venue-label player-color" id="player-venue-name">You</span>
-                    <div class="venue-stats">
-                        <span class="money-badge" id="player-money">💵 $0</span>
-                        <span class="pts-badge" id="player-pts-badge">⭐ 0</span>
-                    </div>
-                </div>
-                <div class="heat-bar-container">
-                    <div class="heat-bar">
-                        <div class="heat-fill" id="player-heat-fill"></div>
-                    </div>
-                    <span class="heat-label" id="player-heat-text">🔥 0/21</span>
-                </div>
-                <div class="venue-scene" id="player-scene">
-                    <div class="scene-zone dance-zone">DANCE</div>
-                    <div class="scene-zone bar-zone">BAR</div>
-                    <div class="scene-zone lounge-zone">LOUNGE</div>
-                    <div class="actor-layer" id="player-actors"></div>
-                    <div class="scene-door exit-door" id="player-exit">
-                        <span class="door-label">EXIT</span>
-                        <span class="door-icon">🚪</span>
-                    </div>
-                    <div class="entry-area">
-                        <div class="arriving-slot" id="player-arriving"></div>
-                        <div class="scene-door entry-door" id="player-door" aria-label="Venue entry door">
-                            <span class="door-icon">🚪</span>
-                            <span class="door-label">ENTRY</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="guest-slots" id="player-slots"></div>
-                <div class="venue-status" id="player-status"></div>
-            </div>
 
             <!-- Bottom Panel -->
             <div class="bottom-panel" id="bottom-panel">

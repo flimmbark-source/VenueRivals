@@ -31,6 +31,8 @@
     const revealDoorIntel = { player: null, rival: null };
     const venueActors = { player: new Map(), rival: new Map() };
     let actorAnimTimer = null;
+    let activePartyView = 'player';
+    let swipeStartX = null;
 
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
@@ -213,6 +215,48 @@
         updateVenueStatus('player');
         updateVenueStatus('rival');
         updateHUD();
+        applyPartyView(false);
+    }
+
+
+    function applyPartyView(animate = true) {
+        const track = document.getElementById('party-track');
+        if (!track) return;
+        track.style.transition = animate ? 'transform 0.28s ease' : 'none';
+        track.style.transform = activePartyView === 'player' ? 'translateX(0%)' : 'translateX(-50%)';
+
+        const playerBtn = document.getElementById('btn-view-player');
+        const rivalBtn = document.getElementById('btn-view-rival');
+        playerBtn?.classList.toggle('active', activePartyView === 'player');
+        rivalBtn?.classList.toggle('active', activePartyView === 'rival');
+    }
+
+    function setPartyView(view, animate = true) {
+        if (view !== 'player' && view !== 'rival') return;
+        activePartyView = view;
+        applyPartyView(animate);
+    }
+
+    function bindPartyCarouselInteractions() {
+        const carousel = document.getElementById('party-carousel');
+        if (!carousel) return;
+
+        carousel.addEventListener('touchstart', (e) => {
+            if (!e.touches?.length) return;
+            swipeStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        carousel.addEventListener('touchend', (e) => {
+            if (swipeStartX == null || !e.changedTouches?.length) return;
+            const deltaX = e.changedTouches[0].clientX - swipeStartX;
+            swipeStartX = null;
+            if (Math.abs(deltaX) < 40) return;
+            if (deltaX < 0) setPartyView('rival');
+            else setPartyView('player');
+        }, { passive: true });
+
+        document.getElementById('btn-view-player')?.addEventListener('click', () => setPartyView('player'));
+        document.getElementById('btn-view-rival')?.addEventListener('click', () => setPartyView('rival'));
     }
 
     function syncSelectedGridGuest() {
@@ -1686,6 +1730,7 @@
         updateVenueStatus('player');
         updateVenueStatus('rival');
         updateHUD();
+        setPartyView('player', false);
 
         // Start AI
         setTimeout(() => startAITimer(), 800);
@@ -2201,6 +2246,8 @@
             }
         });
 
+        bindPartyCarouselInteractions();
+
         // Guest phase controls
         document.getElementById('btn-admit').addEventListener('click', handleAdmit);
         document.getElementById('btn-ability').addEventListener('click', handleAbility);
@@ -2234,6 +2281,7 @@
             if (roundSelect) roundSelect.disabled = false;
             const multiplayerFields = document.getElementById('multiplayer-fields');
             if (multiplayerFields) multiplayerFields.style.display = 'none';
+            setPartyView('player', false);
             initLoadout();
             switchScreen('title');
         });
@@ -2265,6 +2313,7 @@
     function init() {
         initLoadout();
         setupEventListeners();
+        applyPartyView(false);
         startAnimLoop();
     }
 

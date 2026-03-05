@@ -693,14 +693,57 @@ body {
     font-size: 0.8rem;
 }
 
+
+.party-carousel {
+    overflow: hidden;
+    touch-action: pan-y;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.party-track {
+    display: flex;
+    width: 200%;
+    transition: transform 0.28s ease;
+    will-change: transform;
+}
+
+.party-slide {
+    width: 50%;
+    flex-shrink: 0;
+}
+
+.party-view-controls {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 10px 4px;
+}
+
+.party-view-btn {
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.06);
+    color: var(--text-secondary);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.party-view-btn.active {
+    color: #fff;
+    border-color: rgba(76, 201, 240, 0.75);
+    background: rgba(76, 201, 240, 0.18);
+}
+
 /* === Venue Area === */
 .venue-area {
     padding: 6px 10px;
     flex-shrink: 0;
 }
 
-.rival-venue { border-bottom: 1px solid rgba(255, 110, 110, 0.15); }
-.player-venue { border-top: 1px solid rgba(76, 201, 240, 0.15); }
+.rival-venue { border-left: 2px solid rgba(255, 110, 110, 0.12); }
+.player-venue { border-left: 2px solid rgba(76, 201, 240, 0.12); }
 
 .venue-header {
     display: flex;
