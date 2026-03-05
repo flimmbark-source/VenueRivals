@@ -710,6 +710,73 @@ body {
     flex-direction: column;
 }
 
+.venue-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.venue-label {
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+
+.venue-stats {
+    display: flex;
+    gap: 6px;
+}
+
+.heat-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+}
+
+.heat-bar,
+.phone-phase-progress {
+    position: relative;
+    height: 6px;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.heat-fill {
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    transition: width 0.25s ease, background 0.25s ease;
+    background: linear-gradient(90deg, #2cb67d, #7be495);
+}
+
+.heat-fill.warning {
+    background: linear-gradient(90deg, #f8c12c, #ffdb77);
+}
+
+.heat-fill.danger {
+    background: linear-gradient(90deg, #f77f00, #ff5400);
+}
+
+.heat-fill.critical {
+    background: linear-gradient(90deg, #ff3366, #ff006e);
+}
+
+.heat-fill.safe {
+    background: linear-gradient(90deg, #2cb67d, #7be495);
+}
+
+.heat-label,
+.phone-heat-text {
+    min-width: 58px;
+    text-align: right;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
 
 
 /* === Top-Down Venue Scene === */
@@ -2359,6 +2426,12 @@ body {
     border-radius: 14px;
     padding: 8px;
 }
+
+.phone-screen.buy-phase-compact .phone-economy-row,
+.phone-screen.buy-phase-compact .phone-heat-row,
+.phone-screen.buy-phase-compact .phone-grid-module {
+    display: none;
+}
 .phone-grid-title {
     color: var(--text-secondary);
     font-size: 0.63rem;
@@ -2381,8 +2454,17 @@ body {
 .phone-hud .guest-detail-ability { font-size: 0.66rem; }
 .phone-hud .action-buttons .btn { border-radius: 999px; min-height: 36px; font-size: 0.68rem; }
 .phone-hud .btn-admit { flex: 1.3; }
-.phone-hud .shop-layout { max-height: 30vh; overflow-y: auto; }
-
+.phone-hud .shop-layout {
+    max-height: 30vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    gap: 6px;
+    justify-content: space-between;
+}
+.phone-hud .shop-grid {
+    gap: 22px 6px;
+    min-width: 0;
+}
 .guest-slot.just-entered {
     border-color: var(--accent-gold);
     box-shadow: 0 0 14px rgba(255, 209, 102, 0.65);

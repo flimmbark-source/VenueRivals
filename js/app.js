@@ -167,6 +167,7 @@
             document.getElementById('buy-phase-panel').style.display = '';
             document.getElementById('gameover-panel').style.display = 'none';
             renderShop();
+            setPhoneBuyPhaseLayout(true);
             return;
         }
 
@@ -175,6 +176,7 @@
             document.getElementById('round-results-panel').style.display = 'none';
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = '';
+            setPhoneBuyPhaseLayout(false);
             return;
         }
 
@@ -183,6 +185,8 @@
             document.getElementById('round-results-panel').style.display = '';
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = 'none';
+            // If buy phase has already started (results being shown before shop opens), keep compact HUD.
+            setPhoneBuyPhaseLayout(gameState.phase === 'buy');
             return;
         }
 
@@ -190,6 +194,13 @@
         document.getElementById('round-results-panel').style.display = 'none';
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
+        setPhoneBuyPhaseLayout(false);
+    }
+
+    function setPhoneBuyPhaseLayout(isBuyPhase) {
+        const phoneScreenEl = document.querySelector('#phone-hud .phone-screen');
+        if (!phoneScreenEl) return;
+        phoneScreenEl.classList.toggle('buy-phase-compact', !!isBuyPhase);
     }
 
     function mapStateToJoinPerspective(state) {
@@ -650,6 +661,37 @@
         ensureActorLoop();
     }
 
+    function queueVenueActorExit(who, guestId) {
+        const actors = venueActors[who];
+        if (!actors || !actors.size) return false;
+
+        const candidates = [];
+        for (const [key, actor] of actors.entries()) {
+            if (actor.state === 'exiting') continue;
+            if (guestId && actor.guestId !== guestId) continue;
+            candidates.push([key, actor]);
+        }
+        if (!candidates.length) return false;
+
+        // Prefer established house actors over the transient arriving placeholder.
+        candidates.sort((a, b) => {
+            const aArriving = a[0] === 'arriving-guest' ? 1 : 0;
+            const bArriving = b[0] === 'arriving-guest' ? 1 : 0;
+            return aArriving - bArriving;
+        });
+
+        const [, actor] = candidates[0];
+        const exitTarget = getExitDoorPosition(who);
+        actor.state = 'exiting';
+        actor.behavior = 'leaving';
+        actor.targetX = exitTarget.x;
+        actor.targetY = exitTarget.y;
+        actor.el.classList.add('exiting');
+        actor.el.title = `${actor.guestName} • leaving`;
+        ensureActorLoop();
+        return true;
+    }
+
     function stepVenueActors() {
         ['player', 'rival'].forEach((who) => {
             const actors = venueActors[who];
@@ -809,6 +851,7 @@
     function updateVenueStatus(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const statusEl = document.getElementById(`${who}-status`);
+        if (!statusEl) return;
 
         if (player.busted) {
             statusEl.textContent = 'BUSTED!';
@@ -830,11 +873,15 @@
             guestId.forEach((id) => animateExitGuest(who, id));
             return;
         }
-        const exitDoor = document.querySelector(`#${who}-area .exit-door`);
-        // try to find the slot containing the specific guestId; fall back to first occupied
+
+        // Move matching venue actor to exit door before it disappears.
+        // (syncVenueActors also enforces exits for removed actors as a fallback.)
+        queueVenueActorExit(who, guestId);
+
+        // Animate the grid card itself drifting left and fading out.
         let sourceSlot = guestId ? document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`) : null;
         if (!sourceSlot) sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
-        if (!exitDoor || !sourceSlot) return;
+        if (!sourceSlot) return;
 
         const resolvedGuestId = guestId || sourceSlot.dataset.guestId;
         if (!resolvedGuestId || !Game.GUESTS[resolvedGuestId]) return;
@@ -843,18 +890,12 @@
         ghost.classList.add('exit-ghost');
 
         const sourceRect = sourceSlot.getBoundingClientRect();
-        const exitRect = exitDoor.getBoundingClientRect();
-        const sourceCenterX = sourceRect.left + sourceRect.width / 2;
-        const sourceCenterY = sourceRect.top + sourceRect.height / 2;
-        const exitCenterX = exitRect.left + exitRect.width / 2;
-        const exitCenterY = exitRect.top + exitRect.height / 2;
-
-        ghost.style.left = `${sourceCenterX - sourceRect.width / 2}px`;
-        ghost.style.top = `${sourceCenterY - sourceRect.height / 2}px`;
+        ghost.style.left = `${sourceRect.left}px`;
+        ghost.style.top = `${sourceRect.top}px`;
         document.body.appendChild(ghost);
 
         requestAnimationFrame(() => {
-            ghost.style.transform = `translate(${exitCenterX - sourceCenterX}px, ${exitCenterY - sourceCenterY}px)`;
+            ghost.style.transform = 'translate(-56px, 0)';
             ghost.classList.add('leaving');
         });
 
@@ -1609,6 +1650,14 @@
         document.getElementById('round-results-panel').style.display = '';
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
+
+        if (!isFinalRound) {
+            // Enter buy phase immediately when results appear, but keep results visible
+            // until player confirms and opens the shop panel.
+            startBuyPhase({ deferPanel: true });
+            setPhoneBuyPhaseLayout(true);
+        }
+
         publishState();
     }
 
@@ -1619,12 +1668,13 @@
             Game.endBuyPhase(gameState);
             showGameOver();
         } else {
-            startBuyPhase();
+            showBuyPanel();
         }
     }
 
     // === Buy Phase ===
-    function startBuyPhase() {
+    function startBuyPhase(options = {}) {
+        const deferPanel = !!options.deferPanel;
         gameState.phase = 'buy';
         updateHUD();
 
@@ -1647,11 +1697,17 @@
             : playerMarket;
         renderShop();
 
-        // Show buy panel
+        if (!deferPanel) {
+            showBuyPanel();
+        }
+    }
+
+    function showBuyPanel() {
         document.getElementById('guest-phase-panel').style.display = 'none';
         document.getElementById('round-results-panel').style.display = 'none';
         document.getElementById('buy-phase-panel').style.display = '';
         document.getElementById('gameover-panel').style.display = 'none';
+        setPhoneBuyPhaseLayout(true);
     }
 
     function renderShopCard(guestId, cost, canAfford, container) {
@@ -1754,6 +1810,7 @@
         }
 
         Game.endBuyPhase(gameState);
+        setPhoneBuyPhaseLayout(false);
 
         if (gameState.phase === 'gameover') {
             showGameOver();
@@ -1810,6 +1867,7 @@
         Game.startGuestPhase(gameState);
         clearRevealDoorIntel();
         playerFlashWindowInstanceId = null;
+        setPhoneBuyPhaseLayout(false);
 
         showFeedback(`ROUND ${gameState.round}`, 'points', 1500);
 
