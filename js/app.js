@@ -29,6 +29,8 @@
     let waitingPopupBackdropEl = null;
     let pendingHostMatchConfig = null;
     const revealDoorIntel = { player: null, rival: null };
+    const venueActors = { player: new Map(), rival: new Map() };
+    let actorAnimTimer = null;
 
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
@@ -379,6 +381,7 @@
         const hudPhaseEl = document.getElementById('hud-phase');
         const hudPlayerPtsEl = document.getElementById('hud-player-pts');
         const hudRivalPtsEl = document.getElementById('hud-rival-pts');
+        const hudPlayerInsideEl = document.getElementById('hud-player-inside');
         const playerVenueNameEl = document.getElementById('player-venue-name');
         const playerMoneyEl = document.getElementById('player-money');
         const playerPtsBadgeEl = document.getElementById('player-pts-badge');
@@ -399,6 +402,7 @@
 
         if (hudPlayerPtsEl) hudPlayerPtsEl.textContent = `You: ${p.points} pts`;
         if (hudRivalPtsEl) hudRivalPtsEl.textContent = `Rival: ${r.points} pts`;
+        if (hudPlayerInsideEl) hudPlayerInsideEl.textContent = `Inside: ${p.house.length}`;
 
         // Player venue
         playerVenueNameEl.textContent = p.name;
@@ -431,6 +435,121 @@
         if (!guest.ability) return '';
         const icon = escapeHtml(guest.ability.icon || '');
         return `<span class="ability-icon-badge" aria-label="${escapeHtml(guest.ability.name || 'Ability')}" title="${escapeHtml(guest.ability.name || 'Ability')}">${icon}</span>`;
+    }
+
+
+    // === Venue Scene Actors ===
+    function getHouseEntryKey(entry, index) {
+        if (entry && typeof entry === 'object' && entry.instanceId != null) return `i-${entry.instanceId}`;
+        const guestId = entry && typeof entry === 'object' ? entry.guestId : entry;
+        return `g-${guestId}-${index}`;
+    }
+
+    function getSceneBounds(who) {
+        const scene = document.getElementById(`${who}-scene`);
+        if (!scene) return null;
+        return {
+            width: scene.clientWidth || 280,
+            height: scene.clientHeight || 150,
+        };
+    }
+
+    function pickBehaviorTarget(who) {
+        const bounds = getSceneBounds(who);
+        if (!bounds) return { x: 120, y: 80, behavior: 'hang' };
+        const choices = [
+            { behavior: 'dance', x: bounds.width * 0.34, y: bounds.height * 0.46 },
+            { behavior: 'drink', x: bounds.width * 0.78, y: bounds.height * 0.35 },
+            { behavior: 'lounge', x: bounds.width * 0.24, y: bounds.height * 0.72 },
+            { behavior: 'wander', x: bounds.width * (0.42 + Math.random() * 0.36), y: bounds.height * (0.56 + Math.random() * 0.28) },
+        ];
+        return choices[Math.floor(Math.random() * choices.length)];
+    }
+
+    function ensureActorLoop() {
+        if (actorAnimTimer) return;
+        actorAnimTimer = setInterval(stepVenueActors, 90);
+    }
+
+    function stopActorLoop() {
+        if (!actorAnimTimer) return;
+        clearInterval(actorAnimTimer);
+        actorAnimTimer = null;
+    }
+
+    function syncVenueActors(who) {
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        const layer = document.getElementById(`${who}-actors`);
+        if (!layer || !player) return;
+        const actors = venueActors[who];
+        const wanted = new Set();
+
+        player.house.forEach((entry, idx) => {
+            const guestId = entry.guestId || entry;
+            const guest = Game.GUESTS[guestId];
+            if (!guest) return;
+            const key = getHouseEntryKey(entry, idx);
+            wanted.add(key);
+            let actor = actors.get(key);
+            if (!actor) {
+                const target = pickBehaviorTarget(who);
+                const el = document.createElement('div');
+                el.className = 'venue-actor';
+                el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                el.title = `${guest.name} • ${target.behavior}`;
+                layer.appendChild(el);
+                const b = getSceneBounds(who) || { width: 280, height: 150 };
+                actor = { el, x: b.width * 0.93, y: 12, targetX: target.x, targetY: target.y, behavior: target.behavior, t: Math.random() * Math.PI * 2, guestName: guest.name };
+                actors.set(key, actor);
+            }
+            if (Math.random() < 0.03) {
+                const target = pickBehaviorTarget(who);
+                actor.targetX = target.x;
+                actor.targetY = target.y;
+                actor.behavior = target.behavior;
+                actor.el.title = `${actor.guestName} • ${target.behavior}`;
+            }
+        });
+
+        for (const [key, actor] of actors.entries()) {
+            if (!wanted.has(key)) {
+                actor.el.classList.add('leaving');
+                setTimeout(() => actor.el.remove(), 250);
+                actors.delete(key);
+            }
+        }
+
+        ensureActorLoop();
+    }
+
+    function stepVenueActors() {
+        ['player', 'rival'].forEach((who) => {
+            const actors = venueActors[who];
+            const bounds = getSceneBounds(who);
+            if (!bounds) return;
+            actors.forEach((actor) => {
+                const dx = actor.targetX - actor.x;
+                const dy = actor.targetY - actor.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 1) {
+                    const speed = Math.min(2.2, 0.25 + dist * 0.04);
+                    actor.x += (dx / dist) * speed;
+                    actor.y += (dy / dist) * speed;
+                } else if (Math.random() < 0.025) {
+                    const target = pickBehaviorTarget(who);
+                    actor.targetX = target.x;
+                    actor.targetY = target.y;
+                    actor.behavior = target.behavior;
+                    actor.el.title = `${actor.guestName} • ${target.behavior}`;
+                }
+                actor.t += 0.18;
+                const bob = Math.sin(actor.t) * 2;
+                actor.el.style.left = `${Math.max(8, Math.min(bounds.width - 22, actor.x))}px`;
+                actor.el.style.top = `${Math.max(8, Math.min(bounds.height - 24, actor.y + bob))}px`;
+            });
+        });
+
+        if (!venueActors.player.size && !venueActors.rival.size) stopActorLoop();
     }
 
 
@@ -531,15 +650,30 @@
             }
             slotsEl.appendChild(slot);
         }
+
+        syncVenueActors(who);
     }
 
     function renderArrivingGuest(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const arrivingEl = document.getElementById(`${who}-arriving`);
-        
-        // Arriving guest is now rendered as part of the house grid, so clear the entry area
+        if (!arrivingEl) return;
         arrivingEl.innerHTML = '';
         arrivingEl.dataset.renderKey = '';
+        if (!player?.arrivingGuest || player.doorClosed || player.busted) return;
+
+        const guest = Game.GUESTS[player.arrivingGuest];
+        if (!guest) return;
+        const card = document.createElement('div');
+        card.className = 'arriving-guest-card';
+        card.innerHTML = `
+            <span class="arriving-stat arriving-heat">🔥${guest.heat}</span>
+            <span class="arriving-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
+            <span class="arriving-stat arriving-money">${guest.money}</span>
+            <span class="arriving-stat arriving-points">${guest.points}</span>
+        `;
+        card.title = `${guest.name} - ${guest.desc}`;
+        arrivingEl.appendChild(card);
     }
 
     function updateVenueStatus(who) {
@@ -1507,6 +1641,8 @@
         const rivalName = options.rivalName || RIVAL_NAMES[Math.floor(Math.random() * RIVAL_NAMES.length)];
 
         gameState = Game.createGameState(name, venueType, rivalName, rivalVenue, totalRounds);
+        venueActors.player.clear();
+        venueActors.rival.clear();
 
         // Override player deck with the loadout deck
         if (loadoutState) {
@@ -2073,6 +2209,7 @@
         document.getElementById('btn-play-again').addEventListener('click', () => {
             if (aiTimerId) { clearInterval(aiTimerId); aiTimerId = null; }
             Renderer.resetAnimState();
+            stopActorLoop();
             gameState = null;
             currentMarket = null;
             if (multiplayerSession) { multiplayerSession.close(); multiplayerSession = null; }

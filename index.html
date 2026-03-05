@@ -197,6 +197,11 @@
                     <span class="hud-round">ROUND <span id="hud-round-num">1</span>/<span id="hud-round-total">3</span></span>
                     <span class="hud-phase" id="hud-phase">GUEST PHASE</span>
                 </div>
+                <div class="hud-right">
+                    <span class="hud-score" id="hud-player-pts">You: 0 pts</span>
+                    <span class="hud-score" id="hud-rival-pts">Rival: 0 pts</span>
+                    <span class="hud-score" id="hud-player-inside">Inside: 0</span>
+                </div>
             </div>
 
             <!-- Opponent Venue Area -->
@@ -214,19 +219,24 @@
                     </div>
                     <span class="heat-label" id="rival-heat-text">🔥 0/21</span>
                 </div>
-                <div class="house-lane">
-                    <div class="exit-door">
+                <div class="venue-scene" id="rival-scene">
+                    <div class="scene-zone dance-zone">DANCE</div>
+                    <div class="scene-zone bar-zone">BAR</div>
+                    <div class="scene-zone lounge-zone">LOUNGE</div>
+                    <div class="actor-layer" id="rival-actors"></div>
+                    <div class="scene-door exit-door">
                         <span class="door-label">EXIT</span>
                         <span class="door-icon">🚪</span>
                     </div>
-                    <div class="guest-slots" id="rival-slots"></div>
                     <div class="entry-area">
                         <div class="arriving-slot" id="rival-arriving"></div>
-                        <div class="entry-door" id="rival-door">
+                        <div class="scene-door entry-door" id="rival-door" aria-label="Venue entry door">
                             <span class="door-icon">🚪</span>
+                            <span class="door-label">ENTRY</span>
                         </div>
                     </div>
                 </div>
+                <div class="guest-slots" id="rival-slots"></div>
                 <div class="venue-status" id="rival-status"></div>
             </div>
 
@@ -248,19 +258,24 @@
                     </div>
                     <span class="heat-label" id="player-heat-text">🔥 0/21</span>
                 </div>
-                <div class="house-lane">
-                    <div class="exit-door" id="player-exit">
+                <div class="venue-scene" id="player-scene">
+                    <div class="scene-zone dance-zone">DANCE</div>
+                    <div class="scene-zone bar-zone">BAR</div>
+                    <div class="scene-zone lounge-zone">LOUNGE</div>
+                    <div class="actor-layer" id="player-actors"></div>
+                    <div class="scene-door exit-door" id="player-exit">
                         <span class="door-label">EXIT</span>
                         <span class="door-icon">🚪</span>
                     </div>
-                    <div class="guest-slots" id="player-slots"></div>
                     <div class="entry-area">
                         <div class="arriving-slot" id="player-arriving"></div>
-                        <div class="entry-door" id="player-door">
+                        <div class="scene-door entry-door" id="player-door" aria-label="Venue entry door">
                             <span class="door-icon">🚪</span>
+                            <span class="door-label">ENTRY</span>
                         </div>
                     </div>
                 </div>
+                <div class="guest-slots" id="player-slots"></div>
                 <div class="venue-status" id="player-status"></div>
             </div>
 
