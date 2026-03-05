@@ -1810,6 +1810,7 @@
         }
 
         Game.endBuyPhase(gameState);
+        setPhoneBuyPhaseLayout(false);
 
         if (gameState.phase === 'gameover') {
             showGameOver();
@@ -1866,6 +1867,7 @@
         Game.startGuestPhase(gameState);
         clearRevealDoorIntel();
         playerFlashWindowInstanceId = null;
+        setPhoneBuyPhaseLayout(false);
 
         showFeedback(`ROUND ${gameState.round}`, 'points', 1500);
 

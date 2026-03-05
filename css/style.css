@@ -2454,7 +2454,41 @@ body {
 .phone-hud .guest-detail-ability { font-size: 0.66rem; }
 .phone-hud .action-buttons .btn { border-radius: 999px; min-height: 36px; font-size: 0.68rem; }
 .phone-hud .btn-admit { flex: 1.3; }
-.phone-hud .shop-layout { max-height: 30vh; overflow-y: auto; }
+.phone-hud #buy-phase-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.phone-hud .shop-layout {
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.phone-hud .shop-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px 4px;
+}
+
+.phone-hud .shop-upgrades {
+    flex-direction: row;
+    justify-content: space-evenly;
+    gap: 8px;
+}
+
+.phone-hud .shop-upgrades-label {
+    display: none;
+}
+
+.phone-hud .shop-card-wrapper .guest-slot {
+    width: 34px;
+    height: 42px;
+}
+
+.phone-hud .shop-card-wrapper .guest-slot .slot-emoji {
+    font-size: 15px;
+}
 
 .guest-slot.just-entered {
     border-color: var(--accent-gold);
