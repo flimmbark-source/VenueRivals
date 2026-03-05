@@ -515,6 +515,16 @@
         return choices[Math.floor(Math.random() * choices.length)];
     }
 
+    function getEntryDoorPosition(who) {
+        const bounds = getSceneBounds(who) || { width: 280, height: 150 };
+        return { x: bounds.width * 0.93, y: 12 };
+    }
+
+    function getExitDoorPosition(who) {
+        const bounds = getSceneBounds(who) || { width: 280, height: 150 };
+        return { x: 14, y: 14 };
+    }
+
     function ensureActorLoop() {
         if (actorAnimTimer) return;
         actorAnimTimer = setInterval(stepVenueActors, ACTOR_TICK_MS);
@@ -551,29 +561,52 @@
             let actor = actors.get(key);
             if (!actor) {
                 const target = pickBehaviorTarget(who);
+                const spawn = getEntryDoorPosition(who);
                 const el = document.createElement('div');
-                el.className = 'venue-actor';
+                el.className = 'venue-actor entering';
                 el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
-                el.title = `${guest.name} • ${target.behavior}`;
+                el.title = `${guest.name} • entering`;
                 layer.appendChild(el);
-                const b = getSceneBounds(who) || { width: 280, height: 150 };
-                actor = { el, x: b.width * 0.93, y: 12, targetX: target.x, targetY: target.y, behavior: target.behavior, t: Math.random() * Math.PI * 2, guestName: guest.name };
+                actor = {
+                    el,
+                    x: spawn.x,
+                    y: spawn.y,
+                    targetX: target.x,
+                    targetY: target.y,
+                    behavior: target.behavior,
+                    state: 'active',
+                    t: Math.random() * Math.PI * 2,
+                    guestName: guest.name,
+                };
                 actors.set(key, actor);
-            }
-            if (Math.random() < 0.03) {
+                setTimeout(() => el.classList.remove('entering'), 320);
+            } else if (actor.state === 'exiting') {
+                actor.state = 'active';
+                actor.el.classList.remove('exiting', 'leaving');
                 const target = pickBehaviorTarget(who);
                 actor.targetX = target.x;
                 actor.targetY = target.y;
                 actor.behavior = target.behavior;
-                actor.el.title = `${actor.guestName} • ${target.behavior}`;
             }
+
+            if (actor.state === 'active' && Math.random() < 0.03) {
+                const target = pickBehaviorTarget(who);
+                actor.targetX = target.x;
+                actor.targetY = target.y;
+                actor.behavior = target.behavior;
+            }
+            actor.el.title = `${actor.guestName} • ${actor.behavior}`;
         });
 
         for (const [key, actor] of actors.entries()) {
-            if (!wanted.has(key)) {
-                actor.el.classList.add('leaving');
-                setTimeout(() => actor.el.remove(), 250);
-                actors.delete(key);
+            if (!wanted.has(key) && actor.state !== 'exiting') {
+                const exitTarget = getExitDoorPosition(who);
+                actor.state = 'exiting';
+                actor.behavior = 'leaving';
+                actor.targetX = exitTarget.x;
+                actor.targetY = exitTarget.y;
+                actor.el.classList.add('exiting');
+                actor.el.title = `${actor.guestName} • leaving`;
             }
         }
 
@@ -585,14 +618,20 @@
             const actors = venueActors[who];
             const bounds = getSceneBounds(who);
             if (!bounds) return;
-            actors.forEach((actor) => {
+            const removeKeys = [];
+
+            actors.forEach((actor, key) => {
                 const dx = actor.targetX - actor.x;
                 const dy = actor.targetY - actor.y;
                 const dist = Math.hypot(dx, dy);
                 if (dist > 1) {
-                    const speed = Math.min(ACTOR_MAX_SPEED, ACTOR_MIN_SPEED + dist * ACTOR_DISTANCE_SPEED_FACTOR);
+                    const maxSpeed = actor.state === 'exiting' ? ACTOR_MAX_SPEED + 1.2 : ACTOR_MAX_SPEED;
+                    const speed = Math.min(maxSpeed, ACTOR_MIN_SPEED + dist * ACTOR_DISTANCE_SPEED_FACTOR);
                     actor.x += (dx / dist) * speed;
                     actor.y += (dy / dist) * speed;
+                } else if (actor.state === 'exiting') {
+                    actor.el.classList.add('leaving');
+                    removeKeys.push(key);
                 } else if (Math.random() < 0.025) {
                     const target = pickBehaviorTarget(who);
                     actor.targetX = target.x;
@@ -600,10 +639,19 @@
                     actor.behavior = target.behavior;
                     actor.el.title = `${actor.guestName} • ${target.behavior}`;
                 }
-                actor.t += 0.18;
-                const bob = Math.sin(actor.t) * 2;
+
+                actor.t += actor.state === 'exiting' ? 0.06 : 0.18;
+                const bob = actor.state === 'exiting' ? 0 : Math.sin(actor.t) * 2;
                 actor.el.style.left = `${Math.max(8, Math.min(bounds.width - 22, actor.x))}px`;
                 actor.el.style.top = `${Math.max(8, Math.min(bounds.height - 24, actor.y + bob))}px`;
+            });
+
+            removeKeys.forEach((key) => {
+                const actor = actors.get(key);
+                if (!actor) return;
+                const el = actor.el;
+                setTimeout(() => el.remove(), 220);
+                actors.delete(key);
             });
         });
 
