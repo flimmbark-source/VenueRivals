@@ -34,6 +34,11 @@
     let activePartyView = 'player';
     let swipeStartX = null;
 
+    const ACTOR_TICK_MS = 50;
+    const ACTOR_MIN_SPEED = 0.65;
+    const ACTOR_DISTANCE_SPEED_FACTOR = 0.065;
+    const ACTOR_MAX_SPEED = 4.2;
+
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
     const ABLY_API_KEY = '_tDhUg.HYf2eA:VPJbNYIBgqUrolL5QzcLSyj4XRCheq3cizKtHVAtGCA';
@@ -512,7 +517,7 @@
 
     function ensureActorLoop() {
         if (actorAnimTimer) return;
-        actorAnimTimer = setInterval(stepVenueActors, 90);
+        actorAnimTimer = setInterval(stepVenueActors, ACTOR_TICK_MS);
     }
 
     function stopActorLoop() {
@@ -585,7 +590,7 @@
                 const dy = actor.targetY - actor.y;
                 const dist = Math.hypot(dx, dy);
                 if (dist > 1) {
-                    const speed = Math.min(2.2, 0.25 + dist * 0.04);
+                    const speed = Math.min(ACTOR_MAX_SPEED, ACTOR_MIN_SPEED + dist * ACTOR_DISTANCE_SPEED_FACTOR);
                     actor.x += (dx / dist) * speed;
                     actor.y += (dy / dist) * speed;
                 } else if (Math.random() < 0.025) {
