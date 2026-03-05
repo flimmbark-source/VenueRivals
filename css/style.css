@@ -651,54 +651,13 @@ body {
     overflow-y: auto;
 }
 
-/* === Game HUD === */
-.game-hud {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background: rgba(15, 14, 23, 0.9);
-    border-bottom: 1px solid var(--bg-light);
-    flex-shrink: 0;
-    z-index: 5;
-}
-
-.hud-left, .hud-right {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.hud-right { align-items: flex-end; }
-
-.hud-round {
-    font-family: 'Poppins', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--accent-gold);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
-
-.hud-phase {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.hud-score {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 700;
-    font-size: 0.8rem;
-}
-
 
 .party-carousel {
     overflow: hidden;
     touch-action: pan-y;
     border-top: 1px solid rgba(255,255,255,0.08);
     border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex: 1;
 }
 
 .party-track {
@@ -738,82 +697,17 @@ body {
 
 /* === Venue Area === */
 .venue-area {
-    padding: 6px 10px;
-    flex-shrink: 0;
+    padding: 8px 10px 8px;
+    min-height: 100%;
+    position: relative;
 }
 
 .rival-venue { border-left: 2px solid rgba(255, 110, 110, 0.12); }
 .player-venue { border-left: 2px solid rgba(76, 201, 240, 0.12); }
 
-.venue-header {
+.player-venue {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 4px;
-}
-
-.venue-label {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 700;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-}
-
-.venue-stats {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.money-badge, .pts-badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 1px 6px;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.06);
-}
-
-.money-badge { color: var(--accent-tertiary); }
-.pts-badge { color: var(--accent-blue); }
-
-/* === Heat Bar === */
-.heat-bar-container {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 4px;
-}
-
-.heat-bar {
-    flex: 1;
-    height: 5px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.heat-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.3s ease, background 0.3s ease;
-    width: 0%;
-    background: var(--accent-tertiary);
-}
-
-.heat-fill.safe { background: var(--accent-tertiary); }
-.heat-fill.warning { background: var(--accent-gold); }
-.heat-fill.danger { background: var(--accent-primary); }
-.heat-fill.critical {
-    background: #ff3333;
-    animation: heatPulse 0.6s ease infinite;
-}
-
-.heat-label {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-    min-width: 55px;
-    text-align: right;
+    flex-direction: column;
 }
 
 
@@ -821,7 +715,7 @@ body {
 /* === Top-Down Venue Scene === */
 .venue-scene {
     position: relative;
-    height: clamp(210px, 38vh, 320px);
+    height: clamp(280px, 58vh, 500px);
     border-radius: 14px;
     border: 1px solid rgba(255,255,255,0.12);
     background:
@@ -919,12 +813,13 @@ body {
 
 .guest-slots {
     justify-content: flex-start;
-    min-height: 78px;
+    min-height: 52px;
     overflow-x: auto;
     overflow-y: visible;
     align-items: flex-start;
     padding-top: 2px;
-    padding-bottom: 18px;
+    padding-bottom: 8px;
+    position: relative;
 }
 
 .guest-slots .guest-slot {
@@ -1028,12 +923,27 @@ body {
     gap: 3px;
     flex: 1;
     justify-content: flex-start;
-    min-height: 78px;
+    min-height: 82px;
     align-items: flex-start;
     overflow-x: auto;
     overflow-y: visible;
     padding-top: 2px;
-    padding-bottom: 18px;
+    padding-bottom: 8px;
+    position: relative;
+}
+
+
+.guest-slots::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 12px;
+    background: linear-gradient(180deg, rgba(7, 10, 20, 0.05), rgba(7, 10, 20, 0.72));
+    pointer-events: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
 }
 
 /* === Guest Slot (in grid) === */
@@ -1069,7 +979,7 @@ body {
 }
 
 .guest-slot .slot-heat {
-    top: 121%;
+    top: calc(100% + 7px);
     right: 10px;
     left: auto;
     transform: none;
@@ -1306,14 +1216,9 @@ body {
 
 /* === Bottom Panel === */
 .bottom-panel {
-    flex: 1;
-    min-height: 170px;
-    background: rgba(15, 14, 23, 0.95);
-    border-top: 1px solid var(--bg-light);
-    padding: 8px 12px;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    gap: 8px;
 }
 
 /* === Guest Detail === */
@@ -2353,4 +2258,145 @@ body {
     #setup-screen .loadout-venue-desc {
         display: none;
     }
+}
+
+
+/* === Diegetic Phone HUD === */
+.phone-hud {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: min(96%, 360px);
+    margin: 8px auto 0;
+    z-index: 7;
+    pointer-events: none;
+    animation: phoneRise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.phone-shell {
+    pointer-events: auto;
+    border-radius: 30px;
+    padding: 10px;
+    background: linear-gradient(160deg, #121724, #070a14 72%);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 22px 42px rgba(0, 0, 0, 0.55), 0 0 22px rgba(76, 201, 240, 0.18);
+}
+
+.phone-speaker {
+    width: 84px;
+    height: 5px;
+    border-radius: 999px;
+    margin: 0 auto 8px;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.phone-screen {
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(33, 39, 67, 0.95), rgba(13, 17, 30, 0.96));
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    max-height: min(62vh, 570px);
+    overflow-y: auto;
+}
+
+.phone-status-strip {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+}
+.phone-round { color: var(--accent-gold); font-weight: 700; }
+.phone-phase { text-align: center; color: var(--text-primary); font-weight: 700; }
+.phone-connection { text-align: right; color: #8af7c7; }
+
+.phone-economy-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.phone-heat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.phone-heat-row .phone-phase-progress {
+    flex: 1;
+}
+
+.phone-heat-text {
+    min-width: 58px;
+    text-align: right;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.phone-phase-progress {
+    height: 4px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 99px;
+    overflow: hidden;
+}
+.phone-phase-progress-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-secondary));
+    transition: width 0.25s ease;
+}
+
+.phone-grid-module {
+    background: rgba(7, 10, 20, 0.45);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 8px;
+}
+.phone-grid-title {
+    color: var(--text-secondary);
+    font-size: 0.63rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+#player-slots {
+    justify-content: flex-end;
+}
+
+.phone-guest-actions {
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    padding: 6px;
+}
+
+.phone-hud .guest-detail { position: static; margin-bottom: 6px; min-height: 62px; }
+.phone-hud .guest-detail-ability { font-size: 0.66rem; }
+.phone-hud .action-buttons .btn { border-radius: 999px; min-height: 36px; font-size: 0.68rem; }
+.phone-hud .btn-admit { flex: 1.3; }
+.phone-hud .shop-layout { max-height: 30vh; overflow-y: auto; }
+
+.guest-slot.just-entered {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 14px rgba(255, 209, 102, 0.65);
+}
+
+.flash-available {
+    margin-top: 4px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    letter-spacing: 0.6px;
+}
+
+@keyframes phoneRise {
+    from { transform: translateY(52px) rotate(-2deg); opacity: 0; }
+    to { transform: translateY(0) rotate(0); opacity: 1; }
 }
