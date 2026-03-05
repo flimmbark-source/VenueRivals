@@ -29,6 +29,16 @@
     let waitingPopupBackdropEl = null;
     let pendingHostMatchConfig = null;
     const revealDoorIntel = { player: null, rival: null };
+    const venueActors = { player: new Map(), rival: new Map() };
+    let actorAnimTimer = null;
+    let activePartyView = 'player';
+    let swipeStartX = null;
+    let playerFlashWindowInstanceId = null;
+
+    const ACTOR_TICK_MS = 50;
+    const ACTOR_MIN_SPEED = 0.65;
+    const ACTOR_DISTANCE_SPEED_FACTOR = 0.065;
+    const ACTOR_MAX_SPEED = 4.2;
 
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
@@ -157,6 +167,7 @@
             document.getElementById('buy-phase-panel').style.display = '';
             document.getElementById('gameover-panel').style.display = 'none';
             renderShop();
+            setPhoneBuyPhaseLayout(true);
             return;
         }
 
@@ -165,6 +176,7 @@
             document.getElementById('round-results-panel').style.display = 'none';
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = '';
+            setPhoneBuyPhaseLayout(false);
             return;
         }
 
@@ -173,6 +185,8 @@
             document.getElementById('round-results-panel').style.display = '';
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = 'none';
+            // If buy phase has already started (results being shown before shop opens), keep compact HUD.
+            setPhoneBuyPhaseLayout(gameState.phase === 'buy');
             return;
         }
 
@@ -180,6 +194,13 @@
         document.getElementById('round-results-panel').style.display = 'none';
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
+        setPhoneBuyPhaseLayout(false);
+    }
+
+    function setPhoneBuyPhaseLayout(isBuyPhase) {
+        const phoneScreenEl = document.querySelector('#phone-hud .phone-screen');
+        if (!phoneScreenEl) return;
+        phoneScreenEl.classList.toggle('buy-phase-compact', !!isBuyPhase);
     }
 
     function mapStateToJoinPerspective(state) {
@@ -211,6 +232,48 @@
         updateVenueStatus('player');
         updateVenueStatus('rival');
         updateHUD();
+        applyPartyView(false);
+    }
+
+
+    function applyPartyView(animate = true) {
+        const track = document.getElementById('party-track');
+        if (!track) return;
+        track.style.transition = animate ? 'transform 0.28s ease' : 'none';
+        track.style.transform = activePartyView === 'player' ? 'translateX(0%)' : 'translateX(-50%)';
+
+        const playerBtn = document.getElementById('btn-view-player');
+        const rivalBtn = document.getElementById('btn-view-rival');
+        playerBtn?.classList.toggle('active', activePartyView === 'player');
+        rivalBtn?.classList.toggle('active', activePartyView === 'rival');
+    }
+
+    function setPartyView(view, animate = true) {
+        if (view !== 'player' && view !== 'rival') return;
+        activePartyView = view;
+        applyPartyView(animate);
+    }
+
+    function bindPartyCarouselInteractions() {
+        const carousel = document.getElementById('party-carousel');
+        if (!carousel) return;
+
+        carousel.addEventListener('touchstart', (e) => {
+            if (!e.touches?.length) return;
+            swipeStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        carousel.addEventListener('touchend', (e) => {
+            if (swipeStartX == null || !e.changedTouches?.length) return;
+            const deltaX = e.changedTouches[0].clientX - swipeStartX;
+            swipeStartX = null;
+            if (Math.abs(deltaX) < 40) return;
+            if (deltaX < 0) setPartyView('rival');
+            else setPartyView('player');
+        }, { passive: true });
+
+        document.getElementById('btn-view-player')?.addEventListener('click', () => setPartyView('player'));
+        document.getElementById('btn-view-rival')?.addEventListener('click', () => setPartyView('rival'));
     }
 
     function syncSelectedGridGuest() {
@@ -368,26 +431,17 @@
     function updateHUD() {
         if (!gameState) return;
         const p = gameState.player;
-        const r = gameState.rival;
         const pVenue = Game.VENUES[p.venueId];
-        const rVenue = Game.VENUES[r.venueId];
         const includeProjectedRoundTotals =
-        gameState.phase === 'guest' && gameState.guestPhaseScoredRound !== gameState.round;
+            gameState.phase === 'guest' && gameState.guestPhaseScoredRound !== gameState.round;
 
         const hudRoundNumEl = document.getElementById('hud-round-num');
         const hudRoundTotalEl = document.getElementById('hud-round-total');
         const hudPhaseEl = document.getElementById('hud-phase');
         const hudPlayerPtsEl = document.getElementById('hud-player-pts');
-        const hudRivalPtsEl = document.getElementById('hud-rival-pts');
-        const playerVenueNameEl = document.getElementById('player-venue-name');
         const playerMoneyEl = document.getElementById('player-money');
-        const playerPtsBadgeEl = document.getElementById('player-pts-badge');
-        const rivalVenueNameEl = document.getElementById('rival-venue-name');
-        const rivalMoneyEl = document.getElementById('rival-money');
-        const rivalPtsBadgeEl = document.getElementById('rival-pts-badge');
 
-        if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl ||
-            !playerVenueNameEl || !playerMoneyEl || !playerPtsBadgeEl || !rivalVenueNameEl || !rivalMoneyEl || !rivalPtsBadgeEl) {
+        if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl || !hudPlayerPtsEl || !playerMoneyEl) {
             return;
         }
 
@@ -395,22 +449,13 @@
         hudRoundTotalEl.textContent = gameState.totalRounds;
         hudPhaseEl.textContent =
             gameState.phase === 'guest' ? 'GUEST PHASE' :
-            gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
+                gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
-        if (hudPlayerPtsEl) hudPlayerPtsEl.textContent = `You: ${p.points} pts`;
-        if (hudRivalPtsEl) hudRivalPtsEl.textContent = `Rival: ${r.points} pts`;
-
-        // Player venue
-        playerVenueNameEl.textContent = p.name;
+        hudPlayerPtsEl.textContent = `⭐ ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
         playerMoneyEl.textContent = `💵 $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
-        playerPtsBadgeEl.textContent = `⭐ ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
-        updateHeatBar('player', p.heat, Game.getHeatCapacity(pVenue, p), p.busted);
 
-        // Rival venue
-        rivalVenueNameEl.textContent = r.name;
-        rivalMoneyEl.textContent = `💵 $${r.money + (includeProjectedRoundTotals ? r.roundMoney : 0)}`;
-        rivalPtsBadgeEl.textContent = `⭐ ${r.points + (includeProjectedRoundTotals ? r.roundPoints : 0)}`;
-        updateHeatBar('rival', r.heat, Game.getHeatCapacity(rVenue, r), r.busted);
+        updateHeatBar('player', p.heat, Game.getHeatCapacity(pVenue, p), p.busted);
+        updateHeatBar('rival', gameState.rival.heat, Game.getHeatCapacity(Game.VENUES[gameState.rival.venueId], gameState.rival), gameState.rival.busted);
     }
 
     function updateHeatBar(who, heat, max, busted = false) {
@@ -431,6 +476,265 @@
         if (!guest.ability) return '';
         const icon = escapeHtml(guest.ability.icon || '');
         return `<span class="ability-icon-badge" aria-label="${escapeHtml(guest.ability.name || 'Ability')}" title="${escapeHtml(guest.ability.name || 'Ability')}">${icon}</span>`;
+    }
+
+
+    // === Venue Scene Actors ===
+    function getHouseEntryKey(entry, index) {
+        if (entry && typeof entry === 'object' && entry.instanceId != null) return `i-${entry.instanceId}`;
+        const guestId = entry && typeof entry === 'object' ? entry.guestId : entry;
+        return `g-${guestId}-${index}`;
+    }
+
+    function getSceneBounds(who) {
+        const scene = document.getElementById(`${who}-scene`);
+        if (!scene) return null;
+        return {
+            width: scene.clientWidth || 280,
+            height: scene.clientHeight || 150,
+        };
+    }
+
+    function pickBehaviorTarget(who) {
+        const bounds = getSceneBounds(who);
+        if (!bounds) return { x: 120, y: 80, behavior: 'hang' };
+        const choices = [
+            { behavior: 'dance', x: bounds.width * 0.34, y: bounds.height * 0.46 },
+            { behavior: 'drink', x: bounds.width * 0.78, y: bounds.height * 0.35 },
+            { behavior: 'lounge', x: bounds.width * 0.24, y: bounds.height * 0.72 },
+            { behavior: 'wander', x: bounds.width * (0.42 + Math.random() * 0.36), y: bounds.height * (0.56 + Math.random() * 0.28) },
+        ];
+        return choices[Math.floor(Math.random() * choices.length)];
+    }
+
+    function getEntryDoorPosition(who) {
+        const bounds = getSceneBounds(who) || { width: 280, height: 150 };
+        return { x: bounds.width * 0.93, y: 12 };
+    }
+
+    function getExitDoorPosition(who) {
+        const bounds = getSceneBounds(who) || { width: 280, height: 150 };
+        return { x: 14, y: 14 };
+    }
+
+    function ensureActorLoop() {
+        if (actorAnimTimer) return;
+        actorAnimTimer = setInterval(stepVenueActors, ACTOR_TICK_MS);
+    }
+
+    function stopActorLoop() {
+        if (!actorAnimTimer) return;
+        clearInterval(actorAnimTimer);
+        actorAnimTimer = null;
+    }
+
+    function clearVenueActors() {
+        ['player', 'rival'].forEach((who) => {
+            venueActors[who].clear();
+            const layer = document.getElementById(`${who}-actors`);
+            if (layer) layer.innerHTML = '';
+        });
+        stopActorLoop();
+    }
+
+    function syncVenueActors(who) {
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        const layer = document.getElementById(`${who}-actors`);
+        if (!layer || !player) return;
+        const actors = venueActors[who];
+        const wanted = new Set();
+
+        player.house.forEach((entry, idx) => {
+            const guestId = entry.guestId || entry;
+            const guest = Game.GUESTS[guestId];
+            if (!guest) return;
+            const key = getHouseEntryKey(entry, idx);
+            wanted.add(key);
+            let actor = actors.get(key);
+
+            // If this guest was the arriving-in-grid guest last frame, promote that actor into house.
+            const arrivingActor = actors.get('arriving-guest');
+            if (!actor && arrivingActor && arrivingActor.guestId === guestId) {
+                actors.set(key, arrivingActor);
+                actors.delete('arriving-guest');
+                actor = arrivingActor;
+                actor.state = 'active';
+                actor.el.classList.remove('entering', 'exiting', 'leaving');
+            }
+
+            if (!actor) {
+                const target = pickBehaviorTarget(who);
+                const spawn = getEntryDoorPosition(who);
+                const el = document.createElement('div');
+                el.className = 'venue-actor entering';
+                el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                el.title = `${guest.name} • entering`;
+                layer.appendChild(el);
+                actor = {
+                    el,
+                    x: spawn.x,
+                    y: spawn.y,
+                    targetX: target.x,
+                    targetY: target.y,
+                    behavior: target.behavior,
+                    state: 'active',
+                    t: Math.random() * Math.PI * 2,
+                    guestName: guest.name,
+                    guestId,
+                };
+                actors.set(key, actor);
+                setTimeout(() => el.classList.remove('entering'), 320);
+            } else if (actor.state === 'exiting') {
+                actor.state = 'active';
+                actor.el.classList.remove('exiting', 'leaving');
+                const target = pickBehaviorTarget(who);
+                actor.targetX = target.x;
+                actor.targetY = target.y;
+                actor.behavior = target.behavior;
+            }
+
+            actor.guestId = guestId;
+            actor.guestName = guest.name;
+
+            if (actor.state === 'active' && Math.random() < 0.03) {
+                const target = pickBehaviorTarget(who);
+                actor.targetX = target.x;
+                actor.targetY = target.y;
+                actor.behavior = target.behavior;
+            }
+            actor.el.title = `${actor.guestName} • ${actor.behavior}`;
+        });
+
+        // Arriving guest appears in venue grid before admit: show their actor immediately.
+        if (player.arrivingGuest && !player.doorClosed && !player.busted) {
+            wanted.add('arriving-guest');
+            const guestId = player.arrivingGuest;
+            const guest = Game.GUESTS[guestId];
+            if (guest) {
+                let arrivingActor = actors.get('arriving-guest');
+                if (!arrivingActor) {
+                    const target = pickBehaviorTarget(who);
+                    const spawn = getEntryDoorPosition(who);
+                    const el = document.createElement('div');
+                    el.className = 'venue-actor entering';
+                    el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                    layer.appendChild(el);
+                    arrivingActor = {
+                        el,
+                        x: spawn.x,
+                        y: spawn.y,
+                        targetX: target.x,
+                        targetY: target.y,
+                        behavior: target.behavior,
+                        state: 'active',
+                        t: Math.random() * Math.PI * 2,
+                        guestName: guest.name,
+                        guestId,
+                    };
+                    actors.set('arriving-guest', arrivingActor);
+                    setTimeout(() => el.classList.remove('entering'), 320);
+                } else {
+                    arrivingActor.guestId = guestId;
+                    arrivingActor.guestName = guest.name;
+                    arrivingActor.el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                    if (arrivingActor.state === 'exiting') {
+                        arrivingActor.state = 'active';
+                        arrivingActor.el.classList.remove('exiting', 'leaving');
+                    }
+                }
+                arrivingActor.el.title = `${arrivingActor.guestName} • ${arrivingActor.behavior}`;
+            }
+        }
+
+        for (const [key, actor] of actors.entries()) {
+            if (!wanted.has(key) && actor.state !== 'exiting') {
+                const exitTarget = getExitDoorPosition(who);
+                actor.state = 'exiting';
+                actor.behavior = 'leaving';
+                actor.targetX = exitTarget.x;
+                actor.targetY = exitTarget.y;
+                actor.el.classList.add('exiting');
+                actor.el.title = `${actor.guestName} • leaving`;
+            }
+        }
+
+        ensureActorLoop();
+    }
+
+    function queueVenueActorExit(who, guestId) {
+        const actors = venueActors[who];
+        if (!actors || !actors.size) return false;
+
+        const candidates = [];
+        for (const [key, actor] of actors.entries()) {
+            if (actor.state === 'exiting') continue;
+            if (guestId && actor.guestId !== guestId) continue;
+            candidates.push([key, actor]);
+        }
+        if (!candidates.length) return false;
+
+        // Prefer established house actors over the transient arriving placeholder.
+        candidates.sort((a, b) => {
+            const aArriving = a[0] === 'arriving-guest' ? 1 : 0;
+            const bArriving = b[0] === 'arriving-guest' ? 1 : 0;
+            return aArriving - bArriving;
+        });
+
+        const [, actor] = candidates[0];
+        const exitTarget = getExitDoorPosition(who);
+        actor.state = 'exiting';
+        actor.behavior = 'leaving';
+        actor.targetX = exitTarget.x;
+        actor.targetY = exitTarget.y;
+        actor.el.classList.add('exiting');
+        actor.el.title = `${actor.guestName} • leaving`;
+        ensureActorLoop();
+        return true;
+    }
+
+    function stepVenueActors() {
+        ['player', 'rival'].forEach((who) => {
+            const actors = venueActors[who];
+            const bounds = getSceneBounds(who);
+            if (!bounds) return;
+            const removeKeys = [];
+
+            actors.forEach((actor, key) => {
+                const dx = actor.targetX - actor.x;
+                const dy = actor.targetY - actor.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 1) {
+                    const maxSpeed = actor.state === 'exiting' ? ACTOR_MAX_SPEED + 1.2 : ACTOR_MAX_SPEED;
+                    const speed = Math.min(maxSpeed, ACTOR_MIN_SPEED + dist * ACTOR_DISTANCE_SPEED_FACTOR);
+                    actor.x += (dx / dist) * speed;
+                    actor.y += (dy / dist) * speed;
+                } else if (actor.state === 'exiting') {
+                    actor.el.classList.add('leaving');
+                    removeKeys.push(key);
+                } else if (Math.random() < 0.025) {
+                    const target = pickBehaviorTarget(who);
+                    actor.targetX = target.x;
+                    actor.targetY = target.y;
+                    actor.behavior = target.behavior;
+                    actor.el.title = `${actor.guestName} • ${target.behavior}`;
+                }
+
+                actor.t += actor.state === 'exiting' ? 0.06 : 0.18;
+                const bob = actor.state === 'exiting' ? 0 : Math.sin(actor.t) * 2;
+                actor.el.style.left = `${Math.max(8, Math.min(bounds.width - 22, actor.x))}px`;
+                actor.el.style.top = `${Math.max(8, Math.min(bounds.height - 24, actor.y + bob))}px`;
+            });
+
+            removeKeys.forEach((key) => {
+                const actor = actors.get(key);
+                if (!actor) return;
+                const el = actor.el;
+                setTimeout(() => el.remove(), 220);
+                actors.delete(key);
+            });
+        });
+
+        if (!venueActors.player.size && !venueActors.rival.size) stopActorLoop();
     }
 
 
@@ -498,6 +802,7 @@
                 const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
                 if (instanceId != null) slot.dataset.instanceId = String(instanceId);
+                if (who === 'player' && instanceId != null && instanceId === playerFlashWindowInstanceId) slot.classList.add('just-entered');
                 if (selectedGridGuest?.source === 'house' &&
                     selectedGridGuest.guestId === guestId &&
                     (selectedGridGuest.instanceId == null || selectedGridGuest.instanceId === instanceId)) {
@@ -531,13 +836,14 @@
             }
             slotsEl.appendChild(slot);
         }
+
+        syncVenueActors(who);
     }
 
     function renderArrivingGuest(who) {
-        const player = who === 'player' ? gameState.player : gameState.rival;
         const arrivingEl = document.getElementById(`${who}-arriving`);
-        
-        // Arriving guest is now rendered as part of the house grid, so clear the entry area
+        if (!arrivingEl) return;
+        // Door-side arriving card intentionally hidden; arriving guest remains visible in the guest strip/detail panel.
         arrivingEl.innerHTML = '';
         arrivingEl.dataset.renderKey = '';
     }
@@ -545,6 +851,7 @@
     function updateVenueStatus(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const statusEl = document.getElementById(`${who}-status`);
+        if (!statusEl) return;
 
         if (player.busted) {
             statusEl.textContent = 'BUSTED!';
@@ -566,11 +873,15 @@
             guestId.forEach((id) => animateExitGuest(who, id));
             return;
         }
-        const exitDoor = document.querySelector(`#${who}-area .exit-door`);
-        // try to find the slot containing the specific guestId; fall back to first occupied
+
+        // Move matching venue actor to exit door before it disappears.
+        // (syncVenueActors also enforces exits for removed actors as a fallback.)
+        queueVenueActorExit(who, guestId);
+
+        // Animate the grid card itself drifting left and fading out.
         let sourceSlot = guestId ? document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`) : null;
         if (!sourceSlot) sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
-        if (!exitDoor || !sourceSlot) return;
+        if (!sourceSlot) return;
 
         const resolvedGuestId = guestId || sourceSlot.dataset.guestId;
         if (!resolvedGuestId || !Game.GUESTS[resolvedGuestId]) return;
@@ -579,22 +890,28 @@
         ghost.classList.add('exit-ghost');
 
         const sourceRect = sourceSlot.getBoundingClientRect();
-        const exitRect = exitDoor.getBoundingClientRect();
-        const sourceCenterX = sourceRect.left + sourceRect.width / 2;
-        const sourceCenterY = sourceRect.top + sourceRect.height / 2;
-        const exitCenterX = exitRect.left + exitRect.width / 2;
-        const exitCenterY = exitRect.top + exitRect.height / 2;
-
-        ghost.style.left = `${sourceCenterX - sourceRect.width / 2}px`;
-        ghost.style.top = `${sourceCenterY - sourceRect.height / 2}px`;
+        ghost.style.left = `${sourceRect.left}px`;
+        ghost.style.top = `${sourceRect.top}px`;
         document.body.appendChild(ghost);
 
         requestAnimationFrame(() => {
-            ghost.style.transform = `translate(${exitCenterX - sourceCenterX}px, ${exitCenterY - sourceCenterY}px)`;
+            ghost.style.transform = 'translate(-56px, 0)';
             ghost.classList.add('leaving');
         });
 
         setTimeout(() => ghost.remove(), 380);
+    }
+
+    function getPlayerFlashWindowEntry() {
+        if (!gameState || playerFlashWindowInstanceId == null) return null;
+        return gameState.player.house.find((entry) => typeof entry !== 'string' && entry.instanceId === playerFlashWindowInstanceId) || null;
+    }
+
+    function isPlayerFlashAvailable() {
+        const entry = getPlayerFlashWindowEntry();
+        if (!entry) return false;
+        const guest = Game.GUESTS[entry.guestId];
+        return !!(guest?.ability && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
     }
 
     // === Guest Detail Panel ===
@@ -640,9 +957,7 @@
                 return (entry.guestId || entry) === selectedGuestId;
             }) || null;
         }
-        const canUseSelectedAbility = !!guest.ability && (
-            selectedGuestSource !== 'house' || !selectedHouseEntry || !selectedHouseEntry.abilityUsed
-        );
+        const canUseSelectedAbility = isPlayerFlashAvailable();
 
         let abilityHTML = '';
         if (guest.ability) {
@@ -675,6 +990,7 @@
                         <span class="stat-heat${wouldBust ? ' danger' : ''}">\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}</span>
                     </div>
                     ${abilityHTML}
+                    ${isPlayerFlashAvailable() ? '<div class="flash-available">FLASH AVAILABLE</div>' : ''}
                 </div>
             </div>
         `;
@@ -756,6 +1072,8 @@
         document.body.appendChild(el);
         iconTooltipEl = el;
 
+        const target = e?.currentTarget || e?.target;
+        if (!target) return;
         const rect = target.getBoundingClientRect();
         const left = Math.min(window.innerWidth - el.offsetWidth - 10, Math.max(10, rect.left - 10));
         const top = Math.max(10, rect.top - el.offsetHeight - 8);
@@ -968,6 +1286,9 @@
         };
         const result = Game.admitGuest(self, venue, opponent, Game.VENUES[opponent.venueId]);
         if (!result) return;
+        if (selfKey === 'player') {
+            playerFlashWindowInstanceId = typeof self.house[0] === 'object' ? self.house[0].instanceId : null;
+        }
 
         if (result.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
@@ -1028,7 +1349,11 @@
             roundMoney: gameState.player.roundMoney,
             roundPoints: gameState.player.roundPoints,
         };
-        const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue, selfKey === 'player' ? selectedGridGuest : null);
+        const flashEntry = selfKey === 'player' ? getPlayerFlashWindowEntry() : null;
+        const selectedForAbility = selfKey === 'player'
+            ? (flashEntry ? { source: 'house', guestId: flashEntry.guestId, instanceId: flashEntry.instanceId } : null)
+            : null;
+        const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue, selectedForAbility);
         if (!result) return;
 
         showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
@@ -1101,6 +1426,7 @@
             roundPoints: gameState.player.roundPoints,
         };
         const result = Game.closeDoor(self, venue, opponent);
+        if (selfKey === 'player') playerFlashWindowInstanceId = null;
         if (result?.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
         }
@@ -1324,6 +1650,14 @@
         document.getElementById('round-results-panel').style.display = '';
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
+
+        if (!isFinalRound) {
+            // Enter buy phase immediately when results appear, but keep results visible
+            // until player confirms and opens the shop panel.
+            startBuyPhase({ deferPanel: true });
+            setPhoneBuyPhaseLayout(true);
+        }
+
         publishState();
     }
 
@@ -1334,12 +1668,13 @@
             Game.endBuyPhase(gameState);
             showGameOver();
         } else {
-            startBuyPhase();
+            showBuyPanel();
         }
     }
 
     // === Buy Phase ===
-    function startBuyPhase() {
+    function startBuyPhase(options = {}) {
+        const deferPanel = !!options.deferPanel;
         gameState.phase = 'buy';
         updateHUD();
 
@@ -1362,11 +1697,17 @@
             : playerMarket;
         renderShop();
 
-        // Show buy panel
+        if (!deferPanel) {
+            showBuyPanel();
+        }
+    }
+
+    function showBuyPanel() {
         document.getElementById('guest-phase-panel').style.display = 'none';
         document.getElementById('round-results-panel').style.display = 'none';
         document.getElementById('buy-phase-panel').style.display = '';
         document.getElementById('gameover-panel').style.display = 'none';
+        setPhoneBuyPhaseLayout(true);
     }
 
     function renderShopCard(guestId, cost, canAfford, container) {
@@ -1469,6 +1810,7 @@
         }
 
         Game.endBuyPhase(gameState);
+        setPhoneBuyPhaseLayout(false);
 
         if (gameState.phase === 'gameover') {
             showGameOver();
@@ -1507,6 +1849,7 @@
         const rivalName = options.rivalName || RIVAL_NAMES[Math.floor(Math.random() * RIVAL_NAMES.length)];
 
         gameState = Game.createGameState(name, venueType, rivalName, rivalVenue, totalRounds);
+        clearVenueActors();
 
         // Override player deck with the loadout deck
         if (loadoutState) {
@@ -1523,6 +1866,8 @@
     function startNewRound() {
         Game.startGuestPhase(gameState);
         clearRevealDoorIntel();
+        playerFlashWindowInstanceId = null;
+        setPhoneBuyPhaseLayout(false);
 
         showFeedback(`ROUND ${gameState.round}`, 'points', 1500);
 
@@ -1540,6 +1885,7 @@
         updateVenueStatus('player');
         updateVenueStatus('rival');
         updateHUD();
+        setPartyView('player', false);
 
         // Start AI
         setTimeout(() => startAITimer(), 800);
@@ -2055,6 +2401,8 @@
             }
         });
 
+        bindPartyCarouselInteractions();
+
         // Guest phase controls
         document.getElementById('btn-admit').addEventListener('click', handleAdmit);
         document.getElementById('btn-ability').addEventListener('click', handleAbility);
@@ -2073,6 +2421,7 @@
         document.getElementById('btn-play-again').addEventListener('click', () => {
             if (aiTimerId) { clearInterval(aiTimerId); aiTimerId = null; }
             Renderer.resetAnimState();
+            clearVenueActors();
             gameState = null;
             currentMarket = null;
             if (multiplayerSession) { multiplayerSession.close(); multiplayerSession = null; }
@@ -2087,6 +2436,7 @@
             if (roundSelect) roundSelect.disabled = false;
             const multiplayerFields = document.getElementById('multiplayer-fields');
             if (multiplayerFields) multiplayerFields.style.display = 'none';
+            setPartyView('player', false);
             initLoadout();
             switchScreen('title');
         });
@@ -2118,6 +2468,7 @@
     function init() {
         initLoadout();
         setupEventListeners();
+        applyPartyView(false);
         startAnimLoop();
     }
 
