@@ -660,6 +660,37 @@
         ensureActorLoop();
     }
 
+    function queueVenueActorExit(who, guestId) {
+        const actors = venueActors[who];
+        if (!actors || !actors.size) return false;
+
+        const candidates = [];
+        for (const [key, actor] of actors.entries()) {
+            if (actor.state === 'exiting') continue;
+            if (guestId && actor.guestId !== guestId) continue;
+            candidates.push([key, actor]);
+        }
+        if (!candidates.length) return false;
+
+        // Prefer established house actors over the transient arriving placeholder.
+        candidates.sort((a, b) => {
+            const aArriving = a[0] === 'arriving-guest' ? 1 : 0;
+            const bArriving = b[0] === 'arriving-guest' ? 1 : 0;
+            return aArriving - bArriving;
+        });
+
+        const [, actor] = candidates[0];
+        const exitTarget = getExitDoorPosition(who);
+        actor.state = 'exiting';
+        actor.behavior = 'leaving';
+        actor.targetX = exitTarget.x;
+        actor.targetY = exitTarget.y;
+        actor.el.classList.add('exiting');
+        actor.el.title = `${actor.guestName} • leaving`;
+        ensureActorLoop();
+        return true;
+    }
+
     function stepVenueActors() {
         ['player', 'rival'].forEach((who) => {
             const actors = venueActors[who];
@@ -842,8 +873,11 @@
             return;
         }
 
+        // Move matching venue actor to exit door before it disappears.
+        // (syncVenueActors also enforces exits for removed actors as a fallback.)
+        queueVenueActorExit(who, guestId);
+
         // Animate the grid card itself drifting left and fading out.
-        // The venue actor is handled separately by syncVenueActors(), which moves it to the exit door.
         let sourceSlot = guestId ? document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`) : null;
         if (!sourceSlot) sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
         if (!sourceSlot) return;
