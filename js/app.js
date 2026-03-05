@@ -559,6 +559,17 @@
             const key = getHouseEntryKey(entry, idx);
             wanted.add(key);
             let actor = actors.get(key);
+
+            // If this guest was the arriving-in-grid guest last frame, promote that actor into house.
+            const arrivingActor = actors.get('arriving-guest');
+            if (!actor && arrivingActor && arrivingActor.guestId === guestId) {
+                actors.set(key, arrivingActor);
+                actors.delete('arriving-guest');
+                actor = arrivingActor;
+                actor.state = 'active';
+                actor.el.classList.remove('entering', 'exiting', 'leaving');
+            }
+
             if (!actor) {
                 const target = pickBehaviorTarget(who);
                 const spawn = getEntryDoorPosition(who);
@@ -577,6 +588,7 @@
                     state: 'active',
                     t: Math.random() * Math.PI * 2,
                     guestName: guest.name,
+                    guestId,
                 };
                 actors.set(key, actor);
                 setTimeout(() => el.classList.remove('entering'), 320);
@@ -589,6 +601,9 @@
                 actor.behavior = target.behavior;
             }
 
+            actor.guestId = guestId;
+            actor.guestName = guest.name;
+
             if (actor.state === 'active' && Math.random() < 0.03) {
                 const target = pickBehaviorTarget(who);
                 actor.targetX = target.x;
@@ -597,6 +612,47 @@
             }
             actor.el.title = `${actor.guestName} • ${actor.behavior}`;
         });
+
+        // Arriving guest appears in venue grid before admit: show their actor immediately.
+        if (player.arrivingGuest && !player.doorClosed && !player.busted) {
+            wanted.add('arriving-guest');
+            const guestId = player.arrivingGuest;
+            const guest = Game.GUESTS[guestId];
+            if (guest) {
+                let arrivingActor = actors.get('arriving-guest');
+                if (!arrivingActor) {
+                    const target = pickBehaviorTarget(who);
+                    const spawn = getEntryDoorPosition(who);
+                    const el = document.createElement('div');
+                    el.className = 'venue-actor entering';
+                    el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                    layer.appendChild(el);
+                    arrivingActor = {
+                        el,
+                        x: spawn.x,
+                        y: spawn.y,
+                        targetX: target.x,
+                        targetY: target.y,
+                        behavior: target.behavior,
+                        state: 'active',
+                        t: Math.random() * Math.PI * 2,
+                        guestName: guest.name,
+                        guestId,
+                    };
+                    actors.set('arriving-guest', arrivingActor);
+                    setTimeout(() => el.classList.remove('entering'), 320);
+                } else {
+                    arrivingActor.guestId = guestId;
+                    arrivingActor.guestName = guest.name;
+                    arrivingActor.el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                    if (arrivingActor.state === 'exiting') {
+                        arrivingActor.state = 'active';
+                        arrivingActor.el.classList.remove('exiting', 'leaving');
+                    }
+                }
+                arrivingActor.el.title = `${arrivingActor.guestName} • ${arrivingActor.behavior}`;
+            }
+        }
 
         for (const [key, actor] of actors.entries()) {
             if (!wanted.has(key) && actor.state !== 'exiting') {
