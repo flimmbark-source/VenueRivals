@@ -648,6 +648,7 @@ body {
     max-width: 480px;
     margin: 0 auto;
     background: linear-gradient(180deg, #0d0a2a 0%, #1a1040 30%, #2a1858 60%, #1a1932 100%);
+    overflow-y: auto;
 }
 
 /* === Game HUD === */
@@ -777,7 +778,7 @@ body {
 /* === Top-Down Venue Scene === */
 .venue-scene {
     position: relative;
-    height: 170px;
+    height: clamp(112px, 18vh, 156px);
     border-radius: 14px;
     border: 1px solid rgba(255,255,255,0.12);
     background:
@@ -1256,7 +1257,7 @@ body {
 /* === Bottom Panel === */
 .bottom-panel {
     flex: 1;
-    min-height: 0;
+    min-height: 170px;
     background: rgba(15, 14, 23, 0.95);
     border-top: 1px solid var(--bg-light);
     padding: 8px 12px;
@@ -1268,6 +1269,9 @@ body {
 /* === Guest Detail === */
 .guest-detail {
     background: var(--bg-medium);
+    position: sticky;
+    top: 0;
+    z-index: 2;
     border-radius: var(--radius-md);
     padding: 10px 12px;
     margin-bottom: 8px;
@@ -1690,9 +1694,9 @@ body {
     .arriving-guest-card { width: 44px; height: 52px; font-size: 20px; }
 }
 
-@media (max-height: 600px) {
+@media (max-height: 700px) {
     .venue-area { padding: 4px 8px; }
-    .venue-scene { height: 145px; }
+    .venue-scene { height: 112px; }
     .guest-detail { min-height: 50px; padding: 6px 10px; }
     .game-hud { padding: 4px 10px; }
 }

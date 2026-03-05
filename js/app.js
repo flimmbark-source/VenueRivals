@@ -477,6 +477,15 @@
         actorAnimTimer = null;
     }
 
+    function clearVenueActors() {
+        ['player', 'rival'].forEach((who) => {
+            venueActors[who].clear();
+            const layer = document.getElementById(`${who}-actors`);
+            if (layer) layer.innerHTML = '';
+        });
+        stopActorLoop();
+    }
+
     function syncVenueActors(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const layer = document.getElementById(`${who}-actors`);
@@ -890,6 +899,8 @@
         document.body.appendChild(el);
         iconTooltipEl = el;
 
+        const target = e?.currentTarget || e?.target;
+        if (!target) return;
         const rect = target.getBoundingClientRect();
         const left = Math.min(window.innerWidth - el.offsetWidth - 10, Math.max(10, rect.left - 10));
         const top = Math.max(10, rect.top - el.offsetHeight - 8);
@@ -1641,8 +1652,7 @@
         const rivalName = options.rivalName || RIVAL_NAMES[Math.floor(Math.random() * RIVAL_NAMES.length)];
 
         gameState = Game.createGameState(name, venueType, rivalName, rivalVenue, totalRounds);
-        venueActors.player.clear();
-        venueActors.rival.clear();
+        clearVenueActors();
 
         // Override player deck with the loadout deck
         if (loadoutState) {
@@ -2209,7 +2219,7 @@
         document.getElementById('btn-play-again').addEventListener('click', () => {
             if (aiTimerId) { clearInterval(aiTimerId); aiTimerId = null; }
             Renderer.resetAnimState();
-            stopActorLoop();
+            clearVenueActors();
             gameState = null;
             currentMarket = null;
             if (multiplayerSession) { multiplayerSession.close(); multiplayerSession = null; }
