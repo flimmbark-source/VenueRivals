@@ -813,7 +813,7 @@ body {
 
 .guest-slots {
     justify-content: flex-start;
-    min-height: 72px;
+    min-height: 52px;
     overflow-x: auto;
     overflow-y: visible;
     align-items: flex-start;
@@ -923,7 +923,7 @@ body {
     gap: 3px;
     flex: 1;
     justify-content: flex-start;
-    min-height: 72px;
+    min-height: 82px;
     align-items: flex-start;
     overflow-x: auto;
     overflow-y: visible;
