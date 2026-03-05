@@ -2126,9 +2126,4 @@
     } else {
         init();
     }
-
-    // Expose game state for top-down integration
-    window.App = {
-        get gameState() { return gameState; }
-    };
 })();

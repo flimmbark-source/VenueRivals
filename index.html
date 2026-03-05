@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Venue Rivals</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/topdown.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -191,90 +190,109 @@
 
     <!-- Main Game Screen -->
     <div id="game-screen" class="screen">
-        <div class="game-topdown-layout">
-            <!-- Venue Canvas -->
-            <canvas id="venue-canvas" class="venue-canvas"></canvas>
-
-            <!-- Party HUD Overlay -->
-            <div class="party-hud">
-                <div class="hud-top">
-                    <div class="hud-section">
-                        <span class="hud-label">ROUND</span>
-                        <span class="hud-value"><span id="hud-round-num">1</span>/<span id="hud-round-total">7</span></span>
-                    </div>
-                    <div class="hud-section">
-                        <span class="hud-label" id="player-venue-name">Your Venue</span>
-                    </div>
-                    <div class="hud-section">
-                        <span class="hud-value"><span id="hud-phase">GUEST PHASE</span></span>
-                    </div>
-                </div>
-                <div class="hud-stats">
-                    <div class="hud-stat-group">
-                        <div class="hud-stat heat-stat">
-                            <span class="stat-icon">🔥</span>
-                            <span class="stat-bar-wrapper">
-                                <span class="stat-bar">
-                                    <span class="stat-bar-fill" id="player-heat-bar"></span>
-                                </span>
-                                <span class="stat-text" id="player-heat-text">0/21</span>
-                            </span>
-                        </div>
-                        <div class="hud-stat money-stat">
-                            <span class="stat-icon">💵</span>
-                            <span class="stat-value" id="player-money">$0</span>
-                        </div>
-                        <div class="hud-stat points-stat">
-                            <span class="stat-icon">⭐</span>
-                            <span class="stat-value" id="player-pts-badge">0</span>
-                        </div>
-                        <div class="hud-stat guests-stat">
-                            <span class="stat-icon">👥</span>
-                            <span class="stat-value" id="player-guest-count">0</span>
-                        </div>
-                    </div>
+        <div class="game-layout">
+            <!-- Top HUD -->
+            <div class="game-hud">
+                <div class="hud-left">
+                    <span class="hud-round">ROUND <span id="hud-round-num">1</span>/<span id="hud-round-total">3</span></span>
+                    <span class="hud-phase" id="hud-phase">GUEST PHASE</span>
                 </div>
             </div>
 
-            <!-- Guest Focus Panel -->
-            <div class="guest-focus-panel" id="guest-focus-panel" style="display: none;">
-                <div class="focus-guest-info">
-                    <div class="focus-guest-portrait" id="focus-guest-portrait">🙂</div>
-                    <div class="focus-guest-details">
-                        <div class="focus-guest-name" id="focus-guest-name">Guest Name</div>
-                        <div class="focus-guest-stats">
-                            <span class="focus-stat heat-focus">🔥 <span id="focus-heat">0</span></span>
-                            <span class="focus-stat money-focus">💵 <span id="focus-money">0</span></span>
-                            <span class="focus-stat points-focus">⭐ <span id="focus-points">0</span></span>
-                        </div>
-                        <div class="focus-guest-ability" id="focus-guest-ability"></div>
+            <!-- Opponent Venue Area -->
+            <div class="venue-area rival-venue" id="rival-area">
+                <div class="venue-header">
+                    <span class="venue-label rival-color" id="rival-venue-name">Rival</span>
+                    <div class="venue-stats">
+                        <span class="money-badge" id="rival-money">💵 $0</span>
+                        <span class="pts-badge" id="rival-pts-badge">⭐ 0</span>
                     </div>
                 </div>
-                <div class="focus-actions">
-                    <button class="btn btn-admit" id="btn-admit" disabled>
-                        <span>ADMIT</span>
-                        <span class="btn-arrow">→</span>
-                    </button>
-                    <button class="btn btn-ability" id="btn-ability" disabled>
-                        <span>ABILITY</span>
-                    </button>
-                    <button class="btn btn-close-door" id="btn-close-door" disabled>
-                        <span>🚪 CLOSE</span>
-                    </button>
+                <div class="heat-bar-container">
+                    <div class="heat-bar">
+                        <div class="heat-fill" id="rival-heat-fill"></div>
+                    </div>
+                    <span class="heat-label" id="rival-heat-text">🔥 0/21</span>
                 </div>
+                <div class="house-lane">
+                    <div class="exit-door">
+                        <span class="door-label">EXIT</span>
+                        <span class="door-icon">🚪</span>
+                    </div>
+                    <div class="guest-slots" id="rival-slots"></div>
+                    <div class="entry-area">
+                        <div class="arriving-slot" id="rival-arriving"></div>
+                        <div class="entry-door" id="rival-door">
+                            <span class="door-icon">🚪</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="venue-status" id="rival-status"></div>
             </div>
 
-            <!-- Round Results Panel -->
-            <div class="overlay-panel" id="round-results-panel" style="display: none;">
-                <div class="panel-content">
+            <!-- Center Feedback -->
+            <div class="center-feedback" id="center-feedback"></div>
+
+            <!-- Player Venue Area -->
+            <div class="venue-area player-venue" id="player-area">
+                <div class="venue-header">
+                    <span class="venue-label player-color" id="player-venue-name">You</span>
+                    <div class="venue-stats">
+                        <span class="money-badge" id="player-money">💵 $0</span>
+                        <span class="pts-badge" id="player-pts-badge">⭐ 0</span>
+                    </div>
+                </div>
+                <div class="heat-bar-container">
+                    <div class="heat-bar">
+                        <div class="heat-fill" id="player-heat-fill"></div>
+                    </div>
+                    <span class="heat-label" id="player-heat-text">🔥 0/21</span>
+                </div>
+                <div class="house-lane">
+                    <div class="exit-door" id="player-exit">
+                        <span class="door-label">EXIT</span>
+                        <span class="door-icon">🚪</span>
+                    </div>
+                    <div class="guest-slots" id="player-slots"></div>
+                    <div class="entry-area">
+                        <div class="arriving-slot" id="player-arriving"></div>
+                        <div class="entry-door" id="player-door">
+                            <span class="door-icon">🚪</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="venue-status" id="player-status"></div>
+            </div>
+
+            <!-- Bottom Panel -->
+            <div class="bottom-panel" id="bottom-panel">
+                <!-- Guest Phase Controls -->
+                <div id="guest-phase-panel">
+                    <div class="guest-detail" id="guest-detail">
+                        <div class="guest-detail-empty">Waiting for guest...</div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-admit" id="btn-admit" disabled>
+                            <span>ADMIT</span>
+                            <span class="btn-arrow">→</span>
+                        </button>
+                        <button class="btn btn-ability" id="btn-ability" disabled>
+                            <span>ABILITY</span>
+                        </button>
+                        <button class="btn btn-close-door" id="btn-close-door" disabled>
+                            <span>🚪 CLOSE</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Round Results Panel -->
+                <div id="round-results-panel" style="display: none;">
                     <div class="results-content" id="results-content"></div>
                     <button class="btn btn-primary" id="btn-next-phase">Continue</button>
                 </div>
-            </div>
 
-            <!-- Buy Phase Panel -->
-            <div class="overlay-panel buy-phase-overlay" id="buy-phase-panel" style="display: none;">
-                <div class="panel-content">
+                <!-- Buy Phase Panel -->
+                <div id="buy-phase-panel" style="display: none;">
                     <div class="shop-header">
                         <span class="shop-title">SHOP</span>
                         <span class="shop-money" id="shop-money">💵 $0</span>
@@ -285,11 +303,9 @@
                     </div>
                     <button class="btn btn-primary" id="btn-done-shopping">Done Shopping</button>
                 </div>
-            </div>
 
-            <!-- Game Over Panel -->
-            <div class="overlay-panel" id="gameover-panel" style="display: none;">
-                <div class="panel-content">
+                <!-- Game Over Panel -->
+                <div id="gameover-panel" style="display: none;">
                     <canvas id="gameover-canvas" width="400" height="200"></canvas>
                     <h2 id="gameover-title">Game Over</h2>
                     <p id="gameover-message"></p>
@@ -305,10 +321,6 @@
     <script src="js/ai.js"></script>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <script src="js/multiplayer.js"></script>
-    <script src="js/venue-scene.js"></script>
-    <script src="js/topdown-adapter.js"></script>
     <script src="js/app.js"></script>
-    <script src="js/topdown-integration.js"></script>
-    <script src="js/topdown-hooks.js"></script>
 </body>
 </html>
