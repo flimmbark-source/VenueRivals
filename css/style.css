@@ -1433,7 +1433,6 @@ body {
 
 .shop-layout {
     display: flex;
-    padding-left: 25px;
     gap: 10px;
     margin-bottom: 10px;
     justify-content: center;
@@ -2455,7 +2454,17 @@ body {
 .phone-hud .guest-detail-ability { font-size: 0.66rem; }
 .phone-hud .action-buttons .btn { border-radius: 999px; min-height: 36px; font-size: 0.68rem; }
 .phone-hud .btn-admit { flex: 1.3; }
-.phone-hud .shop-layout { max-height: 30vh; overflow-y: auto; }
+.phone-hud .shop-layout {
+    max-height: 30vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    gap: 6px;
+    justify-content: space-between;
+}
+.phone-hud .shop-grid {
+    gap: 22px 6px;
+    min-width: 0;
+}
 .guest-slot.just-entered {
     border-color: var(--accent-gold);
     box-shadow: 0 0 14px rgba(255, 209, 102, 0.65);
