@@ -831,11 +831,12 @@
             guestId.forEach((id) => animateExitGuest(who, id));
             return;
         }
-        const exitDoor = document.querySelector(`#${who}-area .exit-door`);
-        // try to find the slot containing the specific guestId; fall back to first occupied
+
+        // Animate the grid card itself drifting left and fading out.
+        // The venue actor is handled separately by syncVenueActors(), which moves it to the exit door.
         let sourceSlot = guestId ? document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`) : null;
         if (!sourceSlot) sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
-        if (!exitDoor || !sourceSlot) return;
+        if (!sourceSlot) return;
 
         const resolvedGuestId = guestId || sourceSlot.dataset.guestId;
         if (!resolvedGuestId || !Game.GUESTS[resolvedGuestId]) return;
@@ -844,18 +845,12 @@
         ghost.classList.add('exit-ghost');
 
         const sourceRect = sourceSlot.getBoundingClientRect();
-        const exitRect = exitDoor.getBoundingClientRect();
-        const sourceCenterX = sourceRect.left + sourceRect.width / 2;
-        const sourceCenterY = sourceRect.top + sourceRect.height / 2;
-        const exitCenterX = exitRect.left + exitRect.width / 2;
-        const exitCenterY = exitRect.top + exitRect.height / 2;
-
-        ghost.style.left = `${sourceCenterX - sourceRect.width / 2}px`;
-        ghost.style.top = `${sourceCenterY - sourceRect.height / 2}px`;
+        ghost.style.left = `${sourceRect.left}px`;
+        ghost.style.top = `${sourceRect.top}px`;
         document.body.appendChild(ghost);
 
         requestAnimationFrame(() => {
-            ghost.style.transform = `translate(${exitCenterX - sourceCenterX}px, ${exitCenterY - sourceCenterY}px)`;
+            ghost.style.transform = 'translate(-56px, 0)';
             ghost.classList.add('leaving');
         });
 
