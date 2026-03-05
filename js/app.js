@@ -1649,6 +1649,13 @@
         document.getElementById('round-results-panel').style.display = '';
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
+
+        if (!isFinalRound) {
+            // Enter buy phase immediately when results appear, but keep results visible
+            // until player confirms and opens the shop panel.
+            startBuyPhase({ deferPanel: true });
+        }
+
         publishState();
     }
 
@@ -1659,12 +1666,13 @@
             Game.endBuyPhase(gameState);
             showGameOver();
         } else {
-            startBuyPhase();
+            showBuyPanel();
         }
     }
 
     // === Buy Phase ===
-    function startBuyPhase() {
+    function startBuyPhase(options = {}) {
+        const deferPanel = !!options.deferPanel;
         gameState.phase = 'buy';
         updateHUD();
 
@@ -1687,12 +1695,17 @@
             : playerMarket;
         renderShop();
 
-        // Show buy panel
+        if (!deferPanel) {
+            showBuyPanel();
+        }
+    }
+
+    function showBuyPanel() {
         document.getElementById('guest-phase-panel').style.display = 'none';
         document.getElementById('round-results-panel').style.display = 'none';
         document.getElementById('buy-phase-panel').style.display = '';
         document.getElementById('gameover-panel').style.display = 'none';
-        setPhoneBuyPhaseLayout(false);
+        setPhoneBuyPhaseLayout(true);
     }
 
     function renderShopCard(guestId, cost, canAfford, container) {
