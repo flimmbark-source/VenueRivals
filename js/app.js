@@ -167,6 +167,7 @@
             document.getElementById('buy-phase-panel').style.display = '';
             document.getElementById('gameover-panel').style.display = 'none';
             renderShop();
+            setPhoneBuyPhaseLayout(true);
             return;
         }
 
@@ -175,6 +176,7 @@
             document.getElementById('round-results-panel').style.display = 'none';
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = '';
+            setPhoneBuyPhaseLayout(false);
             return;
         }
 
@@ -183,6 +185,7 @@
             document.getElementById('round-results-panel').style.display = '';
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = 'none';
+            setPhoneBuyPhaseLayout(false);
             return;
         }
 
@@ -190,6 +193,13 @@
         document.getElementById('round-results-panel').style.display = 'none';
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
+        setPhoneBuyPhaseLayout(false);
+    }
+
+    function setPhoneBuyPhaseLayout(isBuyPhase) {
+        const phoneScreenEl = document.querySelector('#phone-hud .phone-screen');
+        if (!phoneScreenEl) return;
+        phoneScreenEl.classList.toggle('buy-phase-compact', !!isBuyPhase);
     }
 
     function mapStateToJoinPerspective(state) {
@@ -1648,6 +1658,7 @@
         document.getElementById('round-results-panel').style.display = 'none';
         document.getElementById('buy-phase-panel').style.display = '';
         document.getElementById('gameover-panel').style.display = 'none';
+        setPhoneBuyPhaseLayout(false);
     }
 
     function renderShopCard(guestId, cost, canAfford, container) {

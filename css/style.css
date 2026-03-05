@@ -2426,6 +2426,12 @@ body {
     border-radius: 14px;
     padding: 8px;
 }
+
+.phone-screen.buy-phase-compact .phone-economy-row,
+.phone-screen.buy-phase-compact .phone-heat-row,
+.phone-screen.buy-phase-compact .phone-grid-module {
+    display: none;
+}
 .phone-grid-title {
     color: var(--text-secondary);
     font-size: 0.63rem;
