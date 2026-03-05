@@ -821,7 +821,7 @@ body {
 /* === Top-Down Venue Scene === */
 .venue-scene {
     position: relative;
-    height: clamp(112px, 18vh, 156px);
+    height: clamp(168px, 29vh, 240px);
     border-radius: 14px;
     border: 1px solid rgba(255,255,255,0.12);
     background:
@@ -914,9 +914,12 @@ body {
 
 .guest-slots {
     justify-content: flex-start;
-    min-height: 52px;
+    min-height: 78px;
     overflow-x: auto;
-    padding-bottom: 3px;
+    overflow-y: visible;
+    align-items: flex-start;
+    padding-top: 2px;
+    padding-bottom: 18px;
 }
 
 .guest-slots .guest-slot {
@@ -1019,9 +1022,13 @@ body {
     display: flex;
     gap: 3px;
     flex: 1;
-    justify-content: flex-end;
-    min-height: 46px;
-    align-items: center;
+    justify-content: flex-start;
+    min-height: 78px;
+    align-items: flex-start;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding-top: 2px;
+    padding-bottom: 18px;
 }
 
 /* === Guest Slot (in grid) === */
@@ -1124,12 +1131,7 @@ body {
 
 /* === Arriving Guest Slot === */
 .arriving-slot {
-    min-width: 40px;
-    min-height: 46px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
+    display: none !important;
 }
 
 .arriving-guest-card {
@@ -1739,7 +1741,7 @@ body {
 
 @media (max-height: 700px) {
     .venue-area { padding: 4px 8px; }
-    .venue-scene { height: 112px; }
+    .venue-scene { height: 150px; }
     .guest-detail { min-height: 50px; padding: 6px 10px; }
     .game-hud { padding: 4px 10px; }
 }

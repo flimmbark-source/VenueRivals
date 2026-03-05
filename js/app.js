@@ -713,25 +713,11 @@
     }
 
     function renderArrivingGuest(who) {
-        const player = who === 'player' ? gameState.player : gameState.rival;
         const arrivingEl = document.getElementById(`${who}-arriving`);
         if (!arrivingEl) return;
+        // Door-side arriving card intentionally hidden; arriving guest remains visible in the guest strip/detail panel.
         arrivingEl.innerHTML = '';
         arrivingEl.dataset.renderKey = '';
-        if (!player?.arrivingGuest || player.doorClosed || player.busted) return;
-
-        const guest = Game.GUESTS[player.arrivingGuest];
-        if (!guest) return;
-        const card = document.createElement('div');
-        card.className = 'arriving-guest-card';
-        card.innerHTML = `
-            <span class="arriving-stat arriving-heat">🔥${guest.heat}</span>
-            <span class="arriving-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
-            <span class="arriving-stat arriving-money">${guest.money}</span>
-            <span class="arriving-stat arriving-points">${guest.points}</span>
-        `;
-        card.title = `${guest.name} - ${guest.desc}`;
-        arrivingEl.appendChild(card);
     }
 
     function updateVenueStatus(who) {
