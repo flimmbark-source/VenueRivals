@@ -821,8 +821,8 @@ body {
 }
 
 .venue-scene #player-slots .slot-heat {
-    top: -8px;
-    right: 8px;
+    top: calc(100% + 2px);
+    right: 10px;
 }
 
 .player-venue .venue-scene {
