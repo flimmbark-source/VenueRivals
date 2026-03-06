@@ -914,6 +914,22 @@
         return !!(guest?.ability && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
     }
 
+    function setGuestPhaseControls({ canAdmit = false, canClose = false, canFlash = false } = {}) {
+        const entryDoor = document.getElementById('player-door');
+        const exitDoor = document.getElementById('player-exit');
+        if (entryDoor) {
+            entryDoor.classList.toggle('door-action-disabled', !canAdmit);
+            entryDoor.setAttribute('aria-disabled', canAdmit ? 'false' : 'true');
+        }
+        if (exitDoor) {
+            exitDoor.classList.toggle('door-action-disabled', !canClose);
+            exitDoor.setAttribute('aria-disabled', canClose ? 'false' : 'true');
+        }
+
+        const flashButton = document.getElementById('btn-ability');
+        if (flashButton) flashButton.disabled = !canFlash;
+    }
+
     // === Guest Detail Panel ===
     function updateGuestDetail() {
         const detailEl = document.getElementById('guest-detail');
@@ -933,15 +949,11 @@
                 'No more guests.';
             const curEmpty = detailEl.querySelector('.guest-detail-empty');
             if (curEmpty && curEmpty.textContent === emptyText) {
-                document.getElementById('btn-admit').disabled = true;
-                document.getElementById('btn-ability').disabled = true;
-                document.getElementById('btn-close-door').disabled = true;
+                setGuestPhaseControls({ canAdmit: false, canClose: false, canFlash: false });
                 return;
             }
             detailEl.innerHTML = '<div class="guest-detail-empty">' + emptyText + '</div>';
-            document.getElementById('btn-admit').disabled = true;
-            document.getElementById('btn-ability').disabled = true;
-            document.getElementById('btn-close-door').disabled = true;
+            setGuestPhaseControls({ canAdmit: false, canClose: false, canFlash: false });
             return;
         }
 
@@ -973,9 +985,7 @@
         const expectedPoints = `\u2B50 ${guest.points}`;
         const expectedHeat = `\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}`;
         if (existingName === guest.name && existingMoney === expectedMoney && existingPoints === expectedPoints && existingHeat === expectedHeat) {
-            document.getElementById('btn-admit').disabled = false;
-            document.getElementById('btn-ability').disabled = !canUseSelectedAbility;
-            document.getElementById('btn-close-door').disabled = false;
+            setGuestPhaseControls({ canAdmit: true, canClose: true, canFlash: canUseSelectedAbility });
             return;
         }
 
@@ -992,13 +1002,13 @@
                     ${abilityHTML}
                     ${isPlayerFlashAvailable() ? '<div class="flash-available">FLASH AVAILABLE</div>' : ''}
                 </div>
+                <button class="btn btn-ability guest-detail-flash-btn" id="btn-ability" ${canUseSelectedAbility ? '' : 'disabled'}>
+                    <span>FLASH</span>
+                </button>
             </div>
         `;
 
-        // Update buttons
-        document.getElementById('btn-admit').disabled = false;
-        document.getElementById('btn-ability').disabled = !canUseSelectedAbility;
-        document.getElementById('btn-close-door').disabled = false;
+        setGuestPhaseControls({ canAdmit: true, canClose: true, canFlash: canUseSelectedAbility });
     }
 
     // === Tooltip ===
@@ -2409,12 +2419,11 @@
         bindPartyCarouselInteractions();
 
         // Guest phase controls
-        document.getElementById('btn-admit').addEventListener('click', handleAdmit);
-        document.getElementById('btn-ability').addEventListener('click', handleAbility);
-        document.getElementById('btn-close-door').addEventListener('click', handleCloseDoor);
-
-        // Player door click to close
-        document.getElementById('player-door').addEventListener('click', handleCloseDoor);
+        document.getElementById('guest-detail').addEventListener('click', (event) => {
+            if (event.target.closest('#btn-ability')) handleAbility();
+        });
+        document.getElementById('player-door').addEventListener('click', handleAdmit);
+        document.getElementById('player-exit').addEventListener('click', handleCloseDoor);
 
         // Round results
         document.getElementById('btn-next-phase').addEventListener('click', handleNextPhase);
