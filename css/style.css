@@ -643,6 +643,7 @@ body {
 .game-layout {
     display: flex;
     flex-direction: column;
+    align-items: center;
     width: 100%;
     height: 100%;
     max-width: 480px;
@@ -659,6 +660,7 @@ body {
     border-top: 1px solid rgba(255,255,255,0.08);
     border-bottom: 1px solid rgba(255,255,255,0.08);
     flex: 1;
+    min-height: 250px;
     display: flex;
     flex-direction: column;
 }
@@ -688,7 +690,7 @@ body {
 
 .party-view-btn {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 68px);
+    top: 52px;
     z-index: 8;
     border: 1px solid rgba(255,255,255,0.2);
     background: rgba(255,255,255,0.06);
@@ -842,13 +844,9 @@ body {
 
 .player-venue .venue-scene {
     flex: 1;
-    min-height: clamp(330px, 64vh, 570px);
+    min-height: clamp(220px, 42vh, 360px);
     margin-bottom: 0;
     overflow: visible;
-}
-
-.player-venue .phone-hud {
-    margin: 0 auto 0;
 }
 
 
@@ -2425,8 +2423,8 @@ body {
     position: relative;
     right: auto;
     bottom: auto;
-    width: min(96%, 360px);
-    margin: 8px auto 2px;
+    width: min(96%, 380px);
+    margin: 10px auto;
     z-index: 7;
     pointer-events: none;
     animation: phoneRise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -2458,8 +2456,8 @@ body {
     flex-direction: column;
     gap: 8px;
     padding: 10px;
-    max-height: min(62vh, 570px);
-    overflow-y: auto;
+    max-height: min(86vh, 760px);
+    overflow: hidden;
 }
 
 .phone-status-strip {

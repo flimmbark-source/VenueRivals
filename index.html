@@ -191,125 +191,125 @@
     <!-- Main Game Screen -->
     <div id="game-screen" class="screen">
         <div class="game-layout">
-            <div class="party-carousel" id="party-carousel" aria-label="Party view carousel">
-                <div class="party-top-hud" id="party-top-hud">
-                    <div class="phone-status-strip">
-                        <span class="phone-round">Round <span id="hud-round-num">1</span>/<span id="hud-round-total">3</span></span>
-                        <span class="phone-phase" id="hud-phase">GUEST PHASE</span>
-                        <span class="phone-connection">
-                            <span id="player-money">💵 $0</span>
-                            <span id="hud-player-pts">⭐ 0</span>
-                        </span>
-                    </div>
-                    <div class="phone-heat-row">
-                        <div class="phone-phase-progress">
-                            <div class="heat-fill" id="player-heat-fill"></div>
-                        </div>
-                        <span class="phone-heat-text" id="player-heat-text">🔥 0/21</span>
-                    </div>
-                </div>
-                <div class="party-track" id="party-track">
-                    <!-- Player Venue Area -->
-                    <div class="venue-area player-venue party-slide" id="player-area">
-                        <div class="venue-scene" id="player-scene">
-                            <div class="scene-zone dance-zone">DANCE</div>
-                            <div class="scene-zone bar-zone">BAR</div>
-                            <div class="scene-zone lounge-zone">LOUNGE</div>
-                            <div class="actor-layer" id="player-actors"></div>
-                            <div class="guest-slots" id="player-slots"></div>
-                            <div class="scene-door exit-door" id="player-exit">
-                                <span class="door-label">EXIT</span>
-                                <span class="door-icon">🚪</span>
+            <div class="phone-hud" id="phone-hud">
+                <div class="phone-shell">
+                    <div class="center-feedback" id="center-feedback" aria-live="polite" aria-atomic="true"></div>
+                    <div class="phone-speaker"></div>
+                    <div class="phone-screen">
+                        <div class="party-top-hud" id="party-top-hud">
+                            <div class="phone-status-strip">
+                                <span class="phone-round">Round <span id="hud-round-num">1</span>/<span id="hud-round-total">3</span></span>
+                                <span class="phone-phase" id="hud-phase">GUEST PHASE</span>
+                                <span class="phone-connection">
+                                    <span id="player-money">💵 $0</span>
+                                    <span id="hud-player-pts">⭐ 0</span>
+                                </span>
                             </div>
-                            <div class="entry-area">
-                                <div class="arriving-slot" id="player-arriving"></div>
-                                <div class="scene-door entry-door" id="player-door" aria-label="Venue entry door">
-                                    <span class="door-icon">🚪</span>
-                                    <span class="door-label">ENTRY</span>
+                            <div class="phone-heat-row">
+                                <div class="phone-phase-progress">
+                                    <div class="heat-fill" id="player-heat-fill"></div>
                                 </div>
+                                <span class="phone-heat-text" id="player-heat-text">🔥 0/21</span>
                             </div>
                         </div>
-                        <div class="phone-hud" id="phone-hud">
-                            <div class="phone-shell">
-                                <div class="center-feedback" id="center-feedback" aria-live="polite" aria-atomic="true"></div>
-                                <div class="phone-speaker"></div>
-                                <div class="phone-screen">
-                                    <div class="phone-guest-actions" id="bottom-panel">
-                                        <div id="guest-phase-panel">
-                                            <div class="guest-detail" id="guest-detail">
-                                                <div class="guest-detail-empty">Waiting for guest...</div>
-                                            </div>
+                        <div class="party-carousel" id="party-carousel" aria-label="Party view carousel">
+                            <div class="party-track" id="party-track">
+                                <!-- Player Venue Area -->
+                                <div class="venue-area player-venue party-slide" id="player-area">
+                                    <div class="venue-scene" id="player-scene">
+                                        <div class="scene-zone dance-zone">DANCE</div>
+                                        <div class="scene-zone bar-zone">BAR</div>
+                                        <div class="scene-zone lounge-zone">LOUNGE</div>
+                                        <div class="actor-layer" id="player-actors"></div>
+                                        <div class="guest-slots" id="player-slots"></div>
+                                        <div class="scene-door exit-door" id="player-exit">
+                                            <span class="door-label">EXIT</span>
+                                            <span class="door-icon">🚪</span>
                                         </div>
-
-                                        <div id="round-results-panel" style="display: none;">
-                                            <div class="results-content" id="results-content"></div>
-                                            <button class="btn btn-primary" id="btn-next-phase">Continue</button>
-                                        </div>
-
-                                        <div id="buy-phase-panel" style="display: none;">
-                                            <div class="shop-header">
-                                                <span class="shop-title">SHOP</span>
-                                                <span class="shop-money" id="shop-money">💵 $0</span>
+                                        <div class="entry-area">
+                                            <div class="arriving-slot" id="player-arriving"></div>
+                                            <div class="scene-door entry-door" id="player-door" aria-label="Venue entry door">
+                                                <span class="door-icon">🚪</span>
+                                                <span class="door-label">ENTRY</span>
                                             </div>
-                                            <div class="shop-layout">
-                                                <div class="shop-grid" id="shop-grid"></div>
-                                                <div class="shop-upgrades" id="shop-upgrades"></div>
-                                            </div>
-                                            <button class="btn btn-primary" id="btn-done-shopping">Done Shopping</button>
-                                        </div>
-
-                                        <div id="gameover-panel" style="display: none;">
-                                            <canvas id="gameover-canvas" width="400" height="200"></canvas>
-                                            <h2 id="gameover-title">Game Over</h2>
-                                            <p id="gameover-message"></p>
-                                            <div class="gameover-stats" id="gameover-stats"></div>
-                                            <button class="btn btn-primary btn-large" id="btn-play-again">Play Again</button>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Opponent Venue Area -->
-                    <div class="venue-area rival-venue party-slide" id="rival-area">
-                        <div class="venue-header">
-                            <span class="venue-label rival-color" id="rival-venue-name">Rival</span>
-                            <div class="venue-stats">
-                                <span class="money-badge" id="rival-money">💵 $0</span>
-                                <span class="pts-badge" id="rival-pts-badge">⭐ 0</span>
-                            </div>
-                        </div>
-                        <div class="heat-bar-container">
-                            <div class="heat-bar">
-                                <div class="heat-fill" id="rival-heat-fill"></div>
-                            </div>
-                            <span class="heat-label" id="rival-heat-text">🔥 0/21</span>
-                        </div>
-                        <div class="venue-scene" id="rival-scene">
-                            <div class="scene-zone dance-zone">DANCE</div>
-                            <div class="scene-zone bar-zone">BAR</div>
-                            <div class="scene-zone lounge-zone">LOUNGE</div>
-                            <div class="actor-layer" id="rival-actors"></div>
-                            <div class="scene-door exit-door">
-                                <span class="door-label">EXIT</span>
-                                <span class="door-icon">🚪</span>
-                            </div>
-                            <div class="entry-area">
-                                <div class="arriving-slot" id="rival-arriving"></div>
-                                <div class="scene-door entry-door" id="rival-door" aria-label="Venue entry door">
-                                    <span class="door-icon">🚪</span>
-                                    <span class="door-label">ENTRY</span>
+                                <!-- Opponent Venue Area -->
+                                <div class="venue-area rival-venue party-slide" id="rival-area">
+                                    <div class="venue-header">
+                                        <span class="venue-label rival-color" id="rival-venue-name">Rival</span>
+                                        <div class="venue-stats">
+                                            <span class="money-badge" id="rival-money">💵 $0</span>
+                                            <span class="pts-badge" id="rival-pts-badge">⭐ 0</span>
+                                        </div>
+                                    </div>
+                                    <div class="heat-bar-container">
+                                        <div class="heat-bar">
+                                            <div class="heat-fill" id="rival-heat-fill"></div>
+                                        </div>
+                                        <span class="heat-label" id="rival-heat-text">🔥 0/21</span>
+                                    </div>
+                                    <div class="venue-scene" id="rival-scene">
+                                        <div class="scene-zone dance-zone">DANCE</div>
+                                        <div class="scene-zone bar-zone">BAR</div>
+                                        <div class="scene-zone lounge-zone">LOUNGE</div>
+                                        <div class="actor-layer" id="rival-actors"></div>
+                                        <div class="scene-door exit-door">
+                                            <span class="door-label">EXIT</span>
+                                            <span class="door-icon">🚪</span>
+                                        </div>
+                                        <div class="entry-area">
+                                            <div class="arriving-slot" id="rival-arriving"></div>
+                                            <div class="scene-door entry-door" id="rival-door" aria-label="Venue entry door">
+                                                <span class="door-icon">🚪</span>
+                                                <span class="door-label">ENTRY</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="guest-slots" id="rival-slots"></div>
+                                    <div class="venue-status" id="rival-status"></div>
                                 </div>
                             </div>
+
+                            <button class="party-view-btn active" id="btn-view-player" type="button">You</button>
+                            <button class="party-view-btn" id="btn-view-rival" type="button">Rival</button>
                         </div>
-                        <div class="guest-slots" id="rival-slots"></div>
-                        <div class="venue-status" id="rival-status"></div>
+                        <div class="phone-guest-actions" id="bottom-panel">
+                            <div id="guest-phase-panel">
+                                <div class="guest-detail" id="guest-detail">
+                                    <div class="guest-detail-empty">Waiting for guest...</div>
+                                </div>
+                            </div>
+
+                            <div id="round-results-panel" style="display: none;">
+                                <div class="results-content" id="results-content"></div>
+                                <button class="btn btn-primary" id="btn-next-phase">Continue</button>
+                            </div>
+
+                            <div id="buy-phase-panel" style="display: none;">
+                                <div class="shop-header">
+                                    <span class="shop-title">SHOP</span>
+                                    <span class="shop-money" id="shop-money">💵 $0</span>
+                                </div>
+                                <div class="shop-layout">
+                                    <div class="shop-grid" id="shop-grid"></div>
+                                    <div class="shop-upgrades" id="shop-upgrades"></div>
+                                </div>
+                                <button class="btn btn-primary" id="btn-done-shopping">Done Shopping</button>
+                            </div>
+
+                            <div id="gameover-panel" style="display: none;">
+                                <canvas id="gameover-canvas" width="400" height="200"></canvas>
+                                <h2 id="gameover-title">Game Over</h2>
+                                <p id="gameover-message"></p>
+                                <div class="gameover-stats" id="gameover-stats"></div>
+                                <button class="btn btn-primary btn-large" id="btn-play-again">Play Again</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <button class="party-view-btn active" id="btn-view-player" type="button">You</button>
-                <button class="party-view-btn" id="btn-view-rival" type="button">Rival</button>
             </div>
         </div>
     </div>
