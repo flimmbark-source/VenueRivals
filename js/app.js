@@ -251,6 +251,7 @@
     function setPartyView(view, animate = true) {
         if (view !== 'player' && view !== 'rival') return;
         activePartyView = view;
+        removeTooltip();
         applyPartyView(animate);
         updateHUD();
         updateGuestDetail();
@@ -1044,7 +1045,12 @@
         // Defer listener attachment to allow current click to finish
         setTimeout(() => {
             const dismissTooltip = (clickEvent) => {
-                if (tooltipEl && !el.contains(clickEvent.target)) {
+                // Guard against stale document listeners from previous tooltips.
+                if (tooltipEl !== el) {
+                    document.removeEventListener('click', dismissTooltip);
+                    return;
+                }
+                if (!el.contains(clickEvent.target)) {
                     removeTooltip();
                     document.removeEventListener('click', dismissTooltip);
                 }
