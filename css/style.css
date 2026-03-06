@@ -817,7 +817,8 @@ body {
     margin-bottom: 6px;
 }
 
-.venue-scene #player-slots {
+.venue-scene #player-slots,
+.venue-scene #rival-slots {
     position: absolute;
     left: 50%;
     bottom: 8px;
@@ -832,12 +833,14 @@ body {
     z-index: 4;
 }
 
-.venue-scene #player-slots::after {
+.venue-scene #player-slots::after,
+.venue-scene #rival-slots::after {
     content: none !important;
     display: none !important;
 }
 
-.venue-scene #player-slots .slot-heat {
+.venue-scene #player-slots .slot-heat,
+.venue-scene #rival-slots .slot-heat {
     top: auto;
     bottom: 3px;
     right: 4px;
@@ -858,7 +861,25 @@ body {
     margin: 0;
 }
 
+.rival-venue {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    gap: 2px;
+    padding-bottom: max(1px, env(safe-area-inset-bottom, 0px));
+}
 
+.rival-venue .venue-scene {
+    flex: 1;
+    min-height: clamp(330px, 64vh, 570px);
+    margin-bottom: 0;
+    overflow: visible;
+}
+
+.rival-venue .phone-hud {
+    width: 100%;
+    margin: 0;
+}
 
 .scene-zone {
     position: absolute;
@@ -954,13 +975,14 @@ body {
 
 
 .player-venue #player-door,
-.player-venue #player-exit {
+.player-venue #player-exit,
+.rival-venue #rival-door,
+.rival-venue #rival-exit {
     display: none;
 }
 
 .slot-door-card {
     position: absolute;
-    bottom: 10px;
     width: 40px;
     height: 58px;
     border-radius: 10px;
@@ -975,10 +997,12 @@ body {
 }
 
 .slot-door-card.exit-side {
-    left: max(6px, calc(50% - 212px));
+    top: 8px;
+    left: 8px;
 }
 
 .slot-door-card.entry-side {
+    bottom: 10px;
     right: max(6px, calc(50% - 212px));
 }
 
@@ -1694,12 +1718,30 @@ body {
     background: var(--bg-medium);
     border: 2px solid var(--accent-secondary);
     border-radius: var(--radius-md);
-    padding: 10px 14px;
+    padding: 12px 14px 10px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.5);
     min-width: 160px;
     max-width: 220px;
-    pointer-events: none;
+    pointer-events: auto;
     animation: tooltipIn 0.15s ease;
+}
+
+.guest-tooltip .tt-stats-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.guest-tooltip .tt-ability-btn {
+    width: 33%;
+    min-width: 52px;
+    height: 10px;
+    font-size: 0.48rem;
+    line-height: 10px;
+    padding: 0 6px;
+    border-radius: 999px;
+    align-self: center;
 }
 
 .effect-tooltip {
@@ -1731,7 +1773,7 @@ body {
 
 .guest-tooltip .tt-stats {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     font-size: 0.72rem;
     font-weight: 600;
 }
