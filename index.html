@@ -244,9 +244,7 @@
                                 <div class="phone-screen">
                                     <div class="phone-guest-actions" id="bottom-panel">
                                         <div id="guest-phase-panel">
-                                            <div class="guest-detail" id="guest-detail">
-                                                <div class="guest-detail-empty">Waiting for guest...</div>
-                                            </div>
+                                            <div class="guest-detail-empty">Tap a guest card to inspect details.</div>
                                         </div>
 
                                         <div id="gameover-panel" style="display: none;">
@@ -283,25 +281,21 @@
 
                     <!-- Opponent Venue Area -->
                     <div class="venue-area rival-venue party-slide" id="rival-area">
-                        <div class="venue-header">
-                            <span class="venue-label rival-color" id="rival-venue-name">Rival</span>
-                            <div class="venue-stats">
-                                <span class="money-badge" id="rival-money">💵 $0</span>
-                                <span class="pts-badge" id="rival-pts-badge">⭐ 0</span>
-                            </div>
-                        </div>
-                        <div class="heat-bar-container">
-                            <div class="heat-bar">
-                                <div class="heat-fill" id="rival-heat-fill"></div>
-                            </div>
-                            <span class="heat-label" id="rival-heat-text">🔥 0/21</span>
-                        </div>
                         <div class="venue-scene" id="rival-scene">
                             <div class="scene-zone dance-zone">DANCE</div>
                             <div class="scene-zone bar-zone">BAR</div>
                             <div class="scene-zone lounge-zone">LOUNGE</div>
                             <div class="actor-layer" id="rival-actors"></div>
-                            <div class="scene-door exit-door">
+                            <button class="scene-door slot-door-card exit-side" id="rival-exit-card" aria-label="Rival exit guests">
+                                <span class="door-icon">🚪</span>
+                                <span class="door-label">EXIT</span>
+                            </button>
+                            <div class="guest-slots" id="rival-slots"></div>
+                            <button class="scene-door slot-door-card entry-side" id="rival-door-card" aria-label="Rival admit guest">
+                                <span class="door-icon">🚪</span>
+                                <span class="door-label">ENTRY</span>
+                            </button>
+                            <div class="scene-door exit-door" id="rival-exit">
                                 <span class="door-label">EXIT</span>
                                 <span class="door-icon">🚪</span>
                             </div>
@@ -313,7 +307,6 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="guest-slots" id="rival-slots"></div>
                         <div class="venue-status" id="rival-status"></div>
                     </div>
                 </div>
