@@ -653,6 +653,7 @@ body {
 
 
 .party-carousel {
+    position: relative;
     overflow: hidden;
     touch-action: pan-y;
     border-top: 1px solid rgba(255,255,255,0.08);
@@ -672,22 +673,22 @@ body {
     flex-shrink: 0;
 }
 
-.party-view-controls {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 6px 10px 4px;
-}
-
 .party-view-btn {
+    position: absolute;
+    top: 8px;
+    z-index: 8;
     border: 1px solid rgba(255,255,255,0.2);
     background: rgba(255,255,255,0.06);
     color: var(--text-secondary);
     border-radius: 999px;
-    padding: 4px 10px;
+    padding: 4px 12px;
+    min-width: 58px;
     font-size: 0.7rem;
     font-weight: 700;
 }
+
+#btn-view-player { left: calc(50% - 64px); }
+#btn-view-rival { left: calc(50% + 6px); }
 
 .party-view-btn.active {
     color: #fff;
