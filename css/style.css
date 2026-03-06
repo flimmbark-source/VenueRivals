@@ -997,7 +997,6 @@ body {
 
 .slot-door-card {
     position: absolute;
-    bottom: 10px;
     width: 40px;
     height: 58px;
     border-radius: 10px;
@@ -1012,10 +1011,12 @@ body {
 }
 
 .slot-door-card.exit-side {
-    left: max(6px, calc(50% - 212px));
+    top: 8px;
+    left: 8px;
 }
 
 .slot-door-card.entry-side {
+    bottom: 10px;
     right: max(6px, calc(50% - 212px));
 }
 
