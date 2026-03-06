@@ -1260,12 +1260,17 @@
     // === Center Feedback ===
     function showFeedback(text, type, duration) {
         const el = document.getElementById('center-feedback');
+        if (!el) return;
+
+        const popupDuration = Math.max(1400, duration || 2200);
+        el.style.setProperty('--feedback-duration', `${popupDuration}ms`);
         el.innerHTML = `<div class="feedback-msg ${type || ''}">${text}</div>`;
+
         setTimeout(() => {
             if (el.querySelector('.feedback-msg')?.textContent === text) {
                 el.innerHTML = '';
             }
-        }, duration || 2000);
+        }, popupDuration + 120);
     }
 
     // === Guest Phase Actions ===
