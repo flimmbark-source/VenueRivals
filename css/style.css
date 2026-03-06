@@ -675,7 +675,7 @@ body {
 
 .party-view-btn {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    top: calc(env(safe-area-inset-top, 0px) + 24px);
     z-index: 8;
     border: 1px solid rgba(255,255,255,0.2);
     background: rgba(255,255,255,0.06);
