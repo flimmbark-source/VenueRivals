@@ -2406,18 +2406,24 @@ body {
     font-size: 0.66rem;
     text-transform: uppercase;
     letter-spacing: 0.7px;
+    gap: 6px;
 }
 .phone-round { color: var(--accent-gold); font-weight: 700; }
 .phone-phase { text-align: center; color: var(--text-primary); font-weight: 700; }
-.phone-connection { text-align: right; color: #8af7c7; }
-
-.phone-economy-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px 8px;
+.phone-connection {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
     font-size: 0.72rem;
     font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-primary);
 }
+
+.phone-connection #player-money { color: var(--accent-tertiary); }
+.phone-connection #hud-player-pts { color: var(--accent-blue); }
+
 
 .phone-heat-row {
     display: flex;
@@ -2456,7 +2462,6 @@ body {
     padding: 8px;
 }
 
-.phone-screen.buy-phase-compact .phone-economy-row,
 .phone-screen.buy-phase-compact .phone-heat-row,
 .phone-screen.buy-phase-compact .phone-grid-module {
     display: none;
