@@ -1001,7 +1001,7 @@
         }
 
         const abilityBtnHTML = tooltipWho === 'player'
-            ? `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>FLASH</button>`
+            ? `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>Ability</button>`
             : '';
 
         el.innerHTML = `
