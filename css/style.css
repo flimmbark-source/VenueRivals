@@ -645,10 +645,10 @@ body {
     flex-direction: column;
     width: 100%;
     height: 100%;
-    max-width: 480px;
-    margin: 0 auto;
-    background: linear-gradient(180deg, #0d0a2a 0%, #1a1040 30%, #2a1858 60%, #1a1932 100%);
-    overflow-y: auto;
+    max-width: none;
+    margin: 0;
+    background: #090d18;
+    overflow: hidden;
 }
 
 
@@ -849,6 +849,29 @@ body {
 
 .player-venue .phone-hud {
     margin: 0 auto 0;
+}
+
+.game-phone-hud {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    animation: none;
+}
+
+.game-phone-hud .phone-shell {
+    height: 100%;
+    border-radius: 0;
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom, 0px));
+    border: 0;
+    box-shadow: none;
+}
+
+.game-phone-screen {
+    flex: 1;
+    max-height: none;
+    min-height: 0;
 }
 
 
