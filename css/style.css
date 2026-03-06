@@ -808,7 +808,7 @@ body {
     width: min(95%, 340px);
     justify-content: center;
     min-height: 58px;
-    padding: 4px 8px 8px;
+    padding: 4px 8px 0;
     border-radius: 0;
     background: transparent;
     border: 0;
@@ -817,6 +817,10 @@ body {
 
 .venue-scene #player-slots::after {
     display: none;
+}
+
+.venue-scene #player-slots .slot-heat {
+    top: calc(100% + 2px);
 }
 
 .player-venue .venue-scene {
