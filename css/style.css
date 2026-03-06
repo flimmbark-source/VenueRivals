@@ -858,6 +858,41 @@ body {
     margin: 0;
 }
 
+.rival-venue {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    gap: 2px;
+    padding-bottom: max(1px, env(safe-area-inset-bottom, 0px));
+}
+
+.rival-venue .venue-scene {
+    flex: 1;
+    min-height: clamp(330px, 64vh, 570px);
+    margin-bottom: 0;
+    overflow: visible;
+}
+
+.rival-venue .phone-hud {
+    width: 100%;
+    margin: 0;
+}
+
+.rival-venue .phone-grid-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.rival-venue .phone-grid-title #rival-money {
+    color: var(--accent-tertiary);
+}
+
+.rival-venue .phone-grid-title #rival-pts-badge {
+    color: var(--accent-blue);
+}
 
 
 .scene-zone {
@@ -954,7 +989,9 @@ body {
 
 
 .player-venue #player-door,
-.player-venue #player-exit {
+.player-venue #player-exit,
+.rival-venue #rival-door,
+.rival-venue #rival-exit {
     display: none;
 }
 

@@ -440,6 +440,9 @@
         const hudPhaseEl = document.getElementById('hud-phase');
         const hudPlayerPtsEl = document.getElementById('hud-player-pts');
         const playerMoneyEl = document.getElementById('player-money');
+        const rivalMoneyEl = document.getElementById('rival-money');
+        const rivalPtsEl = document.getElementById('rival-pts-badge');
+        const rivalNameEl = document.getElementById('rival-venue-name');
 
         if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl || !hudPlayerPtsEl || !playerMoneyEl) {
             return;
@@ -453,6 +456,15 @@
 
         hudPlayerPtsEl.textContent = `⭐ ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
         playerMoneyEl.textContent = `💵 $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
+
+        const r = gameState.rival;
+        if (rivalNameEl) rivalNameEl.textContent = r.name;
+        if (rivalMoneyEl) {
+            rivalMoneyEl.textContent = `💵 $${r.money + (includeProjectedRoundTotals ? r.roundMoney : 0)}`;
+        }
+        if (rivalPtsEl) {
+            rivalPtsEl.textContent = `⭐ ${r.points + (includeProjectedRoundTotals ? r.roundPoints : 0)}`;
+        }
 
         updateHeatBar('player', p.heat, Game.getHeatCapacity(pVenue, p), p.busted);
         updateHeatBar('rival', gameState.rival.heat, Game.getHeatCapacity(Game.VENUES[gameState.rival.venueId], gameState.rival), gameState.rival.busted);
@@ -522,14 +534,14 @@
     function getEntryDoorPosition(who) {
         const bounds = getSceneBounds(who) || { width: 280, height: 150 };
         const fallback = { x: bounds.width * 0.93, y: 12 };
-        const elementId = who === 'player' ? 'player-door-card' : `${who}-door`;
+        const elementId = who === 'player' ? 'player-door-card' : 'rival-door-card';
         return getDoorPositionFromElement(who, elementId, fallback);
     }
 
     function getExitDoorPosition(who) {
         const bounds = getSceneBounds(who) || { width: 280, height: 150 };
         const fallback = { x: 14, y: 14 };
-        const elementId = who === 'player' ? 'player-exit-card' : `${who}-exit`;
+        const elementId = who === 'player' ? 'player-exit-card' : 'rival-exit-card';
         return getDoorPositionFromElement(who, elementId, fallback);
     }
 
