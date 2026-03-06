@@ -817,7 +817,8 @@ body {
     margin-bottom: 6px;
 }
 
-.venue-scene #player-slots {
+.venue-scene #player-slots,
+.venue-scene #rival-slots {
     position: absolute;
     left: 50%;
     bottom: 8px;
@@ -832,12 +833,14 @@ body {
     z-index: 4;
 }
 
-.venue-scene #player-slots::after {
+.venue-scene #player-slots::after,
+.venue-scene #rival-slots::after {
     content: none !important;
     display: none !important;
 }
 
-.venue-scene #player-slots .slot-heat {
+.venue-scene #player-slots .slot-heat,
+.venue-scene #rival-slots .slot-heat {
     top: auto;
     bottom: 3px;
     right: 4px;
@@ -877,23 +880,6 @@ body {
     width: 100%;
     margin: 0;
 }
-
-.rival-venue .phone-grid-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 4px;
-}
-
-.rival-venue .phone-grid-title #rival-money {
-    color: var(--accent-tertiary);
-}
-
-.rival-venue .phone-grid-title #rival-pts-badge {
-    color: var(--accent-blue);
-}
-
 
 .scene-zone {
     position: absolute;

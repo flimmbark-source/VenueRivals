@@ -252,6 +252,9 @@
         if (view !== 'player' && view !== 'rival') return;
         activePartyView = view;
         applyPartyView(animate);
+        updateHUD();
+        updateGuestDetail();
+        updateRivalGuestDetail();
     }
 
     function bindPartyCarouselInteractions() {
@@ -431,7 +434,6 @@
     function updateHUD() {
         if (!gameState) return;
         const p = gameState.player;
-        const pVenue = Game.VENUES[p.venueId];
         const includeProjectedRoundTotals =
             gameState.phase === 'guest' && gameState.guestPhaseScoredRound !== gameState.round;
 
@@ -440,9 +442,6 @@
         const hudPhaseEl = document.getElementById('hud-phase');
         const hudPlayerPtsEl = document.getElementById('hud-player-pts');
         const playerMoneyEl = document.getElementById('player-money');
-        const rivalMoneyEl = document.getElementById('rival-money');
-        const rivalPtsEl = document.getElementById('rival-pts-badge');
-        const rivalNameEl = document.getElementById('rival-venue-name');
 
         if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl || !hudPlayerPtsEl || !playerMoneyEl) {
             return;
@@ -454,20 +453,14 @@
             gameState.phase === 'guest' ? 'GUEST PHASE' :
                 gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
-        hudPlayerPtsEl.textContent = `⭐ ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
-        playerMoneyEl.textContent = `💵 $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
-
         const r = gameState.rival;
-        if (rivalNameEl) rivalNameEl.textContent = r.name;
-        if (rivalMoneyEl) {
-            rivalMoneyEl.textContent = `💵 $${r.money + (includeProjectedRoundTotals ? r.roundMoney : 0)}`;
-        }
-        if (rivalPtsEl) {
-            rivalPtsEl.textContent = `⭐ ${r.points + (includeProjectedRoundTotals ? r.roundPoints : 0)}`;
-        }
+        const hudActor = activePartyView === 'rival' ? r : p;
+        hudPlayerPtsEl.textContent = `⭐ ${hudActor.points + (includeProjectedRoundTotals ? hudActor.roundPoints : 0)}`;
+        playerMoneyEl.textContent = `💵 $${hudActor.money + (includeProjectedRoundTotals ? hudActor.roundMoney : 0)}`;
 
-        updateHeatBar('player', p.heat, Game.getHeatCapacity(pVenue, p), p.busted);
-        updateHeatBar('rival', gameState.rival.heat, Game.getHeatCapacity(Game.VENUES[gameState.rival.venueId], gameState.rival), gameState.rival.busted);
+        const hudVenue = Game.VENUES[hudActor.venueId];
+        updateHeatBar('player', hudActor.heat, Game.getHeatCapacity(hudVenue, hudActor), hudActor.busted);
+        updateHeatBar('rival', r.heat, Game.getHeatCapacity(Game.VENUES[r.venueId], r), r.busted);
     }
 
     function updateHeatBar(who, heat, max, busted = false) {
@@ -960,7 +953,9 @@
 
     // === Guest Detail Panel ===
     function updateGuestDetail() {
+        updateRivalGuestDetail();
         const detailEl = document.getElementById('guest-detail');
+        if (!detailEl || !gameState) return;
         const p = gameState.player;
         syncSelectedGridGuest();
         const selectedGuestId = selectedGridGuest?.guestId || p.arrivingGuest;
@@ -1037,6 +1032,50 @@
         `;
 
         setGuestPhaseControls({ canAdmit: true, canClose: true, canFlash: canUseSelectedAbility });
+    }
+
+    function updateRivalGuestDetail() {
+        const detailEl = document.getElementById('rival-guest-detail');
+        if (!detailEl || !gameState) return;
+
+        const r = gameState.rival;
+        if (!r.arrivingGuest || r.doorClosed || r.busted) {
+            const emptyText = r.busted ? `${r.name} busted this round.` :
+                r.doorClosed ? `${r.name} closed the door.` :
+                'No rival guest at the door.';
+            detailEl.innerHTML = `<div class="guest-detail-empty">${emptyText}</div>`;
+            return;
+        }
+
+        const guest = Game.GUESTS[r.arrivingGuest];
+        if (!guest) {
+            detailEl.innerHTML = '<div class="guest-detail-empty">Unknown rival guest.</div>';
+            return;
+        }
+
+        const venue = Game.VENUES[r.venueId];
+        const wouldBust = r.heat > Game.getHeatCapacity(venue, r);
+        const abilityHTML = guest.ability
+            ? `<div class="guest-detail-ability">⚡ ${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`
+            : '';
+
+        detailEl.innerHTML = `
+            <div class="guest-detail-content">
+                <div class="guest-detail-emoji">${guest.emoji}</div>
+                <div class="guest-detail-info">
+                    <div class="guest-detail-name">${guest.name}</div>
+                    <div class="guest-detail-stats">
+                        <span class="stat-money">💵 ${guest.money}</span>
+                        <span class="stat-points">⭐ ${guest.points}</span>
+                        <span class="stat-heat${wouldBust ? ' danger' : ''}">🔥 ${guest.heat}${wouldBust ? ' BUST!' : ''}</span>
+                    </div>
+                    ${abilityHTML}
+                </div>
+                <button class="btn btn-ability guest-detail-flash-btn" disabled>
+                    <span>FLASH</span>
+                </button>
+            </div>
+        `;
     }
 
     // === Tooltip ===
