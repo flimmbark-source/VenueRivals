@@ -810,6 +810,27 @@ body {
     margin: 0 auto 0;
 }
 
+
+.player-slots-dock {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: -2px;
+    margin-bottom: 4px;
+    z-index: 6;
+}
+
+.player-slots-dock #player-slots {
+    flex: 0 1 auto;
+    justify-content: center;
+    min-height: 58px;
+    width: min(95%, 340px);
+    padding: 4px 8px 8px;
+    border-radius: 12px;
+    background: rgba(7, 10, 20, 0.45);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
 .scene-zone {
     position: absolute;
     border: 1px dashed rgba(255,255,255,0.2);
@@ -2458,15 +2479,7 @@ body {
     transition: width 0.25s ease;
 }
 
-.phone-grid-module {
-    background: rgba(7, 10, 20, 0.45);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 14px;
-    padding: 8px;
-}
-
-.phone-screen.buy-phase-compact .phone-heat-row,
-.phone-screen.buy-phase-compact .phone-grid-module {
+.phone-screen.buy-phase-compact .phone-heat-row {
     display: none;
 }
 .phone-grid-title {
@@ -2478,7 +2491,7 @@ body {
 }
 
 #player-slots {
-    justify-content: flex-end;
+    justify-content: center;
 }
 
 .phone-guest-actions {
