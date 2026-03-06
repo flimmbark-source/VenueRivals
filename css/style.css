@@ -659,12 +659,23 @@ body {
     border-top: 1px solid rgba(255,255,255,0.08);
     border-bottom: 1px solid rgba(255,255,255,0.08);
     flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.party-top-hud {
+    position: relative;
+    z-index: 9;
+    padding: 8px 10px 6px;
+    background: linear-gradient(180deg, rgba(7, 8, 20, 0.92), rgba(7, 8, 20, 0.45));
+    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .party-track {
     display: flex;
     width: 200%;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     transition: transform 0.28s ease;
     will-change: transform;
 }
@@ -677,7 +688,7 @@ body {
 
 .party-view-btn {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 24px);
+    top: calc(env(safe-area-inset-top, 0px) + 68px);
     z-index: 8;
     border: 1px solid rgba(255,255,255,0.2);
     background: rgba(255,255,255,0.06);
@@ -2509,6 +2520,14 @@ body {
 
 .phone-screen.buy-phase-compact .phone-heat-row {
     display: none;
+}
+
+.party-top-hud .phone-status-strip {
+    font-size: 0.62rem;
+}
+
+.party-top-hud .phone-heat-row {
+    margin-top: 4px;
 }
 .phone-grid-title {
     color: var(--text-secondary);
