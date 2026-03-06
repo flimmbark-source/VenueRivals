@@ -507,14 +507,30 @@
         return choices[Math.floor(Math.random() * choices.length)];
     }
 
+    function getDoorPositionFromElement(who, elementId, fallback) {
+        const sceneEl = document.getElementById(`${who}-scene`);
+        const doorEl = document.getElementById(elementId);
+        if (!sceneEl || !doorEl) return fallback;
+        const sceneRect = sceneEl.getBoundingClientRect();
+        const doorRect = doorEl.getBoundingClientRect();
+        return {
+            x: Math.max(8, Math.min(sceneRect.width - 8, (doorRect.left - sceneRect.left) + (doorRect.width / 2))),
+            y: Math.max(8, Math.min(sceneRect.height - 8, (doorRect.top - sceneRect.top) + (doorRect.height / 2))),
+        };
+    }
+
     function getEntryDoorPosition(who) {
         const bounds = getSceneBounds(who) || { width: 280, height: 150 };
-        return { x: bounds.width * 0.93, y: 12 };
+        const fallback = { x: bounds.width * 0.93, y: 12 };
+        const elementId = who === 'player' ? 'player-door-card' : `${who}-door`;
+        return getDoorPositionFromElement(who, elementId, fallback);
     }
 
     function getExitDoorPosition(who) {
         const bounds = getSceneBounds(who) || { width: 280, height: 150 };
-        return { x: 14, y: 14 };
+        const fallback = { x: 14, y: 14 };
+        const elementId = who === 'player' ? 'player-exit-card' : `${who}-exit`;
+        return getDoorPositionFromElement(who, elementId, fallback);
     }
 
     function ensureActorLoop() {
