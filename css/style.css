@@ -803,7 +803,7 @@ body {
 .venue-scene #player-slots {
     position: absolute;
     left: 50%;
-    bottom: 24px;
+    bottom: 8px;
     transform: translateX(-50%);
     width: min(95%, 340px);
     justify-content: center;
@@ -821,8 +821,12 @@ body {
 }
 
 .venue-scene #player-slots .slot-heat {
-    top: calc(100% + 2px);
-    right: 10px;
+    top: auto;
+    bottom: 3px;
+    right: 4px;
+    left: auto;
+    transform: none;
+    z-index: 1;
 }
 
 .player-venue .venue-scene {
