@@ -647,8 +647,12 @@ body {
     height: 100%;
     max-width: 480px;
     margin: 0 auto;
-    background: linear-gradient(180deg, #0d0a2a 0%, #1a1040 30%, #2a1858 60%, #1a1932 100%);
-    overflow-y: auto;
+    padding: 0;
+    background: linear-gradient(160deg, #121724, #070a14 72%);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 22px 42px rgba(0, 0, 0, 0.55), 0 0 22px rgba(76, 201, 240, 0.18);
+    overflow: hidden;
+    position: relative;
 }
 
 
@@ -656,11 +660,13 @@ body {
     position: relative;
     overflow: hidden;
     touch-action: pan-y;
-    border-top: 1px solid rgba(255,255,255,0.08);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
     flex: 1;
     display: flex;
     flex-direction: column;
+    border-radius: 0;
+    background: linear-gradient(180deg, rgba(33, 39, 67, 0.95), rgba(13, 17, 30, 0.96));
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(6px);
 }
 
 .party-top-hud {
@@ -848,7 +854,8 @@ body {
 }
 
 .player-venue .phone-hud {
-    margin: 0 auto 0;
+    width: 100%;
+    margin: 0;
 }
 
 
@@ -1312,10 +1319,10 @@ body {
 
 .center-feedback {
     position: absolute;
-    top: 10px;
+    top: 6px;
     left: 12px;
     right: 12px;
-    z-index: 12;
+    z-index: 20;
     display: flex;
     justify-content: center;
     pointer-events: none;
@@ -2425,41 +2432,35 @@ body {
     position: relative;
     right: auto;
     bottom: auto;
-    width: min(96%, 360px);
-    margin: 8px auto 2px;
+    width: 100%;
+    margin: 8px 0 0;
     z-index: 7;
-    pointer-events: none;
-    animation: phoneRise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+    pointer-events: auto;
 }
 
 .phone-shell {
-    pointer-events: auto;
-    border-radius: 30px;
-    padding: 10px;
-    background: linear-gradient(160deg, #121724, #070a14 72%);
-    border: 1px solid rgba(255, 255, 255, 0.28);
-    box-shadow: 0 22px 42px rgba(0, 0, 0, 0.55), 0 0 22px rgba(76, 201, 240, 0.18);
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
 }
 
 .phone-speaker {
-    width: 84px;
-    height: 5px;
-    border-radius: 999px;
-    margin: 0 auto 8px;
-    background: rgba(255, 255, 255, 0.18);
+    display: none;
 }
 
 .phone-screen {
-    border-radius: 22px;
-    background: linear-gradient(180deg, rgba(33, 39, 67, 0.95), rgba(13, 17, 30, 0.96));
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    backdrop-filter: blur(6px);
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    backdrop-filter: none;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 10px;
-    max-height: min(62vh, 570px);
-    overflow-y: auto;
+    padding: 0;
+    max-height: none;
+    overflow: visible;
 }
 
 .phone-status-strip {
