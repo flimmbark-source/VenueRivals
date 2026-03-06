@@ -710,7 +710,8 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    gap: 4px;
+    gap: 2px;
+    padding-bottom: max(2px, env(safe-area-inset-bottom, 0px));
 }
 
 .venue-header {
@@ -799,12 +800,12 @@ body {
 
 .player-venue .venue-scene {
     flex: 1;
-    min-height: clamp(324px, 63vh, 564px);
+    min-height: clamp(330px, 64vh, 570px);
     margin-bottom: 0;
 }
 
 .player-venue .phone-hud {
-    margin: 0 auto max(2px, env(safe-area-inset-bottom, 0px));
+    margin: 0 auto 0;
 }
 
 .scene-zone {
@@ -2363,7 +2364,7 @@ body {
     right: auto;
     bottom: auto;
     width: min(96%, 360px);
-    margin: 8px auto max(2px, env(safe-area-inset-bottom, 0px));
+    margin: 8px auto 2px;
     z-index: 7;
     pointer-events: none;
     animation: phoneRise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
