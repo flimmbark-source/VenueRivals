@@ -1320,8 +1320,9 @@ body {
 .center-feedback {
     position: fixed;
     top: calc(env(safe-area-inset-top, 0px) + 6px);
-    left: max(12px, calc((100vw - 480px) / 2 + 12px));
-    right: max(12px, calc((100vw - 480px) / 2 + 12px));
+    left: 50%;
+    width: min(456px, calc(100vw - 24px));
+    transform: translateX(-50%);
     z-index: 20;
     display: flex;
     justify-content: center;
