@@ -507,14 +507,30 @@
         return choices[Math.floor(Math.random() * choices.length)];
     }
 
+    function getDoorPositionFromElement(who, elementId, fallback) {
+        const sceneEl = document.getElementById(`${who}-scene`);
+        const doorEl = document.getElementById(elementId);
+        if (!sceneEl || !doorEl) return fallback;
+        const sceneRect = sceneEl.getBoundingClientRect();
+        const doorRect = doorEl.getBoundingClientRect();
+        return {
+            x: Math.max(8, Math.min(sceneRect.width - 8, (doorRect.left - sceneRect.left) + (doorRect.width / 2))),
+            y: Math.max(8, Math.min(sceneRect.height - 8, (doorRect.top - sceneRect.top) + (doorRect.height / 2))),
+        };
+    }
+
     function getEntryDoorPosition(who) {
         const bounds = getSceneBounds(who) || { width: 280, height: 150 };
-        return { x: bounds.width * 0.93, y: 12 };
+        const fallback = { x: bounds.width * 0.93, y: 12 };
+        const elementId = who === 'player' ? 'player-door-card' : `${who}-door`;
+        return getDoorPositionFromElement(who, elementId, fallback);
     }
 
     function getExitDoorPosition(who) {
         const bounds = getSceneBounds(who) || { width: 280, height: 150 };
-        return { x: 14, y: 14 };
+        const fallback = { x: 14, y: 14 };
+        const elementId = who === 'player' ? 'player-exit-card' : `${who}-exit`;
+        return getDoorPositionFromElement(who, elementId, fallback);
     }
 
     function ensureActorLoop() {
@@ -915,16 +931,16 @@
     }
 
     function setGuestPhaseControls({ canAdmit = false, canClose = false, canFlash = false } = {}) {
-        const entryDoor = document.getElementById('player-door');
-        const exitDoor = document.getElementById('player-exit');
-        if (entryDoor) {
+        const entryDoors = [document.getElementById('player-door'), document.getElementById('player-door-card')].filter(Boolean);
+        const exitDoors = [document.getElementById('player-exit'), document.getElementById('player-exit-card')].filter(Boolean);
+        entryDoors.forEach((entryDoor) => {
             entryDoor.classList.toggle('door-action-disabled', !canAdmit);
             entryDoor.setAttribute('aria-disabled', canAdmit ? 'false' : 'true');
-        }
-        if (exitDoor) {
+        });
+        exitDoors.forEach((exitDoor) => {
             exitDoor.classList.toggle('door-action-disabled', !canClose);
             exitDoor.setAttribute('aria-disabled', canClose ? 'false' : 'true');
-        }
+        });
 
         const flashButton = document.getElementById('btn-ability');
         if (flashButton) flashButton.disabled = !canFlash;
@@ -1219,7 +1235,7 @@
 
     function renderRevealDoorIntel(who) {
         if (!gameState) return;
-        const doorEl = document.getElementById(`${who}-door`);
+        const doorEl = document.getElementById(who === 'player' ? 'player-door-card' : `${who}-door`);
         if (!doorEl) return;
 
         const player = who === 'player' ? gameState.player : gameState.rival;
@@ -2423,7 +2439,9 @@
             if (event.target.closest('#btn-ability')) handleAbility();
         });
         document.getElementById('player-door').addEventListener('click', handleAdmit);
+        document.getElementById('player-door-card').addEventListener('click', handleAdmit);
         document.getElementById('player-exit').addEventListener('click', handleCloseDoor);
+        document.getElementById('player-exit-card').addEventListener('click', handleCloseDoor);
 
         // Round results
         document.getElementById('btn-next-phase').addEventListener('click', handleNextPhase);

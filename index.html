@@ -191,6 +191,7 @@
     <!-- Main Game Screen -->
     <div id="game-screen" class="screen">
         <div class="game-layout">
+            <div class="center-feedback" id="center-feedback" aria-live="polite" aria-atomic="true"></div>
             <div class="party-carousel" id="party-carousel" aria-label="Party view carousel">
                 <div class="party-top-hud" id="party-top-hud">
                     <div class="phone-status-strip">
@@ -216,7 +217,15 @@
                             <div class="scene-zone bar-zone">BAR</div>
                             <div class="scene-zone lounge-zone">LOUNGE</div>
                             <div class="actor-layer" id="player-actors"></div>
+                            <button class="scene-door slot-door-card exit-side" id="player-exit-card" aria-label="Exit guests">
+                                <span class="door-icon">🚪</span>
+                                <span class="door-label">EXIT</span>
+                            </button>
                             <div class="guest-slots" id="player-slots"></div>
+                            <button class="scene-door slot-door-card entry-side" id="player-door-card" aria-label="Admit guest">
+                                <span class="door-icon">🚪</span>
+                                <span class="door-label">ENTRY</span>
+                            </button>
                             <div class="scene-door exit-door" id="player-exit">
                                 <span class="door-label">EXIT</span>
                                 <span class="door-icon">🚪</span>
@@ -231,7 +240,6 @@
                         </div>
                         <div class="phone-hud" id="phone-hud">
                             <div class="phone-shell">
-                                <div class="center-feedback" id="center-feedback" aria-live="polite" aria-atomic="true"></div>
                                 <div class="phone-speaker"></div>
                                 <div class="phone-screen">
                                     <div class="phone-guest-actions" id="bottom-panel">
