@@ -1718,7 +1718,7 @@ body {
     background: var(--bg-medium);
     border: 2px solid var(--accent-secondary);
     border-radius: var(--radius-md);
-    padding: 28px 14px 10px;
+    padding: 34px 14px 10px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.5);
     min-width: 160px;
     max-width: 220px;
@@ -1729,9 +1729,10 @@ body {
 .guest-tooltip .tt-ability-btn {
     position: absolute;
     top: 6px;
-    left: 6px;
+    right: 6px;
+    width: calc(100% - 12px);
     font-size: 0.62rem;
-    padding: 3px 8px;
+    padding: 4px 8px;
     border-radius: 999px;
 }
 
