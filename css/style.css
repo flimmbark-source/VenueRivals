@@ -1206,7 +1206,7 @@ body {
 
 .ability-icon-badge {
     position: absolute;
-    left: 50%;
+    left: 25%;
     bottom: 4px;
     transform: translateX(-50%);
     font-size: 0.55rem;

@@ -780,7 +780,7 @@
         el.dataset.guestId = guestId;
         if (animate) el.classList.add('entering');
         el.innerHTML = `
-            <span class="slot-stat slot-heat">🔥${guest.heat}</span>
+            <span class="slot-stat slot-heat">${guest.heat}</span>
             <span class="slot-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
             <span class="slot-stat slot-money">${guest.money}</span>
             ${renderAbilityBadge(guest)}
