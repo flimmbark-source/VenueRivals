@@ -803,12 +803,12 @@ body {
 .venue-scene #player-slots {
     position: absolute;
     left: 50%;
-    bottom: 16px;
+    bottom: 6px;
     transform: translateX(-50%);
     width: min(95%, 340px);
     justify-content: center;
-    min-height: 58px;
-    padding: 4px 8px 0;
+    min-height: 52px;
+    padding: 0 8px;
     border-radius: 0;
     background: transparent;
     border: 0;
@@ -816,11 +816,13 @@ body {
 }
 
 .venue-scene #player-slots::after {
-    display: none;
+    content: none !important;
+    display: none !important;
 }
 
 .venue-scene #player-slots .slot-heat {
-    top: calc(100% + 2px);
+    top: -8px;
+    right: 8px;
 }
 
 .player-venue .venue-scene {
