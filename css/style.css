@@ -1736,9 +1736,10 @@ body {
 .guest-tooltip .tt-ability-btn {
     width: 33%;
     min-width: 52px;
-    font-size: 0.52rem;
-    line-height: 1;
-    padding: 1px 6px;
+    height: 10px;
+    font-size: 0.48rem;
+    line-height: 10px;
+    padding: 0 6px;
     border-radius: 999px;
     align-self: center;
 }
