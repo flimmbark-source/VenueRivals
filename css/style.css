@@ -647,8 +647,12 @@ body {
     height: 100%;
     max-width: 480px;
     margin: 0 auto;
-    background: linear-gradient(180deg, #0d0a2a 0%, #1a1040 30%, #2a1858 60%, #1a1932 100%);
-    overflow-y: auto;
+    padding: 0;
+    background: linear-gradient(160deg, #121724, #070a14 72%);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 22px 42px rgba(0, 0, 0, 0.55), 0 0 22px rgba(76, 201, 240, 0.18);
+    overflow: hidden;
+    position: relative;
 }
 
 
@@ -656,26 +660,41 @@ body {
     position: relative;
     overflow: hidden;
     touch-action: pan-y;
-    border-top: 1px solid rgba(255,255,255,0.08);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0;
+    background: linear-gradient(180deg, rgba(33, 39, 67, 0.95), rgba(13, 17, 30, 0.96));
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(6px);
+}
+
+.party-top-hud {
+    position: relative;
+    z-index: 9;
+    padding: 8px 10px 6px;
+    background: linear-gradient(180deg, rgba(7, 8, 20, 0.92), rgba(7, 8, 20, 0.45));
+    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .party-track {
     display: flex;
     width: 200%;
+    flex: 1;
+    min-height: 0;
     transition: transform 0.28s ease;
     will-change: transform;
 }
 
 .party-slide {
     width: 50%;
+    height: 100%;
     flex-shrink: 0;
 }
 
 .party-view-btn {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 24px);
+    top: calc(env(safe-area-inset-top, 0px) + 68px);
     z-index: 8;
     border: 1px solid rgba(255,255,255,0.2);
     background: rgba(255,255,255,0.06);
@@ -709,6 +728,9 @@ body {
 .player-venue {
     display: flex;
     flex-direction: column;
+    min-height: 100%;
+    gap: 2px;
+    padding-bottom: max(1px, env(safe-area-inset-bottom, 0px));
 }
 
 .venue-header {
@@ -795,6 +817,70 @@ body {
     margin-bottom: 6px;
 }
 
+.venue-scene #player-slots,
+.venue-scene #rival-slots {
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    transform: translateX(-50%);
+    width: min(95%, 340px);
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 8px;
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    z-index: 4;
+}
+
+.venue-scene #player-slots::after,
+.venue-scene #rival-slots::after {
+    content: none !important;
+    display: none !important;
+}
+
+.venue-scene #player-slots .slot-heat,
+.venue-scene #rival-slots .slot-heat {
+    top: auto;
+    bottom: 3px;
+    right: 4px;
+    left: auto;
+    transform: none;
+    z-index: 1;
+}
+
+.player-venue .venue-scene {
+    flex: 1;
+    min-height: clamp(330px, 64vh, 570px);
+    margin-bottom: 0;
+    overflow: visible;
+}
+
+.player-venue .phone-hud {
+    width: 100%;
+    margin: 0;
+}
+
+.rival-venue {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    gap: 2px;
+    padding-bottom: max(1px, env(safe-area-inset-bottom, 0px));
+}
+
+.rival-venue .venue-scene {
+    flex: 1;
+    min-height: clamp(330px, 64vh, 570px);
+    margin-bottom: 0;
+    overflow: visible;
+}
+
+.rival-venue .phone-hud {
+    width: 100%;
+    margin: 0;
+}
+
 .scene-zone {
     position: absolute;
     border: 1px dashed rgba(255,255,255,0.2);
@@ -849,6 +935,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.scene-door.door-action-disabled {
+    opacity: 0.45;
+    cursor: default;
+    pointer-events: none;
 }
 
 .venue-scene .entry-area {
@@ -876,6 +970,44 @@ body {
 .venue-scene .door-label {
     position: absolute;
     top: 102%;
+    font-size: 0.44rem;
+}
+
+
+.player-venue #player-door,
+.player-venue #player-exit,
+.rival-venue #rival-door,
+.rival-venue #rival-exit {
+    display: none;
+}
+
+.slot-door-card {
+    position: absolute;
+    width: 40px;
+    height: 58px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: rgba(12, 14, 24, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    z-index: 5;
+}
+
+.slot-door-card.exit-side {
+    top: 8px;
+    left: 8px;
+}
+
+.slot-door-card.entry-side {
+    bottom: 10px;
+    right: max(6px, calc(50% - 212px));
+}
+
+.slot-door-card .door-label {
+    position: static;
     font-size: 0.44rem;
 }
 
@@ -1074,7 +1206,7 @@ body {
 
 .ability-icon-badge {
     position: absolute;
-    left: 50%;
+    left: 25%;
     bottom: 4px;
     transform: translateX(-50%);
     font-size: 0.55rem;
@@ -1239,47 +1371,63 @@ body {
 }
 
 /* === Center Feedback === */
+.phone-shell {
+    position: relative;
+    overflow: hidden;
+}
+
 .center-feedback {
-    min-height: 28px;
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 6px);
+    left: 50%;
+    width: min(calc(100vw - 24px), 456px);
+    transform: translateX(-50%);
+    z-index: 20;
     display: flex;
-    align-items: center;
     justify-content: center;
-    padding: 2px 12px;
-    flex-shrink: 0;
+    pointer-events: none;
 }
 
 .feedback-msg {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 3px 14px;
-    border-radius: 12px;
-    animation: feedbackPop 0.3s ease;
+    width: 100%;
+    max-width: 100%;
+    min-height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 5px 10px;
+    border-radius: 11px;
     text-align: center;
+    color: var(--text-primary);
+    background: rgba(20, 25, 42, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transform: translateY(-120%) scale(0.92);
+    animation: phoneNotificationDrop var(--feedback-duration, 2200ms) cubic-bezier(0.22, 0.8, 0.24, 1) forwards;
 }
 
 .feedback-msg.disruption {
-    background: rgba(255, 110, 110, 0.15);
-    color: var(--accent-primary);
-    border: 1px solid rgba(255, 110, 110, 0.3);
+    border-color: rgba(255, 110, 110, 0.45);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36), inset 3px 0 0 rgba(255, 110, 110, 0.75);
 }
 
 .feedback-msg.points {
-    background: rgba(76, 201, 240, 0.12);
-    color: var(--accent-blue);
-    border: 1px solid rgba(76, 201, 240, 0.3);
+    border-color: rgba(76, 201, 240, 0.45);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36), inset 3px 0 0 rgba(76, 201, 240, 0.75);
 }
 
 .feedback-msg.money {
-    background: rgba(255, 209, 102, 0.12);
-    color: var(--accent-tertiary);
-    border: 1px solid rgba(255, 209, 102, 0.3);
+    border-color: rgba(255, 209, 102, 0.5);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36), inset 3px 0 0 rgba(255, 209, 102, 0.78);
 }
 
 .feedback-msg.bust {
-    background: rgba(255, 50, 50, 0.2);
-    color: #ff4444;
-    border: 1px solid rgba(255, 50, 50, 0.4);
-    font-size: 0.85rem;
+    border-color: rgba(255, 68, 68, 0.55);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), inset 3px 0 0 rgba(255, 68, 68, 0.85);
 }
 
 /* === Bottom Panel === */
@@ -1287,6 +1435,33 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.context-panel-overlay {
+    position: absolute;
+    inset: 8px 10px max(8px, env(safe-area-inset-bottom, 0px));
+    z-index: 18;
+    pointer-events: none;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.context-panel {
+    width: 100%;
+    max-width: 100%;
+    max-height: min(56vh, 560px);
+    overflow-y: auto;
+    pointer-events: auto;
+    background: rgba(11, 13, 24, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.55);
+    padding: 10px;
+}
+
+#buy-phase-panel.context-panel {
+    max-height: min(74vh, 680px);
 }
 
 /* === Guest Detail === */
@@ -1313,7 +1488,7 @@ body {
 .guest-detail-content {
     display: flex;
     gap: 12px;
-    align-items: center;
+    align-items: flex-start;
     width: 100%;
 }
 
@@ -1359,6 +1534,15 @@ body {
     background: rgba(255, 209, 102, 0.1);
     border-radius: 6px;
     display: inline-block;
+}
+
+.guest-detail-flash-btn {
+    margin-left: auto;
+    align-self: flex-start;
+    min-height: 28px;
+    padding: 6px 12px;
+    font-size: 0.62rem;
+    letter-spacing: 0.5px;
 }
 
 /* === Action Buttons === */
@@ -1534,12 +1718,31 @@ body {
     background: var(--bg-medium);
     border: 2px solid var(--accent-secondary);
     border-radius: var(--radius-md);
-    padding: 10px 14px;
+    padding: 12px 14px 10px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.5);
     min-width: 160px;
     max-width: 220px;
-    pointer-events: none;
+    pointer-events: auto;
     animation: tooltipIn 0.15s ease;
+}
+
+.guest-tooltip .tt-stats-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.guest-tooltip .tt-ability-btn {
+    width: 33%;
+    min-width: 52px;
+    min-height: 0;
+    height: 22px;
+    font-size: 0.48rem;
+    line-height: 1;
+    padding: 0 6px;
+    border-radius: 999px;
+    align-self: center;
 }
 
 .effect-tooltip {
@@ -1571,7 +1774,7 @@ body {
 
 .guest-tooltip .tt-stats {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     font-size: 0.72rem;
     font-weight: 600;
 }
@@ -1720,6 +1923,7 @@ body {
 @media (max-height: 700px) {
     .venue-area { padding: 4px 8px; }
     .venue-scene { height: 180px; }
+    .player-venue .venue-scene { min-height: 220px; }
     .guest-detail { min-height: 50px; padding: 6px 10px; }
     .game-hud { padding: 4px 10px; }
 }
@@ -2334,41 +2538,35 @@ body {
     position: relative;
     right: auto;
     bottom: auto;
-    width: min(96%, 360px);
-    margin: 8px auto 0;
+    width: 100%;
+    margin: 8px 0 0;
     z-index: 7;
-    pointer-events: none;
-    animation: phoneRise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+    pointer-events: auto;
 }
 
 .phone-shell {
-    pointer-events: auto;
-    border-radius: 30px;
-    padding: 10px;
-    background: linear-gradient(160deg, #121724, #070a14 72%);
-    border: 1px solid rgba(255, 255, 255, 0.28);
-    box-shadow: 0 22px 42px rgba(0, 0, 0, 0.55), 0 0 22px rgba(76, 201, 240, 0.18);
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
 }
 
 .phone-speaker {
-    width: 84px;
-    height: 5px;
-    border-radius: 999px;
-    margin: 0 auto 8px;
-    background: rgba(255, 255, 255, 0.18);
+    display: none;
 }
 
 .phone-screen {
-    border-radius: 22px;
-    background: linear-gradient(180deg, rgba(33, 39, 67, 0.95), rgba(13, 17, 30, 0.96));
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    backdrop-filter: blur(6px);
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    backdrop-filter: none;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 10px;
-    max-height: min(62vh, 570px);
-    overflow-y: auto;
+    padding: 0;
+    max-height: none;
+    overflow: visible;
 }
 
 .phone-status-strip {
@@ -2378,18 +2576,24 @@ body {
     font-size: 0.66rem;
     text-transform: uppercase;
     letter-spacing: 0.7px;
+    gap: 6px;
 }
 .phone-round { color: var(--accent-gold); font-weight: 700; }
 .phone-phase { text-align: center; color: var(--text-primary); font-weight: 700; }
-.phone-connection { text-align: right; color: #8af7c7; }
-
-.phone-economy-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px 8px;
+.phone-connection {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
     font-size: 0.72rem;
     font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-primary);
 }
+
+.phone-connection #player-money { color: var(--accent-tertiary); }
+.phone-connection #hud-player-pts { color: var(--accent-blue); }
+
 
 .phone-heat-row {
     display: flex;
@@ -2421,17 +2625,16 @@ body {
     transition: width 0.25s ease;
 }
 
-.phone-grid-module {
-    background: rgba(7, 10, 20, 0.45);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 14px;
-    padding: 8px;
+.phone-screen.buy-phase-compact .phone-heat-row {
+    display: none;
 }
 
-.phone-screen.buy-phase-compact .phone-economy-row,
-.phone-screen.buy-phase-compact .phone-heat-row,
-.phone-screen.buy-phase-compact .phone-grid-module {
-    display: none;
+.party-top-hud .phone-status-strip {
+    font-size: 0.62rem;
+}
+
+.party-top-hud .phone-heat-row {
+    margin-top: 4px;
 }
 .phone-grid-title {
     color: var(--text-secondary);
@@ -2439,10 +2642,6 @@ body {
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 6px;
-}
-
-#player-slots {
-    justify-content: flex-end;
 }
 
 .phone-guest-actions {
@@ -2453,8 +2652,7 @@ body {
 
 .phone-hud .guest-detail { position: static; margin-bottom: 6px; min-height: 62px; }
 .phone-hud .guest-detail-ability { font-size: 0.66rem; }
-.phone-hud .action-buttons .btn { border-radius: 999px; min-height: 36px; font-size: 0.68rem; }
-.phone-hud .btn-admit { flex: 1.3; }
+.phone-hud .guest-detail-flash-btn { border-radius: 999px; }
 .phone-hud .shop-layout {
     max-height: 30vh;
     overflow-y: auto;
@@ -2482,4 +2680,23 @@ body {
 @keyframes phoneRise {
     from { transform: translateY(52px) rotate(-2deg); opacity: 0; }
     to { transform: translateY(0) rotate(0); opacity: 1; }
+}
+
+@keyframes phoneNotificationDrop {
+    0% {
+        opacity: 0;
+        transform: translateY(-120%) scale(0.92);
+    }
+    14% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    82% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-115%) scale(0.9);
+    }
 }
