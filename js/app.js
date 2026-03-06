@@ -915,16 +915,16 @@
     }
 
     function setGuestPhaseControls({ canAdmit = false, canClose = false, canFlash = false } = {}) {
-        const entryDoor = document.getElementById('player-door');
-        const exitDoor = document.getElementById('player-exit');
-        if (entryDoor) {
+        const entryDoors = [document.getElementById('player-door'), document.getElementById('player-door-card')].filter(Boolean);
+        const exitDoors = [document.getElementById('player-exit'), document.getElementById('player-exit-card')].filter(Boolean);
+        entryDoors.forEach((entryDoor) => {
             entryDoor.classList.toggle('door-action-disabled', !canAdmit);
             entryDoor.setAttribute('aria-disabled', canAdmit ? 'false' : 'true');
-        }
-        if (exitDoor) {
+        });
+        exitDoors.forEach((exitDoor) => {
             exitDoor.classList.toggle('door-action-disabled', !canClose);
             exitDoor.setAttribute('aria-disabled', canClose ? 'false' : 'true');
-        }
+        });
 
         const flashButton = document.getElementById('btn-ability');
         if (flashButton) flashButton.disabled = !canFlash;
@@ -1219,7 +1219,7 @@
 
     function renderRevealDoorIntel(who) {
         if (!gameState) return;
-        const doorEl = document.getElementById(`${who}-door`);
+        const doorEl = document.getElementById(who === 'player' ? 'player-door-card' : `${who}-door`);
         if (!doorEl) return;
 
         const player = who === 'player' ? gameState.player : gameState.rival;
@@ -2423,7 +2423,9 @@
             if (event.target.closest('#btn-ability')) handleAbility();
         });
         document.getElementById('player-door').addEventListener('click', handleAdmit);
+        document.getElementById('player-door-card').addEventListener('click', handleAdmit);
         document.getElementById('player-exit').addEventListener('click', handleCloseDoor);
+        document.getElementById('player-exit-card').addEventListener('click', handleCloseDoor);
 
         // Round results
         document.getElementById('btn-next-phase').addEventListener('click', handleNextPhase);
