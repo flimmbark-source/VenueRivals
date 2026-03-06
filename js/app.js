@@ -251,6 +251,7 @@
     function setPartyView(view, animate = true) {
         if (view !== 'player' && view !== 'rival') return;
         activePartyView = view;
+        removeTooltip();
         applyPartyView(animate);
         updateHUD();
         updateGuestDetail();
@@ -779,7 +780,7 @@
         el.dataset.guestId = guestId;
         if (animate) el.classList.add('entering');
         el.innerHTML = `
-            <span class="slot-stat slot-heat">🔥${guest.heat}</span>
+            <span class="slot-stat slot-heat">${guest.heat}</span>
             <span class="slot-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
             <span class="slot-stat slot-money">${guest.money}</span>
             ${renderAbilityBadge(guest)}
@@ -1000,7 +1001,7 @@
         }
 
         const abilityBtnHTML = tooltipWho === 'player'
-            ? `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>FLASH</button>`
+            ? `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>Ability</button>`
             : '';
 
         el.innerHTML = `
@@ -1044,7 +1045,12 @@
         // Defer listener attachment to allow current click to finish
         setTimeout(() => {
             const dismissTooltip = (clickEvent) => {
-                if (tooltipEl && !el.contains(clickEvent.target)) {
+                // Guard against stale document listeners from previous tooltips.
+                if (tooltipEl !== el) {
+                    document.removeEventListener('click', dismissTooltip);
+                    return;
+                }
+                if (!el.contains(clickEvent.target)) {
                     removeTooltip();
                     document.removeEventListener('click', dismissTooltip);
                 }
