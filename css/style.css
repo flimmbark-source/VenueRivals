@@ -800,6 +800,25 @@ body {
     margin-bottom: 6px;
 }
 
+.venue-scene #player-slots {
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    transform: translateX(-50%);
+    width: min(95%, 340px);
+    justify-content: center;
+    min-height: 58px;
+    padding: 4px 8px 8px;
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    z-index: 4;
+}
+
+.venue-scene #player-slots::after {
+    display: none;
+}
+
 .player-venue .venue-scene {
     flex: 1;
     min-height: clamp(330px, 64vh, 570px);
@@ -811,25 +830,6 @@ body {
 }
 
 
-.player-slots-dock {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    margin-top: -2px;
-    margin-bottom: 4px;
-    z-index: 6;
-}
-
-.player-slots-dock #player-slots {
-    flex: 0 1 auto;
-    justify-content: center;
-    min-height: 58px;
-    width: min(95%, 340px);
-    padding: 4px 8px 8px;
-    border-radius: 12px;
-    background: rgba(7, 10, 20, 0.45);
-    border: 1px solid rgba(255,255,255,0.1);
-}
 
 .scene-zone {
     position: absolute;
@@ -2488,10 +2488,6 @@ body {
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 6px;
-}
-
-#player-slots {
-    justify-content: center;
 }
 
 .phone-guest-actions {
