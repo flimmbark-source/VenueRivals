@@ -252,6 +252,8 @@
         if (view !== 'player' && view !== 'rival') return;
         activePartyView = view;
         applyPartyView(animate);
+        updateHUD();
+        updateGuestDetail();
     }
 
     function bindPartyCarouselInteractions() {
@@ -431,7 +433,6 @@
     function updateHUD() {
         if (!gameState) return;
         const p = gameState.player;
-        const pVenue = Game.VENUES[p.venueId];
         const includeProjectedRoundTotals =
             gameState.phase === 'guest' && gameState.guestPhaseScoredRound !== gameState.round;
 
@@ -451,11 +452,14 @@
             gameState.phase === 'guest' ? 'GUEST PHASE' :
                 gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
-        hudPlayerPtsEl.textContent = `⭐ ${p.points + (includeProjectedRoundTotals ? p.roundPoints : 0)}`;
-        playerMoneyEl.textContent = `💵 $${p.money + (includeProjectedRoundTotals ? p.roundMoney : 0)}`;
+        const r = gameState.rival;
+        const hudActor = activePartyView === 'rival' ? r : p;
+        hudPlayerPtsEl.textContent = `⭐ ${hudActor.points + (includeProjectedRoundTotals ? hudActor.roundPoints : 0)}`;
+        playerMoneyEl.textContent = `💵 $${hudActor.money + (includeProjectedRoundTotals ? hudActor.roundMoney : 0)}`;
 
-        updateHeatBar('player', p.heat, Game.getHeatCapacity(pVenue, p), p.busted);
-        updateHeatBar('rival', gameState.rival.heat, Game.getHeatCapacity(Game.VENUES[gameState.rival.venueId], gameState.rival), gameState.rival.busted);
+        const hudVenue = Game.VENUES[hudActor.venueId];
+        updateHeatBar('player', hudActor.heat, Game.getHeatCapacity(hudVenue, hudActor), hudActor.busted);
+        updateHeatBar('rival', r.heat, Game.getHeatCapacity(Game.VENUES[r.venueId], r), r.busted);
     }
 
     function updateHeatBar(who, heat, max, busted = false) {
@@ -522,14 +526,14 @@
     function getEntryDoorPosition(who) {
         const bounds = getSceneBounds(who) || { width: 280, height: 150 };
         const fallback = { x: bounds.width * 0.93, y: 12 };
-        const elementId = who === 'player' ? 'player-door-card' : `${who}-door`;
+        const elementId = who === 'player' ? 'player-door-card' : 'rival-door-card';
         return getDoorPositionFromElement(who, elementId, fallback);
     }
 
     function getExitDoorPosition(who) {
         const bounds = getSceneBounds(who) || { width: 280, height: 150 };
         const fallback = { x: 14, y: 14 };
-        const elementId = who === 'player' ? 'player-exit-card' : `${who}-exit`;
+        const elementId = who === 'player' ? 'player-exit-card' : 'rival-exit-card';
         return getDoorPositionFromElement(who, elementId, fallback);
     }
 
@@ -783,7 +787,7 @@
         `;
         el.title = `${guest.name} - ${guest.desc}`;
         if (options.interactive !== false) {
-            el.addEventListener('click', (e) => showTooltip(e, guestId));
+            el.addEventListener('click', (e) => showTooltip(e, guestId, options));
         }
         return el;
     }
@@ -793,7 +797,6 @@
         const slotsEl = document.getElementById(`${who}-slots`);
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
-        const allowGridTooltip = who === 'rival';
 
         const houseCapacity = Game.getHouseCapacity(venue, player);
         // Count occupied slots: house + arriving guest (cap to capacity for empties)
@@ -813,7 +816,7 @@
         }
         guests.forEach((entry) => {
             const guestId = entry.guestId || entry;
-            const slot = createGuestSlot(guestId, false, { interactive: allowGridTooltip });
+            const slot = createGuestSlot(guestId, false, { interactive: false });
             if (who === 'player') {
                 const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
@@ -829,6 +832,11 @@
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
+                    showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', instanceId });
+                });
+            } else {
+                slot.addEventListener('click', () => {
+                    showTooltipForTarget(slot, guestId, { who: 'rival', source: 'house' });
                 });
             }
             slotsEl.appendChild(slot);
@@ -836,7 +844,7 @@
 
         // Render arriving guest as the rightmost/newest slot
         if (player.arrivingGuest) {
-            const slot = createGuestSlot(player.arrivingGuest, false, { interactive: allowGridTooltip });
+            const slot = createGuestSlot(player.arrivingGuest, false, { interactive: false });
             slot.classList.add('arriving-in-grid');
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
@@ -848,6 +856,11 @@
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
+                    showTooltipForTarget(slot, player.arrivingGuest, { who: 'player', source: 'arriving' });
+                });
+            } else {
+                slot.addEventListener('click', () => {
+                    showTooltipForTarget(slot, player.arrivingGuest, { who: 'rival', source: 'arriving' });
                 });
             }
             slotsEl.appendChild(slot);
@@ -942,13 +955,13 @@
             exitDoor.setAttribute('aria-disabled', canClose ? 'false' : 'true');
         });
 
-        const flashButton = document.getElementById('btn-ability');
+        const flashButton = tooltipEl?.querySelector('#btn-tooltip-ability');
         if (flashButton) flashButton.disabled = !canFlash;
     }
 
     // === Guest Detail Panel ===
     function updateGuestDetail() {
-        const detailEl = document.getElementById('guest-detail');
+        if (!gameState) return;
         const p = gameState.player;
         syncSelectedGridGuest();
         const selectedGuestId = selectedGridGuest?.guestId || p.arrivingGuest;
@@ -960,92 +973,45 @@
         _lastGuestDetailKey = key;
 
         if (!p.arrivingGuest || p.doorClosed || p.busted) {
-            const emptyText = p.busted ? 'You busted! Round over.' :
-                p.doorClosed ? 'Door closed. Waiting for rival...' :
-                'No more guests.';
-            const curEmpty = detailEl.querySelector('.guest-detail-empty');
-            if (curEmpty && curEmpty.textContent === emptyText) {
-                setGuestPhaseControls({ canAdmit: false, canClose: false, canFlash: false });
-                return;
-            }
-            detailEl.innerHTML = '<div class="guest-detail-empty">' + emptyText + '</div>';
             setGuestPhaseControls({ canAdmit: false, canClose: false, canFlash: false });
             return;
         }
 
-        const guest = Game.GUESTS[selectedGuestId];
-        const venue = Game.VENUES[p.venueId];
-        const wouldBust = p.heat > Game.getHeatCapacity(venue, p);
-        let selectedHouseEntry = null;
-        if (selectedGuestSource === 'house') {
-            selectedHouseEntry = p.house.find((entry) => {
-                if (selectedGridGuest?.instanceId != null && typeof entry !== 'string') {
-                    return entry.instanceId === selectedGridGuest.instanceId;
-                }
-                return (entry.guestId || entry) === selectedGuestId;
-            }) || null;
-        }
         const canUseSelectedAbility = isPlayerFlashAvailable();
-
-        let abilityHTML = '';
-        if (guest.ability) {
-            abilityHTML = `<div class="guest-detail-ability">\u26A1 ${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
-        }
-
-        // If DOM already shows the same guest info, skip replacing innerHTML
-        const existingName = detailEl.querySelector('.guest-detail-name')?.textContent;
-        const existingMoney = detailEl.querySelector('.stat-money')?.textContent;
-        const existingPoints = detailEl.querySelector('.stat-points')?.textContent;
-        const existingHeat = detailEl.querySelector('.stat-heat')?.textContent || detailEl.querySelector('.stat-heat.danger')?.textContent;
-        const expectedMoney = `\u{1F4B5} ${guest.money}`;
-        const expectedPoints = `\u2B50 ${guest.points}`;
-        const expectedHeat = `\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}`;
-        if (existingName === guest.name && existingMoney === expectedMoney && existingPoints === expectedPoints && existingHeat === expectedHeat) {
-            setGuestPhaseControls({ canAdmit: true, canClose: true, canFlash: canUseSelectedAbility });
-            return;
-        }
-
-        detailEl.innerHTML = `
-            <div class="guest-detail-content">
-                <div class="guest-detail-emoji">${guest.emoji}</div>
-                <div class="guest-detail-info">
-                    <div class="guest-detail-name">${guest.name}</div>
-                    <div class="guest-detail-stats">
-                        <span class="stat-money">\u{1F4B5} ${guest.money}</span>
-                        <span class="stat-points">\u2B50 ${guest.points}</span>
-                        <span class="stat-heat${wouldBust ? ' danger' : ''}">\u{1F525} ${guest.heat}${wouldBust ? ' BUST!' : ''}</span>
-                    </div>
-                    ${abilityHTML}
-                    ${isPlayerFlashAvailable() ? '<div class="flash-available">FLASH AVAILABLE</div>' : ''}
-                </div>
-                <button class="btn btn-ability guest-detail-flash-btn" id="btn-ability" ${canUseSelectedAbility ? '' : 'disabled'}>
-                    <span>FLASH</span>
-                </button>
-            </div>
-        `;
 
         setGuestPhaseControls({ canAdmit: true, canClose: true, canFlash: canUseSelectedAbility });
     }
 
     // === Tooltip ===
-    function showTooltipForTarget(target, guestId) {
+    function showTooltipForTarget(target, guestId, options = {}) {
         if (!target) return;
         removeTooltip();
         const guest = Game.GUESTS[guestId];
+        if (!guest) return;
         const el = document.createElement('div');
         el.className = 'guest-tooltip';
+
+        const tooltipWho = options.who || 'rival';
+        const canTriggerAbility = tooltipWho === 'player' && isPlayerFlashAvailable();
 
         let abilityHTML = '';
         if (guest.ability) {
             abilityHTML = `<div class="tt-ability">${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
         }
 
+        const abilityBtnHTML = tooltipWho === 'player'
+            ? `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>FLASH</button>`
+            : '';
+
         el.innerHTML = `
             <div class="tt-name">${guest.emoji} ${guest.name}</div>
-            <div class="tt-stats">
-                <span class="stat-money">💵${guest.money}</span>
-                <span class="stat-points">⭐${guest.points}</span>
-                <span class="stat-heat">🔥${guest.heat}</span>
+            <div class="tt-stats-row">
+                <div class="tt-stats">
+                    <span class="stat-money">💵${guest.money}</span>
+                    <span class="stat-points">⭐${guest.points}</span>
+                    <span class="stat-heat">🔥${guest.heat}</span>
+                </div>
+                ${abilityBtnHTML}
             </div>
             ${abilityHTML}
         `;
@@ -1065,6 +1031,15 @@
         el.style.left = left + 'px';
         el.style.top = top + 'px';
 
+        const tooltipAbilityBtn = el.querySelector('#btn-tooltip-ability');
+        if (tooltipAbilityBtn) {
+            tooltipAbilityBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                handleAbility();
+            });
+        }
+
         // Dismiss on click anywhere outside the tooltip
         // Defer listener attachment to allow current click to finish
         setTimeout(() => {
@@ -1078,9 +1053,9 @@
         }, 0);
     }
 
-        function showTooltip(e, guestId) {
+        function showTooltip(e, guestId, options = {}) {
         e.stopPropagation();
-        showTooltipForTarget(e.currentTarget || e.target, guestId);
+        showTooltipForTarget(e.currentTarget || e.target, guestId, options);
     }
 
     function removeTooltip() {
@@ -2435,9 +2410,6 @@
         bindPartyCarouselInteractions();
 
         // Guest phase controls
-        document.getElementById('guest-detail').addEventListener('click', (event) => {
-            if (event.target.closest('#btn-ability')) handleAbility();
-        });
         document.getElementById('player-door').addEventListener('click', handleAdmit);
         document.getElementById('player-door-card').addEventListener('click', handleAdmit);
         document.getElementById('player-exit').addEventListener('click', handleCloseDoor);
