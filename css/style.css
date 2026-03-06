@@ -803,7 +803,7 @@ body {
 .venue-scene #player-slots {
     position: absolute;
     left: 50%;
-    bottom: 14px;
+    bottom: 24px;
     transform: translateX(-50%);
     width: min(95%, 340px);
     justify-content: center;
@@ -829,6 +829,7 @@ body {
     flex: 1;
     min-height: clamp(330px, 64vh, 570px);
     margin-bottom: 0;
+    overflow: visible;
 }
 
 .player-venue .phone-hud {
