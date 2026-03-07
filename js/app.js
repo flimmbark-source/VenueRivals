@@ -47,7 +47,7 @@
     const _spriteCache = {};
     const SPRITE_W = 12;
     const SPRITE_H = 16;
-    const SPRITE_SCALE = 2;
+    const SPRITE_SCALE = 2.7;
     const SPRITE_FRAMES = 4; // idle0, idle1, walk0, walk1
 
     const SKIN = {
@@ -474,6 +474,13 @@
         const fw = SPRITE_W * SPRITE_SCALE;
         const fh = SPRITE_H * SPRITE_SCALE;
         return `<div class="actor-sprite" style="background-image:url(${sheetUrl});width:${fw}px;height:${fh}px;background-position:0 0;background-size:${fw * SPRITE_FRAMES}px ${fh}px"></div>`;
+    }
+
+    function getGuestCardSpriteHtml(guestId) {
+        const sheetUrl = generateSpriteSheet(guestId);
+        const fw = SPRITE_W * SPRITE_SCALE;
+        const fh = SPRITE_H * SPRITE_SCALE;
+        return `<span class="slot-sprite" style="background-image:url(${sheetUrl});width:${fw}px;height:${fh}px;background-position:0 0;background-size:${fw * SPRITE_FRAMES}px ${fh}px" aria-hidden="true"></span>`;
     }
 
     const MIN_DECK_SIZE = 4;
@@ -1271,7 +1278,7 @@
         if (animate) el.classList.add('entering');
         el.innerHTML = `
             <span class="slot-stat slot-heat">${guest.heat}</span>
-            <span class="slot-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
+            <button type="button" class="slot-emoji slot-sprite-btn${guest.ability ? ' has-ability' : ''}" aria-label="${escapeHtml(guest.name)} sprite" tabindex="-1">${getGuestCardSpriteHtml(guestId)}</button>
             <span class="slot-stat slot-money">${guest.money}</span>
             ${renderAbilityBadge(guest)}
             <span class="slot-stat slot-points">${guest.points}</span>

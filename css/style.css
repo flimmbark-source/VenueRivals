@@ -737,13 +737,13 @@ body {
 /* --- Club Control Panel Tabs --- */
 .party-view-btn {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 68px);
-    z-index: 8;
+    top: calc(env(safe-area-inset-top, 0px) + 40px);
+    z-index: 10;
     border: 1px solid rgba(255,255,255,0.12);
-    border-bottom: 2px solid transparent;
+    border-top: 2px solid transparent;
     background: linear-gradient(180deg, rgba(20, 18, 38, 0.85), rgba(12, 10, 26, 0.9));
     color: var(--text-dim);
-    border-radius: 8px 8px 2px 2px;
+    border-radius: 2px 2px 8px 8px;
     padding: 5px 14px;
     min-width: 58px;
     font-family: 'Poppins', sans-serif;
@@ -752,9 +752,17 @@ body {
     letter-spacing: 1px;
     text-transform: uppercase;
     cursor: pointer;
+    transform: scaleY(-1), rotateX(180deg);
+    transform-origin: center top;
     transition: all 0.2s ease;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
+
+.party-view-btn-label {
+    display: block;
+    transform: scaleY(-1);
+}
+
 
 #btn-view-player { left: calc(50% - 64px); }
 #btn-view-rival { left: calc(50% + 6px); }
@@ -762,7 +770,7 @@ body {
 .party-view-btn.active {
     color: #fff;
     border-color: rgba(127, 90, 240, 0.4);
-    border-bottom-color: var(--accent-secondary);
+    border-top-color: var(--accent-secondary);
     background: linear-gradient(180deg, rgba(30, 26, 58, 0.95), rgba(18, 14, 38, 0.95));
     box-shadow:
         0 2px 8px rgba(0,0,0,0.4),
@@ -776,7 +784,7 @@ body {
 
 /* === Venue Area === */
 .venue-area {
-    padding: 8px 10px 8px;
+    padding: 8px 10px calc(12px + env(safe-area-inset-bottom, 0px));
     min-height: 100%;
     position: relative;
 }
@@ -1439,9 +1447,24 @@ body {
 .guest-slot .slot-emoji {
     position: absolute;
     left: 2px;
-    top: 25%;
+    top: 35%;
     transform: translateY(-50%);
-    font-size: 18px;
+}
+
+.guest-slot .slot-sprite-btn {
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: inherit;
+    line-height: 0;
+}
+
+.guest-slot .slot-sprite {
+    display: block;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    transform: scale(0.72);
+    transform-origin: left center;
 }
 
 .guest-slot .slot-emoji.has-ability {
@@ -1572,11 +1595,13 @@ body {
 
 .venue-info-panel {
     margin-top: 6px;
-    min-height: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .venue-heat-row {
-    margin-bottom: 4px;
+    margin-bottom: 0;
 }
 
 .venue-info-panel .phone-heat-text {
@@ -1588,10 +1613,13 @@ body {
 .venue-status {
     font-size: 0.7rem;
     text-align: Left;
-    min-height: 18px;
     color: var(--text-muted);
     font-weight: 600;
     letter-spacing: 0.5px;
+}
+
+.venue-status:empty {
+    display: none;
 }
 
 .venue-status.busted {
@@ -2917,11 +2945,11 @@ body {
 }
 
 .phone-guest-actions {
-    background: linear-gradient(180deg, rgba(20, 18, 38, 0.6), rgba(12, 10, 26, 0.5));
-    border-radius: 10px;
-    padding: 6px;
-    border: 1px solid rgba(127, 90, 240, 0.12);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
 }
 
 .phone-hud .guest-detail { position: static; margin-bottom: 6px; min-height: 62px; }
