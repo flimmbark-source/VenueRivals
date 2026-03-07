@@ -1902,11 +1902,17 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 52px;
     cursor: pointer;
     position: relative;
     user-select: none;
     -webkit-user-select: none;
     touch-action: manipulation;
+}
+
+.shop-card-wrapper .deck-card-name {
+    width: 52px;
+    margin-bottom: 4px;
 }
 
 .shop-card-wrapper::after {
@@ -1956,6 +1962,15 @@ body {
     cursor: inherit;
 }
 
+.shop-card-wrapper .slot-heat {
+    top: auto;
+    bottom: 3px;
+    right: 4px;
+    left: auto;
+    transform: none;
+    z-index: 1;
+}
+
 .shop-upgrades .slot-stat,
 .shop-upgrades .ability-icon-badge {
     display: none;
@@ -1967,19 +1982,19 @@ body {
     transform: translate(-50%, -50%);
 }
 
-.shop-card-name {
+.shop-upgrade-card-text {
     position: absolute;
-    bottom: 3px;
     left: 0;
     right: 0;
+    bottom: 3px;
     font-family: 'Poppins', sans-serif;
-    font-size: 0.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-size: 0.45rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: rgba(255, 255, 255, 0.95);
+    text-transform: uppercase;
     text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
     pointer-events: none;
 }
 

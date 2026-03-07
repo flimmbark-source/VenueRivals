@@ -1658,13 +1658,34 @@
 
         let pressTimer = null;
         let consumedPress = false;
+        let activePointerId = null;
+        let pressActive = false;
 
         const clearPressState = () => {
             if (pressTimer) {
                 clearTimeout(pressTimer);
                 pressTimer = null;
             }
+            pressActive = false;
+            activePointerId = null;
             el.classList.remove('purchase-arming');
+        };
+
+        const startPress = () => {
+            consumedPress = false;
+            clearPressState();
+            pressActive = true;
+            el.classList.add('purchase-arming');
+            pressTimer = setTimeout(() => {
+                pressTimer = null;
+                if (!pressActive) return;
+                consumedPress = tryPurchaseFromShop(guestId, guest.name, el);
+                pressActive = false;
+            }, holdMs);
+        };
+
+        const endPress = () => {
+            clearPressState();
         };
 
         el.addEventListener('click', (e) => {
@@ -1682,18 +1703,50 @@
 
         el.addEventListener('pointerdown', (e) => {
             if (e.pointerType === 'mouse' && e.button !== 0) return;
-            consumedPress = false;
-            clearPressState();
-            el.classList.add('purchase-arming');
-            pressTimer = setTimeout(() => {
-                pressTimer = null;
-                consumedPress = tryPurchaseFromShop(guestId, guest.name, el);
-            }, holdMs);
+            if (activePointerId !== null && activePointerId !== e.pointerId) return;
+            activePointerId = e.pointerId;
+            startPress();
+            e.preventDefault();
         });
 
-        el.addEventListener('pointerup', clearPressState);
-        el.addEventListener('pointercancel', clearPressState);
-        el.addEventListener('pointerleave', clearPressState);
+        el.addEventListener('pointerup', (e) => {
+            if (activePointerId !== null && e.pointerId !== activePointerId) return;
+            endPress();
+        });
+        el.addEventListener('pointercancel', (e) => {
+            if (activePointerId !== null && e.pointerId !== activePointerId) return;
+            endPress();
+        });
+
+        // Fallback for environments with partial pointer-event support.
+        el.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            if (window.PointerEvent) return;
+            startPress();
+            e.preventDefault();
+        });
+        el.addEventListener('mouseup', () => {
+            if (window.PointerEvent) return;
+            endPress();
+        });
+        el.addEventListener('mouseleave', () => {
+            if (window.PointerEvent) return;
+            endPress();
+        });
+
+        el.addEventListener('touchstart', (e) => {
+            if (window.PointerEvent) return;
+            startPress();
+            e.preventDefault();
+        }, { passive: false });
+        el.addEventListener('touchend', () => {
+            if (window.PointerEvent) return;
+            endPress();
+        });
+        el.addEventListener('touchcancel', () => {
+            if (window.PointerEvent) return;
+            endPress();
+        });
     }
 
     function getQueuedGuestPreview(player, count) {
@@ -2244,9 +2297,18 @@
 
     function renderShopCard(guestId, cost, canAfford, container) {
         const guest = Game.GUESTS[guestId];
+        const upgradeCardText = {
+            slotIncrease: '+1 slot',
+            heatCapIncrease: '+1 heat',
+        };
 
         const wrapper = document.createElement('div');
-        wrapper.className = 'shop-card-wrapper' + (canAfford ? '' : ' disabled');
+        wrapper.className = 'deck-manage-card shop-card-wrapper' + (canAfford ? '' : ' disabled');
+
+        const nameLabel = document.createElement('div');
+        nameLabel.className = 'deck-card-name' + (guest.ability ? ' has-ability' : '');
+        nameLabel.textContent = guest.name;
+        wrapper.appendChild(nameLabel);
 
         const costLabel = document.createElement('div');
         costLabel.className = 'shop-card-cost';
@@ -2255,14 +2317,15 @@
 
         const slot = createGuestSlot(guestId, false, { interactive: false });
         slot.removeAttribute('title');
-        wrapper.appendChild(slot);
 
         if (guest.isShopItem) {
-            const nameLabel = document.createElement('div');
-            nameLabel.className = 'shop-card-name';
-            nameLabel.textContent = guest.name;
-            slot.appendChild(nameLabel);
+            const upgradeText = document.createElement('div');
+            upgradeText.className = 'shop-upgrade-card-text';
+            upgradeText.textContent = upgradeCardText[guestId] || guest.name;
+            slot.appendChild(upgradeText);
         }
+
+        wrapper.appendChild(slot);
 
         bindShopCardInteractions(wrapper, guestId, canAfford);
 
