@@ -1623,7 +1623,7 @@
     }
 
 
-    function bindGuestTooltipHoldInteractions(el, guestId) {
+    function bindGuestInfoPopupHoldInteractions(el, guestId) {
         if (!el || !guestId) return;
 
         let pressTimer = null;
@@ -1642,7 +1642,7 @@
             didLongPress = false;
             clearPressTimer();
             pressTimer = setTimeout(() => {
-                showTooltipForTarget(el, guestId);
+                showGuestAbilityPopup(guestId);
                 didLongPress = true;
                 pressTimer = null;
             }, 420);
@@ -2270,7 +2270,7 @@
             slot.appendChild(nameLabel);
         }
 
-        bindGuestTooltipHoldInteractions(wrapper, guestId);
+        bindGuestInfoPopupHoldInteractions(wrapper, guestId);
 
         const slotEmoji = slot.querySelector('.slot-emoji');
         if (slotEmoji && guest.ability) {
