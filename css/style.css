@@ -1575,6 +1575,19 @@ body {
     transform: none;
 }
 
+.venue-info-panel {
+    margin-top: 6px;
+    min-height: 30px;
+}
+
+.venue-heat-row {
+    margin-bottom: 4px;
+}
+
+.venue-info-panel .phone-heat-text {
+    min-width: 64px;
+}
+
 
 /* === Venue Status === */
 .venue-status {
