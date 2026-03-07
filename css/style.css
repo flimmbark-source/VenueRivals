@@ -1441,7 +1441,7 @@ body {
 .guest-slot .slot-emoji {
     position: absolute;
     left: 2px;
-    top: 25%;
+    top: 35%;
     transform: translateY(-50%);
 }
 

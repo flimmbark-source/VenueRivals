@@ -47,7 +47,7 @@
     const _spriteCache = {};
     const SPRITE_W = 12;
     const SPRITE_H = 16;
-    const SPRITE_SCALE = 2;
+    const SPRITE_SCALE = 2.7;
     const SPRITE_FRAMES = 4; // idle0, idle1, walk0, walk1
 
     const SKIN = {
