@@ -737,13 +737,13 @@ body {
 /* --- Club Control Panel Tabs --- */
 .party-view-btn {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 68px);
+    top: calc(env(safe-area-inset-top, 0px) + 82px);
     z-index: 8;
     border: 1px solid rgba(255,255,255,0.12);
-    border-bottom: 2px solid transparent;
+    border-top: 2px solid transparent;
     background: linear-gradient(180deg, rgba(20, 18, 38, 0.85), rgba(12, 10, 26, 0.9));
     color: var(--text-dim);
-    border-radius: 8px 8px 2px 2px;
+    border-radius: 2px 2px 8px 8px;
     padding: 5px 14px;
     min-width: 58px;
     font-family: 'Poppins', sans-serif;
@@ -752,8 +752,10 @@ body {
     letter-spacing: 1px;
     text-transform: uppercase;
     cursor: pointer;
+    transform: translateY(-100%) rotate(180deg);
+    transform-origin: center bottom;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.3);
 }
 
 #btn-view-player { left: calc(50% - 64px); }
@@ -762,10 +764,10 @@ body {
 .party-view-btn.active {
     color: #fff;
     border-color: rgba(127, 90, 240, 0.4);
-    border-bottom-color: var(--accent-secondary);
+    border-top-color: var(--accent-secondary);
     background: linear-gradient(180deg, rgba(30, 26, 58, 0.95), rgba(18, 14, 38, 0.95));
     box-shadow:
-        0 2px 8px rgba(0,0,0,0.4),
+        0 -2px 8px rgba(0,0,0,0.4),
         0 0 12px rgba(127, 90, 240, 0.15);
 }
 
@@ -776,7 +778,7 @@ body {
 
 /* === Venue Area === */
 .venue-area {
-    padding: 8px 10px 8px;
+    padding: 8px 10px calc(12px + env(safe-area-inset-bottom, 0px));
     min-height: 100%;
     position: relative;
 }
@@ -1572,11 +1574,13 @@ body {
 
 .venue-info-panel {
     margin-top: 6px;
-    min-height: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .venue-heat-row {
-    margin-bottom: 4px;
+    margin-bottom: 0;
 }
 
 .venue-info-panel .phone-heat-text {
@@ -1588,10 +1592,13 @@ body {
 .venue-status {
     font-size: 0.7rem;
     text-align: Left;
-    min-height: 18px;
     color: var(--text-muted);
     font-weight: 600;
     letter-spacing: 0.5px;
+}
+
+.venue-status:empty {
+    display: none;
 }
 
 .venue-status.busted {
