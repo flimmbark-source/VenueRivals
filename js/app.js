@@ -1661,19 +1661,22 @@
         let activePointerId = null;
         let pressActive = false;
 
-        const clearPressState = () => {
+        const clearPressState = (options = {}) => {
+            const releasePointer = options.releasePointer !== false;
             if (pressTimer) {
                 clearTimeout(pressTimer);
                 pressTimer = null;
             }
             pressActive = false;
-            activePointerId = null;
+            if (releasePointer) {
+                activePointerId = null;
+            }
             el.classList.remove('purchase-arming');
         };
 
         const startPress = () => {
             consumedPress = false;
-            clearPressState();
+            clearPressState({ releasePointer: false });
             pressActive = true;
             el.classList.add('purchase-arming');
             pressTimer = setTimeout(() => {
@@ -1705,6 +1708,13 @@
             if (e.pointerType === 'mouse' && e.button !== 0) return;
             if (activePointerId !== null && activePointerId !== e.pointerId) return;
             activePointerId = e.pointerId;
+            if (el.setPointerCapture) {
+                try {
+                    el.setPointerCapture(e.pointerId);
+                } catch (_) {
+                    // Ignore: capture can fail if pointer is no longer active.
+                }
+            }
             startPress();
             e.preventDefault();
         });
@@ -1714,6 +1724,10 @@
             endPress();
         });
         el.addEventListener('pointercancel', (e) => {
+            if (activePointerId !== null && e.pointerId !== activePointerId) return;
+            endPress();
+        });
+        el.addEventListener('lostpointercapture', (e) => {
             if (activePointerId !== null && e.pointerId !== activePointerId) return;
             endPress();
         });
