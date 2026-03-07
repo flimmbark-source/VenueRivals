@@ -1903,6 +1903,39 @@ body {
     flex-direction: column;
     align-items: center;
     cursor: pointer;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.shop-card-wrapper::after {
+    content: '';
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    bottom: -4px;
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(255, 209, 102, 0.2);
+    transform: scaleX(0);
+    transform-origin: left center;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.shop-card-wrapper.purchase-arming::after {
+    opacity: 1;
+    animation: shopHoldProgress 1.3s linear forwards;
+}
+
+.shop-card-wrapper.purchase-arming .guest-slot {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.25);
+}
+
+.shop-card-wrapper.purchase-confirmed .guest-slot {
+    animation: shopPurchasePulse 0.22s ease;
 }
 
 .shop-card-wrapper:hover .guest-slot {
@@ -1958,6 +1991,17 @@ body {
 }
 
 #buy-phase-panel .btn { width: 100%; }
+
+@keyframes shopHoldProgress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+@keyframes shopPurchasePulse {
+    0% { transform: scale(1); }
+    60% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
 
 /* === Guest Tooltip (popup on slot click) === */
 .guest-tooltip {
