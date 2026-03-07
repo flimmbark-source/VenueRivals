@@ -1626,7 +1626,7 @@
     }
 
 
-    function bindGuestInfoPopupHoldInteractions(el, guestId) {
+    function bindShopCardTooltipHoldInteractions(el, guestId) {
         if (!el || !guestId) return;
 
         let pressTimer = null;
@@ -1645,7 +1645,7 @@
             didLongPress = false;
             clearPressTimer();
             pressTimer = setTimeout(() => {
-                showGuestAbilityPopup(guestId);
+                showTooltipForTarget(el, guestId, { who: 'shop', source: 'shop' });
                 didLongPress = true;
                 pressTimer = null;
             }, 420);
@@ -2273,7 +2273,7 @@
             slot.appendChild(nameLabel);
         }
 
-        bindGuestInfoPopupHoldInteractions(wrapper, guestId);
+        bindShopCardTooltipHoldInteractions(wrapper, guestId);
 
         const slotEmoji = slot.querySelector('.slot-emoji');
         if (slotEmoji && guest.ability) {
