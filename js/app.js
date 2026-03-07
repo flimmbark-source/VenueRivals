@@ -476,6 +476,13 @@
         return `<div class="actor-sprite" style="background-image:url(${sheetUrl});width:${fw}px;height:${fh}px;background-position:0 0;background-size:${fw * SPRITE_FRAMES}px ${fh}px"></div>`;
     }
 
+    function getGuestCardSpriteHtml(guestId) {
+        const sheetUrl = generateSpriteSheet(guestId);
+        const fw = SPRITE_W * SPRITE_SCALE;
+        const fh = SPRITE_H * SPRITE_SCALE;
+        return `<span class="slot-sprite" style="background-image:url(${sheetUrl});width:${fw}px;height:${fh}px;background-position:0 0;background-size:${fw * SPRITE_FRAMES}px ${fh}px" aria-hidden="true"></span>`;
+    }
+
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
     const ABLY_API_KEY = '_tDhUg.HYf2eA:VPJbNYIBgqUrolL5QzcLSyj4XRCheq3cizKtHVAtGCA';
@@ -1271,7 +1278,7 @@
         if (animate) el.classList.add('entering');
         el.innerHTML = `
             <span class="slot-stat slot-heat">${guest.heat}</span>
-            <span class="slot-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
+            <button type="button" class="slot-emoji slot-sprite-btn${guest.ability ? ' has-ability' : ''}" aria-label="${escapeHtml(guest.name)} sprite" tabindex="-1">${getGuestCardSpriteHtml(guestId)}</button>
             <span class="slot-stat slot-money">${guest.money}</span>
             ${renderAbilityBadge(guest)}
             <span class="slot-stat slot-points">${guest.points}</span>

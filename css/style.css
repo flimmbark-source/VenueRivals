@@ -1443,7 +1443,22 @@ body {
     left: 2px;
     top: 25%;
     transform: translateY(-50%);
-    font-size: 18px;
+}
+
+.guest-slot .slot-sprite-btn {
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: inherit;
+    line-height: 0;
+}
+
+.guest-slot .slot-sprite {
+    display: block;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    transform: scale(0.72);
+    transform-origin: left center;
 }
 
 .guest-slot .slot-emoji.has-ability {
