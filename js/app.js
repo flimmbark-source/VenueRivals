@@ -1654,7 +1654,8 @@
     function bindShopCardInteractions(el, guestId, canAfford) {
         if (!el || !guestId) return;
         const guest = Game.GUESTS[guestId];
-        const holdMs = 1300;
+        // Keep hold threshold below common mobile long-press context-menu delays.
+        const holdMs = 550;
 
         let pressTimer = null;
         let consumedPress = false;
@@ -1700,6 +1701,10 @@
             }
             e.stopPropagation();
             showTooltipForTarget(el, guestId, { who: 'shop', source: 'shop' });
+        });
+
+        el.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
         });
 
         if (!canAfford) return;
