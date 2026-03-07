@@ -1623,83 +1623,77 @@
     }
 
 
-    function bindShopCardTooltipHoldInteractions(el, guestId) {
-        if (!el || !guestId) return;
+    function tryPurchaseFromShop(guestId, guestName, wrapper) {
+        if (!guestId || !gameState || gameState.phase !== 'buy') return false;
 
-        let pressTimer = null;
-        let didLongPress = false;
-
-        const clearPressTimer = () => {
-            if (pressTimer) {
-                clearTimeout(pressTimer);
-                pressTimer = null;
+        if (isMultiplayer() && multiplayerRole === 'join') {
+            multiplayerSession?.publish('request-action', { action: 'buy', actor: 'rival', guestId });
+            showFeedback(`Bought ${guestName}!`, 'money', 1500);
+            if (wrapper) {
+                wrapper.classList.remove('purchase-arming');
+                wrapper.classList.add('purchase-confirmed');
+                setTimeout(() => wrapper.classList.remove('purchase-confirmed'), 240);
             }
-        };
+            return true;
+        }
 
-        const onPressStart = (e) => {
-            if (e.target.closest('.slot-emoji.has-ability')) return;
-            if (e.pointerType === 'mouse' && e.button !== 0) return;
-            didLongPress = false;
-            clearPressTimer();
-            pressTimer = setTimeout(() => {
-                showTooltipForTarget(el, guestId, { who: 'shop', source: 'shop' });
-                didLongPress = true;
-                pressTimer = null;
-            }, 420);
-        };
+        if (!Game.buyGuest(gameState.player, guestId)) return false;
 
-        el.addEventListener('pointerdown', onPressStart);
-        el.addEventListener('pointerup', clearPressTimer);
-        el.addEventListener('pointercancel', clearPressTimer);
-        el.addEventListener('pointerleave', clearPressTimer);
-
-        // Swallow the click that fires after a long-press so it doesn't buy immediately.
-        el.addEventListener('click', (e) => {
-            if (!didLongPress) return;
-            e.preventDefault();
-            e.stopPropagation();
-            didLongPress = false;
-        }, true);
+        showFeedback(`Bought ${guestName}!`, 'money', 1500);
+        if (wrapper) {
+            wrapper.classList.remove('purchase-arming');
+            wrapper.classList.add('purchase-confirmed');
+            setTimeout(() => wrapper.classList.remove('purchase-confirmed'), 240);
+        }
+        renderShop();
+        updateHUD();
+        publishState();
+        return true;
     }
 
-    function bindAbilityTooltipInteractions(el, message) {
-        if (!el || !message) return;
+    function bindShopCardInteractions(el, guestId, canAfford) {
+        if (!el || !guestId) return;
+        const guest = Game.GUESTS[guestId];
+        const holdMs = 1300;
 
         let pressTimer = null;
-        let didLongPress = false;
+        let consumedPress = false;
 
-        el.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (didLongPress) {
-                didLongPress = false;
-                return;
-            }
-            showIconTooltip(e, message, true);
-        });
-
-        el.addEventListener('touchstart', (e) => {
-            e.stopPropagation();
-            didLongPress = false;
-            pressTimer = setTimeout(() => {
-                showIconTooltip(e, message, true);
-                didLongPress = true;
-                pressTimer = null;
-            }, 420);
-        }, { passive: true });
-
-        const clearPressTimer = () => {
+        const clearPressState = () => {
             if (pressTimer) {
                 clearTimeout(pressTimer);
                 pressTimer = null;
             }
+            el.classList.remove('purchase-arming');
         };
 
-        el.addEventListener('touchend', (e) => {
+        el.addEventListener('click', (e) => {
+            if (consumedPress) {
+                consumedPress = false;
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
             e.stopPropagation();
-            clearPressTimer();
-        }, { passive: true });
-        el.addEventListener('touchcancel', clearPressTimer, { passive: true });
-        el.addEventListener('touchmove', clearPressTimer, { passive: true });
+            showTooltipForTarget(el, guestId, { who: 'shop', source: 'shop' });
+        });
+
+        if (!canAfford) return;
+
+        el.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            consumedPress = false;
+            clearPressState();
+            el.classList.add('purchase-arming');
+            pressTimer = setTimeout(() => {
+                pressTimer = null;
+                consumedPress = tryPurchaseFromShop(guestId, guest.name, el);
+            }, holdMs);
+        });
+
+        el.addEventListener('pointerup', clearPressState);
+        el.addEventListener('pointercancel', clearPressState);
+        el.addEventListener('pointerleave', clearPressState);
     }
 
     function getQueuedGuestPreview(player, count) {
@@ -2270,29 +2264,7 @@
             slot.appendChild(nameLabel);
         }
 
-        bindShopCardTooltipHoldInteractions(wrapper, guestId);
-
-        const slotEmoji = slot.querySelector('.slot-emoji');
-        if (slotEmoji && guest.ability) {
-            const abilityMessage = `${guest.ability.name}: ${guest.ability.desc}`;
-            bindAbilityTooltipInteractions(slotEmoji, abilityMessage);
-        }
-
-        if (canAfford) {
-            wrapper.addEventListener('click', () => {
-                if (isMultiplayer() && multiplayerRole === 'join') {
-                    multiplayerSession?.publish('request-action', { action: 'buy', actor: 'rival', guestId });
-                    showFeedback(`Bought ${guest.name}!`, 'money', 1500);
-                    return;
-                }
-                if (Game.buyGuest(gameState.player, guestId)) {
-                    showFeedback(`Bought ${guest.name}!`, 'money', 1500);
-                    renderShop();
-                    updateHUD();
-                    publishState();
-                }
-            });
-        }
+        bindShopCardInteractions(wrapper, guestId, canAfford);
 
         container.appendChild(wrapper);
     }
