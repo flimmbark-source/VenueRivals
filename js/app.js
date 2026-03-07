@@ -34,11 +34,456 @@
     let activePartyView = 'player';
     let swipeStartX = null;
     let playerFlashWindowInstanceId = null;
+    let venueBackgroundPreloadImage = null;
 
+    const VENUE_BACKGROUND_IMAGE_SRC = 'css/public/Venue1.png';
     const ACTOR_TICK_MS = 50;
     const ACTOR_MIN_SPEED = 0.65;
     const ACTOR_DISTANCE_SPEED_FACTOR = 0.065;
     const ACTOR_MAX_SPEED = 4.2;
+
+    // === Pixel Sprite Generator (Multi-frame) ===
+    // Generates 4-frame sprite sheets: idle0, idle1, walk0, walk1.
+    // Each frame is 12x16 pixels at 2x scale (24x32 rendered).
+    // Cached as a single horizontal strip data URL per guest.
+    const _spriteCache = {};
+    const SPRITE_W = 12;
+    const SPRITE_H = 16;
+    const SPRITE_SCALE = 2.7;
+    const SPRITE_FRAMES = 4; // idle0, idle1, walk0, walk1
+
+    const SKIN = {
+        light:  '#f5d6b8',
+        medium: '#e8c49a',
+        tan:    '#d4a574',
+        brown:  '#a67c52',
+        dark:   '#6b4226',
+    };
+    function skinShade(base, amt) {
+        // darken a hex color for shadow detail
+        const n = parseInt(base.slice(1), 16);
+        const r = Math.max(0, ((n>>16)&0xff) - amt);
+        const g = Math.max(0, ((n>>8)&0xff) - amt);
+        const b = Math.max(0, (n&0xff) - amt);
+        return `rgb(${r},${g},${b})`;
+    }
+    function colorShade(hex, amt) {
+        if (hex.startsWith('rgb')) return hex;
+        const n = parseInt(hex.slice(1), 16);
+        const r = Math.max(0, Math.min(255, ((n>>16)&0xff) + amt));
+        const g = Math.max(0, Math.min(255, ((n>>8)&0xff) + amt));
+        const b = Math.max(0, Math.min(255, (n&0xff) + amt));
+        return `rgb(${r},${g},${b})`;
+    }
+
+    const HAIR_COLORS = {
+        black:  '#1a1a2e', brown:  '#5c3a1e', blonde: '#e8c44c',
+        red:    '#b83c28', white:  '#d8d8e8', blue:   '#4488cc',
+        purple: '#8844aa', green:  '#44aa66', pink:   '#e866aa',
+        orange: '#e88833', silver: '#aaaacc',
+    };
+
+    // Blueprint: { skin, hair, hairColor, shirt, pants, shoes, items[] }
+    // hair:  'short','spiky','long','slick','bald','mohawk','cap','tophat','hood','bandana','beanie','ponytail','afro','pigtails'
+    // items: 'glasses','shades','monocle','mask','scar',
+    //        'bowtie','tie','chain','badge','earring',
+    //        'scarf','bag','backpack','camera','clipboard','headphones',
+    //        'cape','vest','apron','holster','cane','crown','gloves','bandolier'
+    const GUEST_SPRITES = {
+        regular:       { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#7788aa', pants:'#445566', shoes:'#333344', items:[] },
+        chiller:       { skin:'light',  hair:'slick',    hairColor:'blue',   shirt:'#44aadd', pants:'#335577', shoes:'#224466', items:['shades','scarf'] },
+        tipper:        { skin:'medium', hair:'short',    hairColor:'black',  shirt:'#2cb67d', pants:'#445544', shoes:'#333333', items:['bowtie','chain'] },
+        tipOffArtist:  { skin:'tan',    hair:'slick',    hairColor:'black',  shirt:'#333344', pants:'#222233', shoes:'#111122', items:['shades','holster'] },
+        hypeFriend:    { skin:'medium', hair:'spiky',    hairColor:'orange', shirt:'#ffaa33', pants:'#886622', shoes:'#664411', items:['headphones'] },
+        hypester:      { skin:'tan',    hair:'spiky',    hairColor:'red',    shirt:'#ee4422', pants:'#882211', shoes:'#661100', items:['earring','chain','vest'] },
+        standIn:       { skin:'light',  hair:'long',     hairColor:'purple', shirt:'#7755bb', pants:'#554488', shoes:'#332266', items:['mask','cape'] },
+        usher:         { skin:'medium', hair:'slick',    hairColor:'black',  shirt:'#222233', pants:'#111122', shoes:'#0a0a18', items:['gloves','badge'] },
+        floorRunner:   { skin:'tan',    hair:'bandana',  hairColor:'brown',  shirt:'#55cc77', pants:'#336644', shoes:'#224422', items:['badge','backpack'] },
+        bookkeeper:    { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#bbaa77', pants:'#665544', shoes:'#443322', items:['glasses','clipboard'] },
+        rovingCritic:  { skin:'light',  hair:'tophat',   hairColor:'white',  shirt:'#886644', pants:'#443322', shoes:'#221100', items:['monocle','cane'] },
+        partyPromoter: { skin:'medium', hair:'afro',     hairColor:'blonde', shirt:'#ee6633', pants:'#aa4422', shoes:'#882211', items:['headphones','chain'] },
+        bigSpender:    { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#ffd166', pants:'#aa8833', shoes:'#886622', items:['bowtie','bag','crown'] },
+        celebrity:     { skin:'tan',    hair:'long',     hairColor:'blonde', shirt:'#dd33aa', pants:'#882266', shoes:'#661155', items:['shades','scarf','earring'] },
+        headliner:     { skin:'medium', hair:'ponytail', hairColor:'pink',   shirt:'#ffcc00', pants:'#aa8800', shoes:'#886600', items:['earring','cape','crown'] },
+        champagneHost: { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#111122', pants:'#0a0a18', shoes:'#050510', items:['bowtie','vest'] },
+        velvetBouncer: { skin:'dark',   hair:'bald',     hairColor:'black',  shirt:'#222233', pants:'#111122', shoes:'#0a0a18', items:['badge','earring'] },
+        spotlightPhotographer: { skin:'medium', hair:'beanie', hairColor:'brown', shirt:'#666688', pants:'#444466', shoes:'#333355', items:['camera','bag'] },
+        galleryScout:  { skin:'tan',    hair:'cap',      hairColor:'brown',  shirt:'#558844', pants:'#445533', shoes:'#334422', items:['backpack'] },
+        trendBroker:   { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#334466', pants:'#222244', shoes:'#111133', items:['glasses','tie','clipboard'] },
+        curioDealer:   { skin:'medium', hair:'cap',      hairColor:'red',    shirt:'#885533', pants:'#664422', shoes:'#553311', items:['earring','bag','apron'] },
+        stylist:       { skin:'light',  hair:'pigtails', hairColor:'pink',   shirt:'#cc44cc', pants:'#883388', shoes:'#662266', items:['scarf','bag'] },
+        gateRunner:    { skin:'tan',    hair:'hood',     hairColor:'black',  shirt:'#cc2222', pants:'#661111', shoes:'#440000', items:['scar','bandolier'] },
+        wheelman:      { skin:'medium', hair:'cap',      hairColor:'brown',  shirt:'#555555', pants:'#333333', shoes:'#222222', items:['shades','gloves'] },
+        fence:         { skin:'dark',   hair:'hood',     hairColor:'black',  shirt:'#444433', pants:'#332222', shoes:'#221111', items:['bag','holster'] },
+        provocateur:   { skin:'tan',    hair:'mohawk',   hairColor:'red',    shirt:'#881133', pants:'#440022', shoes:'#330011', items:['scar','chain','earring'] },
+        gatecrasher:   { skin:'dark',   hair:'mohawk',   hairColor:'red',    shirt:'#aa1111', pants:'#551111', shoes:'#330000', items:['scar','bandolier'] },
+    };
+
+    // ---- Sprite drawing engine ----
+    function generateSpriteSheet(guestId) {
+        if (_spriteCache[guestId]) return _spriteCache[guestId];
+
+        const bp = GUEST_SPRITES[guestId] || GUEST_SPRITES.regular;
+        const skin = SKIN[bp.skin] || SKIN.light;
+        const skinDark = skinShade(skin, 30);
+        const hairC = HAIR_COLORS[bp.hairColor] || bp.hairColor;
+        const hairHi = colorShade(hairC, 30);
+        const shirt = bp.shirt;
+        const shirtHi = colorShade(shirt, 20);
+        const shirtLo = colorShade(shirt, -25);
+        const pants = bp.pants;
+        const pantsLo = colorShade(pants, -20);
+        const shoes = bp.shoes;
+        const items = new Set(bp.items);
+
+        const fw = SPRITE_W * SPRITE_SCALE;
+        const fh = SPRITE_H * SPRITE_SCALE;
+        const canvas = document.createElement('canvas');
+        canvas.width = fw * SPRITE_FRAMES;
+        canvas.height = fh;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        const s = SPRITE_SCALE;
+
+        // Draw each frame
+        for (let f = 0; f < SPRITE_FRAMES; f++) {
+            const ox = f * SPRITE_W; // pixel offset for this frame
+            const isIdle = f < 2;
+            const frameIdx = f % 2; // 0 or 1 for the two sub-poses
+
+            function px(x, y, color) {
+                ctx.fillStyle = color;
+                ctx.fillRect((ox + x) * s, y * s, s, s);
+            }
+
+            // Idle frames: frameIdx 0 = neutral, frameIdx 1 = slight bob (arms shift)
+            // Walk frames: frameIdx 0 = left leg fwd, frameIdx 1 = right leg fwd
+
+            // ---- HAIR (rows 0-3) ----
+            switch (bp.hair) {
+                case 'spiky':
+                    px(4,0,hairC); px(6,0,hairC); px(8,0,hairC);
+                    px(3,1,hairHi); px(5,1,hairC); px(7,1,hairC);
+                    for (let x=3;x<=8;x++) px(x,2,hairC);
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    break;
+                case 'long':
+                    for (let x=4;x<=7;x++) px(x,0,hairC);
+                    for (let x=3;x<=8;x++) px(x,1,hairC);
+                    for (let x=3;x<=8;x++) px(x,2,hairC);
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    px(3,4,hairC); px(8,4,hairC);
+                    px(3,5,hairC); px(8,5,hairC);
+                    break;
+                case 'slick':
+                    for (let x=4;x<=7;x++) px(x,1,hairC);
+                    for (let x=3;x<=8;x++) px(x,2,hairHi);
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    break;
+                case 'bald':
+                    for (let x=4;x<=7;x++) px(x,2,skinDark);
+                    for (let x=3;x<=8;x++) px(x,3,skin);
+                    break;
+                case 'mohawk':
+                    px(5,0,hairC); px(6,0,hairC);
+                    px(5,1,hairHi); px(6,1,hairHi);
+                    px(5,2,hairC); px(6,2,hairC);
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    break;
+                case 'cap':
+                    for (let x=2;x<=9;x++) px(x,2,shirt);
+                    px(2,3,shirt);
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    break;
+                case 'tophat':
+                    for (let x=4;x<=7;x++) px(x,0,hairC);
+                    for (let x=4;x<=7;x++) px(x,1,hairC);
+                    for (let x=3;x<=8;x++) px(x,2,colorShade(hairC, -20));
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    break;
+                case 'hood':
+                    for (let x=3;x<=8;x++) px(x,1,shirtLo);
+                    for (let x=3;x<=8;x++) px(x,2,shirt);
+                    for (let x=3;x<=8;x++) px(x,3,shirt);
+                    px(3,4,shirt); px(8,4,shirt);
+                    break;
+                case 'bandana':
+                    for (let x=3;x<=8;x++) px(x,2,'#cc3333');
+                    px(9,3,'#cc3333'); // trailing end
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    break;
+                case 'beanie':
+                    for (let x=3;x<=8;x++) px(x,1,shirt);
+                    for (let x=3;x<=8;x++) px(x,2,colorShade(shirt,30));
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    break;
+                case 'ponytail':
+                    for (let x=4;x<=7;x++) px(x,1,hairC);
+                    for (let x=3;x<=8;x++) px(x,2,hairC);
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    px(9,3,hairC); px(9,4,hairC); px(9,5,hairC); // tail
+                    px(10,6,hairC);
+                    break;
+                case 'afro':
+                    for (let x=3;x<=8;x++) px(x,0,hairC);
+                    for (let x=2;x<=9;x++) px(x,1,hairC);
+                    for (let x=2;x<=9;x++) px(x,2,hairHi);
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    px(2,3,hairC); px(9,3,hairC);
+                    break;
+                case 'pigtails':
+                    for (let x=4;x<=7;x++) px(x,1,hairC);
+                    for (let x=3;x<=8;x++) px(x,2,hairC);
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    px(2,3,hairC); px(2,4,hairC); px(2,5,hairC); // left pigtail
+                    px(9,3,hairC); px(9,4,hairC); px(9,5,hairC); // right pigtail
+                    break;
+                default: // 'short'
+                    for (let x=4;x<=7;x++) px(x,2,hairC);
+                    for (let x=3;x<=8;x++) px(x,3,hairC);
+                    break;
+            }
+
+            // ---- Crown (over hair) ----
+            if (items.has('crown')) {
+                px(4,0,'#ffd166'); px(5,0,'#ffaa22'); px(6,0,'#ffd166'); px(7,0,'#ffaa22');
+                px(4,1,'#ffd166'); px(5,1,'#ffd166'); px(6,1,'#ffd166'); px(7,1,'#ffd166');
+            }
+
+            // ---- HEAD / FACE (rows 4-6) ----
+            for (let x=4;x<=7;x++) { px(x,4,skin); px(x,5,skin); px(x,6,skin); }
+            px(3,5,skin); px(8,5,skin); // ears
+            // Eyes
+            px(5,5,'#1a1a2e'); px(6,5,'#1a1a2e');
+            // Mouth
+            px(5,6,skinDark); px(6,6,skinDark);
+
+            // Face accessories
+            if (items.has('glasses')) {
+                px(4,5,'#6688aa'); px(5,5,'#aaddff'); px(6,5,'#aaddff'); px(7,5,'#6688aa');
+            }
+            if (items.has('shades')) {
+                px(4,5,'#111122'); px(5,5,'#1a1a33'); px(6,5,'#1a1a33'); px(7,5,'#111122');
+            }
+            if (items.has('monocle')) {
+                px(6,5,'#ddcc88'); px(7,5,'#ddcc88'); px(7,6,'#bbaa66');
+            }
+            if (items.has('mask')) {
+                px(4,5,'#eeeeee'); px(5,5,'#222233'); px(6,5,'#222233'); px(7,5,'#eeeeee');
+            }
+            if (items.has('scar')) {
+                px(7,4,'#cc4444'); px(8,5,'#cc4444'); px(7,6,'#cc4444');
+            }
+            if (items.has('earring')) {
+                px(3,5,'#ffd166');
+            }
+
+            // ---- BODY / SHIRT (rows 7-10) ----
+            // Torso
+            for (let y=7;y<=10;y++) {
+                for (let x=4;x<=7;x++) px(x,y,shirt);
+            }
+            // Collar / neckline
+            px(5,7,shirtHi); px(6,7,shirtHi);
+
+            // Arms — animate per frame
+            if (isIdle) {
+                // idle: arms down; frameIdx 1 = slight arm shift
+                const armDy = frameIdx === 1 ? 1 : 0;
+                px(3,8+armDy,shirt); px(8,8+armDy,shirt);
+                px(3,9+armDy,skin); px(8,9+armDy,skin); // hands
+            } else {
+                // walk: alternate arms
+                if (frameIdx === 0) {
+                    px(3,8,shirt); px(3,9,skin); // left arm back
+                    px(9,9,shirt); px(9,10,skin); // right arm forward
+                } else {
+                    px(9,8,shirt); px(9,9,skin); // right arm back
+                    px(2,9,shirt); px(2,10,skin); // left arm forward
+                }
+            }
+
+            // ---- Body items ----
+            if (items.has('bowtie')) {
+                px(5,7,'#cc2244'); px(6,7,'#cc2244');
+            }
+            if (items.has('tie')) {
+                px(5,7,'#cc2244'); px(5,8,'#cc2244'); px(5,9,'#aa1133');
+            }
+            if (items.has('chain')) {
+                px(5,8,'#ffd166'); px(6,9,'#ffd166'); px(5,10,'#eebb44');
+            }
+            if (items.has('badge')) {
+                px(6,8,'#ffd166'); px(7,8,'#eebb44');
+            }
+            if (items.has('gloves')) {
+                // override hand pixels
+                if (isIdle) {
+                    const armDy = frameIdx === 1 ? 1 : 0;
+                    px(3,9+armDy,'#eeeeee'); px(8,9+armDy,'#eeeeee');
+                } else {
+                    if (frameIdx === 0) { px(3,9,'#eeeeee'); px(9,10,'#eeeeee'); }
+                    else { px(9,9,'#eeeeee'); px(2,10,'#eeeeee'); }
+                }
+            }
+            if (items.has('vest')) {
+                px(4,7,shirtLo); px(7,7,shirtLo);
+                px(4,8,shirtLo); px(7,8,shirtLo);
+                px(4,9,shirtLo); px(7,9,shirtLo);
+            }
+            if (items.has('apron')) {
+                for (let x=4;x<=7;x++) { px(x,9,'#eeeecc'); px(x,10,'#eeeecc'); }
+            }
+
+            // ---- Scarf (wraps around neck, drapes) ----
+            if (items.has('scarf')) {
+                const scarfC = items.has('shades') ? '#ee4444' : '#44bbdd';
+                px(4,7,scarfC); px(5,7,scarfC); px(6,7,scarfC); px(7,7,scarfC);
+                px(3,8,scarfC); // draping end
+                if (frameIdx === 1) px(3,9,scarfC); // sway
+            }
+
+            // ---- Cape (behind body) ----
+            if (items.has('cape')) {
+                const capeC = '#7733aa';
+                px(3,8,capeC); px(8,8,capeC);
+                px(3,9,capeC); px(8,9,capeC);
+                px(3,10,capeC); px(8,10,capeC);
+                px(2,10,capeC); px(9,10,capeC);
+                if (frameIdx === 1) { px(2,11,capeC); px(9,11,capeC); }
+            }
+
+            // ---- Headphones ----
+            if (items.has('headphones')) {
+                px(3,3,'#333333'); px(8,3,'#333333');
+                px(3,4,'#555555'); px(8,4,'#555555');
+                px(4,2,'#444444'); px(7,2,'#444444');
+            }
+
+            // ---- Camera (hangs on chest) ----
+            if (items.has('camera')) {
+                px(5,9,'#333333'); px(6,9,'#444444'); px(6,10,'#333333');
+                px(7,9,'#aaaaaa'); // flash
+            }
+
+            // ---- Clipboard (in hand) ----
+            if (items.has('clipboard')) {
+                if (isIdle) {
+                    px(8,9,'#ddcc88'); px(8,10,'#ddcc88'); px(8,11,'#ccbb77');
+                } else if (frameIdx === 0) {
+                    px(9,10,'#ddcc88'); px(9,11,'#ddcc88');
+                }
+            }
+
+            // ---- Bag (shoulder) ----
+            if (items.has('bag')) {
+                const bagC = '#996633';
+                px(8,7,bagC);
+                px(8,8,bagC); px(9,8,bagC);
+                px(8,9,bagC); px(9,9,bagC);
+                px(9,10,colorShade(bagC,-20));
+            }
+
+            // ---- Backpack ----
+            if (items.has('backpack')) {
+                const bpC = '#557744';
+                px(3,7,bpC); px(2,8,bpC); px(3,8,bpC);
+                px(2,9,bpC); px(3,9,bpC); px(2,10,bpC);
+            }
+
+            // ---- Holster (side) ----
+            if (items.has('holster')) {
+                px(8,9,'#443322'); px(8,10,'#443322'); px(8,11,'#554433');
+            }
+
+            // ---- Bandolier (diagonal strap) ----
+            if (items.has('bandolier')) {
+                px(7,7,'#554422'); px(6,8,'#554422'); px(5,9,'#554422'); px(4,10,'#554422');
+                px(7,8,'#997744'); px(6,9,'#997744'); // ammo dots
+            }
+
+            // ---- Cane (right side) ----
+            if (items.has('cane')) {
+                const caneC = '#886644';
+                if (isIdle) {
+                    px(9,9,caneC); px(9,10,caneC); px(9,11,caneC); px(9,12,caneC); px(9,13,caneC);
+                    px(10,9,'#ddcc88'); // handle
+                } else {
+                    // cane tilts while walking
+                    const tilt = frameIdx === 0 ? 9 : 8;
+                    px(tilt,10,caneC); px(tilt,11,caneC); px(9,12,caneC); px(9,13,caneC);
+                    px(tilt+1,9,'#ddcc88');
+                }
+            }
+
+            // ---- PANTS / LEGS (rows 11-13) ----
+            if (isIdle) {
+                // Standing: legs together, frameIdx 1 = subtle weight shift
+                for (let y=11;y<=13;y++) {
+                    px(4,y,pants); px(5,y,pants); px(6,y,pants); px(7,y,pants);
+                }
+                if (frameIdx === 1) {
+                    // weight on right foot: left foot lifts 1px
+                    px(4,13,pants); // left foot stays but lighter
+                }
+                // Subtle gap between legs
+                px(5,13,pantsLo); px(6,13,pantsLo);
+            } else {
+                // Walking: alternate legs
+                // Both frames have torso-level pants
+                px(4,11,pants); px(5,11,pants); px(6,11,pants); px(7,11,pants);
+                if (frameIdx === 0) {
+                    // left leg forward, right leg back
+                    px(3,12,pants); px(4,12,pants); px(5,12,pants);
+                    px(6,12,pants); px(7,12,pants); px(8,12,pants);
+                    px(3,13,pants); px(4,13,pants);  // left foot forward
+                    px(7,13,pants); px(8,13,pants);  // right foot back
+                } else {
+                    // right leg forward, left leg back
+                    px(6,12,pants); px(7,12,pants); px(8,12,pants);
+                    px(3,12,pants); px(4,12,pants); px(5,12,pants);
+                    px(7,13,pants); px(8,13,pants);  // right foot forward
+                    px(3,13,pants); px(4,13,pants);  // left foot back
+                }
+            }
+
+            // ---- FEET (rows 14-15) ----
+            if (isIdle) {
+                px(4,14,shoes); px(5,14,shoes); px(6,14,shoes); px(7,14,shoes);
+                px(4,15,shoes); px(5,15,shoes); px(6,15,shoes); px(7,15,shoes);
+            } else {
+                if (frameIdx === 0) {
+                    px(3,14,shoes); px(4,14,shoes); // left forward
+                    px(7,14,shoes); px(8,14,shoes); // right back
+                    px(3,15,shoes); px(4,15,shoes);
+                    px(7,15,shoes); px(8,15,shoes);
+                } else {
+                    px(7,14,shoes); px(8,14,shoes); // right forward
+                    px(3,14,shoes); px(4,14,shoes); // left back
+                    px(7,15,shoes); px(8,15,shoes);
+                    px(3,15,shoes); px(4,15,shoes);
+                }
+            }
+        }
+
+        const dataUrl = canvas.toDataURL('image/png');
+        _spriteCache[guestId] = dataUrl;
+        return dataUrl;
+    }
+
+    function getActorHtml(guestId) {
+        const sheetUrl = generateSpriteSheet(guestId);
+        const fw = SPRITE_W * SPRITE_SCALE;
+        const fh = SPRITE_H * SPRITE_SCALE;
+        return `<div class="actor-sprite" style="background-image:url(${sheetUrl});width:${fw}px;height:${fh}px;background-position:0 0;background-size:${fw * SPRITE_FRAMES}px ${fh}px"></div>`;
+    }
+
+    function getGuestCardSpriteHtml(guestId) {
+        const sheetUrl = generateSpriteSheet(guestId);
+        const fw = SPRITE_W * SPRITE_SCALE;
+        const fh = SPRITE_H * SPRITE_SCALE;
+        return `<span class="slot-sprite" style="background-image:url(${sheetUrl});width:${fw}px;height:${fh}px;background-position:0 0;background-size:${fw * SPRITE_FRAMES}px ${fh}px" aria-hidden="true"></span>`;
+    }
 
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
@@ -588,7 +1033,7 @@
                 const spawn = getEntryDoorPosition(who);
                 const el = document.createElement('div');
                 el.className = 'venue-actor entering';
-                el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                el.innerHTML = getActorHtml(guestId);
                 el.title = `${guest.name} • entering`;
                 layer.appendChild(el);
                 actor = {
@@ -602,6 +1047,8 @@
                     t: Math.random() * Math.PI * 2,
                     guestName: guest.name,
                     guestId,
+                    frame: 0,
+                    frameTick: 0,
                 };
                 actors.set(key, actor);
                 setTimeout(() => el.classList.remove('entering'), 320);
@@ -638,7 +1085,7 @@
                     const spawn = getEntryDoorPosition(who);
                     const el = document.createElement('div');
                     el.className = 'venue-actor entering';
-                    el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                    el.innerHTML = getActorHtml(guestId);
                     layer.appendChild(el);
                     arrivingActor = {
                         el,
@@ -651,13 +1098,15 @@
                         t: Math.random() * Math.PI * 2,
                         guestName: guest.name,
                         guestId,
+                        frame: 0,
+                        frameTick: 0,
                     };
                     actors.set('arriving-guest', arrivingActor);
                     setTimeout(() => el.classList.remove('entering'), 320);
                 } else {
                     arrivingActor.guestId = guestId;
                     arrivingActor.guestName = guest.name;
-                    arrivingActor.el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                    arrivingActor.el.innerHTML = getActorHtml(guestId);
                     if (arrivingActor.state === 'exiting') {
                         arrivingActor.state = 'active';
                         arrivingActor.el.classList.remove('exiting', 'leaving');
@@ -713,6 +1162,36 @@
         return true;
     }
 
+    // Micro-VFX puff symbols per behavior
+    const PUFF_SYMBOLS = {
+        dance: '\u266A',   // ♪
+        drink: '\u2615',   // ☕ (cup)
+        lounge: '\uD83D\uDCA4', // 💤 (zzz)
+    };
+    // Performance flag: disable micro-VFX on low-end devices or via prefers-reduced-motion
+    let vfxEnabled = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function spawnActorPuff(actor) {
+        if (!vfxEnabled || !actor.el || !actor.el.parentNode) return;
+        const sym = PUFF_SYMBOLS[actor.behavior];
+        if (!sym) return;
+        const puff = document.createElement('span');
+        puff.className = 'actor-puff';
+        puff.textContent = sym;
+        actor.el.appendChild(puff);
+        setTimeout(() => puff.remove(), 300);
+    }
+
+    function spawnTroublePuff(actorEl) {
+        if (!vfxEnabled || !actorEl || !actorEl.parentNode) return;
+        const puff = document.createElement('span');
+        puff.className = 'actor-puff';
+        puff.textContent = '\u{1F4A2}'; // 💢
+        puff.style.color = '#ff5c5c';
+        actorEl.appendChild(puff);
+        setTimeout(() => puff.remove(), 300);
+    }
+
     function stepVenueActors() {
         ['player', 'rival'].forEach((who) => {
             const actors = venueActors[who];
@@ -740,10 +1219,30 @@
                     actor.el.title = `${actor.guestName} • ${target.behavior}`;
                 }
 
+                // Spawn micro-VFX puffs occasionally when idle at target
+                if (actor.state !== 'exiting' && dist <= 1 && Math.random() < 0.008) {
+                    spawnActorPuff(actor);
+                }
+
+                // --- Sprite frame animation ---
+                const isMoving = dist > 2;
+                // frameTick counts 50ms ticks; swap sub-frame every ~6 ticks (300ms)
+                actor.frameTick = (actor.frameTick || 0) + 1;
+                if (actor.frameTick >= 6) {
+                    actor.frameTick = 0;
+                    actor.frame = (actor.frame || 0) === 0 ? 1 : 0; // toggle 0/1
+                }
+                // Frame index: idle = 0-1, walk = 2-3
+                const spriteFrame = isMoving ? (2 + actor.frame) : actor.frame;
+                const spriteEl = actor.el.firstChild;
+                if (spriteEl && spriteEl.style) {
+                    spriteEl.style.backgroundPosition = `-${spriteFrame * SPRITE_W * SPRITE_SCALE}px 0`;
+                }
+
                 actor.t += actor.state === 'exiting' ? 0.06 : 0.18;
-                const bob = actor.state === 'exiting' ? 0 : Math.sin(actor.t) * 2;
-                actor.el.style.left = `${Math.max(8, Math.min(bounds.width - 22, actor.x))}px`;
-                actor.el.style.top = `${Math.max(8, Math.min(bounds.height - 24, actor.y + bob))}px`;
+                const bob = actor.state === 'exiting' ? 0 : Math.sin(actor.t) * 1.5;
+                actor.el.style.left = `${Math.max(8, Math.min(bounds.width - 24, actor.x))}px`;
+                actor.el.style.top = `${Math.max(8, Math.min(bounds.height - 36, actor.y + bob))}px`;
             });
 
             removeKeys.forEach((key) => {
@@ -779,9 +1278,12 @@
         el.className = `guest-slot occupied-slot tier-${guest.tier}`;
         el.dataset.guestId = guestId;
         if (animate) el.classList.add('entering');
+        const guestVisualHtml = guest.isShopItem
+            ? `<span class="slot-emoji" aria-label="${escapeHtml(guest.name)}">${guest.emoji}</span>`
+            : `<button type="button" class="slot-emoji slot-sprite-btn${guest.ability ? ' has-ability' : ''}" aria-label="${escapeHtml(guest.name)} sprite" tabindex="-1">${getGuestCardSpriteHtml(guestId)}</button>`;
         el.innerHTML = `
             <span class="slot-stat slot-heat">${guest.heat}</span>
-            <span class="slot-emoji${guest.ability ? ' has-ability' : ''}">${guest.emoji}</span>
+            ${guestVisualHtml}
             <span class="slot-stat slot-money">${guest.money}</span>
             ${renderAbilityBadge(guest)}
             <span class="slot-stat slot-points">${guest.points}</span>
@@ -898,11 +1400,35 @@
         }
     }
 
+    function animateDoorOpen(who) {
+        const doorId = who === 'player' ? 'player-door-card' : 'rival-door-card';
+        const doorEl = document.getElementById(doorId);
+        if (!doorEl) return;
+        doorEl.classList.remove('door-opening');
+        void doorEl.offsetWidth; // reflow to restart animation
+        doorEl.classList.add('door-opening');
+        setTimeout(() => doorEl.classList.remove('door-opening'), 360);
+    }
+
+    function showExitStamp(who) {
+        const exitId = who === 'player' ? 'player-exit-card' : 'rival-exit-card';
+        const exitEl = document.getElementById(exitId);
+        if (!exitEl) return;
+        const stamp = document.createElement('span');
+        stamp.className = 'exit-stamp';
+        stamp.textContent = 'EXIT';
+        exitEl.appendChild(stamp);
+        setTimeout(() => stamp.remove(), 280);
+    }
+
     function animateExitGuest(who, guestId) {
         if (Array.isArray(guestId)) {
             guestId.forEach((id) => animateExitGuest(who, id));
             return;
         }
+
+        // Show exit stamp briefly
+        showExitStamp(who);
 
         // Move matching venue actor to exit door before it disappears.
         // (syncVenueActors also enforces exits for removed actors as a fallback.)
@@ -1100,7 +1626,7 @@
     }
 
 
-    function bindGuestTooltipHoldInteractions(el, guestId) {
+    function bindShopCardTooltipHoldInteractions(el, guestId) {
         if (!el || !guestId) return;
 
         let pressTimer = null;
@@ -1119,7 +1645,7 @@
             didLongPress = false;
             clearPressTimer();
             pressTimer = setTimeout(() => {
-                showTooltipForTarget(el, guestId);
+                showTooltipForTarget(el, guestId, { who: 'shop', source: 'shop' });
                 didLongPress = true;
                 pressTimer = null;
             }, 420);
@@ -1301,6 +1827,9 @@
         if (selfKey === 'player') {
             playerFlashWindowInstanceId = typeof self.house[0] === 'object' ? self.house[0].instanceId : null;
         }
+
+        // Animate entry door opening
+        animateDoorOpen(selfKey);
 
         if (result.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
@@ -1744,7 +2273,7 @@
             slot.appendChild(nameLabel);
         }
 
-        bindGuestTooltipHoldInteractions(wrapper, guestId);
+        bindShopCardTooltipHoldInteractions(wrapper, guestId);
 
         const slotEmoji = slot.querySelector('.slot-emoji');
         if (slotEmoji && guest.ability) {
@@ -2474,8 +3003,16 @@
         document.getElementById('btn-start-game').disabled = !(nameOk && deckOk && guestListOk);
     }
 
+    function preloadVenueBackground() {
+        if (venueBackgroundPreloadImage) return;
+        venueBackgroundPreloadImage = new Image();
+        venueBackgroundPreloadImage.decoding = 'async';
+        venueBackgroundPreloadImage.src = VENUE_BACKGROUND_IMAGE_SRC;
+    }
+
     // === Init ===
     function init() {
+        preloadVenueBackground();
         initLoadout();
         setupEventListeners();
         applyPartyView(false);
