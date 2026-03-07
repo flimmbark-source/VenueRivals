@@ -1034,14 +1034,14 @@ body {
 
 .venue-actor {
     position: absolute;
-    width: 20px;
-    height: 28px;
+    width: 24px;
+    height: 32px;
     transform: translate(-50%, -50%);
     display: flex;
     align-items: center;
     justify-content: center;
     transition: opacity 0.2s ease;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.65));
 }
 
 .venue-actor.exiting {
@@ -1053,20 +1053,15 @@ body {
     transition: opacity 0.2s ease;
 }
 
-/* --- Pixel sprite styling --- */
+/* --- Pixel sprite sheet styling --- */
 .venue-actor .actor-sprite {
     display: block;
-    width: 20px;
-    height: 28px;
+    width: 24px;
+    height: 32px;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
-    animation: actorIdleBounce 1.2s ease-in-out infinite;
+    background-repeat: no-repeat;
     pointer-events: none;
-}
-
-@keyframes actorIdleBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-1.5px); }
 }
 
 /* --- Micro action-cue puffs --- */
@@ -2969,7 +2964,6 @@ body {
 
 /* === Reduced Motion / Performance === */
 @media (prefers-reduced-motion: reduce) {
-    .venue-actor .actor-sprite { animation: none; }
     .dance-zone { animation: none; }
     .actor-puff { display: none; }
     .venue-actor.exiting::after { display: none; }
