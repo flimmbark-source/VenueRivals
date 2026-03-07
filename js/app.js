@@ -1278,9 +1278,12 @@
         el.className = `guest-slot occupied-slot tier-${guest.tier}`;
         el.dataset.guestId = guestId;
         if (animate) el.classList.add('entering');
+        const guestVisualHtml = guest.isShopItem
+            ? `<span class="slot-emoji" aria-label="${escapeHtml(guest.name)}">${guest.emoji}</span>`
+            : `<button type="button" class="slot-emoji slot-sprite-btn${guest.ability ? ' has-ability' : ''}" aria-label="${escapeHtml(guest.name)} sprite" tabindex="-1">${getGuestCardSpriteHtml(guestId)}</button>`;
         el.innerHTML = `
             <span class="slot-stat slot-heat">${guest.heat}</span>
-            <button type="button" class="slot-emoji slot-sprite-btn${guest.ability ? ' has-ability' : ''}" aria-label="${escapeHtml(guest.name)} sprite" tabindex="-1">${getGuestCardSpriteHtml(guestId)}</button>
+            ${guestVisualHtml}
             <span class="slot-stat slot-money">${guest.money}</span>
             ${renderAbilityBadge(guest)}
             <span class="slot-stat slot-points">${guest.points}</span>
