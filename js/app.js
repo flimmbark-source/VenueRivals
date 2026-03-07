@@ -713,6 +713,36 @@
         return true;
     }
 
+    // Micro-VFX puff symbols per behavior
+    const PUFF_SYMBOLS = {
+        dance: '\u266A',   // ♪
+        drink: '\u2615',   // ☕ (cup)
+        lounge: '\uD83D\uDCA4', // 💤 (zzz)
+    };
+    // Performance flag: disable micro-VFX on low-end devices or via prefers-reduced-motion
+    let vfxEnabled = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function spawnActorPuff(actor) {
+        if (!vfxEnabled || !actor.el || !actor.el.parentNode) return;
+        const sym = PUFF_SYMBOLS[actor.behavior];
+        if (!sym) return;
+        const puff = document.createElement('span');
+        puff.className = 'actor-puff';
+        puff.textContent = sym;
+        actor.el.appendChild(puff);
+        setTimeout(() => puff.remove(), 300);
+    }
+
+    function spawnTroublePuff(actorEl) {
+        if (!vfxEnabled || !actorEl || !actorEl.parentNode) return;
+        const puff = document.createElement('span');
+        puff.className = 'actor-puff';
+        puff.textContent = '\u{1F4A2}'; // 💢
+        puff.style.color = '#ff5c5c';
+        actorEl.appendChild(puff);
+        setTimeout(() => puff.remove(), 300);
+    }
+
     function stepVenueActors() {
         ['player', 'rival'].forEach((who) => {
             const actors = venueActors[who];
@@ -738,6 +768,11 @@
                     actor.targetY = target.y;
                     actor.behavior = target.behavior;
                     actor.el.title = `${actor.guestName} • ${target.behavior}`;
+                }
+
+                // Spawn micro-VFX puffs occasionally when idle at target
+                if (actor.state !== 'exiting' && dist <= 1 && Math.random() < 0.008) {
+                    spawnActorPuff(actor);
                 }
 
                 actor.t += actor.state === 'exiting' ? 0.06 : 0.18;
@@ -898,11 +933,35 @@
         }
     }
 
+    function animateDoorOpen(who) {
+        const doorId = who === 'player' ? 'player-door-card' : 'rival-door-card';
+        const doorEl = document.getElementById(doorId);
+        if (!doorEl) return;
+        doorEl.classList.remove('door-opening');
+        void doorEl.offsetWidth; // reflow to restart animation
+        doorEl.classList.add('door-opening');
+        setTimeout(() => doorEl.classList.remove('door-opening'), 360);
+    }
+
+    function showExitStamp(who) {
+        const exitId = who === 'player' ? 'player-exit-card' : 'rival-exit-card';
+        const exitEl = document.getElementById(exitId);
+        if (!exitEl) return;
+        const stamp = document.createElement('span');
+        stamp.className = 'exit-stamp';
+        stamp.textContent = 'EXIT';
+        exitEl.appendChild(stamp);
+        setTimeout(() => stamp.remove(), 280);
+    }
+
     function animateExitGuest(who, guestId) {
         if (Array.isArray(guestId)) {
             guestId.forEach((id) => animateExitGuest(who, id));
             return;
         }
+
+        // Show exit stamp briefly
+        showExitStamp(who);
 
         // Move matching venue actor to exit door before it disappears.
         // (syncVenueActors also enforces exits for removed actors as a fallback.)
@@ -1301,6 +1360,9 @@
         if (selfKey === 'player') {
             playerFlashWindowInstanceId = typeof self.house[0] === 'object' ? self.house[0].instanceId : null;
         }
+
+        // Animate entry door opening
+        animateDoorOpen(selfKey);
 
         if (result.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
