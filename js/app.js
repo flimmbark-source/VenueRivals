@@ -34,7 +34,9 @@
     let activePartyView = 'player';
     let swipeStartX = null;
     let playerFlashWindowInstanceId = null;
+    let venueBackgroundPreloadImage = null;
 
+    const VENUE_BACKGROUND_IMAGE_SRC = 'css/public/Venue1.png';
     const ACTOR_TICK_MS = 50;
     const ACTOR_MIN_SPEED = 0.65;
     const ACTOR_DISTANCE_SPEED_FACTOR = 0.065;
@@ -2998,8 +3000,16 @@
         document.getElementById('btn-start-game').disabled = !(nameOk && deckOk && guestListOk);
     }
 
+    function preloadVenueBackground() {
+        if (venueBackgroundPreloadImage) return;
+        venueBackgroundPreloadImage = new Image();
+        venueBackgroundPreloadImage.decoding = 'async';
+        venueBackgroundPreloadImage.src = VENUE_BACKGROUND_IMAGE_SRC;
+    }
+
     // === Init ===
     function init() {
+        preloadVenueBackground();
         initLoadout();
         setupEventListeners();
         applyPartyView(false);
