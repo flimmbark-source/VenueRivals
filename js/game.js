@@ -1021,7 +1021,7 @@ const Game = (() => {
         break;
       }
       case "scoreNow": {
-        player.points += guest.ability.value;
+        player.roundPoints += guest.ability.value;
         result.effects.push(`scored ${guest.ability.value} points`);
         break;
       }
@@ -1128,14 +1128,14 @@ const Game = (() => {
         break;
       }
       case "gainMoney": {
-        player.money += guest.ability.value;
+        player.roundMoney += guest.ability.value;
         result.effects.push(`gained ${guest.ability.value} money`);
         break;
       }
       case "stealMoney": {
-        const stolen = Math.min(guest.ability.value, opponent.money);
-        opponent.money -= stolen;
-        player.money += stolen;
+        const stolen = Math.min(guest.ability.value, opponent.roundMoney);
+        opponent.roundMoney -= stolen;
+        player.roundMoney += stolen;
         result.effects.push(
           stolen ? `stole ${stolen} money` : "nothing to steal",
         );
@@ -1152,7 +1152,7 @@ const Game = (() => {
       }
       case "scorePerGuest": {
         const bonus = player.house.length * guest.ability.value;
-        player.points += bonus;
+        player.roundPoints += bonus;
         result.effects.push(`scored ${bonus} points (${player.house.length} guests)`);
         break;
       }
@@ -1160,7 +1160,7 @@ const Game = (() => {
         let adjacent = 0;
         if (player.house.length > 1) adjacent++;
         const bonus = adjacent * guest.ability.value;
-        player.points += bonus;
+        player.roundPoints += bonus;
         result.effects.push(
           bonus
             ? `scored ${bonus} from ${adjacent} adjacent`

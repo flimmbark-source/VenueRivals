@@ -879,9 +879,6 @@
     function updateHUD() {
         if (!gameState) return;
         const p = gameState.player;
-        const includeProjectedRoundTotals =
-            gameState.phase === 'guest' && gameState.guestPhaseScoredRound !== gameState.round;
-
         const hudRoundNumEl = document.getElementById('hud-round-num');
         const hudRoundTotalEl = document.getElementById('hud-round-total');
         const hudPhaseEl = document.getElementById('hud-phase');
@@ -900,8 +897,8 @@
 
         const r = gameState.rival;
         const hudActor = activePartyView === 'rival' ? r : p;
-        hudPlayerPtsEl.textContent = `⭐ ${hudActor.points + (includeProjectedRoundTotals ? hudActor.roundPoints : 0)}`;
-        playerMoneyEl.textContent = `💵 $${hudActor.money + (includeProjectedRoundTotals ? hudActor.roundMoney : 0)}`;
+        hudPlayerPtsEl.textContent = `⭐ ${hudActor.points}`;
+        playerMoneyEl.textContent = `💵 $${hudActor.money}`;
 
         const hudVenue = Game.VENUES[hudActor.venueId];
         updateHeatBar('player', hudActor.heat, Game.getHeatCapacity(hudVenue, hudActor), hudActor.busted);
