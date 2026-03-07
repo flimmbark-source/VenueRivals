@@ -889,21 +889,8 @@ body {
     border-radius: 14px;
     border: 1px solid rgba(127, 90, 240, 0.15);
     background:
-        /* Ambient ceiling spots */
-        radial-gradient(circle at 34% 47%, var(--zone-dance-glow), transparent 26%),
-        radial-gradient(circle at 78% 37%, var(--zone-bar-glow), transparent 28%),
-        radial-gradient(circle at 22% 73%, var(--zone-lounge-glow), transparent 25%),
-        /* Subtle floor tile pattern */
-        repeating-linear-gradient(
-            90deg,
-            transparent, transparent 49px, rgba(255,255,255,0.015) 49px, rgba(255,255,255,0.015) 50px
-        ),
-        repeating-linear-gradient(
-            0deg,
-            transparent, transparent 49px, rgba(255,255,255,0.015) 49px, rgba(255,255,255,0.015) 50px
-        ),
-        /* Venue floor gradient */
-        linear-gradient(180deg, var(--bg-venue-ceiling), var(--bg-venue-floor));
+        linear-gradient(180deg, rgba(20, 18, 38, 0.25), rgba(14, 12, 30, 0.35)),
+        url('./public/Venue1.png') center / cover no-repeat;
     overflow: hidden;
     margin-bottom: 6px;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);

@@ -34,7 +34,9 @@
     let activePartyView = 'player';
     let swipeStartX = null;
     let playerFlashWindowInstanceId = null;
+    let venueBackgroundPreloadImage = null;
 
+    const VENUE_BACKGROUND_IMAGE_SRC = 'css/public/Venue1.png';
     const ACTOR_TICK_MS = 50;
     const ACTOR_MIN_SPEED = 0.65;
     const ACTOR_DISTANCE_SPEED_FACTOR = 0.065;
@@ -1276,9 +1278,12 @@
         el.className = `guest-slot occupied-slot tier-${guest.tier}`;
         el.dataset.guestId = guestId;
         if (animate) el.classList.add('entering');
+        const guestVisualHtml = guest.isShopItem
+            ? `<span class="slot-emoji" aria-label="${escapeHtml(guest.name)}">${guest.emoji}</span>`
+            : `<button type="button" class="slot-emoji slot-sprite-btn${guest.ability ? ' has-ability' : ''}" aria-label="${escapeHtml(guest.name)} sprite" tabindex="-1">${getGuestCardSpriteHtml(guestId)}</button>`;
         el.innerHTML = `
             <span class="slot-stat slot-heat">${guest.heat}</span>
-            <button type="button" class="slot-emoji slot-sprite-btn${guest.ability ? ' has-ability' : ''}" aria-label="${escapeHtml(guest.name)} sprite" tabindex="-1">${getGuestCardSpriteHtml(guestId)}</button>
+            ${guestVisualHtml}
             <span class="slot-stat slot-money">${guest.money}</span>
             ${renderAbilityBadge(guest)}
             <span class="slot-stat slot-points">${guest.points}</span>
@@ -1621,7 +1626,7 @@
     }
 
 
-    function bindGuestTooltipHoldInteractions(el, guestId) {
+    function bindShopCardTooltipHoldInteractions(el, guestId) {
         if (!el || !guestId) return;
 
         let pressTimer = null;
@@ -1640,7 +1645,7 @@
             didLongPress = false;
             clearPressTimer();
             pressTimer = setTimeout(() => {
-                showTooltipForTarget(el, guestId);
+                showTooltipForTarget(el, guestId, { who: 'shop', source: 'shop' });
                 didLongPress = true;
                 pressTimer = null;
             }, 420);
@@ -2268,7 +2273,7 @@
             slot.appendChild(nameLabel);
         }
 
-        bindGuestTooltipHoldInteractions(wrapper, guestId);
+        bindShopCardTooltipHoldInteractions(wrapper, guestId);
 
         const slotEmoji = slot.querySelector('.slot-emoji');
         if (slotEmoji && guest.ability) {
@@ -2998,8 +3003,16 @@
         document.getElementById('btn-start-game').disabled = !(nameOk && deckOk && guestListOk);
     }
 
+    function preloadVenueBackground() {
+        if (venueBackgroundPreloadImage) return;
+        venueBackgroundPreloadImage = new Image();
+        venueBackgroundPreloadImage.decoding = 'async';
+        venueBackgroundPreloadImage.src = VENUE_BACKGROUND_IMAGE_SRC;
+    }
+
     // === Init ===
     function init() {
+        preloadVenueBackground();
         initLoadout();
         setupEventListeners();
         applyPartyView(false);
