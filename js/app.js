@@ -40,6 +40,215 @@
     const ACTOR_DISTANCE_SPEED_FACTOR = 0.065;
     const ACTOR_MAX_SPEED = 4.2;
 
+    // === Pixel Sprite Generator ===
+    // Generates tiny 10x14 pixel characters on an offscreen canvas, cached as data URLs.
+    // Each guest gets unique hair, skin, clothing, and accessory pixels.
+    const _spriteCache = {};
+    const SPRITE_W = 10;
+    const SPRITE_H = 14;
+    const SPRITE_SCALE = 2; // rendered at 20x28, displayed at native size
+
+    // Skin tones
+    const SKIN = {
+        light: '#f5d6b8',
+        medium: '#e8c49a',
+        tan: '#d4a574',
+        brown: '#a67c52',
+        dark: '#6b4226',
+    };
+
+    // Hair colors
+    const HAIR_COLORS = {
+        black: '#1a1a2e',
+        brown: '#5c3a1e',
+        blonde: '#e8c44c',
+        red: '#b83c28',
+        white: '#d8d8e8',
+        blue: '#4488cc',
+        purple: '#8844aa',
+        green: '#44aa66',
+        pink: '#e866aa',
+        orange: '#e88833',
+    };
+
+    // Guest-specific visual blueprints: [skinKey, hairColor, shirtColor, pantsColor, hairStyle, accessory]
+    // hairStyle: 'short','spiky','long','slick','bald','mohawk','cap','tophat','hood','bandana'
+    // accessory: null,'glasses','shades','monocle','bowtie','earring','mask','gloves','badge','scar'
+    const GUEST_SPRITES = {
+        regular:       ['light', 'brown',  '#7788aa', '#445566', 'short', null],
+        chiller:       ['light', 'blue',   '#44aadd', '#335577', 'slick', 'shades'],
+        tipper:        ['medium','black',  '#2cb67d', '#445544', 'short', 'bowtie'],
+        tipOffArtist:  ['tan',   'black',  '#333344', '#222233', 'slick', 'shades'],
+        hypeFriend:    ['medium','orange', '#ffaa33', '#886622', 'spiky', null],
+        hypester:      ['tan',   'red',    '#ee4422', '#882211', 'spiky', 'earring'],
+        standIn:       ['light', 'purple', '#7755bb', '#554488', 'long', 'mask'],
+        usher:         ['medium','black',  '#222233', '#111122', 'slick', 'gloves'],
+        floorRunner:   ['tan',   'brown',  '#55cc77', '#336644', 'short', 'badge'],
+        bookkeeper:    ['light', 'brown',  '#bbaa77', '#665544', 'short', 'glasses'],
+        rovingCritic:  ['light', 'white',  '#886644', '#443322', 'slick', 'monocle'],
+        partyPromoter: ['medium','blonde', '#ee6633', '#aa4422', 'spiky', null],
+        bigSpender:    ['light', 'black',  '#ffd166', '#aa8833', 'slick', 'bowtie'],
+        celebrity:     ['tan',   'blonde', '#dd33aa', '#882266', 'long', 'shades'],
+        headliner:     ['medium','pink',   '#ffcc00', '#aa8800', 'long', 'earring'],
+        champagneHost: ['light', 'black',  '#111122', '#0a0a18', 'slick', 'bowtie'],
+        velvetBouncer: ['dark',  'black',  '#222233', '#111122', 'bald', 'badge'],
+        spotlightPhotographer: ['medium','brown', '#666688', '#444466', 'short', 'glasses'],
+        galleryScout:  ['tan',   'brown',  '#558844', '#445533', 'cap', null],
+        trendBroker:   ['light', 'black',  '#334466', '#222244', 'slick', 'glasses'],
+        curioDealer:   ['medium','red',    '#885533', '#664422', 'cap', 'earring'],
+        stylist:       ['light', 'pink',   '#cc44cc', '#883388', 'long', null],
+        gateRunner:    ['tan',   'black',  '#cc2222', '#661111', 'hood', 'scar'],
+        wheelman:      ['medium','brown',  '#555555', '#333333', 'cap', 'shades'],
+        fence:         ['dark',  'black',  '#444433', '#332222', 'hood', null],
+        provocateur:   ['tan',   'red',    '#881133', '#440022', 'mohawk', 'scar'],
+        gatecrasher:   ['dark',  'red',    '#aa1111', '#551111', 'mohawk', 'scar'],
+    };
+
+    function generateSprite(guestId) {
+        if (_spriteCache[guestId]) return _spriteCache[guestId];
+
+        const canvas = document.createElement('canvas');
+        canvas.width = SPRITE_W * SPRITE_SCALE;
+        canvas.height = SPRITE_H * SPRITE_SCALE;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+
+        const bp = GUEST_SPRITES[guestId] || GUEST_SPRITES.regular;
+        const skin = SKIN[bp[0]] || SKIN.light;
+        const hair = HAIR_COLORS[bp[1]] || bp[1];
+        const shirt = bp[2];
+        const pants = bp[3];
+        const hairStyle = bp[4];
+        const accessory = bp[5];
+
+        const s = SPRITE_SCALE;
+        function px(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * s, y * s, s, s);
+        }
+
+        // -- Hair (rows 0-2) --
+        const hairTop = hair;
+        switch (hairStyle) {
+            case 'spiky':
+                px(3,0,hairTop); px(5,0,hairTop); px(7,0,hairTop);
+                for (let x=2;x<=7;x++) px(x,1,hairTop);
+                for (let x=2;x<=7;x++) px(x,2,hairTop);
+                break;
+            case 'long':
+                for (let x=3;x<=6;x++) px(x,0,hairTop);
+                for (let x=2;x<=7;x++) px(x,1,hairTop);
+                for (let x=2;x<=7;x++) px(x,2,hairTop);
+                px(2,3,hairTop); px(7,3,hairTop); // side bangs
+                px(2,4,hairTop); px(7,4,hairTop);
+                break;
+            case 'slick':
+                for (let x=3;x<=6;x++) px(x,1,hairTop);
+                for (let x=2;x<=7;x++) px(x,2,hairTop);
+                break;
+            case 'bald':
+                for (let x=3;x<=6;x++) px(x,2,skin);
+                break;
+            case 'mohawk':
+                px(4,0,hairTop); px(5,0,hairTop);
+                px(4,1,hairTop); px(5,1,hairTop);
+                for (let x=3;x<=6;x++) px(x,2,hairTop);
+                break;
+            case 'cap':
+                for (let x=2;x<=8;x++) px(x,1,shirt);
+                for (let x=2;x<=7;x++) px(x,2,hairTop);
+                break;
+            case 'tophat':
+                for (let x=3;x<=6;x++) px(x,0,hair);
+                for (let x=3;x<=6;x++) px(x,1,hair);
+                for (let x=2;x<=7;x++) px(x,2,hair);
+                break;
+            case 'hood':
+                for (let x=2;x<=7;x++) px(x,1,shirt);
+                for (let x=2;x<=7;x++) px(x,2,shirt);
+                px(2,3,shirt); px(7,3,shirt);
+                break;
+            case 'bandana':
+                for (let x=2;x<=7;x++) px(x,1,'#cc3333');
+                for (let x=2;x<=7;x++) px(x,2,hairTop);
+                break;
+            default: // 'short'
+                for (let x=3;x<=6;x++) px(x,1,hairTop);
+                for (let x=2;x<=7;x++) px(x,2,hairTop);
+                break;
+        }
+
+        // -- Head / Face (rows 3-5) --
+        for (let x=3;x<=6;x++) { px(x,3,skin); px(x,4,skin); px(x,5,skin); }
+        // Eyes
+        px(4,4,'#1a1a2e'); px(5,4,'#1a1a2e');
+
+        // -- Accessories on face --
+        switch (accessory) {
+            case 'glasses':
+                px(3,4,'#6688aa'); px(4,4,'#aaccee'); px(5,4,'#aaccee'); px(6,4,'#6688aa');
+                break;
+            case 'shades':
+                px(3,4,'#111122'); px(4,4,'#222244'); px(5,4,'#222244'); px(6,4,'#111122');
+                break;
+            case 'monocle':
+                px(5,4,'#ddcc88'); px(6,4,'#ddcc88');
+                px(6,5,'#ddcc88');
+                break;
+            case 'mask':
+                px(3,4,'#ffffff'); px(4,4,'#222222'); px(5,4,'#222222'); px(6,4,'#ffffff');
+                break;
+            case 'scar':
+                px(6,3,'#cc4444'); px(6,4,'#cc4444');
+                break;
+        }
+
+        // -- Body / Shirt (rows 6-9) --
+        for (let y=6;y<=9;y++) {
+            for (let x=3;x<=6;x++) px(x,y,shirt);
+        }
+        // Arms
+        px(2,7,shirt); px(7,7,shirt);
+        px(2,8,skin); px(7,8,skin); // hands
+
+        // -- Accessories on body --
+        switch (accessory) {
+            case 'bowtie':
+                px(4,6,'#cc2244'); px(5,6,'#cc2244');
+                break;
+            case 'gloves':
+                px(2,8,'#ffffff'); px(7,8,'#ffffff');
+                break;
+            case 'badge':
+                px(5,7,'#ffd166');
+                break;
+            case 'earring':
+                px(2,4,'#ffd166');
+                break;
+        }
+
+        // -- Pants / Legs (rows 10-12) --
+        for (let y=10;y<=12;y++) {
+            px(3,y,pants); px(4,y,pants); px(5,y,pants); px(6,y,pants);
+        }
+        // Leg gap
+        px(4,12,pants); px(5,12,pants);
+        px(3,12,pants); px(6,12,pants);
+
+        // -- Feet (row 13) --
+        px(3,13,'#222233'); px(4,13,'#222233');
+        px(5,13,'#222233'); px(6,13,'#222233');
+
+        const dataUrl = canvas.toDataURL('image/png');
+        _spriteCache[guestId] = dataUrl;
+        return dataUrl;
+    }
+
+    function getActorHtml(guestId) {
+        const spriteUrl = generateSprite(guestId);
+        return `<img class="actor-sprite" src="${spriteUrl}" alt="" width="${SPRITE_W * SPRITE_SCALE}" height="${SPRITE_H * SPRITE_SCALE}">`;
+    }
+
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
     const ABLY_API_KEY = '_tDhUg.HYf2eA:VPJbNYIBgqUrolL5QzcLSyj4XRCheq3cizKtHVAtGCA';
@@ -588,7 +797,7 @@
                 const spawn = getEntryDoorPosition(who);
                 const el = document.createElement('div');
                 el.className = 'venue-actor entering';
-                el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                el.innerHTML = getActorHtml(guestId);
                 el.title = `${guest.name} • entering`;
                 layer.appendChild(el);
                 actor = {
@@ -638,7 +847,7 @@
                     const spawn = getEntryDoorPosition(who);
                     const el = document.createElement('div');
                     el.className = 'venue-actor entering';
-                    el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                    el.innerHTML = getActorHtml(guestId);
                     layer.appendChild(el);
                     arrivingActor = {
                         el,
@@ -657,7 +866,7 @@
                 } else {
                     arrivingActor.guestId = guestId;
                     arrivingActor.guestName = guest.name;
-                    arrivingActor.el.innerHTML = `<span class="actor-emoji">${guest.emoji}</span>`;
+                    arrivingActor.el.innerHTML = getActorHtml(guestId);
                     if (arrivingActor.state === 'exiting') {
                         arrivingActor.state = 'active';
                         arrivingActor.el.classList.remove('exiting', 'leaving');
@@ -777,8 +986,8 @@
 
                 actor.t += actor.state === 'exiting' ? 0.06 : 0.18;
                 const bob = actor.state === 'exiting' ? 0 : Math.sin(actor.t) * 2;
-                actor.el.style.left = `${Math.max(8, Math.min(bounds.width - 22, actor.x))}px`;
-                actor.el.style.top = `${Math.max(8, Math.min(bounds.height - 24, actor.y + bob))}px`;
+                actor.el.style.left = `${Math.max(8, Math.min(bounds.width - 24, actor.x))}px`;
+                actor.el.style.top = `${Math.max(8, Math.min(bounds.height - 32, actor.y + bob))}px`;
             });
 
             removeKeys.forEach((key) => {
