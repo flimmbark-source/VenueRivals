@@ -1861,9 +1861,11 @@ body {
 .feedback-ticker-static {
     display: inline-block;
     white-space: nowrap;
+    margin-left: 0;
 }
 
 .feedback-ticker-run {
+    margin-left: 100%;
     animation: feedbackTickerScroll var(--feedback-duration, 2200ms) linear forwards;
 }
 
@@ -3312,6 +3314,6 @@ body {
 }
 
 @keyframes feedbackTickerScroll {
-    from { transform: translateX(110%); }
-    to { transform: translateX(0%); }
+    from { margin-left: 100%; }
+    to { margin-left: 0; }
 }

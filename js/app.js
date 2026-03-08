@@ -1860,28 +1860,32 @@
 
     // === Center Feedback ===
     function showFeedback(text, type, duration, who = activePartyView) {
-        const target = who === 'rival' ? 'rival' : 'player';
-        const el = document.getElementById(`${target}-feedback`);
-        if (!el) return;
+        const feedbackEls = [
+            document.getElementById('player-feedback'),
+            document.getElementById('rival-feedback'),
+        ].filter(Boolean);
+        if (!feedbackEls.length) return;
 
         const popupDuration = Math.max(1400, duration || 2200);
-        const existing = el.querySelector('.feedback-msg');
-        if (existing) existing.remove();
+        feedbackEls.forEach((el) => {
+            const existing = el.querySelector('.feedback-msg');
+            if (existing) existing.remove();
 
-        const msgEl = document.createElement('div');
-        msgEl.className = `feedback-msg ${type || ''}`.trim();
-        msgEl.style.setProperty('--feedback-duration', `${popupDuration}ms`);
+            const msgEl = document.createElement('div');
+            msgEl.className = `feedback-msg ${type || ''}`.trim();
+            msgEl.style.setProperty('--feedback-duration', `${popupDuration}ms`);
 
-        const tickerEl = document.createElement('span');
-        tickerEl.className = 'feedback-ticker-run';
-        tickerEl.textContent = text;
-        msgEl.appendChild(tickerEl);
-        el.appendChild(msgEl);
+            const tickerEl = document.createElement('span');
+            tickerEl.className = 'feedback-ticker-run';
+            tickerEl.textContent = text;
+            msgEl.appendChild(tickerEl);
+            el.appendChild(msgEl);
 
-        setTimeout(() => {
-            if (!msgEl.isConnected || !tickerEl.isConnected) return;
-            tickerEl.className = 'feedback-ticker-static';
-        }, popupDuration);
+            setTimeout(() => {
+                if (!msgEl.isConnected || !tickerEl.isConnected) return;
+                tickerEl.className = 'feedback-ticker-static';
+            }, popupDuration);
+        });
     }
 
     // === Guest Phase Actions ===
