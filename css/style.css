@@ -1849,15 +1849,11 @@ body {
     overflow: hidden;
 }
 
-.center-feedback {
-    position: fixed;
-    top: calc(env(safe-area-inset-top, 0px) + 6px);
-    left: 50%;
-    width: min(calc(100vw - 24px), 456px);
-    transform: translateX(-50%);
-    z-index: 20;
+.venue-feedback {
+    min-height: 26px;
     display: flex;
-    justify-content: center;
+    align-items: center;
+    width: 100%;
     pointer-events: none;
 }
 
@@ -1878,9 +1874,9 @@ body {
     background: rgba(20, 25, 42, 0.88);
     border: 1px solid rgba(255, 255, 255, 0.16);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    opacity: 0;
-    transform: translateY(-120%) scale(0.92);
-    animation: phoneNotificationDrop var(--feedback-duration, 2200ms) cubic-bezier(0.22, 0.8, 0.24, 1) forwards;
+    opacity: 1;
+    transform: none;
+    animation: none;
 }
 
 .feedback-msg.disruption {
