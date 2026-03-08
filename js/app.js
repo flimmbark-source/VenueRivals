@@ -1594,6 +1594,11 @@
         }
     }
 
+    function dismissInfoPanelPopup() {
+        removeTooltip();
+        closeGuestAbilityPopup();
+    }
+
     function showIconTooltip(e, text, sticky = false) {
         removeIconTooltip();
         const el = document.createElement('div');
@@ -1930,6 +1935,7 @@
     }
 
     function handleAdmit() {
+        dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'admit', actor: 'rival' });
             return;
@@ -2008,6 +2014,7 @@
     }
 
     function handleAbility() {
+        dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'ability', actor: 'rival' });
             return;
@@ -2055,6 +2062,7 @@
     }
 
     function handleCloseDoor() {
+        dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'close', actor: 'rival' });
             return;
@@ -2266,6 +2274,7 @@
     }
 
     function handleNextPhase() {
+        dismissInfoPanelPopup();
         const isFinalRound = gameState.round >= gameState.totalRounds;
 
         if (isFinalRound) {
@@ -2417,6 +2426,7 @@
     }
 
     function handleDoneShopping() {
+        dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'done-shopping', actor: 'rival' });
             showFeedback('Waiting for host to continue…', 'points', 1500);
@@ -2822,7 +2832,7 @@
         previewEmpty.style.display = 'none';
         deck.guests.forEach((guestId) => {
             const card = createDeckManageCard(guestId);
-            card.addEventListener('click', () => showGuestAbilityPopup(guestId));
+            card.addEventListener('click', () => showTooltipForTarget(card, guestId, { who: 'rival', source: 'deck-preview' }));
             previewGrid.appendChild(card);
         });
     }
@@ -3102,7 +3112,12 @@
 
         // Remove tooltip on any click outside
         document.addEventListener('click', (e) => {
-            if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.shop-card-wrapper') && !e.target.closest('.guest-tooltip')) {
+            if (tooltipEl &&
+                !e.target.closest('.guest-slot') &&
+                !e.target.closest('.shop-card-wrapper') &&
+                !e.target.closest('.deck-manage-card') &&
+                !e.target.closest('.guest-tooltip')) {
+                dismissInfoPanelPopup();
             }
             if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.slot-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
                 removeIconTooltip();
@@ -3110,6 +3125,9 @@
         });
 
         document.addEventListener('keydown', (e) => {
+            if (tooltipEl) {
+                dismissInfoPanelPopup();
+            }
             if (e.key === 'Escape' && guestAbilityPopupEl) {
                 closeGuestAbilityPopup();
             }
