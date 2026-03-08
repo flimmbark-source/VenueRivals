@@ -538,7 +538,7 @@ body {
 /* --- Card Scroll Row --- */
 .arcade-card-scroll {
     display: flex;
-    gap: 6px;
+    gap: 5px;
     overflow-x: auto;
     overflow-y: hidden;
     padding: 4px 2px 8px;
@@ -2669,38 +2669,48 @@ body {
 /* === Loadout Overlays === */
 .loadout-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(15, 14, 23, 0.95);
+    inset: 0;
+    background: rgba(6, 7, 16, 0.92);
+    backdrop-filter: blur(3px);
     z-index: 50;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 10px;
     animation: fadeIn 0.2s ease;
 }
 
 #guest-list-manage-overlay {
-    background: rgba(8, 8, 18, 0.985);
-    backdrop-filter: blur(4px);
+    background: rgba(6, 7, 16, 0.95);
 }
 
 #guest-list-manage-overlay .loadout-overlay-panel {
-    background: #191a2e;
-    border-color: #2d3060;
+    border-color: rgba(76, 201, 240, 0.28);
 }
 
 .loadout-overlay-panel {
-    background: var(--bg-medium);
-    border-radius: var(--radius-xl);
-    padding: 20px;
-    width: 95%;
-    max-width: 460px;
+    background:
+        radial-gradient(ellipse at top, rgba(127, 90, 240, 0.12), transparent 65%),
+        linear-gradient(180deg, rgba(15, 14, 23, 0.96), rgba(10, 9, 20, 0.98));
+    border-radius: 6px;
+    padding: 14px;
+    width: min(95%, 470px);
     max-height: 85vh;
     overflow-y: auto;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
-    border: 1px solid var(--bg-light);
+    box-shadow:
+        0 0 14px rgba(127, 90, 240, 0.2),
+        inset 0 0 20px rgba(0, 0, 0, 0.45);
+    border: 2px solid rgba(127, 90, 240, 0.4);
+    position: relative;
+}
+
+.loadout-overlay-panel::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 7px;
+    border: 1px solid rgba(127, 90, 240, 0.15);
+    pointer-events: none;
 }
 
 .loadout-overlay-panel::-webkit-scrollbar { width: 4px; }
@@ -2710,34 +2720,43 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
-    gap: 10px;
+    margin-bottom: 10px;
+    gap: 8px;
+    padding-bottom: 7px;
+    border-bottom: 1px dotted rgba(127, 90, 240, 0.25);
 }
 
 .loadout-overlay-top h3 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.2rem;
-    color: var(--accent-secondary);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.56rem;
+    color: var(--accent-gold);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    text-shadow: 0 0 8px rgba(255, 209, 102, 0.45);
 }
 
 .loadout-overlay-close {
-    width: 36px;
-    height: 36px;
-    border: none;
-    background: var(--bg-card);
-    color: var(--text-primary);
-    border-radius: 50%;
-    font-size: 1.3rem;
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(255, 92, 92, 0.45);
+    background: rgba(255, 92, 92, 0.12);
+    color: var(--accent-primary);
+    border-radius: 2px;
+    font-size: 0.8rem;
     cursor: pointer;
     transition: var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    line-height: 1;
+    font-family: 'Press Start 2P', monospace;
 }
 
 .loadout-overlay-close:hover {
-    background: var(--accent-primary);
+    background: rgba(255, 92, 92, 0.2);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 10px rgba(255, 92, 92, 0.3);
 }
 
 /* Venue selection overlay */
@@ -2780,9 +2799,9 @@ body {
 
 /* Deck management overlay */
 .deck-size-badge {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Press Start 2P', monospace;
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.44rem;
     color: var(--accent-tertiary);
     background: rgba(44, 182, 125, 0.15);
     padding: 4px 10px;
@@ -2840,28 +2859,39 @@ body {
 }
 
 .deck-manage-section-header h4 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 0.85rem;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.48rem;
     color: var(--text-primary);
 }
 
 .deck-manage-hint {
-    font-size: 0.62rem;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.36rem;
     color: var(--text-muted);
 }
 
 .deck-manage-grid {
     display: flex;
     gap: 16px 10px;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: visible;
+    overflow-y: visible;
     padding-bottom: 12px;
+    -webkit-overflow-scrolling: touch;
+    }
+
+.deck-manage-grid::-webkit-scrollbar { height: 4px; }
+.deck-manage-grid::-webkit-scrollbar-thumb {
+    background: rgba(127, 90, 240, 0.3);
+    border-radius: 4px;
 }
 
 .deck-manage-card {
     display: flex;
     flex-direction: column;
     align-items: center;
+    flex: 0 0 auto;
     width: 46px;
     cursor: pointer;
     transition: var(--transition);
