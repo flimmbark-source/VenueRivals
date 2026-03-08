@@ -2905,6 +2905,9 @@
         document.getElementById('btn-back-to-title').addEventListener('click', () => {
             switchScreen('title');
         });
+        document.getElementById('btn-back-to-title-from-setup').addEventListener('click', () => {
+            switchScreen('title');
+        });
 
         // Setup / Loadout
         document.getElementById('loadout-venue-card').addEventListener('click', openVenueSelect);

@@ -65,11 +65,16 @@
     <!-- Setup Screen (Loadout) -->
     <div id="setup-screen" class="screen">
         <div class="setup-container">
-            <div class="setup-name-section setup-name-section-top">
-                <label for="venue-name-input">Name Your Venue</label>
+            <div class="setup-header">
+                <button class="setup-back-btn" id="btn-back-to-title-from-setup" aria-label="Back to title">&#8592;</button>
+                <h2 class="setup-title">Match Setup</h2>
+            </div>
+
+            <div class="setup-section setup-name-section setup-name-section-top">
+                <label for="venue-name-input" class="setup-section-label">Name Your Venue</label>
                 <input type="text" id="venue-name-input" placeholder="Enter venue name..." maxlength="16">
             </div>
-            <button class="btn btn-primary btn-large" id="btn-start-game" disabled>Start Match</button>
+
             <div class="loadout-area">
                 <div class="loadout-card loadout-card-primary" id="loadout-venue-card">
                     <div class="loadout-card-header">
@@ -96,13 +101,14 @@
                     <div class="loadout-deck-body" id="loadout-guest-list-body"></div>
                 </div>
             </div>
-            <div class="setup-rounds-section multiplayer-settings">
+
+            <div class="setup-section setup-rounds-section multiplayer-settings">
                 <label for="round-count-input">Rounds</label>
                 <label for="game-mode-input">Mode</label>
                 <select id="round-count-input">
                     <option value="5">5</option>
                     <option value="6">6</option>
-                    <option value="7"selected>7</option>
+                    <option value="7" selected>7</option>
                     <option value="8">8</option>
                     <option value="9">9</option>
                     <option value="10">10</option>
@@ -118,6 +124,8 @@
                     <div id="multiplayer-status" class="setup-help">Enter details, then press Start Match.</div>
                 </div>
             </div>
+
+            <button class="btn btn-primary btn-large btn-start-match" id="btn-start-game" disabled>Start Match</button>
         </div>
 
         <!-- Venue Selection Overlay -->
