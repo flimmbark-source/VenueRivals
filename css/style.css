@@ -1937,24 +1937,32 @@ body {
     font-family: 'Press Start 2P', monospace;
     font-size: 0.62rem;
     letter-spacing: 0.3px;
-    animation: numberPingReel 300ms steps(3, end) 3;
+    animation: numberPingReel 320ms linear 1;
 }
 
 @keyframes numberPingReel {
-    0% { filter: blur(1px); transform: translateY(-4px); }
-    100% { filter: blur(0); transform: translateY(0); }
+    0% {
+        filter: blur(1.5px);
+        opacity: 0.7;
+        letter-spacing: 1px;
+    }
+    100% {
+        filter: blur(0);
+        opacity: 1;
+        letter-spacing: 0.3px;
+    }
 }
 
 @keyframes numberPingFloatUp {
-    0% { transform: translate(-50%, -45%); }
-    70% { transform: translate(-50%, -135%); }
-    100% { transform: translate(-50%, -155%); opacity: 0; }
+    0% { transform: translate(-50%, -50%); opacity: 0; }
+    12% { opacity: 1; }
+    100% { transform: translate(-50%, -170%); opacity: 0; }
 }
 
 @keyframes numberPingFloatDown {
-    0% { transform: translate(-50%, -55%); }
-    70% { transform: translate(-50%, 35%); }
-    100% { transform: translate(-50%, 55%); opacity: 0; }
+    0% { transform: translate(-50%, -50%); opacity: 0; }
+    12% { opacity: 1; }
+    100% { transform: translate(-50%, 70%); opacity: 0; }
 }
 
 
