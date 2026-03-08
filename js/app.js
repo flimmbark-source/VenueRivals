@@ -1907,11 +1907,6 @@
         popup.className = 'action-log-popup';
         popup.dataset.anchorId = anchorEl.id || '';
 
-        const title = document.createElement('div');
-        title.className = 'action-log-title';
-        title.textContent = `Round ${gameState.round} action log`;
-        popup.appendChild(title);
-
         const list = document.createElement('div');
         list.className = 'action-log-list';
 
@@ -1952,7 +1947,7 @@
         if (!feedbackEls.length) return;
 
         const popupDuration = Math.max(1700, Math.round((duration || 2200) * 1.2));
-        const exitDuration = 700;
+        const exitDuration = 1700;
 
         feedbackEls.forEach((el) => {
             const existing = el.querySelector('.feedback-msg:not(.is-exiting)');
