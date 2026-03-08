@@ -35,6 +35,8 @@
     let swipeStartX = null;
     let playerFlashWindowInstanceId = null;
     let venueBackgroundPreloadImage = null;
+    let roundActionLog = [];
+    let actionLogPopupEl = null;
 
     const VENUE_BACKGROUND_IMAGE_SRC = 'css/public/Venue1.png';
     const ACTOR_TICK_MS = 50;
@@ -1467,6 +1469,24 @@
         return !!(guest?.ability && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
     }
 
+    function getSelectedPlayerHouseEntry() {
+        if (!gameState || selectedGridGuest?.source !== 'house') return null;
+        return gameState.player.house.find((entry) => {
+            if (typeof entry === 'string') return false;
+            if (selectedGridGuest.instanceId != null) {
+                return entry.instanceId === selectedGridGuest.instanceId;
+            }
+            return entry.guestId === selectedGridGuest.guestId;
+        }) || null;
+    }
+
+    function isSelectedPlayerHouseAbilityAvailable() {
+        const entry = getSelectedPlayerHouseEntry();
+        if (!entry) return false;
+        const guest = Game.GUESTS[entry.guestId];
+        return !!(guest?.ability && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
+    }
+
     function setGuestPhaseControls({ canAdmit = false, canClose = false, canFlash = false } = {}) {
         const entryDoors = [document.getElementById('player-door'), document.getElementById('player-door-card')].filter(Boolean);
         const exitDoors = [document.getElementById('player-exit'), document.getElementById('player-exit-card')].filter(Boolean);
@@ -1501,7 +1521,9 @@
             return;
         }
 
-        const canUseSelectedAbility = isPlayerFlashAvailable();
+        const canUseSelectedAbility = selectedGuestSource === 'house'
+            ? isSelectedPlayerHouseAbilityAvailable()
+            : isPlayerFlashAvailable();
 
         setGuestPhaseControls({ canAdmit: true, canClose: true, canFlash: canUseSelectedAbility });
     }
@@ -1516,7 +1538,8 @@
         el.className = 'guest-tooltip';
 
         const tooltipWho = options.who || 'rival';
-        const canTriggerAbility = tooltipWho === 'player' && isPlayerFlashAvailable();
+        const canTriggerAbility = tooltipWho === 'player'
+            && (options.source === 'house' ? isSelectedPlayerHouseAbilityAvailable() : isPlayerFlashAvailable());
 
         let abilityHTML = '';
         if (guest.ability) {
@@ -1633,7 +1656,7 @@
 
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'buy', actor: 'rival', guestId });
-            showFeedback(`Bought ${guestName}!`, 'money', 1500);
+            showFeedback(`Bought ${guestName}!`, 'money', 1500, 'player');
             if (wrapper) {
                 wrapper.classList.remove('purchase-arming');
                 wrapper.classList.add('purchase-confirmed');
@@ -1644,7 +1667,7 @@
 
         if (!Game.buyGuest(gameState.player, guestId)) return false;
 
-        showFeedback(`Bought ${guestName}!`, 'money', 1500);
+        showFeedback(`Bought ${guestName}!`, 'money', 1500, 'player');
         if (wrapper) {
             wrapper.classList.remove('purchase-arming');
             wrapper.classList.add('purchase-confirmed');
@@ -1858,20 +1881,110 @@
         doorEl.appendChild(overlay);
     }
 
+
+    function addRoundActionLogEntry(text) {
+        if (!text) return;
+        roundActionLog.push(text);
+        if (roundActionLog.length > 80) roundActionLog.shift();
+    }
+
+    function closeActionLogPopup() {
+        if (!actionLogPopupEl) return;
+        actionLogPopupEl.remove();
+        actionLogPopupEl = null;
+    }
+
+    function showActionLogPopup(anchorEl) {
+        if (!anchorEl || !gameState) return;
+
+        if (actionLogPopupEl) {
+            const isSameAnchor = actionLogPopupEl.dataset.anchorId && actionLogPopupEl.dataset.anchorId === anchorEl.id;
+            closeActionLogPopup();
+            if (isSameAnchor) return;
+        }
+
+        const popup = document.createElement('div');
+        popup.className = 'action-log-popup';
+        popup.dataset.anchorId = anchorEl.id || '';
+
+        const list = document.createElement('div');
+        list.className = 'action-log-list';
+
+        if (!roundActionLog.length) {
+            const empty = document.createElement('div');
+            empty.className = 'action-log-item action-log-empty';
+            empty.textContent = 'No actions logged yet this round.';
+            list.appendChild(empty);
+        } else {
+            roundActionLog.slice().reverse().forEach((entry) => {
+                const item = document.createElement('div');
+                item.className = 'action-log-item';
+                item.textContent = entry;
+                list.appendChild(item);
+            });
+        }
+
+        popup.appendChild(list);
+        document.body.appendChild(popup);
+        actionLogPopupEl = popup;
+
+        const anchorRect = anchorEl.getBoundingClientRect();
+        const popupRect = popup.getBoundingClientRect();
+        const left = Math.max(10, Math.min(window.innerWidth - popupRect.width - 10, anchorRect.left));
+        const top = Math.min(window.innerHeight - popupRect.height - 10, anchorRect.bottom + 8);
+        popup.style.left = `${left}px`;
+        popup.style.top = `${top}px`;
+    }
+
     // === Center Feedback ===
-    function showFeedback(text, type, duration) {
-        const el = document.getElementById('center-feedback');
-        if (!el) return;
+    function showFeedback(text, type, duration, who = activePartyView) {
+        addRoundActionLogEntry(text);
 
-        const popupDuration = Math.max(1400, duration || 2200);
-        el.style.setProperty('--feedback-duration', `${popupDuration}ms`);
-        el.innerHTML = `<div class="feedback-msg ${type || ''}">${text}</div>`;
+        const feedbackEls = [
+            document.getElementById('player-feedback'),
+            document.getElementById('rival-feedback'),
+        ].filter(Boolean);
+        if (!feedbackEls.length) return;
 
-        setTimeout(() => {
-            if (el.querySelector('.feedback-msg')?.textContent === text) {
-                el.innerHTML = '';
+        const popupDuration = Math.max(1700, Math.round((duration || 2200) * 1.2));
+        const exitDuration = 1700;
+
+        feedbackEls.forEach((el) => {
+            const existing = el.querySelector('.feedback-msg:not(.is-exiting)');
+            if (existing) {
+                existing.classList.add('is-exiting');
+                const existingTicker = existing.querySelector('.feedback-ticker-run, .feedback-ticker-static');
+                if (existingTicker) {
+                    const currentTransform = window.getComputedStyle(existingTicker).transform;
+                    existingTicker.style.animation = 'none';
+                    existingTicker.style.transform = currentTransform === 'none' ? 'translateX(0)' : currentTransform;
+                    existingTicker.classList.remove('feedback-ticker-run', 'feedback-ticker-static');
+                    existingTicker.classList.add('feedback-ticker-exit');
+                    // Force layout so the browser uses the frozen transform as the transition start.
+                    void existingTicker.offsetWidth;
+                    existingTicker.style.transition = `transform ${exitDuration}ms linear`;
+                    existingTicker.style.transform = 'translateX(-140%)';
+                }
+                setTimeout(() => {
+                    if (existing.isConnected) existing.remove();
+                }, exitDuration);
             }
-        }, popupDuration + 120);
+
+            const msgEl = document.createElement('div');
+            msgEl.className = `feedback-msg ${type || ''}`.trim();
+            msgEl.style.setProperty('--feedback-duration', `${popupDuration}ms`);
+
+            const tickerEl = document.createElement('span');
+            tickerEl.className = 'feedback-ticker-run';
+            tickerEl.textContent = text;
+            msgEl.appendChild(tickerEl);
+            el.appendChild(msgEl);
+
+            setTimeout(() => {
+                if (!msgEl.isConnected || !tickerEl.isConnected || msgEl.classList.contains('is-exiting')) return;
+                tickerEl.className = 'feedback-ticker-static';
+            }, popupDuration);
+        });
     }
 
     // === Guest Phase Actions ===
@@ -1924,7 +2037,7 @@
 
         if (result.busted) {
             document.getElementById(`${selfKey}-area`).classList.add('bust-flash');
-            showFeedback('YOU BUSTED!', 'bust', 3000);
+            showFeedback('YOU BUSTED!', 'bust', 3000, selfKey);
             setTimeout(() => {
                 document.getElementById(`${selfKey}-area`).classList.remove('bust-flash');
             }, 500);
@@ -1960,13 +2073,16 @@
             roundPoints: gameState.player.roundPoints,
         };
         const flashEntry = selfKey === 'player' ? getPlayerFlashWindowEntry() : null;
+        const selectedHouseEntry = selfKey === 'player' ? getSelectedPlayerHouseEntry() : null;
         const selectedForAbility = selfKey === 'player'
-            ? (flashEntry ? { source: 'house', guestId: flashEntry.guestId, instanceId: flashEntry.instanceId } : null)
+            ? (selectedHouseEntry
+                ? { source: 'house', guestId: selectedHouseEntry.guestId, instanceId: selectedHouseEntry.instanceId }
+                : (flashEntry ? { source: 'house', guestId: flashEntry.guestId, instanceId: flashEntry.instanceId } : null))
             : null;
         const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue, selectedForAbility);
         if (!result) return;
 
-        showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500);
+        showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500, selfKey);
         if (result.revealedGuests) setRevealDoorIntel(selfKey, result.revealedGuests);
 
         if (result.pushedOut) {
@@ -2056,7 +2172,7 @@
         removeTooltip();
         removeIconTooltip();
 
-        showFeedback('You closed the door safely', 'money', 2000);
+        showFeedback('You closed the door safely', 'money', 2000, selfKey);
         checkGuestPhaseDone();
         publishState();
     }
@@ -2143,7 +2259,7 @@
 
             if (result.busted) {
                 document.getElementById('rival-area').classList.add('bust-flash');
-                showFeedback(`${r.name} BUSTED!`, 'bust', 2500);
+                showFeedback(`${r.name} BUSTED!`, 'bust', 2500, 'rival');
                 setTimeout(() => {
                     document.getElementById('rival-area').classList.remove('bust-flash');
                 }, 500);
@@ -2151,7 +2267,7 @@
         } else if (action === 'ability') {
             const result = Game.activateAbility(r, p, rVenue, pVenue);
             if (!result) return;
-            showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500);
+            showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500, 'rival');
             if (result.revealedGuests) setRevealDoorIntel('rival', result.revealedGuests);
             if (result.pushedOut) {
                 animateExitGuest('rival', result.pushedOut);
@@ -2192,7 +2308,7 @@
             if (gameState.rival.house.length !== rivalHouseSnapshot) {
                 renderHouseGrid('rival');
             }
-            showFeedback(`${r.name} closed their door`, 'money', 2000);
+            showFeedback(`${r.name} closed their door`, 'money', 2000, 'rival');
         }
 
         renderArrivingGuest('rival');
@@ -2301,7 +2417,7 @@
 
             if (aiBuys.length > 0) {
                 const names = aiBuys.map(id => Game.GUESTS[id].name).join(', ');
-                showFeedback(`${gameState.rival.name} bought: ${names}`, 'disruption', 3000);
+                showFeedback(`${gameState.rival.name} bought: ${names}`, 'disruption', 3000, 'rival');
             }
         }
 
@@ -2429,7 +2545,7 @@
         dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'done-shopping', actor: 'rival' });
-            showFeedback('Waiting for host to continue…', 'points', 1500);
+            showFeedback('Waiting for host to continue…', 'points', 1500, 'player');
             return;
         }
 
@@ -2462,11 +2578,13 @@
 
     function startNewRound() {
         Game.startGuestPhase(gameState);
+        roundActionLog = [];
+        closeActionLogPopup();
         clearRevealDoorIntel();
         playerFlashWindowInstanceId = null;
         setPhoneBuyPhaseLayout(false);
 
-        showFeedback(`ROUND ${gameState.round}`, 'points', 1500);
+        showFeedback(`ROUND ${gameState.round}`, 'points', 1500, 'player');
 
         // Reset UI
         document.getElementById('guest-phase-panel').style.display = '';
@@ -3072,6 +3190,15 @@
 
         bindPartyCarouselInteractions();
 
+        const feedbackBars = [document.getElementById('player-feedback'), document.getElementById('rival-feedback')].filter(Boolean);
+        feedbackBars.forEach((bar) => {
+            bar.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showActionLogPopup(bar);
+            });
+        });
+
+
         // Guest phase controls
         document.getElementById('player-door').addEventListener('click', handleAdmit);
         document.getElementById('player-door-card').addEventListener('click', handleAdmit);
@@ -3091,6 +3218,8 @@
             clearVenueActors();
             gameState = null;
             currentMarket = null;
+            roundActionLog = [];
+            closeActionLogPopup();
             if (multiplayerSession) { multiplayerSession.close(); multiplayerSession = null; }
             closeWaitingPopup();
             pendingHostMatchConfig = null;
@@ -3127,6 +3256,9 @@
             if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.slot-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
                 removeIconTooltip();
             }
+            if (actionLogPopupEl && !e.target.closest('.action-log-popup') && !e.target.closest('.venue-feedback')) {
+                closeActionLogPopup();
+            }
         });
 
         document.addEventListener('keydown', (e) => {
@@ -3135,6 +3267,9 @@
             }
             if (e.key === 'Escape' && guestAbilityPopupEl) {
                 closeGuestAbilityPopup();
+            }
+            if (e.key === 'Escape' && actionLogPopupEl) {
+                closeActionLogPopup();
             }
         });
     }
