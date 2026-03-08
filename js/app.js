@@ -2629,7 +2629,7 @@
         if (!valid) {
             body.innerHTML = `<div class="loadout-deck-warning" style="font-family:'Press Start 2P',monospace;font-size:0.35rem;color:var(--color-heat);padding:4px;">Need at least ${MIN_DECK_SIZE} cards</div>`;
         }
-        renderLoadoutGuestCards_horizontal(body, loadoutState.guestList);
+        renderLoadoutGuestCards_horizontal(body, loadoutState.guestList, { interactive: true });
     }
 
     function renderLoadoutGuestCards(containerId, guests) {
@@ -2644,10 +2644,11 @@
         });
     }
 
-    function renderLoadoutGuestCards_horizontal(container, guests) {
+    function renderLoadoutGuestCards_horizontal(container, guests, options = {}) {
         if (!container) return;
+        const interactive = options.interactive === true;
         guests.forEach((guestId) => {
-            const slot = createGuestSlot(guestId, false, { interactive: false });
+            const slot = createGuestSlot(guestId, false, { interactive });
             slot.classList.add('loadout-preview-card');
             container.appendChild(slot);
         });
@@ -2916,7 +2917,10 @@
             openVenueSelect();
         });
         document.getElementById('loadout-deck-card').addEventListener('click', openDeckManage);
-        document.getElementById('loadout-guest-list-card').addEventListener('click', openGuestListManage);
+        document.getElementById('btn-edit-guest-list-inline').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openGuestListManage();
+        });
         document.getElementById('btn-close-venue-select').addEventListener('click', closeVenueSelect);
         document.getElementById('btn-close-deck-manage').addEventListener('click', closeDeckManage);
         document.getElementById('btn-close-guest-list-manage').addEventListener('click', closeGuestListManage);
