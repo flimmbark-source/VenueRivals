@@ -37,6 +37,10 @@
     let venueBackgroundPreloadImage = null;
     let roundActionLog = [];
     let actionLogPopupEl = null;
+    const hudDeltaSnapshot = {
+        player: { heat: null, money: null, points: null },
+        rival: { heat: null, money: null, points: null },
+    };
 
     const VENUE_BACKGROUND_IMAGE_SRC = 'css/public/Venue1.png';
     const ACTOR_TICK_MS = 50;
@@ -899,6 +903,19 @@
 
         const r = gameState.rival;
         const hudActor = activePartyView === 'rival' ? r : p;
+
+        emitHudDeltaPing('points', hudActor.points, hudDeltaSnapshot.player.points, hudPlayerPtsEl, 'below');
+        emitHudDeltaPing('money', hudActor.money, hudDeltaSnapshot.player.money, playerMoneyEl, 'below');
+        emitHudDeltaPing('heat', hudActor.heat, hudDeltaSnapshot.player.heat, document.getElementById('player-heat-text'), 'above');
+        emitHudDeltaPing('heat', r.heat, hudDeltaSnapshot.rival.heat, document.getElementById('rival-heat-text'), 'above');
+
+        hudDeltaSnapshot.player.points = hudActor.points;
+        hudDeltaSnapshot.player.money = hudActor.money;
+        hudDeltaSnapshot.player.heat = hudActor.heat;
+        hudDeltaSnapshot.rival.heat = r.heat;
+        hudDeltaSnapshot.rival.points = r.points;
+        hudDeltaSnapshot.rival.money = r.money;
+
         hudPlayerPtsEl.textContent = `⭐ ${hudActor.points}`;
         playerMoneyEl.textContent = `💵 $${hudActor.money}`;
 
@@ -919,6 +936,51 @@
         else if (pct > 50) fill.classList.add('warning');
         else fill.classList.add('safe');
         text.textContent = `\u{1F525} ${heat}/${max}`;
+    }
+
+    function emitHudDeltaPing(statType, nextValue, previousValue, targetEl, placement = 'above') {
+        if (!targetEl || previousValue == null) return;
+        const delta = Number(nextValue) - Number(previousValue);
+        if (!Number.isFinite(delta) || delta === 0) return;
+
+        let color = '#ffd166';
+        if (statType === 'heat') {
+            color = delta > 0 ? '#ff5c5c' : '#4cc9f0';
+        } else if (statType === 'money') {
+            color = delta > 0 ? '#2cb67d' : '#f59e0b';
+        } else if (statType === 'points') {
+            color = '#ffd166';
+        }
+
+        const sign = delta > 0 ? '+' : '';
+        spawnNumberPing(targetEl, `${sign}${delta}`, color, placement);
+    }
+
+    function spawnNumberPing(targetEl, text, color, placement = 'above') {
+        if (!targetEl || !text) return;
+        const rect = targetEl.getBoundingClientRect();
+        if (!rect || (rect.width === 0 && rect.height === 0)) return;
+
+        const ping = document.createElement('div');
+        ping.className = `number-ping ${placement === 'below' ? 'below' : 'above'}`;
+        ping.style.setProperty('--ping-color', color || '#ffd166');
+        ping.style.left = `${rect.left + (rect.width / 2)}px`;
+        ping.style.top = `${placement === 'below' ? rect.bottom + 6 : rect.top - 6}px`;
+
+        const reel = document.createElement('span');
+        reel.className = 'number-ping-reel';
+        reel.textContent = text;
+        ping.appendChild(reel);
+
+        document.body.appendChild(ping);
+        requestAnimationFrame(() => ping.classList.add('is-visible'));
+
+        setTimeout(() => {
+            ping.classList.remove('is-visible');
+            setTimeout(() => {
+                if (ping.isConnected) ping.remove();
+            }, 420);
+        }, 900);
     }
 
     function renderAbilityBadge(guest) {
