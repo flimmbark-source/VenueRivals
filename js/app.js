@@ -35,6 +35,8 @@
     let swipeStartX = null;
     let playerFlashWindowInstanceId = null;
     let venueBackgroundPreloadImage = null;
+    let roundActionLog = [];
+    let actionLogPopupEl = null;
 
     const VENUE_BACKGROUND_IMAGE_SRC = 'css/public/Venue1.png';
     const ACTOR_TICK_MS = 50;
@@ -1879,8 +1881,70 @@
         doorEl.appendChild(overlay);
     }
 
+
+    function addRoundActionLogEntry(text) {
+        if (!text) return;
+        roundActionLog.push(text);
+        if (roundActionLog.length > 80) roundActionLog.shift();
+    }
+
+    function closeActionLogPopup() {
+        if (!actionLogPopupEl) return;
+        actionLogPopupEl.remove();
+        actionLogPopupEl = null;
+    }
+
+    function showActionLogPopup(anchorEl) {
+        if (!anchorEl || !gameState) return;
+
+        if (actionLogPopupEl) {
+            const isSameAnchor = actionLogPopupEl.dataset.anchorId && actionLogPopupEl.dataset.anchorId === anchorEl.id;
+            closeActionLogPopup();
+            if (isSameAnchor) return;
+        }
+
+        const popup = document.createElement('div');
+        popup.className = 'action-log-popup';
+        popup.dataset.anchorId = anchorEl.id || '';
+
+        const title = document.createElement('div');
+        title.className = 'action-log-title';
+        title.textContent = `Round ${gameState.round} action log`;
+        popup.appendChild(title);
+
+        const list = document.createElement('div');
+        list.className = 'action-log-list';
+
+        if (!roundActionLog.length) {
+            const empty = document.createElement('div');
+            empty.className = 'action-log-item action-log-empty';
+            empty.textContent = 'No actions logged yet this round.';
+            list.appendChild(empty);
+        } else {
+            roundActionLog.slice().reverse().forEach((entry) => {
+                const item = document.createElement('div');
+                item.className = 'action-log-item';
+                item.textContent = entry;
+                list.appendChild(item);
+            });
+        }
+
+        popup.appendChild(list);
+        document.body.appendChild(popup);
+        actionLogPopupEl = popup;
+
+        const anchorRect = anchorEl.getBoundingClientRect();
+        const popupRect = popup.getBoundingClientRect();
+        const left = Math.max(10, Math.min(window.innerWidth - popupRect.width - 10, anchorRect.left));
+        const top = Math.min(window.innerHeight - popupRect.height - 10, anchorRect.bottom + 8);
+        popup.style.left = `${left}px`;
+        popup.style.top = `${top}px`;
+    }
+
     // === Center Feedback ===
     function showFeedback(text, type, duration, who = activePartyView) {
+        addRoundActionLogEntry(text);
+
         const feedbackEls = [
             document.getElementById('player-feedback'),
             document.getElementById('rival-feedback'),
@@ -2519,6 +2583,8 @@
 
     function startNewRound() {
         Game.startGuestPhase(gameState);
+        roundActionLog = [];
+        closeActionLogPopup();
         clearRevealDoorIntel();
         playerFlashWindowInstanceId = null;
         setPhoneBuyPhaseLayout(false);
@@ -3129,6 +3195,15 @@
 
         bindPartyCarouselInteractions();
 
+        const feedbackBars = [document.getElementById('player-feedback'), document.getElementById('rival-feedback')].filter(Boolean);
+        feedbackBars.forEach((bar) => {
+            bar.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showActionLogPopup(bar);
+            });
+        });
+
+
         // Guest phase controls
         document.getElementById('player-door').addEventListener('click', handleAdmit);
         document.getElementById('player-door-card').addEventListener('click', handleAdmit);
@@ -3148,6 +3223,8 @@
             clearVenueActors();
             gameState = null;
             currentMarket = null;
+            roundActionLog = [];
+            closeActionLogPopup();
             if (multiplayerSession) { multiplayerSession.close(); multiplayerSession = null; }
             closeWaitingPopup();
             pendingHostMatchConfig = null;
@@ -3184,6 +3261,9 @@
             if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.slot-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
                 removeIconTooltip();
             }
+            if (actionLogPopupEl && !e.target.closest('.action-log-popup') && !e.target.closest('.venue-feedback')) {
+                closeActionLogPopup();
+            }
         });
 
         document.addEventListener('keydown', (e) => {
@@ -3192,6 +3272,9 @@
             }
             if (e.key === 'Escape' && guestAbilityPopupEl) {
                 closeGuestAbilityPopup();
+            }
+            if (e.key === 'Escape' && actionLogPopupEl) {
+                closeActionLogPopup();
             }
         });
     }
