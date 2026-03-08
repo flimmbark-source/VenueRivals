@@ -2138,7 +2138,7 @@ body {
 .shop-grid {
     display: grid;
     grid-template-columns: repeat(5, auto);
-    gap: 18px 18px;
+    gap: 18px 8px;
     justify-content: center;
 }
 
