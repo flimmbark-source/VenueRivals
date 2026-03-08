@@ -299,7 +299,7 @@ const Game = (() => {
     velvetBouncer: {
       name: "Velvet Bouncer",
       emoji: "🛡️",
-      heat: 0,
+      heat: 1,
       money: 2,
       points: 2,
       cost: 4,
