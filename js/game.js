@@ -14,7 +14,7 @@ const Game = (() => {
     regular: {
       name: "Regular",
       emoji: "🙂",
-      heat: 1,
+      heat: 0,
       money: 0,
       points: 1,
       cost: 2,
@@ -26,7 +26,7 @@ const Game = (() => {
     chiller: {
       name: "Chiller",
       emoji: "❄️",
-      heat: 1,
+      heat: 0,
       money: 0,
       points: 1,
       cost: 2,
@@ -46,7 +46,7 @@ const Game = (() => {
     tipper: {
       name: "Tipper",
       emoji: "💵",
-      heat: 2,
+      heat: 0,
       money: 2,
       points: 0,
       cost: 2,
@@ -58,7 +58,7 @@ const Game = (() => {
     tipOffArtist: {
       name: "Tip-Off Artist",
       emoji: "👀",
-      heat: 2,
+      heat: 0,
       money: 3,
       points: 0,
       cost: 4,
@@ -78,7 +78,7 @@ const Game = (() => {
     hypeFriend: {
       name: "Hype Friend",
       emoji: "🙌",
-      heat: 3,
+      heat: 1,
       money: 1,
       points: 2,
       cost: 3,
@@ -90,7 +90,7 @@ const Game = (() => {
     hypester: {
       name: "Hypester",
       emoji: "🔥",
-      heat: 2,
+      heat: 1,
       money: 2,
       points: 2,
       cost: 6,
@@ -110,7 +110,7 @@ const Game = (() => {
     standIn: {
       name: "Stand-In",
       emoji: "🎭",
-      heat: 3,
+      heat: 1,
       money: 1,
       points: 2,
       cost: 5,
@@ -129,7 +129,7 @@ const Game = (() => {
     usher: {
       name: "Usher",
       emoji: "🧤",
-      heat: 2,
+      heat: 0,
       money: 0,
       points: 2,
       cost: 5,
@@ -148,7 +148,7 @@ const Game = (() => {
     floorRunner: {
       name: "Floor Runner",
       emoji: "🏃",
-      heat: 2,
+      heat: 0,
       money: 0,
       points: 2,
       cost: 7,
@@ -168,7 +168,7 @@ const Game = (() => {
       name: "Bookkeeper",
       emoji: "📒",
       heat: 1,
-      money: 4,
+      money: 3,
       points: 1,
       cost: 6,
       venue: "Neutral",
@@ -187,7 +187,7 @@ const Game = (() => {
     rovingCritic: {
       name: "Roving Critic",
       emoji: "🧐",
-      heat: 3,
+      heat: 1,
       money: 0,
       points: 3,
       cost: 5,
@@ -208,7 +208,7 @@ const Game = (() => {
       name: "Party Promoter",
       emoji: "📣",
       heat: 3,
-      money: 4,
+      money: 5,
       points: 0,
       cost: 8,
       venue: "Neutral",
@@ -239,7 +239,7 @@ const Game = (() => {
     celebrity: {
       name: "Celebrity",
       emoji: "🎬",
-      heat: 3,
+      heat: 1,
       money: 0,
       points: 4,
       cost: 7,
@@ -260,7 +260,7 @@ const Game = (() => {
     headliner: {
       name: "Headliner",
       emoji: "🌟",
-      heat: 3,
+      heat: 2,
       money: 0,
       points: 4,
       cost: 6,
@@ -279,7 +279,7 @@ const Game = (() => {
     champagneHost: {
       name: "Champagne Host",
       emoji: "🥂",
-      heat: 2,
+      heat: 0,
       money: 2,
       points: 4,
       cost: 5,
@@ -299,7 +299,7 @@ const Game = (() => {
     velvetBouncer: {
       name: "Velvet Bouncer",
       emoji: "🛡️",
-      heat: 3,
+      heat: 0,
       money: 2,
       points: 2,
       cost: 4,
@@ -318,7 +318,7 @@ const Game = (() => {
     spotlightPhotographer: {
       name: "Spotlight Photographer",
       emoji: "📸",
-      heat: 3,
+      heat: 1,
       money: 1,
       points: 4,
       cost: 5,
@@ -340,7 +340,7 @@ const Game = (() => {
     galleryScout: {
       name: "Gallery Scout",
       emoji: "🔭",
-      heat: 1,
+      heat: 0,
       money: 0,
       points: 2,
       cost: 4,
@@ -359,7 +359,7 @@ const Game = (() => {
     trendBroker: {
       name: "Trend Broker",
       emoji: "📈",
-      heat: 2,
+      heat: 1,
       money: 3,
       points: 0,
       cost: 5,
@@ -399,7 +399,7 @@ const Game = (() => {
     stylist: {
       name: "Stylist",
       emoji: "🧵",
-      heat: 2,
+      heat: 0,
       money: 1,
       points: 3,
       cost: 6,
@@ -440,7 +440,7 @@ const Game = (() => {
     wheelman: {
       name: "Wheelman",
       emoji: "🚗",
-      heat: 3,
+      heat: 1,
       money: 4,
       points: 1,
       cost: 8,
@@ -459,7 +459,7 @@ const Game = (() => {
     fence: {
       name: "Fence",
       emoji: "🧰",
-      heat: 3,
+      heat: 1,
       money: 3,
       points: 0,
       cost: 5,
@@ -479,7 +479,7 @@ const Game = (() => {
     provocateur: {
       name: "Provocateur",
       emoji: "😈",
-      heat: 2,
+      heat: 1,
       money: 1,
       points: 3,
       cost: 5,
@@ -501,7 +501,7 @@ const Game = (() => {
     gatecrasher: {
       name: "Gatecrasher",
       emoji: "💥",
-      heat: 2,
+      heat: 1,
       money: 0,
       points: 0,
       cost: 99,
@@ -544,8 +544,8 @@ const Game = (() => {
     velvetRoom: {
       name: "Red Carpet Gala",
       emoji: "🥂",
-      gridSize: 2,
-      bustThreshold: 6,
+      gridSize: 3,
+      bustThreshold: 3,
       desc: "An elegant spotlight gala where VIPs are locked into position until the grand close.",
       style: "points",
       color: "#c9884c",
@@ -572,8 +572,8 @@ const Game = (() => {
     champagneCountdown: {
       name: "Champagne Countdown",
       emoji: "🍾",
-      gridSize: 2,
-      bustThreshold: 6,
+      gridSize: 3,
+      bustThreshold: 3,
       desc: "A packed-house party that peaks at the perfect moment—fill every seat and close strong.",
       style: "points",
       color: "#c9884c",
@@ -601,7 +601,7 @@ const Game = (() => {
       name: "Headliner Afterparty",
       emoji: "🎤",
       gridSize: 3,
-      bustThreshold: 5,
+      bustThreshold: 3,
       desc: "Keep the star locked while the crew pushes and pulls through the lane.",
       style: "points",
       color: "#c9884c",
@@ -629,7 +629,7 @@ const Game = (() => {
       name: "Bazaar Night",
       emoji: "🏮",
       gridSize: 3,
-      bustThreshold: 5,
+      bustThreshold: 3,
       desc: "A curated market soirée where peeking and bouncing keeps your lineup sharp.",
       style: "money",
       color: "#7f5af0",
@@ -657,7 +657,7 @@ const Game = (() => {
       name: "Trendsetter Mixer",
       emoji: "🛍️",
       gridSize: 3,
-      bustThreshold: 5,
+      bustThreshold: 3,
       desc: "A market mixer where scoring at the right moment is everything.",
       style: "money",
       color: "#7f5af0",
@@ -684,8 +684,8 @@ const Game = (() => {
     backAlley: {
       name: "Smuggler's Run",
       emoji: "🕳️",
-      gridSize: 4,
-      bustThreshold: 4,
+      gridSize: 3,
+      bustThreshold: 3,
       desc: "A high-velocity outlaw party—push guests out, taunt rivals, and stay cool.",
       style: "control",
       color: "#2cb67d",
@@ -712,8 +712,8 @@ const Game = (() => {
     blackMarketBash: {
       name: "Black Market Bash",
       emoji: "💼",
-      gridSize: 4,
-      bustThreshold: 4,
+      gridSize: 3,
+      bustThreshold: 3,
       desc: "A gritty underground bash where outlaws lay low and cash out before the heat catches up.",
       style: "control",
       color: "#2cb67d",
@@ -740,8 +740,8 @@ const Game = (() => {
     riotNight: {
       name: "Riot Night",
       emoji: "🚨",
-      gridSize: 4,
-      bustThreshold: 4,
+      gridSize: 3,
+      bustThreshold: 3,
       desc: "A volatile street party built to taunt opponents with heat and force panic closes.",
       style: "control",
       color: "#2cb67d",
