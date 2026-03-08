@@ -1869,16 +1869,15 @@ body {
 .feedback-ticker-exit {
     display: inline-block;
     white-space: nowrap;
-    margin-left: 0;
+    transform: translateX(0);
 }
 
 .feedback-ticker-run {
-    margin-left: 100%;
     animation: feedbackTickerScroll var(--feedback-duration, 2600ms) linear forwards;
 }
 
 .feedback-ticker-exit {
-    animation: feedbackTickerExit 700ms linear forwards;
+    will-change: transform;
 }
 
 .feedback-msg.disruption {
@@ -3326,11 +3325,6 @@ body {
 }
 
 @keyframes feedbackTickerScroll {
-    from { margin-left: 110%; }
-    to { margin-left: 0; }
-}
-
-@keyframes feedbackTickerExit {
-    from { transform: translateX(0); }
-    to { transform: translateX(-140%); }
+    from { transform: translateX(110%); }
+    to { transform: translateX(0); }
 }

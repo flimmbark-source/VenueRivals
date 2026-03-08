@@ -1875,8 +1875,15 @@
                 existing.classList.add('is-exiting');
                 const existingTicker = existing.querySelector('.feedback-ticker-run, .feedback-ticker-static');
                 if (existingTicker) {
+                    const currentTransform = window.getComputedStyle(existingTicker).transform;
+                    existingTicker.style.animation = 'none';
+                    existingTicker.style.transform = currentTransform === 'none' ? 'translateX(0)' : currentTransform;
                     existingTicker.classList.remove('feedback-ticker-run', 'feedback-ticker-static');
                     existingTicker.classList.add('feedback-ticker-exit');
+                    // Force layout so the browser uses the frozen transform as the transition start.
+                    void existingTicker.offsetWidth;
+                    existingTicker.style.transition = `transform ${exitDuration}ms linear`;
+                    existingTicker.style.transform = 'translateX(-140%)';
                 }
                 setTimeout(() => {
                     if (existing.isConnected) existing.remove();
