@@ -2037,7 +2037,7 @@
 
         if (result.busted) {
             document.getElementById(`${selfKey}-area`).classList.add('bust-flash');
-            showFeedback('YOU BUSTED!', 'bust', 3000, selfKey);
+            showFeedback(`${self.name} BUSTED!`, 'bust', 3000, selfKey);
             setTimeout(() => {
                 document.getElementById(`${selfKey}-area`).classList.remove('bust-flash');
             }, 500);
@@ -2120,6 +2120,7 @@
 
         if (opponent.busted) {
             document.getElementById(`${opponentKey}-area`).classList.add('bust-flash');
+            showFeedback(`${opponent.name} BUSTED!`, 'bust', 2500, opponentKey);
             setTimeout(() => {
                 document.getElementById(`${opponentKey}-area`).classList.remove('bust-flash');
             }, 500);
@@ -2279,6 +2280,7 @@
             // Check if player was busted
             if (p.busted) {
                 document.getElementById('player-area').classList.add('bust-flash');
+                showFeedback(`${p.name} BUSTED!`, 'bust', 3000, 'player');
                 updateGuestDetail();
                 updateVenueStatus('player');
                 setTimeout(() => {
