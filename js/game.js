@@ -4,7 +4,7 @@
 
 const Game = (() => {
   const DEFAULT_TOTAL_ROUNDS = 14;
-  const BUST_PENALTY = 0.25;
+  const BUST_PENALTY = 0;
   const TAGS = ["VIP", "Performer", "Scout", "Broker", "Outlaw"];
 
   let nextInstanceId = 1;
