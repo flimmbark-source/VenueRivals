@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Venue Rivals</title>
     <link rel="stylesheet" href="css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- Title Screen -->
@@ -65,59 +65,92 @@
     <!-- Setup Screen (Loadout) -->
     <div id="setup-screen" class="screen">
         <div class="setup-container">
-            <div class="setup-name-section setup-name-section-top">
-                <label for="venue-name-input">Name Your Venue</label>
-                <input type="text" id="venue-name-input" placeholder="Enter venue name..." maxlength="16">
-            </div>
-            <button class="btn btn-primary btn-large" id="btn-start-game" disabled>Start Match</button>
-            <div class="loadout-area">
-                <div class="loadout-card loadout-card-primary" id="loadout-venue-card">
-                    <div class="loadout-card-header">
-                        <span class="loadout-card-label">VENUE</span>
-                        <span class="loadout-card-name" id="loadout-venue-name"></span>
-                        <span class="loadout-card-change">Change</span>
-                    </div>
-                    <div class="loadout-venue-body" id="loadout-venue-body"></div>
-                </div>
-                <div class="loadout-card loadout-card-primary" id="loadout-deck-card">
-                    <div class="loadout-card-header">
-                        <span class="loadout-card-label">DECK</span>
-                        <span class="loadout-card-name" id="loadout-deck-name"></span>
-                        <span class="loadout-card-change">Edit</span>
-                    </div>
-                    <div class="loadout-deck-body" id="loadout-deck-body"></div>
-                </div>
-                <div class="loadout-card loadout-card-secondary" id="loadout-guest-list-card">
-                    <div class="loadout-card-header">
-                        <span class="loadout-card-label">GUEST LIST</span>
-                        <span class="loadout-card-name" id="loadout-guest-list-name"></span>
-                        <span class="loadout-card-change">Edit</span>
-                    </div>
-                    <div class="loadout-deck-body" id="loadout-guest-list-body"></div>
+            <!-- Header Panel -->
+            <div class="arcade-header-panel">
+                <button class="arcade-back-btn" id="btn-back-to-title-from-setup" aria-label="Back to title">BACK</button>
+                <div class="arcade-header-spacer"></div>
+                <div class="arcade-hud-stats">
+                    <span class="arcade-hud-money" id="arcade-hud-money"></span>
+                    <span class="arcade-hud-points" id="arcade-hud-points"></span>
                 </div>
             </div>
-            <div class="setup-rounds-section multiplayer-settings">
-                <label for="round-count-input">Rounds</label>
-                <label for="game-mode-input">Mode</label>
-                <select id="round-count-input">
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7"selected>7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                </select>
-                <select id="game-mode-input">
-                    <option value="single" selected>Single Player</option>
-                    <option value="host">Host Match (Ably)</option>
-                    <option value="join">Join Match (Ably)</option>
-                </select>
-                <div id="multiplayer-fields" style="display:none; margin-top:10px;">
-                    <label for="room-code-input">Room Code</label>
-                    <input type="text" id="room-code-input" maxlength="32" placeholder="e.g. rivals-room-1">
-                    <div id="multiplayer-status" class="setup-help">Enter details, then press Start Match.</div>
+
+            <h2 class="arcade-title">TONIGHT'S SETUP</h2>
+
+            <!-- Venue Name Input (Club Sign) -->
+            <div class="arcade-panel arcade-sign-panel">
+                <span class="arcade-sign-label">VENUE NAME:</span>
+                <div class="arcade-sign-input-wrap">
+                    <input type="text" id="venue-name-input" class="arcade-sign-input" placeholder="Enter venue name..." maxlength="16">
                 </div>
             </div>
+
+            <!-- Venue Panel (Hero) -->
+            <div class="arcade-panel arcade-venue-panel">
+                <div class="arcade-venue-hero" id="loadout-venue-card">
+                    <div class="arcade-venue-header">
+                        <span class="arcade-venue-name-label" id="loadout-venue-name"></span>
+                        <button class="arcade-btn arcade-btn-sm arcade-btn-change" id="btn-change-venue-inline">CHANGE VENUE</button>
+                    </div>
+                    <div class="arcade-venue-preview" id="loadout-venue-body"></div>
+                    <div class="arcade-panel-header">
+                        
+                    </div>
+                    <div class="arcade-card-scroll" id="loadout-guest-list-body"></div>
+                </div>
+            </div>
+
+                        <!-- Guest R
+
+
+            <!-- Deck Panel -->
+            <div class="arcade-panel arcade-deck-panel" id="loadout-deck-card">
+                <div class="arcade-panel-header">
+                    <span class="arcade-panel-title">Invite List</span>
+                    <button class="arcade-btn arcade-btn-edit" id="btn-edit-deck-inline">EDIT</button>
+                </div>
+                <div class="arcade-card-scroll" id="loadout-deck-body"></div>
+            </div>
+
+            <!-- Game Settings Panel -->
+            <div class="arcade-panel arcade-settings-panel">
+                <div class="arcade-settings-row">
+                    <span class="arcade-settings-label">ROUNDS</span>
+                    <div class="arcade-selector" id="arcade-rounds-selector">
+                        <button class="arcade-sel-btn" data-value="8">8</button>
+                        <button class="arcade-sel-btn" data-value="14">14</button>
+                        <button class="arcade-sel-btn" data-value="20">20</button>
+                    </div>
+                    <span class="arcade-settings-label">MODE</span>
+                    <div class="arcade-selector" id="arcade-mode-selector">
+                        <button class="arcade-sel-btn arcade-sel-wide" data-value="single">Solo</button>
+                        <button class="arcade-sel-btn arcade-sel-wide" data-value="host">Host</button>
+                        <button class="arcade-sel-btn arcade-sel-wide" data-value="join">Join</button>
+                    </div>
+                </div>
+                <div id="multiplayer-fields" style="display:none;">
+                    <label for="room-code-input" class="arcade-sign-label" style="font-size:0.5rem;">ROOM CODE</label>
+                    <input type="text" id="room-code-input" class="arcade-sign-input" maxlength="32" placeholder="e.g. rivals-room-1">
+                    <div id="multiplayer-status" class="arcade-mp-status">Enter details, then open doors.</div>
+                </div>
+            </div>
+
+            <!-- Hidden selects for JS compatibility -->
+            <select id="round-count-input" style="display:none;">
+                <option value="8">8</option>
+                <option value="14" selected>14</option>
+                <option value="20">20</option>
+            </select>
+            <select id="game-mode-input" style="display:none;">
+                <option value="single" selected>Single Player</option>
+                <option value="host">Host Match (Ably)</option>
+                <option value="join">Join Match (Ably)</option>
+            </select>
+
+            <!-- Start Button -->
+            <button class="arcade-start-btn" id="btn-start-game" disabled>
+                <span class="arcade-start-text">OPEN DOORS!</span>
+            </button>
         </div>
 
         <!-- Venue Selection Overlay -->
