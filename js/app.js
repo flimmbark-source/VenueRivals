@@ -2660,7 +2660,7 @@
         previewEmpty.style.display = 'none';
         const list = Game.GUEST_LISTS[previewListId];
         list.guests.forEach((guestId) => {
-            const card = createGuestSlot(guestId, false, { interactive: false });
+            const card = createGuestSlot(guestId, false, { interactive: true, who: 'rival', source: 'venue-preview' });
             card.classList.add('loadout-preview-card');
             previewGrid.appendChild(card);
         });
