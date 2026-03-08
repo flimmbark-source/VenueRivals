@@ -2100,14 +2100,14 @@ body {
 .shop-grid {
     display: grid;
     grid-template-columns: repeat(5, auto);
-    gap: 18px 8px;
+    gap: 18px 18px;
     justify-content: center;
 }
 
 .shop-upgrades {
     display: flex;
     flex-direction: column;
-    gap: 22px;
+    gap: 18px;
     align-items: center;
 }
 

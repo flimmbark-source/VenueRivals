@@ -2318,16 +2318,11 @@
         const guest = Game.GUESTS[guestId];
         const upgradeCardText = {
             slotIncrease: '+1 slot',
-            heatCapIncrease: '+1 heat',
+            heatCapIncrease: '+1 🔥',
         };
 
         const wrapper = document.createElement('div');
         wrapper.className = 'deck-manage-card shop-card-wrapper' + (canAfford ? '' : ' disabled');
-
-        const nameLabel = document.createElement('div');
-        nameLabel.className = 'deck-card-name' + (guest.ability ? ' has-ability' : '');
-        nameLabel.textContent = guest.name;
-        wrapper.appendChild(nameLabel);
 
         const costLabel = document.createElement('div');
         costLabel.className = 'shop-card-cost';
@@ -2595,9 +2590,6 @@
         const body = document.getElementById('loadout-venue-body');
         body.innerHTML = `
             <div class="arcade-venue-stats-row">
-                <span class="arcade-stat-chip stat-slots">Guest Slots: ${Math.max(0, venue.gridSize)}</span>
-                <span class="arcade-stat-chip stat-bust">Heat Limit: ${venue.bustThreshold}</span>
-                <span class="arcade-stat-chip stat-style">${VENUE_STYLE_LABEL[venue.style]}</span>
             </div>
         `;
     }
@@ -2614,7 +2606,7 @@
         if (!valid) {
             body.innerHTML = `<div class="loadout-deck-warning" style="font-family:'Press Start 2P',monospace;font-size:0.35rem;color:var(--color-heat);padding:4px;">Need at least ${MIN_DECK_SIZE} cards</div>`;
         }
-        renderLoadoutGuestCards_horizontal(body, loadoutState.deck);
+        renderLoadoutGuestCards_horizontal(body, loadoutState.deck, { interactive: true });
     }
 
     function renderLoadoutGuestList() {
@@ -2629,7 +2621,7 @@
         if (!valid) {
             body.innerHTML = `<div class="loadout-deck-warning" style="font-family:'Press Start 2P',monospace;font-size:0.35rem;color:var(--color-heat);padding:4px;">Need at least ${MIN_DECK_SIZE} cards</div>`;
         }
-        renderLoadoutGuestCards_horizontal(body, loadoutState.guestList);
+        renderLoadoutGuestCards_horizontal(body, loadoutState.guestList, { interactive: true });
     }
 
     function renderLoadoutGuestCards(containerId, guests) {
@@ -2644,10 +2636,11 @@
         });
     }
 
-    function renderLoadoutGuestCards_horizontal(container, guests) {
+    function renderLoadoutGuestCards_horizontal(container, guests, options = {}) {
         if (!container) return;
+        const interactive = options.interactive === true;
         guests.forEach((guestId) => {
-            const slot = createGuestSlot(guestId, false, { interactive: false });
+            const slot = createGuestSlot(guestId, false, { interactive });
             slot.classList.add('loadout-preview-card');
             container.appendChild(slot);
         });
@@ -2669,9 +2662,6 @@
                     <h3>${venue.name}${isEquipped ? ' <span class="equipped-badge">EQUIPPED</span>' : ''}</h3>
                     <p>${venue.desc}</p>
                     <div class="venue-stats-preview">
-                        <span class="stat-tag">Guest Slots: ${Math.max(0, venue.gridSize)}</span>
-                        <span class="stat-tag">Heat Limit: ${venue.bustThreshold}</span>
-                        <span class="stat-tag">${VENUE_STYLE_LABEL[venue.style]}</span>
                     </div>
                     <div class="venue-select-pool">${VENUE_POOL_DESC[id]}</div>
                 </div>
@@ -2916,7 +2906,10 @@
             openVenueSelect();
         });
         document.getElementById('loadout-deck-card').addEventListener('click', openDeckManage);
-        document.getElementById('loadout-guest-list-card').addEventListener('click', openGuestListManage);
+        document.getElementById('btn-edit-deck-inline').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openDeckManage();
+        });
         document.getElementById('btn-close-venue-select').addEventListener('click', closeVenueSelect);
         document.getElementById('btn-close-deck-manage').addEventListener('click', closeDeckManage);
         document.getElementById('btn-close-guest-list-manage').addEventListener('click', closeGuestListManage);
@@ -2954,7 +2947,7 @@
             const roundBtns = roundsSelector.querySelectorAll('.arcade-sel-btn');
             // Set default active
             roundBtns.forEach(btn => {
-                if (btn.dataset.value === (roundsInput?.value || '7')) btn.classList.add('active');
+                if (btn.dataset.value === (roundsInput?.value || '14')) btn.classList.add('active')
                 btn.addEventListener('click', () => {
                     roundBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
