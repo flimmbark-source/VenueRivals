@@ -979,8 +979,8 @@
             ping.classList.remove('is-visible');
             setTimeout(() => {
                 if (ping.isConnected) ping.remove();
-            }, 420);
-        }, 900);
+            }, 650);
+        }, 1900);
     }
 
     function renderAbilityBadge(guest) {
