@@ -2594,15 +2594,11 @@
         if (venueNameEl) venueNameEl.textContent = venue.name;
         const body = document.getElementById('loadout-venue-body');
         body.innerHTML = `
-            <div class="loadout-venue-icon">${venue.emoji}</div>
-            <div class="loadout-venue-name">${venue.name}</div>
-            <div class="loadout-venue-desc">${venue.desc}</div>
-            <div class="loadout-venue-stats">
-                <span class="stat-tag">Slots: ${Math.max(0, venue.gridSize)}</span>
-                <span class="stat-tag">Bust: ${venue.bustThreshold}</span>
-                <span class="stat-tag">${VENUE_STYLE_LABEL[venue.style]}</span>
+            <div class="arcade-venue-stats-row">
+                <span class="arcade-stat-chip stat-slots">Slots: ${Math.max(0, venue.gridSize)}</span>
+                <span class="arcade-stat-chip stat-bust">Bust: ${venue.bustThreshold}</span>
+                <span class="arcade-stat-chip stat-style">${VENUE_STYLE_LABEL[venue.style]}</span>
             </div>
-            <div class="loadout-venue-pool">${VENUE_POOL_DESC[loadoutState.venueId]}</div>
         `;
     }
 
@@ -2610,34 +2606,30 @@
         const body = document.getElementById('loadout-deck-body');
         const count = loadoutState.deck.length;
         const valid = count >= MIN_DECK_SIZE;
-        const selectedDeck = Game.DECKS[loadoutState.selectedDeckId];
-        const deckName = selectedDeck ? selectedDeck.name : `${count} card${count !== 1 ? 's' : ''}`;
 
-        const deckNameEl = document.getElementById('loadout-deck-name');
-        if (deckNameEl) deckNameEl.textContent = deckName;
+        const countEl = document.getElementById('arcade-deck-count');
+        if (countEl) countEl.textContent = `${count} Cards`;
 
-        body.innerHTML = `
-            <div class="loadout-deck-preview-grid" id="loadout-deck-preview-grid"></div>
-            ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
-        `;
-        renderLoadoutGuestCards('loadout-deck-preview-grid', loadoutState.deck);
+        body.innerHTML = '';
+        if (!valid) {
+            body.innerHTML = `<div class="loadout-deck-warning" style="font-family:'Press Start 2P',monospace;font-size:0.35rem;color:var(--color-heat);padding:4px;">Need at least ${MIN_DECK_SIZE} cards</div>`;
+        }
+        renderLoadoutGuestCards_horizontal(body, loadoutState.deck);
     }
 
     function renderLoadoutGuestList() {
         const body = document.getElementById('loadout-guest-list-body');
         const count = loadoutState.guestList.length;
         const valid = count >= MIN_DECK_SIZE;
-        const selectedList = Game.GUEST_LISTS[loadoutState.selectedGuestListId];
-        const guestListName = selectedList ? selectedList.name : 'Custom Guest List';
 
-        const guestListNameEl = document.getElementById('loadout-guest-list-name');
-        if (guestListNameEl) guestListNameEl.textContent = guestListName;
+        const countEl = document.getElementById('arcade-roster-count');
+        if (countEl) countEl.textContent = `${count} Cards`;
 
-        body.innerHTML = `
-            <div class="loadout-deck-preview-grid" id="loadout-guest-list-preview-grid"></div>
-            ${!valid ? `<div class="loadout-deck-warning">Need at least ${MIN_DECK_SIZE} cards</div>` : ''}
-        `;
-                renderLoadoutGuestCards('loadout-guest-list-preview-grid', loadoutState.guestList);
+        body.innerHTML = '';
+        if (!valid) {
+            body.innerHTML = `<div class="loadout-deck-warning" style="font-family:'Press Start 2P',monospace;font-size:0.35rem;color:var(--color-heat);padding:4px;">Need at least ${MIN_DECK_SIZE} cards</div>`;
+        }
+        renderLoadoutGuestCards_horizontal(body, loadoutState.guestList);
     }
 
     function renderLoadoutGuestCards(containerId, guests) {
@@ -2645,6 +2637,15 @@
         if (!container) return;
 
         container.innerHTML = '';
+        guests.forEach((guestId) => {
+            const slot = createGuestSlot(guestId, false, { interactive: false });
+            slot.classList.add('loadout-preview-card');
+            container.appendChild(slot);
+        });
+    }
+
+    function renderLoadoutGuestCards_horizontal(container, guests) {
+        if (!container) return;
         guests.forEach((guestId) => {
             const slot = createGuestSlot(guestId, false, { interactive: false });
             slot.classList.add('loadout-preview-card');
@@ -2909,8 +2910,11 @@
             switchScreen('title');
         });
 
-        // Setup / Loadout
-        document.getElementById('loadout-venue-card').addEventListener('click', openVenueSelect);
+        // Setup / Loadout (Arcade Management)
+        document.getElementById('btn-change-venue-inline').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openVenueSelect();
+        });
         document.getElementById('loadout-deck-card').addEventListener('click', openDeckManage);
         document.getElementById('loadout-guest-list-card').addEventListener('click', openGuestListManage);
         document.getElementById('btn-close-venue-select').addEventListener('click', closeVenueSelect);
@@ -2943,6 +2947,42 @@
 
         modeInput?.addEventListener('change', syncModeSettings);
         syncModeSettings();
+
+        // Arcade selector buttons for Rounds
+        const roundsSelector = document.getElementById('arcade-rounds-selector');
+        if (roundsSelector) {
+            const roundBtns = roundsSelector.querySelectorAll('.arcade-sel-btn');
+            // Set default active
+            roundBtns.forEach(btn => {
+                if (btn.dataset.value === (roundsInput?.value || '7')) btn.classList.add('active');
+                btn.addEventListener('click', () => {
+                    roundBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (roundsInput) {
+                        roundsInput.value = btn.dataset.value;
+                        roundsInput.dispatchEvent(new Event('change'));
+                    }
+                });
+            });
+        }
+
+        // Arcade selector buttons for Mode
+        const modeSelector = document.getElementById('arcade-mode-selector');
+        if (modeSelector) {
+            const modeBtns = modeSelector.querySelectorAll('.arcade-sel-btn');
+            modeBtns.forEach(btn => {
+                if (btn.dataset.value === (modeInput?.value || 'single')) btn.classList.add('active');
+                btn.addEventListener('click', () => {
+                    modeBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (modeInput) {
+                        modeInput.value = btn.dataset.value;
+                        modeInput.dispatchEvent(new Event('change'));
+                    }
+                    syncModeSettings();
+                });
+            });
+        }
 
         document.getElementById('btn-start-game').addEventListener('click', async () => {
             const rawName = document.getElementById('venue-name-input').value.trim() || 'My Venue';
@@ -3029,6 +3069,13 @@
             if (roundSelect) roundSelect.disabled = false;
             const multiplayerFields = document.getElementById('multiplayer-fields');
             if (multiplayerFields) multiplayerFields.style.display = 'none';
+            // Reset arcade selector buttons
+            document.querySelectorAll('#arcade-rounds-selector .arcade-sel-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.value === String(Game.TOTAL_ROUNDS));
+            });
+            document.querySelectorAll('#arcade-mode-selector .arcade-sel-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.value === 'single');
+            });
             setPartyView('player', false);
             initLoadout();
             switchScreen('title');

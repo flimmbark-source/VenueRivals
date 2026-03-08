@@ -255,90 +255,469 @@ body {
 .how-to-play-content::-webkit-scrollbar { width: 4px; }
 .how-to-play-content::-webkit-scrollbar-thumb { background: var(--bg-card); border-radius: 4px; }
 
-/* === Setup Screen === */
+/* === Setup Screen (Arcade Management) === */
+
+/* --- Pixel font helper --- */
+.pixel-font {
+    font-family: 'Press Start 2P', monospace;
+}
 
 .setup-container {
     text-align: center;
-    padding: 14px 14px 12px;
+    padding: 10px 10px 12px;
     padding-bottom: max(12px, env(safe-area-inset-bottom));
     max-width: 500px;
-    width: 95%;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
-.setup-header {
+/* --- Arcade Header Panel --- */
+.arcade-header-panel {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 4px;
-    position: relative;
+    gap: 8px;
+    padding: 6px 4px;
 }
 
-.setup-back-btn {
-    width: 36px;
-    height: 36px;
-    border: 1px solid rgba(127, 90, 240, 0.3);
-    background: rgba(127, 90, 240, 0.08);
-    color: var(--accent-secondary);
-    border-radius: var(--radius-sm);
-    font-size: 1.2rem;
+.arcade-back-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
+    padding: 6px 10px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    background: rgba(15, 14, 23, 0.8);
+    color: var(--text-primary);
     cursor: pointer;
     transition: var(--transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
 }
 
-.setup-back-btn:hover {
-    background: rgba(127, 90, 240, 0.18);
+.arcade-back-btn:hover {
+    background: rgba(127, 90, 240, 0.2);
     border-color: var(--accent-secondary);
 }
 
-.setup-title {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: 1px;
-    flex: 1;
-    text-align: left;
+.arcade-header-spacer { flex: 1; }
+
+.arcade-hud-stats {
+    display: flex;
+    gap: 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
 }
 
-.setup-section-label {
-    display: block;
-    font-size: 0.72rem;
+.arcade-hud-money { color: var(--color-money); }
+.arcade-hud-points { color: var(--color-points); }
+
+/* --- Arcade Title Banner --- */
+.arcade-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1rem;
+    color: var(--accent-gold);
+    text-shadow:
+        0 0 10px rgba(255, 209, 102, 0.6),
+        0 0 30px rgba(255, 209, 102, 0.3),
+        0 2px 0 #b8860b;
+    letter-spacing: 2px;
+    padding: 8px 0 4px;
+    position: relative;
+}
+
+.arcade-title::before,
+.arcade-title::after {
+    content: '✦';
+    font-size: 0.6rem;
+    color: var(--accent-gold);
+    opacity: 0.7;
+    animation: arcade-sparkle 2s ease-in-out infinite;
+    margin: 0 6px;
+}
+
+.arcade-title::after {
+    animation-delay: 1s;
+}
+
+@keyframes arcade-sparkle {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* --- Arcade Panel Base --- */
+.arcade-panel {
+    background: rgba(15, 14, 23, 0.85);
+    border: 2px solid rgba(127, 90, 240, 0.35);
+    border-radius: 4px;
+    padding: 10px;
+    position: relative;
+    box-shadow:
+        0 0 8px rgba(127, 90, 240, 0.1),
+        inset 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
+.arcade-panel::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 5px;
+    border: 1px solid rgba(127, 90, 240, 0.08);
+    pointer-events: none;
+}
+
+/* --- Venue Panel (Hero) --- */
+.arcade-venue-panel {
+    border-color: rgba(255, 209, 102, 0.3);
+    box-shadow:
+        0 0 12px rgba(255, 209, 102, 0.08),
+        inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.arcade-venue-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.arcade-venue-name-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.7rem;
+    color: var(--text-primary);
+    text-shadow: 0 0 8px rgba(127, 90, 240, 0.5);
+}
+
+.arcade-venue-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.arcade-venue-stats-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.arcade-stat-chip {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.4rem;
+    padding: 4px 8px;
+    border-radius: 2px;
+    border: 1px solid rgba(127, 90, 240, 0.3);
+    background: rgba(42, 40, 85, 0.6);
+    color: var(--accent-gold);
+    white-space: nowrap;
+}
+
+.arcade-stat-chip.stat-slots { border-color: rgba(76, 201, 240, 0.4); color: var(--accent-blue); }
+.arcade-stat-chip.stat-bust { border-color: rgba(255, 92, 92, 0.4); color: var(--color-heat); }
+.arcade-stat-chip.stat-style { border-color: rgba(255, 209, 102, 0.4); color: var(--accent-gold); }
+
+/* --- Arcade Buttons --- */
+.arcade-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.42rem;
+    padding: 5px 10px;
+    border: 2px solid rgba(127, 90, 240, 0.5);
+    background: rgba(127, 90, 240, 0.15);
+    color: var(--accent-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 2px;
+}
+
+.arcade-btn:hover {
+    background: rgba(127, 90, 240, 0.3);
+    border-color: var(--accent-secondary);
+    box-shadow: 0 0 10px rgba(127, 90, 240, 0.3);
+}
+
+.arcade-btn:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.arcade-btn-change {
+    border-color: rgba(255, 209, 102, 0.4);
+    color: var(--accent-gold);
+    background: rgba(255, 209, 102, 0.1);
+}
+
+.arcade-btn-change:hover {
+    background: rgba(255, 209, 102, 0.2);
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 10px rgba(255, 209, 102, 0.3);
+}
+
+.arcade-btn-edit {
+    border-color: rgba(255, 92, 92, 0.4);
+    color: var(--accent-primary);
+    background: rgba(255, 92, 92, 0.1);
+    margin-left: auto;
+}
+
+.arcade-btn-edit:hover {
+    background: rgba(255, 92, 92, 0.2);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 10px rgba(255, 92, 92, 0.3);
+}
+
+/* --- Club Sign Input --- */
+.arcade-sign-panel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-color: rgba(255, 209, 102, 0.25);
+}
+
+.arcade-sign-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.45rem;
+    color: var(--accent-gold);
+    white-space: nowrap;
+    text-shadow: 0 0 6px rgba(255, 209, 102, 0.4);
+}
+
+.arcade-sign-input-wrap {
+    flex: 1;
+    position: relative;
+}
+
+.arcade-sign-input {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.6rem;
+    padding: 8px 10px;
+    width: 100%;
+    border: 2px solid rgba(255, 209, 102, 0.3);
+    border-radius: 2px;
+    background: rgba(15, 14, 23, 0.9);
+    color: var(--accent-gold);
+    outline: none;
+    transition: var(--transition);
+    text-shadow: 0 0 6px rgba(255, 209, 102, 0.3);
+}
+
+.arcade-sign-input::placeholder {
+    color: rgba(255, 209, 102, 0.3);
+    font-size: 0.45rem;
+}
+
+.arcade-sign-input:focus {
+    border-color: var(--accent-gold);
+    box-shadow:
+        0 0 12px rgba(255, 209, 102, 0.2),
+        inset 0 0 8px rgba(255, 209, 102, 0.05);
+}
+
+/* --- Panel Headers (Deck / Roster) --- */
+.arcade-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px dotted rgba(127, 90, 240, 0.25);
+}
+
+.arcade-panel-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
+    color: var(--text-primary);
+    text-shadow: 0 0 6px rgba(127, 90, 240, 0.4);
+}
+
+.arcade-panel-subtitle {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.4rem;
     color: var(--text-secondary);
-    margin-bottom: 6px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
+}
+
+/* --- Card Scroll Row --- */
+.arcade-card-scroll {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 2px 8px;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+}
+
+.arcade-card-scroll::-webkit-scrollbar { height: 4px; }
+.arcade-card-scroll::-webkit-scrollbar-thumb {
+    background: rgba(127, 90, 240, 0.3);
+    border-radius: 4px;
+}
+.arcade-card-scroll::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* --- Guest Cards in Arcade Layout --- */
+.arcade-card-scroll .guest-slot,
+.arcade-card-scroll .loadout-preview-card {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    border: 2px solid rgba(127, 90, 240, 0.3);
+    border-radius: 3px;
+    background: rgba(20, 18, 40, 0.8);
+    box-shadow: 0 0 6px rgba(127, 90, 240, 0.1);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.arcade-card-scroll .guest-slot:hover,
+.arcade-card-scroll .loadout-preview-card:hover {
+    border-color: rgba(127, 90, 240, 0.6);
+    box-shadow: 0 0 12px rgba(127, 90, 240, 0.2);
+}
+
+.arcade-card-scroll .tier-rare {
+    border-color: rgba(255, 209, 102, 0.5);
+    box-shadow: 0 0 8px rgba(255, 209, 102, 0.15);
+}
+
+.arcade-card-scroll .tier-uncommon {
+    border-color: rgba(76, 201, 240, 0.4);
+    box-shadow: 0 0 8px rgba(76, 201, 240, 0.12);
+}
+
+/* --- Arcade Settings Panel --- */
+.arcade-settings-panel {
+    padding: 10px;
+}
+
+.arcade-settings-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.arcade-settings-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.45rem;
+    color: var(--text-secondary);
     text-transform: uppercase;
 }
 
-/* Start Match button - prominent at bottom */
-.btn-start-match {
+.arcade-selector {
+    display: flex;
+    gap: 4px;
+}
+
+.arcade-sel-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
+    padding: 6px 12px;
+    border: 2px solid rgba(127, 90, 240, 0.3);
+    background: rgba(15, 14, 23, 0.8);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    border-radius: 2px;
+    min-width: 36px;
+}
+
+.arcade-sel-btn:hover {
+    border-color: rgba(127, 90, 240, 0.5);
+    color: var(--text-primary);
+}
+
+.arcade-sel-btn.active {
+    border-color: var(--accent-blue);
+    background: rgba(76, 201, 240, 0.15);
+    color: var(--accent-blue);
+    box-shadow: 0 0 10px rgba(76, 201, 240, 0.25);
+    text-shadow: 0 0 6px rgba(76, 201, 240, 0.5);
+}
+
+.arcade-sel-wide {
+    min-width: 50px;
+}
+
+.arcade-mp-status {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.35rem;
+    color: var(--accent-blue);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* --- Start Button (OPEN DOORS!) --- */
+.arcade-start-btn {
+    display: block;
     width: 100%;
-    margin-top: 4px;
-    font-size: 1rem;
-    padding: 14px 18px;
-    min-height: 48px;
-    letter-spacing: 1.5px;
+    margin-top: 6px;
+    padding: 16px 20px;
+    border: 3px solid var(--accent-gold);
+    border-radius: 4px;
+    background:
+        linear-gradient(180deg, #ffd166 0%, #e6a800 50%, #cc8800 100%);
+    cursor: pointer;
     position: relative;
     overflow: hidden;
+    transition: var(--transition);
+    box-shadow:
+        0 0 20px rgba(255, 209, 102, 0.3),
+        0 4px 15px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.btn-start-match:not(:disabled) {
-    box-shadow:
-        0 4px 15px rgba(127, 90, 240, 0.4),
-        0 0 30px rgba(127, 90, 240, 0.1);
+.arcade-start-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -100%;
+    width: 60%;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: skewX(-25deg);
+    animation: arcade-shine 3s ease-in-out infinite;
 }
 
-.btn-start-match:not(:disabled):hover {
+@keyframes arcade-shine {
+    0% { left: -100%; }
+    30% { left: 150%; }
+    100% { left: 150%; }
+}
+
+.arcade-start-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.85rem;
+    color: #1a0e00;
+    letter-spacing: 2px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 1;
+}
+
+.arcade-start-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
     box-shadow:
-        0 6px 25px rgba(127, 90, 240, 0.6),
-        0 0 40px rgba(127, 90, 240, 0.15);
+        0 0 35px rgba(255, 209, 102, 0.5),
+        0 6px 25px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.arcade-start-btn:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow:
+        0 0 15px rgba(255, 209, 102, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.arcade-start-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    filter: saturate(0.3);
+}
+
+.arcade-start-btn:disabled::before {
+    animation: none;
 }
 
 .venue-type-grid {
@@ -446,13 +825,18 @@ body {
     margin-bottom: 0;
 }
 
+/* --- Setup Screen Root --- */
 #setup-screen {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     background:
-        radial-gradient(ellipse at 50% 0%, rgba(127, 90, 240, 0.08) 0%, transparent 50%),
-        var(--bg-dark);
+        radial-gradient(ellipse at 50% 0%, rgba(127, 90, 240, 0.12) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 100%, rgba(255, 92, 92, 0.05) 0%, transparent 40%),
+        linear-gradient(180deg, #0a0918 0%, #0f0e17 50%, #0a0918 100%);
+    /* Arcade cabinet edge glow */
+    border-left: 3px solid rgba(127, 90, 240, 0.12);
+    border-right: 3px solid rgba(127, 90, 240, 0.12);
 }
 
 #setup-screen.active {
@@ -464,208 +848,25 @@ body {
 
 #setup-screen .setup-container {
     margin: auto;
-    padding-top: 16px;
-    padding-bottom: 24px;
+    padding-top: 8px;
+    padding-bottom: 20px;
 }
 
-#setup-screen .setup-name-section {
-    margin-bottom: 0;
-    padding: 10px 12px;
-    background: rgba(127, 90, 240, 0.04);
-    border: 1px solid rgba(127, 90, 240, 0.12);
-    border-radius: var(--radius-md);
-}
-
-#setup-screen .setup-name-section label,
-#setup-screen .setup-rounds-section label {
-    margin-bottom: 4px;
-    font-size: 0.75rem;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-}
-
-#setup-screen #venue-name-input {
-    max-width: 100%;
-    width: 100%;
-    min-height: 40px;
-    font-size: 1rem;
-    padding: 10px 12px;
-    border-color: rgba(127, 90, 240, 0.2);
-    background: var(--bg-dark);
-}
-
-#setup-screen #round-count-input,
-#setup-screen #game-mode-input,
-#setup-screen #room-code-input {
-    max-width: 100%;
-    width: 100%;
-    min-height: 38px;
-    font-size: 0.9rem;
-    padding: 8px 10px;
-}
-
-#setup-screen .loadout-area {
-    margin-bottom: 0;
-    gap: 10px;
-    flex-direction: column;
-    flex-wrap: nowrap;
-}
-
-#setup-screen .loadout-card {
-    padding: 11px 12px 24px;
-    border-radius: var(--radius-md);
-    flex: 0 0 auto;
-    width: 100%;
-    align-items: center;
-    text-align: center;
-    border: 1px solid rgba(127, 90, 240, 0.15);
-    background: rgba(26, 25, 50, 0.6);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-#setup-screen .loadout-card:hover {
-    border-color: rgba(127, 90, 240, 0.35);
-    box-shadow: 0 2px 12px rgba(127, 90, 240, 0.08);
-}
-
-#setup-screen #loadout-venue-card {
-    padding: 8px 12px 10px;
-}
-
-#setup-screen #loadout-venue-card .loadout-card-header {
-    margin-bottom: 2px;
-}
-
-#setup-screen .loadout-card-primary,
-#setup-screen .loadout-card-secondary {
-    flex: 0 0 auto;
-    width: 100%;
-}
-
-#setup-screen .loadout-card-header {
-    margin-bottom: 6px;
-    width: 100%;
-    position: relative;
-}
-
-#setup-screen .loadout-card-name {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.7rem;
-    pointer-events: none;
-}
-
-#setup-screen .loadout-card-label {
-    font-size: 0.62rem;
-    letter-spacing: 1px;
-}
-
-#setup-screen .loadout-card-change {
-    font-size: 0.58rem;
-    padding: 2px 8px;
-    background: rgba(127, 90, 240, 0.12);
-    border: 1px solid rgba(127, 90, 240, 0.25);
-    border-radius: 10px;
-    transition: background 0.2s ease;
-}
-
-#setup-screen .loadout-card-change:hover {
-    background: rgba(127, 90, 240, 0.22);
-}
-
-#setup-screen .loadout-venue-body {
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    text-align: left;
-}
-
-#setup-screen .loadout-venue-icon {
-    font-size: 1.8rem;
-    flex-shrink: 0;
-}
-
-#setup-screen .loadout-venue-name {
-    display: none;
-}
-
-#setup-screen .loadout-venue-desc {
-    display: none;
-}
-
-#setup-screen .loadout-venue-stats {
-    flex-direction: column;
-    gap: 3px;
-    align-items: flex-start;
-}
-
-#setup-screen .loadout-venue-pool {
-    display: none;
-}
-
-#setup-screen .loadout-deck-body {
-    gap: 6px;
-    align-items: center;
-    width: 100%;
-}
-
+/* Arcade deck/roster card previews in horizontal scroll */
 #setup-screen .loadout-deck-preview-grid {
+    display: flex;
+    gap: 6px;
     max-height: none;
     overflow: visible;
-    row-gap: 18px;
-    padding: 18px 4px 14px;
-    grid-template-columns: repeat(auto-fit, minmax(46px, 46px));
-    column-gap: 10px;
-    justify-content: center;
-    align-items: center;
-    align-content: center;
-}
-
-#setup-screen .loadout-deck-preview {
-    font-size: 0.86rem;
-    line-height: 1.35;
-    max-height: 54px;
+    padding: 2px;
 }
 
 #setup-screen .stat-tag,
 #setup-screen .loadout-deck-tag {
-    font-size: 0.55rem;
-    padding: 1px 5px;
-}
-
-#setup-screen #loadout-deck-card .loadout-deck-body,
-#setup-screen #loadout-guest-list-card .loadout-deck-body {
-    margin-top: 0;
-}
-
-#setup-screen #loadout-guest-list-preview-grid {
-    margin-top: 0;
-}
-
-#setup-screen .setup-rounds-section.multiplayer-settings {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    padding: 10px 12px;
-    border-radius: var(--radius-md);
-    border: 1px solid rgba(127, 90, 240, 0.15);
-    background: rgba(127, 90, 240, 0.04);
-    text-align: left;
-}
-
-#setup-screen .setup-rounds-section.multiplayer-settings > label {
-    grid-column: span 1;
-}
-
-
-#setup-screen #multiplayer-fields {
-    grid-column: 1 / -1;
-    margin-top: 0 !important;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.35rem;
+    padding: 2px 6px;
+    border-radius: 2px;
 }
 
 
@@ -696,78 +897,11 @@ body {
     z-index: 2600;
 }
 
-#setup-screen #round-count-input:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+/* Hidden selects (synced via arcade buttons) */
+#setup-screen #round-count-input,
+#setup-screen #game-mode-input {
+    display: none;
 }
-#setup-screen #multiplayer-status {
-    font-size: 0.66rem;
-    line-height: 1.25;
-    color: var(--accent-blue);
-    min-height: 16px;
-}
-
-#setup-screen .setup-rounds-section:not(.multiplayer-settings) {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 4px;
-    max-width: 150px;
-    margin: 0 auto;
-}
-
-#setup-screen #btn-start-game {
-    margin-top: 6px;
-}
-
-.setup-name-section label {
-    display: block;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-bottom: 6px;
-    font-weight: 500;
-}
-
-.setup-rounds-section label {
-    display: block;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-bottom: 6px;
-    font-weight: 500;
-}
-
-#venue-name-input {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.1rem;
-    padding: 10px 16px;
-    border: 2px solid var(--bg-card);
-    border-radius: var(--radius-md);
-    background: var(--bg-medium);
-    color: var(--text-primary);
-    text-align: center;
-    width: 100%;
-    max-width: 280px;
-    outline: none;
-    transition: var(--transition);
-}
-
-#venue-name-input:focus { border-color: var(--accent-secondary); }
-
-#round-count-input {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1rem;
-    padding: 10px 16px;
-    border: 2px solid var(--bg-card);
-    border-radius: var(--radius-md);
-    background: var(--bg-medium);
-    color: var(--text-primary);
-    text-align: center;
-    width: 100%;
-    max-width: 180px;
-    outline: none;
-    transition: var(--transition);
-}
-
-#round-count-input:focus { border-color: var(--accent-secondary); }
 
 /* === Game Screen === */
 #game-screen.active {
@@ -2856,47 +2990,31 @@ body {
 /* Small phones */
 @media (max-width: 360px) {
     #setup-screen .setup-container {
-        padding: 10px 10px 8px;
-        gap: 6px;
+        padding: 6px 6px 8px;
+        gap: 5px;
     }
 
-    #setup-screen .loadout-area {
-        gap: 6px;
+    .arcade-title {
+        font-size: 0.75rem;
     }
 
-    #setup-screen .loadout-card {
-        padding: 8px 8px;
-    }
-
-    #setup-screen .loadout-venue-icon {
-        font-size: 1.5rem;
-    }
-
-    #setup-screen .loadout-venue-name {
-        font-size: 0.72rem;
-    }
-
-    #setup-screen .setup-rounds-section.multiplayer-settings {
-        gap: 6px;
+    .arcade-panel {
         padding: 7px;
     }
 
-    #setup-screen #btn-start-game {
-        min-height: 38px;
-        font-size: 0.84rem;
+    .arcade-start-btn {
+        padding: 12px 14px;
     }
 
-    #setup-screen .setup-name-section label,
-    #setup-screen .setup-rounds-section label {
-        font-size: 0.68rem;
+    .arcade-start-text {
+        font-size: 0.7rem;
     }
 
-    .loadout-area {
-        gap: 8px;
+    .arcade-sel-btn {
+        font-size: 0.4rem;
+        padding: 5px 8px;
     }
-    .loadout-card {
-        padding: 10px 8px;
-    }
+
     .deck-manage-card {
         width: 46px;
         padding: 4px;
