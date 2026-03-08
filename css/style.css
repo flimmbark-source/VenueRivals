@@ -614,10 +614,10 @@ body {
 #setup-screen .loadout-deck-preview-grid {
     max-height: none;
     overflow: visible;
-    row-gap: 28px;
-    padding: 28px 4px 20px;
-    grid-template-columns: repeat(auto-fit, minmax(32px, 32px));
-    column-gap: 12px;
+    row-gap: 18px;
+    padding: 18px 4px 14px;
+    grid-template-columns: repeat(auto-fit, minmax(46px, 46px));
+    column-gap: 10px;
     justify-content: center;
     align-items: center;
     align-content: center;
@@ -1016,15 +1016,7 @@ body {
     display: none !important;
 }
 
-.venue-scene #player-slots .slot-heat,
-.venue-scene #rival-slots .slot-heat {
-    top: auto;
-    bottom: 3px;
-    right: 4px;
-    left: auto;
-    transform: none;
-    z-index: 1;
-}
+/* Heat is now inside the card by default */
 
 .player-venue .venue-scene {
     flex: 1;
@@ -1436,7 +1428,7 @@ body {
     gap: 3px;
     flex: 1;
     justify-content: flex-start;
-    min-height: 82px;
+    min-height: 68px;
     align-items: flex-start;
     overflow-x: auto;
     overflow-y: visible;
@@ -1461,9 +1453,9 @@ body {
 
 /* === Guest Slot (in grid) === */
 .guest-slot {
-    width: 40px;
-    height: 48px;
-    border-radius: 7px;
+    width: 46px;
+    height: 55px;
+    border-radius: 8px;
     background: var(--bg-light);
     border: 2px solid var(--bg-light);
     display: flex;
@@ -1492,9 +1484,9 @@ body {
 }
 
 .guest-slot .slot-heat {
-    top: calc(100% + 7px);
-    right: 10px;
-    left: auto;
+    top: 2px;
+    left: 3px;
+    right: auto;
     transform: none;
     color: var(--color-heat);
     white-space: nowrap;
@@ -1519,9 +1511,9 @@ body {
 
 .ability-icon-badge {
     position: absolute;
-    left: 25%;
-    bottom: 4px;
-    transform: translateX(-50%);
+    left: 2px;
+    bottom: 2px;
+    transform: none;
     font-size: 0.55rem;
     line-height: 1;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
@@ -1532,7 +1524,7 @@ body {
 .guest-slot .slot-emoji {
     position: absolute;
     left: 2px;
-    top: 35%;
+    top: 30%;
     transform: translateY(-50%);
 }
 
@@ -1548,7 +1540,7 @@ body {
     display: block;
     background-repeat: no-repeat;
     image-rendering: pixelated;
-    transform: scale(0.72);
+    transform: scale(0.83);
     transform-origin: left center;
 }
 
@@ -1578,9 +1570,9 @@ body {
 }
 
 .arriving-guest-card {
-    width: 40px;
-    height: 48px;
-    border-radius: 7px;
+    width: 46px;
+    height: 55px;
+    border-radius: 8px;
     background: var(--bg-light);
     border: 2px solid var(--accent-gold);
     display: flex;
@@ -1973,7 +1965,7 @@ body {
 .shop-grid {
     display: grid;
     grid-template-columns: repeat(5, auto);
-    gap: 22px 10px;
+    gap: 18px 8px;
     justify-content: center;
 }
 
@@ -2000,7 +1992,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 52px;
+    width: 60px;
     cursor: pointer;
     position: relative;
     user-select: none;
@@ -2009,7 +2001,7 @@ body {
 }
 
 .shop-card-wrapper .deck-card-name {
-    width: 52px;
+    width: 60px;
     margin-bottom: 4px;
 }
 
@@ -2060,14 +2052,7 @@ body {
     cursor: inherit;
 }
 
-.shop-card-wrapper .slot-heat {
-    top: auto;
-    bottom: 3px;
-    right: 4px;
-    left: auto;
-    transform: none;
-    z-index: 1;
-}
+/* Heat is now inside the card by default */
 
 .shop-upgrades .slot-stat,
 .shop-upgrades .ability-icon-badge {
@@ -2493,13 +2478,13 @@ body {
 
 .loadout-deck-preview-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(40px, 40px));
+    grid-template-columns: repeat(auto-fit, minmax(46px, 46px));
     column-gap: 10px;
-    row-gap: 28px;
+    row-gap: 18px;
     width: 100%;
     max-height: none;
     overflow: visible;
-    padding: 4px 4px 20px;
+    padding: 4px 4px 14px;
     justify-items: center;
     justify-content: center;
 }
@@ -2732,17 +2717,17 @@ body {
 
 .deck-manage-grid {
     display: flex;
-    gap: 18px 8px;
+    gap: 16px 10px;
     flex-wrap: wrap;
     justify-content: center;
-    padding-bottom: 12px
+    padding-bottom: 12px;
 }
 
 .deck-manage-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 40px;
+    width: 46px;
     cursor: pointer;
     transition: var(--transition);
 }
@@ -2815,7 +2800,7 @@ body {
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 3px;
-    width: 40px;
+    width: 46px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2912,7 +2897,7 @@ body {
         padding: 10px 8px;
     }
     .deck-manage-card {
-        width: 64px;
+        width: 46px;
         padding: 4px;
     }
 }
