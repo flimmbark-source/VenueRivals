@@ -1870,13 +1870,17 @@
 
         const msgEl = document.createElement('div');
         msgEl.className = `feedback-msg ${type || ''}`.trim();
-        msgEl.textContent = text;
+        msgEl.style.setProperty('--feedback-duration', `${popupDuration}ms`);
+
+        const tickerEl = document.createElement('span');
+        tickerEl.className = 'feedback-ticker-run';
+        tickerEl.textContent = text;
+        msgEl.appendChild(tickerEl);
         el.appendChild(msgEl);
 
         setTimeout(() => {
-            if (el.contains(msgEl)) {
-                msgEl.remove();
-            }
+            if (!msgEl.isConnected || !tickerEl.isConnected) return;
+            tickerEl.className = 'feedback-ticker-static';
         }, popupDuration);
     }
 

@@ -1821,27 +1821,6 @@ body {
 }
 
 
-/* === Venue Status === */
-.venue-status {
-    font-size: 0.7rem;
-    text-align: Left;
-    color: var(--text-muted);
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-.venue-status:empty {
-    display: none;
-}
-
-.venue-status.busted {
-    color: var(--accent-primary);
-    animation: shake 0.4s ease;
-}
-
-.venue-status.closed {
-    color: var(--accent-gold);
-}
 
 /* === Center Feedback === */
 .phone-shell {
@@ -1855,6 +1834,7 @@ body {
     align-items: center;
     width: 100%;
     pointer-events: none;
+    overflow: hidden;
 }
 
 .feedback-msg {
@@ -1863,20 +1843,28 @@ body {
     min-height: 26px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     font-size: 0.68rem;
     font-weight: 700;
     line-height: 1.2;
     padding: 5px 10px;
     border-radius: 11px;
-    text-align: center;
+    text-align: left;
     color: var(--text-primary);
     background: rgba(20, 25, 42, 0.88);
     border: 1px solid rgba(255, 255, 255, 0.16);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    opacity: 1;
-    transform: none;
-    animation: none;
+    overflow: hidden;
+}
+
+.feedback-ticker-run,
+.feedback-ticker-static {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.feedback-ticker-run {
+    animation: feedbackTickerScroll var(--feedback-duration, 2200ms) linear forwards;
 }
 
 .feedback-msg.disruption {
@@ -3321,4 +3309,9 @@ body {
     .exit-stamp { display: none; }
     .slot-door-card.door-opening { animation: none; }
     .heat-fill.critical { animation: none; }
+}
+
+@keyframes feedbackTickerScroll {
+    from { transform: translateX(110%); }
+    to { transform: translateX(0%); }
 }
