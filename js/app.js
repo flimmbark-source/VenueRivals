@@ -1594,6 +1594,11 @@
         }
     }
 
+    function dismissInfoPanelPopup() {
+        removeTooltip();
+        closeGuestAbilityPopup();
+    }
+
     function showIconTooltip(e, text, sticky = false) {
         removeIconTooltip();
         const el = document.createElement('div');
@@ -1930,6 +1935,7 @@
     }
 
     function handleAdmit() {
+        dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'admit', actor: 'rival' });
             return;
@@ -2008,6 +2014,7 @@
     }
 
     function handleAbility() {
+        dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'ability', actor: 'rival' });
             return;
@@ -2055,6 +2062,7 @@
     }
 
     function handleCloseDoor() {
+        dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'close', actor: 'rival' });
             return;
@@ -2266,6 +2274,7 @@
     }
 
     function handleNextPhase() {
+        dismissInfoPanelPopup();
         const isFinalRound = gameState.round >= gameState.totalRounds;
 
         if (isFinalRound) {
@@ -2417,6 +2426,7 @@
     }
 
     function handleDoneShopping() {
+        dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'done-shopping', actor: 'rival' });
             showFeedback('Waiting for host to continue…', 'points', 1500);
@@ -2646,8 +2656,27 @@
         });
     }
 
-    function openVenueSelect() {
-        const overlay = document.getElementById('venue-select-overlay');
+    function renderVenuePreview(venueId) {
+        const previewGrid = document.getElementById('venue-preview-grid');
+        const previewEmpty = document.getElementById('venue-preview-empty');
+        const previewListId = getDefaultGuestListId(venueId);
+
+        previewGrid.innerHTML = '';
+        if (!previewListId) {
+            previewEmpty.style.display = '';
+            return;
+        }
+
+        previewEmpty.style.display = 'none';
+        const list = Game.GUEST_LISTS[previewListId];
+        list.guests.forEach((guestId) => {
+            const card = createGuestSlot(guestId, false, { interactive: true, who: 'rival', source: 'venue-preview' });
+            card.classList.add('loadout-preview-card');
+            previewGrid.appendChild(card);
+        });
+    }
+
+    function renderVenueSelect() {
         const grid = document.getElementById('venue-select-grid');
 
         grid.innerHTML = '';
@@ -2674,14 +2703,21 @@
                     applyGuestList(getDefaultGuestListId(id));
                     selectedVenueType = id;
                 }
-                closeVenueSelect();
+                renderVenueSelect();
+                renderVenuePreview(id);
                 renderLoadout();
             });
 
             grid.appendChild(card);
         });
 
+        renderVenuePreview(loadoutState.venueId);
+    }
+
+    function openVenueSelect() {
+        const overlay = document.getElementById('venue-select-overlay');
         overlay.style.display = '';
+        renderVenueSelect();
     }
 
     function closeVenueSelect() {
@@ -2796,7 +2832,7 @@
         previewEmpty.style.display = 'none';
         deck.guests.forEach((guestId) => {
             const card = createDeckManageCard(guestId);
-            card.addEventListener('click', () => showGuestAbilityPopup(guestId));
+            card.addEventListener('click', () => showTooltipForTarget(card, guestId, { who: 'rival', source: 'deck-preview' }));
             previewGrid.appendChild(card);
         });
     }
@@ -2903,11 +2939,16 @@
         // Setup / Loadout (Arcade Management)
         document.getElementById('btn-change-venue-inline').addEventListener('click', (e) => {
             e.stopPropagation();
+            dismissInfoPanelPopup();
             openVenueSelect();
         });
-        document.getElementById('loadout-deck-card').addEventListener('click', openDeckManage);
+        document.getElementById('loadout-deck-card').addEventListener('click', () => {
+            dismissInfoPanelPopup();
+            openDeckManage();
+        });
         document.getElementById('btn-edit-deck-inline').addEventListener('click', (e) => {
             e.stopPropagation();
+            dismissInfoPanelPopup();
             openDeckManage();
         });
         document.getElementById('btn-close-venue-select').addEventListener('click', closeVenueSelect);
@@ -3076,7 +3117,12 @@
 
         // Remove tooltip on any click outside
         document.addEventListener('click', (e) => {
-            if (tooltipEl && !e.target.closest('.guest-slot') && !e.target.closest('.shop-card-wrapper') && !e.target.closest('.guest-tooltip')) {
+            if (tooltipEl &&
+                !e.target.closest('.guest-slot') &&
+                !e.target.closest('.shop-card-wrapper') &&
+                !e.target.closest('.deck-manage-card') &&
+                !e.target.closest('.guest-tooltip')) {
+                dismissInfoPanelPopup();
             }
             if (iconTooltipEl && !e.target.closest('.arriving-emoji.has-ability') && !e.target.closest('.slot-emoji.has-ability') && !e.target.closest('.effect-tooltip')) {
                 removeIconTooltip();
@@ -3084,6 +3130,9 @@
         });
 
         document.addEventListener('keydown', (e) => {
+            if (tooltipEl) {
+                dismissInfoPanelPopup();
+            }
             if (e.key === 'Escape' && guestAbilityPopupEl) {
                 closeGuestAbilityPopup();
             }
