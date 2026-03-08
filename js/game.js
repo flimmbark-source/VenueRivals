@@ -3,7 +3,7 @@
    ============================================ */
 
 const Game = (() => {
-  const DEFAULT_TOTAL_ROUNDS = 7;
+  const DEFAULT_TOTAL_ROUNDS = 14;
   const BUST_PENALTY = 0.25;
   const TAGS = ["VIP", "Performer", "Scout", "Broker", "Outlaw"];
 
@@ -526,7 +526,7 @@ const Game = (() => {
       isShopItem: true,
     },
     heatCapIncrease: {
-      name: "+1 🔥",
+      name: "+1 Heat",
       emoji: "🌡️",
       money: 0,
       heat: 0,
@@ -600,8 +600,8 @@ const Game = (() => {
     headlinerAfterparty: {
       name: "Headliner Afterparty",
       emoji: "🎤",
-      gridSize: 2,
-      bustThreshold: 6,
+      gridSize: 3,
+      bustThreshold: 5,
       desc: "Keep the star locked while the crew pushes and pulls through the lane.",
       style: "points",
       color: "#c9884c",

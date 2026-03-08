@@ -2318,16 +2318,11 @@
         const guest = Game.GUESTS[guestId];
         const upgradeCardText = {
             slotIncrease: '+1 slot',
-            heatCapIncrease: '+1 heat',
+            heatCapIncrease: '+1 🔥',
         };
 
         const wrapper = document.createElement('div');
         wrapper.className = 'deck-manage-card shop-card-wrapper' + (canAfford ? '' : ' disabled');
-
-        const nameLabel = document.createElement('div');
-        nameLabel.className = 'deck-card-name' + (guest.ability ? ' has-ability' : '');
-        nameLabel.textContent = guest.name;
-        wrapper.appendChild(nameLabel);
 
         const costLabel = document.createElement('div');
         costLabel.className = 'shop-card-cost';
@@ -2614,7 +2609,7 @@
         if (!valid) {
             body.innerHTML = `<div class="loadout-deck-warning" style="font-family:'Press Start 2P',monospace;font-size:0.35rem;color:var(--color-heat);padding:4px;">Need at least ${MIN_DECK_SIZE} cards</div>`;
         }
-        renderLoadoutGuestCards_horizontal(body, loadoutState.deck);
+        renderLoadoutGuestCards_horizontal(body, loadoutState.deck, { interactive: true });
     }
 
     function renderLoadoutGuestList() {
@@ -2917,9 +2912,9 @@
             openVenueSelect();
         });
         document.getElementById('loadout-deck-card').addEventListener('click', openDeckManage);
-        document.getElementById('btn-edit-guest-list-inline').addEventListener('click', (e) => {
+        document.getElementById('btn-edit-deck-inline').addEventListener('click', (e) => {
             e.stopPropagation();
-            openGuestListManage();
+            openDeckManage();
         });
         document.getElementById('btn-close-venue-select').addEventListener('click', closeVenueSelect);
         document.getElementById('btn-close-deck-manage').addEventListener('click', closeDeckManage);
@@ -2958,7 +2953,7 @@
             const roundBtns = roundsSelector.querySelectorAll('.arcade-sel-btn');
             // Set default active
             roundBtns.forEach(btn => {
-                if (btn.dataset.value === (roundsInput?.value || '7')) btn.classList.add('active');
+                if (btn.dataset.value === (roundsInput?.value || '14')) btn.classList.add('active')
                 btn.addEventListener('click', () => {
                     roundBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
