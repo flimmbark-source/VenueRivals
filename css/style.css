@@ -1832,6 +1832,7 @@ body {
     min-height: 26px;
     display: flex;
     align-items: center;
+    position: relative;
     width: 100%;
     pointer-events: none;
     overflow: hidden;
@@ -1844,6 +1845,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    position: absolute;
+    inset: 0;
     font-size: 0.68rem;
     font-weight: 700;
     line-height: 1.2;
@@ -1857,8 +1860,13 @@ body {
     overflow: hidden;
 }
 
+.feedback-msg.is-exiting {
+    z-index: 1;
+}
+
 .feedback-ticker-run,
-.feedback-ticker-static {
+.feedback-ticker-static,
+.feedback-ticker-exit {
     display: inline-block;
     white-space: nowrap;
     margin-left: 0;
@@ -1866,7 +1874,11 @@ body {
 
 .feedback-ticker-run {
     margin-left: 100%;
-    animation: feedbackTickerScroll var(--feedback-duration, 2200ms) linear forwards;
+    animation: feedbackTickerScroll var(--feedback-duration, 2600ms) linear forwards;
+}
+
+.feedback-ticker-exit {
+    animation: feedbackTickerExit 700ms linear forwards;
 }
 
 .feedback-msg.disruption {
@@ -3314,6 +3326,11 @@ body {
 }
 
 @keyframes feedbackTickerScroll {
-    from { margin-left: 100%; }
+    from { margin-left: 110%; }
     to { margin-left: 0; }
+}
+
+@keyframes feedbackTickerExit {
+    from { transform: translateX(0); }
+    to { transform: translateX(-140%); }
 }

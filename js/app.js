@@ -1866,10 +1866,22 @@
         ].filter(Boolean);
         if (!feedbackEls.length) return;
 
-        const popupDuration = Math.max(1400, duration || 2200);
+        const popupDuration = Math.max(1700, Math.round((duration || 2200) * 1.2));
+        const exitDuration = 700;
+
         feedbackEls.forEach((el) => {
-            const existing = el.querySelector('.feedback-msg');
-            if (existing) existing.remove();
+            const existing = el.querySelector('.feedback-msg:not(.is-exiting)');
+            if (existing) {
+                existing.classList.add('is-exiting');
+                const existingTicker = existing.querySelector('.feedback-ticker-run, .feedback-ticker-static');
+                if (existingTicker) {
+                    existingTicker.classList.remove('feedback-ticker-run', 'feedback-ticker-static');
+                    existingTicker.classList.add('feedback-ticker-exit');
+                }
+                setTimeout(() => {
+                    if (existing.isConnected) existing.remove();
+                }, exitDuration);
+            }
 
             const msgEl = document.createElement('div');
             msgEl.className = `feedback-msg ${type || ''}`.trim();
@@ -1882,7 +1894,7 @@
             el.appendChild(msgEl);
 
             setTimeout(() => {
-                if (!msgEl.isConnected || !tickerEl.isConnected) return;
+                if (!msgEl.isConnected || !tickerEl.isConnected || msgEl.classList.contains('is-exiting')) return;
                 tickerEl.className = 'feedback-ticker-static';
             }, popupDuration);
         });
