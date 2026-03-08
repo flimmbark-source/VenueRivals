@@ -1901,6 +1901,70 @@ body {
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), inset 3px 0 0 rgba(255, 68, 68, 0.85);
 }
 
+.number-ping {
+    position: fixed;
+    z-index: 60;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0.82);
+    opacity: 0;
+    transition: opacity 180ms ease, transform 280ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.number-ping.is-visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.number-ping.above.is-visible {
+    animation: numberPingFloatUp 1900ms ease forwards;
+}
+
+.number-ping.below.is-visible {
+    animation: numberPingFloatDown 1900ms ease forwards;
+}
+
+.number-ping-reel {
+    display: inline-block;
+    min-width: 54px;
+    text-align: center;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--ping-color, #ffd166);
+    text-shadow: 0 0 9px color-mix(in srgb, var(--ping-color) 65%, transparent);
+    box-shadow: none;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.3px;
+    animation: numberPingReel 320ms linear 1;
+}
+
+@keyframes numberPingReel {
+    0% {
+        filter: blur(1.5px);
+        opacity: 0.7;
+        letter-spacing: 1px;
+    }
+    100% {
+        filter: blur(0);
+        opacity: 1;
+        letter-spacing: 0.3px;
+    }
+}
+
+@keyframes numberPingFloatUp {
+    0% { transform: translate(-50%, -50%); opacity: 0; }
+    12% { opacity: 1; }
+    100% { transform: translate(-50%, -170%); opacity: 0; }
+}
+
+@keyframes numberPingFloatDown {
+    0% { transform: translate(-50%, -50%); opacity: 0; }
+    12% { opacity: 1; }
+    100% { transform: translate(-50%, 70%); opacity: 0; }
+}
+
 
 .action-log-popup {
     position: fixed;
