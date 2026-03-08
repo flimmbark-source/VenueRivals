@@ -2939,11 +2939,16 @@
         // Setup / Loadout (Arcade Management)
         document.getElementById('btn-change-venue-inline').addEventListener('click', (e) => {
             e.stopPropagation();
+            dismissInfoPanelPopup();
             openVenueSelect();
         });
-        document.getElementById('loadout-deck-card').addEventListener('click', openDeckManage);
+        document.getElementById('loadout-deck-card').addEventListener('click', () => {
+            dismissInfoPanelPopup();
+            openDeckManage();
+        });
         document.getElementById('btn-edit-deck-inline').addEventListener('click', (e) => {
             e.stopPropagation();
+            dismissInfoPanelPopup();
             openDeckManage();
         });
         document.getElementById('btn-close-venue-select').addEventListener('click', closeVenueSelect);
