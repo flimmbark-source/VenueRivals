@@ -2570,6 +2570,11 @@
         if (loadoutState) {
             gameState.player.fullDeck = [...loadoutState.deck];
             gameState.player.guestList = [...loadoutState.guestList];
+
+            // In solo mode, mirror the player's deck for the rival unless a specific rival deck is supplied.
+            if (!isMultiplayer() && !options.rivalDeck?.length) {
+                gameState.rival.fullDeck = [...loadoutState.deck];
+            }
         }
         if (options.rivalDeck?.length) gameState.rival.fullDeck = [...options.rivalDeck];
         if (options.rivalGuestList?.length) gameState.rival.guestList = [...options.rivalGuestList];
