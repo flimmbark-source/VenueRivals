@@ -1929,11 +1929,11 @@ body {
     text-align: center;
     padding: 4px 8px;
     border-radius: 8px;
-    border: 1px solid color-mix(in srgb, var(--ping-color) 75%, #ffffff 25%);
+    border: none;
     background: transparent;
     color: var(--ping-color, #ffd166);
     text-shadow: 0 0 9px color-mix(in srgb, var(--ping-color) 65%, transparent);
-    box-shadow: 0 0 14px color-mix(in srgb, var(--ping-color) 42%, transparent);
+    box-shadow: none;
     font-family: 'Press Start 2P', monospace;
     font-size: 0.62rem;
     letter-spacing: 0.3px;
