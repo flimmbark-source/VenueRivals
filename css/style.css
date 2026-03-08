@@ -512,7 +512,7 @@ body {
 }
 
 #setup-screen .loadout-card {
-    padding: 10px 12px 24px;
+    padding: 11px 12px 24px;
     border-radius: var(--radius-md);
     flex: 0 0 auto;
     width: 100%;
@@ -1477,7 +1477,7 @@ body {
 
 .guest-slot .slot-stat {
     position: absolute;
-    font-size: 0.62rem;
+    font-size: 0.82rem;
     font-weight: 700;
     line-height: 1;
     text-shadow: 0 1px 3px rgba(0,0,0,0.65);
@@ -1512,10 +1512,10 @@ body {
 
 .ability-icon-badge {
     position: absolute;
-    left: 2px;
-    bottom: 2px;
+    left: 8px;
+    bottom: 5px;
     transform: none;
-    font-size: 0.55rem;
+    font-size: 0.82rem;
     line-height: 1;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
     filter: drop-shadow(0 0 2px rgba(255, 209, 102, 0.5));
@@ -1525,7 +1525,7 @@ body {
 .guest-slot .slot-emoji {
     position: absolute;
     left: 2px;
-    top: 30%;
+    top: 33%;
     transform: translateY(-50%);
 }
 
@@ -2307,8 +2307,8 @@ body {
         border-right: 1px solid var(--bg-light);
     }
 
-    .guest-slot { width: 42px; height: 50px; font-size: 18px; }
-    .arriving-guest-card { width: 44px; height: 52px; font-size: 20px; }
+    .guest-slot { width: 52px; height: 64px; font-size: 26px; }
+    .arriving-guest-card { width: 44px; height: 52px; font-size: 28px; }
 }
 
 @media (max-height: 700px) {
