@@ -2590,9 +2590,6 @@
         const body = document.getElementById('loadout-venue-body');
         body.innerHTML = `
             <div class="arcade-venue-stats-row">
-                <span class="arcade-stat-chip stat-slots">Guest Slots: ${Math.max(0, venue.gridSize)}</span>
-                <span class="arcade-stat-chip stat-bust">Heat Limit: ${venue.bustThreshold}</span>
-                <span class="arcade-stat-chip stat-style">${VENUE_STYLE_LABEL[venue.style]}</span>
             </div>
         `;
     }
@@ -2665,9 +2662,6 @@
                     <h3>${venue.name}${isEquipped ? ' <span class="equipped-badge">EQUIPPED</span>' : ''}</h3>
                     <p>${venue.desc}</p>
                     <div class="venue-stats-preview">
-                        <span class="stat-tag">Guest Slots: ${Math.max(0, venue.gridSize)}</span>
-                        <span class="stat-tag">Heat Limit: ${venue.bustThreshold}</span>
-                        <span class="stat-tag">${VENUE_STYLE_LABEL[venue.style]}</span>
                     </div>
                     <div class="venue-select-pool">${VENUE_POOL_DESC[id]}</div>
                 </div>
