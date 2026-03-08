@@ -2646,8 +2646,27 @@
         });
     }
 
-    function openVenueSelect() {
-        const overlay = document.getElementById('venue-select-overlay');
+    function renderVenuePreview(venueId) {
+        const previewGrid = document.getElementById('venue-preview-grid');
+        const previewEmpty = document.getElementById('venue-preview-empty');
+        const previewListId = getDefaultGuestListId(venueId);
+
+        previewGrid.innerHTML = '';
+        if (!previewListId) {
+            previewEmpty.style.display = '';
+            return;
+        }
+
+        previewEmpty.style.display = 'none';
+        const list = Game.GUEST_LISTS[previewListId];
+        list.guests.forEach((guestId) => {
+            const card = createGuestSlot(guestId, false, { interactive: false });
+            card.classList.add('loadout-preview-card');
+            previewGrid.appendChild(card);
+        });
+    }
+
+    function renderVenueSelect() {
         const grid = document.getElementById('venue-select-grid');
 
         grid.innerHTML = '';
@@ -2674,14 +2693,21 @@
                     applyGuestList(getDefaultGuestListId(id));
                     selectedVenueType = id;
                 }
-                closeVenueSelect();
+                renderVenueSelect();
+                renderVenuePreview(id);
                 renderLoadout();
             });
 
             grid.appendChild(card);
         });
 
+        renderVenuePreview(loadoutState.venueId);
+    }
+
+    function openVenueSelect() {
+        const overlay = document.getElementById('venue-select-overlay');
         overlay.style.display = '';
+        renderVenueSelect();
     }
 
     function closeVenueSelect() {
