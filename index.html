@@ -243,6 +243,7 @@
             <div class="party-carousel" id="party-carousel" aria-label="Party view carousel">
                 <div class="party-top-hud" id="party-top-hud">
                     <div class="phone-status-strip">
+                        <button class="hud-menu-btn" id="btn-game-menu" aria-label="Menu">☰</button>
                         <span class="phone-round">Round <span id="hud-round-num">1</span></span>
                         <span class="phone-phase" id="hud-phase">GUEST PHASE</span>
                         <span class="phone-connection">
@@ -366,6 +367,34 @@
 
                 <button class="party-view-btn active" id="btn-view-player" type="button">You</button>
                 <button class="party-view-btn" id="btn-view-rival" type="button">Rival</button>
+            </div>
+        </div>
+
+        <!-- Game Menu Overlay -->
+        <div class="game-menu-overlay" id="game-menu-overlay" style="display:none;">
+            <div class="game-menu-panel">
+                <div class="game-menu-header">
+                    <h3>MENU</h3>
+                    <button class="loadout-overlay-close" id="btn-close-game-menu">✕</button>
+                </div>
+                <button class="game-menu-item" id="btn-menu-glossary">Glossary</button>
+                <button class="game-menu-item" id="btn-menu-options">Options</button>
+                <button class="game-menu-item game-menu-item--danger" id="btn-menu-main-menu">Main Menu</button>
+            </div>
+        </div>
+
+        <!-- Glossary Overlay -->
+        <div class="game-menu-overlay" id="glossary-overlay" style="display:none;">
+            <div class="glossary-panel">
+                <div class="glossary-header">
+                    <button class="glossary-back-btn" id="btn-glossary-back">←</button>
+                    <h3>GLOSSARY</h3>
+                    <button class="loadout-overlay-close" id="btn-close-glossary">✕</button>
+                </div>
+                <div class="glossary-body">
+                    <nav class="glossary-nav" id="glossary-nav"></nav>
+                    <div class="glossary-content" id="glossary-content"></div>
+                </div>
             </div>
         </div>
     </div>

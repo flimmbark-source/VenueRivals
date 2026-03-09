@@ -3309,6 +3309,203 @@
         renderGuestListPreview(loadoutState.selectedGuestListId);
     }
 
+    // === Game Menu & Glossary ===
+    function openGameMenu() {
+        document.getElementById('game-menu-overlay').style.display = '';
+    }
+    function closeGameMenu() {
+        document.getElementById('game-menu-overlay').style.display = 'none';
+    }
+    function openGlossary() {
+        closeGameMenu();
+        const overlay = document.getElementById('glossary-overlay');
+        overlay.style.display = '';
+        buildGlossaryNav();
+        // Select first item
+        const firstBtn = document.querySelector('.glossary-nav-item:not(.glossary-nav-item--section)');
+        if (firstBtn) firstBtn.click();
+    }
+    function closeGlossary() {
+        document.getElementById('glossary-overlay').style.display = 'none';
+    }
+
+    const GLOSSARY_SECTIONS = [
+        {
+            heading: 'Reference',
+            items: [
+                { id: 'how-to-play', label: 'How to Play' },
+                { id: 'abilities', label: 'Abilities' },
+            ],
+        },
+        {
+            heading: 'Definitions',
+            items: [
+                { id: 'verbs', label: 'Ability Verbs' },
+                { id: 'targeting', label: 'Targeting' },
+                { id: 'terms', label: 'Term Glossary' },
+                { id: 'phases', label: 'Game Phases' },
+            ],
+        },
+    ];
+
+    function buildGlossaryNav() {
+        const nav = document.getElementById('glossary-nav');
+        nav.innerHTML = '';
+        GLOSSARY_SECTIONS.forEach((section) => {
+            const heading = document.createElement('div');
+            heading.className = 'glossary-nav-item glossary-nav-item--section';
+            heading.textContent = section.heading;
+            nav.appendChild(heading);
+            section.items.forEach((item) => {
+                const btn = document.createElement('button');
+                btn.className = 'glossary-nav-item';
+                btn.textContent = item.label;
+                btn.dataset.id = item.id;
+                btn.addEventListener('click', () => {
+                    nav.querySelectorAll('.glossary-nav-item').forEach((b) => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderGlossaryContent(item.id);
+                });
+                nav.appendChild(btn);
+            });
+        });
+    }
+
+    function renderGlossaryContent(id) {
+        const el = document.getElementById('glossary-content');
+        switch (id) {
+            case 'how-to-play':
+                el.innerHTML = `
+                    <h4>How to Play</h4>
+                    <p><strong>Goal:</strong> Be the first player to reach the point target.</p>
+                    <p>Each round has two phases: <strong>Guest Phase</strong> and <strong>Buy Phase</strong>.</p>
+                    <p><strong>Guest Phase:</strong> Guests arrive at your venue one at a time. For each guest you decide:</p>
+                    <p>• <strong>Admit</strong> — Let them into your house. They add their Money, Points, and Heat to your round totals.</p>
+                    <p>• <strong>Use Ability</strong> — If the guest (or a guest already in your house) has a special ability, activate it.</p>
+                    <p>• <strong>Close Door</strong> — Stop admitting guests. Your round totals are locked in.</p>
+                    <p><strong>Heat &amp; Busting:</strong> Each guest adds Heat. If your Heat exceeds your venue's bust threshold, you <strong>bust</strong> and lose all earnings for the round.</p>
+                    <p><strong>Buy Phase:</strong> Spend earned Money to buy new guests for your deck, or purchase upgrades (+1 Slot, +1 Heat Cap).</p>
+                    <p><strong>House Grid:</strong> Admitted guests sit in a lane. The <strong>Newest</strong> guest is closest to the entry (index 0), the <strong>Oldest</strong> is closest to the exit. Lane abilities like Boot, Bounce, Nudge, and Lock target guests by position.</p>
+                `;
+                break;
+            case 'abilities': {
+                const guests = Game.GUESTS;
+                let rows = '';
+                Object.keys(guests).forEach((gid) => {
+                    const g = guests[gid];
+                    if (!g.ability || g.isShopItem) return;
+                    rows += `<div class="glossary-ability-row">
+                        <span class="glossary-ability-icon">${escapeHtml(g.ability.icon)}</span>
+                        <span class="glossary-ability-name">${escapeHtml(g.ability.name)}</span>
+                        <span class="glossary-ability-desc">${escapeHtml(g.name)} — ${escapeHtml(g.ability.desc)}</span>
+                    </div>`;
+                });
+                el.innerHTML = `<h4>All Guest Abilities</h4>${rows}`;
+                break;
+            }
+            case 'verbs':
+                el.innerHTML = `
+                    <h4>Ability Verbs</h4>
+                    <table class="glossary-table">
+                        <tr><th>Verb</th><th>Effect</th></tr>
+                        <tr><td>COOL X</td><td>Reduce your Heat by X (min 0)</td></tr>
+                        <tr><td>SPIKE X</td><td>Add X Heat to opponent</td></tr>
+                        <tr><td>PEEK X</td><td>Reveal the next X guests in your queue</td></tr>
+                        <tr><td>STACK</td><td>Reveal next 2 guests and choose their order</td></tr>
+                        <tr><td>GRAB X</td><td>Gain X Money</td></tr>
+                        <tr><td>LIFT X</td><td>Steal up to X Money from opponent</td></tr>
+                        <tr><td>TRASH</td><td>Discard the next queued guest</td></tr>
+                        <tr><td>PLANT</td><td>Queue a Gatecrasher for opponent</td></tr>
+                        <tr><td>LOCK</td><td>Lock a guest until door close</td></tr>
+                        <tr><td>BOOT</td><td>Remove a guest from the house (they leave)</td></tr>
+                        <tr><td>BOUNCE</td><td>Remove a guest and put them back on top of your queue</td></tr>
+                        <tr><td>NUDGE</td><td>Move a guest 1 step toward Newest (toward entry)</td></tr>
+                    </table>
+                `;
+                break;
+            case 'targeting':
+                el.innerHTML = `
+                    <h4>Targeting</h4>
+                    <p>Lane abilities (Boot, Bounce, Nudge, Lock) target a specific guest by position in your house.</p>
+                    <table class="glossary-table">
+                        <tr><th>Target</th><th>Meaning</th></tr>
+                        <tr><td>Oldest</td><td>Guest closest to the exit (last in house)</td></tr>
+                        <tr><td>Newest</td><td>Guest closest to the entry (first in house)</td></tr>
+                        <tr><td>Left of Self</td><td>Guest immediately older than this guest (one step toward exit)</td></tr>
+                        <tr><td>Right of Self</td><td>Guest immediately newer than this guest (one step toward entry)</td></tr>
+                    </table>
+                    <p><strong>Lock rules:</strong> Locked guests cannot be Booted or Bounced. Nudge cannot move a locked guest or swap with a locked neighbor.</p>
+                `;
+                break;
+            case 'terms':
+                el.innerHTML = `
+                    <h4>Term Glossary</h4>
+                    <table class="glossary-table">
+                        <tr><th>Term</th><th>Definition</th></tr>
+                        <tr><td>Heat</td><td>Pressure from guests. If it exceeds your bust threshold, you bust.</td></tr>
+                        <tr><td>Bust</td><td>Losing all round earnings because Heat went over the limit.</td></tr>
+                        <tr><td>House</td><td>Your venue's guest lane. Admitted guests sit here left to right.</td></tr>
+                        <tr><td>Queue</td><td>Your draw pile. Guests arrive from the top of the queue.</td></tr>
+                        <tr><td>Arriving Guest</td><td>The guest currently at your door, waiting to be admitted.</td></tr>
+                        <tr><td>Deck</td><td>The full set of guests you bring into a match.</td></tr>
+                        <tr><td>Flash</td><td>The trigger type for abilities — used at the moment a guest appears.</td></tr>
+                        <tr><td>Slot</td><td>A position in the house grid. Capacity can be increased.</td></tr>
+                        <tr><td>Gatecrasher</td><td>A trouble guest with 1 Heat, 0 Money, 0 Points. Planted by opponents.</td></tr>
+                        <tr><td>Round Money</td><td>Money earned during the current round from abilities and guests.</td></tr>
+                        <tr><td>Round Points</td><td>Points earned during the current round.</td></tr>
+                    </table>
+                `;
+                break;
+            case 'phases':
+                el.innerHTML = `
+                    <h4>Game Phases</h4>
+                    <p><strong>1. Guest Phase</strong></p>
+                    <p>Guests arrive one by one. Decide to admit, use abilities, or close the door. Both players act simultaneously.</p>
+                    <p><strong>2. Round Results</strong></p>
+                    <p>After both players close (or bust), round earnings are tallied and added to permanent totals.</p>
+                    <p><strong>3. Buy Phase</strong></p>
+                    <p>Spend Money to purchase new guests or upgrades. New guests go into your full deck for future rounds.</p>
+                    <p><strong>4. Victory</strong></p>
+                    <p>The first player to reach the point target wins. If both reach it in the same round, the higher score wins.</p>
+                `;
+                break;
+            default:
+                el.innerHTML = '<p>Select a topic.</p>';
+        }
+    }
+
+    function handleMenuMainMenu() {
+        closeGameMenu();
+        if (aiTimerId) { clearInterval(aiTimerId); aiTimerId = null; }
+        Renderer.resetAnimState();
+        clearVenueActors();
+        gameState = null;
+        currentMarket = null;
+        roundActionLog = [];
+        closeActionLogPopup();
+        if (multiplayerSession) { multiplayerSession.close(); multiplayerSession = null; }
+        closeWaitingPopup();
+        pendingHostMatchConfig = null;
+        multiplayerMode = 'single';
+        document.getElementById('venue-name-input').value = '';
+        document.getElementById('round-count-input').value = String(Game.POINT_TARGET);
+        const modeSelect = document.getElementById('game-mode-input');
+        if (modeSelect) modeSelect.value = 'single';
+        const roundSelect = document.getElementById('round-count-input');
+        if (roundSelect) roundSelect.disabled = false;
+        const multiplayerFields = document.getElementById('multiplayer-fields');
+        if (multiplayerFields) multiplayerFields.style.display = 'none';
+        document.querySelectorAll('#arcade-rounds-selector .arcade-sel-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.value === String(Game.POINT_TARGET));
+        });
+        document.querySelectorAll('#arcade-mode-selector .arcade-sel-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.value === 'single');
+        });
+        setPartyView('player', false);
+        initLoadout();
+        switchScreen('title');
+    }
+
     // === Event Listeners ===
     function setupEventListeners() {
         // Title
@@ -3323,6 +3520,29 @@
         });
         document.getElementById('btn-back-to-title-from-setup').addEventListener('click', () => {
             switchScreen('title');
+        });
+
+        // Game Menu
+        document.getElementById('btn-game-menu').addEventListener('click', openGameMenu);
+        document.getElementById('btn-close-game-menu').addEventListener('click', closeGameMenu);
+        document.getElementById('game-menu-overlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeGameMenu();
+        });
+        document.getElementById('btn-menu-glossary').addEventListener('click', openGlossary);
+        document.getElementById('btn-menu-options').addEventListener('click', () => {
+            // Options placeholder — close menu for now
+            closeGameMenu();
+        });
+        document.getElementById('btn-menu-main-menu').addEventListener('click', handleMenuMainMenu);
+
+        // Glossary
+        document.getElementById('btn-close-glossary').addEventListener('click', closeGlossary);
+        document.getElementById('btn-glossary-back').addEventListener('click', () => {
+            closeGlossary();
+            openGameMenu();
+        });
+        document.getElementById('glossary-overlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeGlossary();
         });
 
         // Setup / Loadout (Arcade Management)
@@ -3536,11 +3756,15 @@
             if (tooltipEl) {
                 dismissInfoPanelPopup();
             }
-            if (e.key === 'Escape' && guestAbilityPopupEl) {
-                closeGuestAbilityPopup();
-            }
-            if (e.key === 'Escape' && actionLogPopupEl) {
-                closeActionLogPopup();
+            if (e.key === 'Escape') {
+                if (document.getElementById('glossary-overlay').style.display !== 'none') {
+                    closeGlossary(); return;
+                }
+                if (document.getElementById('game-menu-overlay').style.display !== 'none') {
+                    closeGameMenu(); return;
+                }
+                if (guestAbilityPopupEl) { closeGuestAbilityPopup(); return; }
+                if (actionLogPopupEl) { closeActionLogPopup(); }
             }
         });
     }
