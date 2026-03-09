@@ -678,6 +678,22 @@ describe("activateAbility guards", () => {
     expect(second).toBeNull();
   });
 
+  test("legacy house entry normalization keeps null instanceId to avoid visual remount", () => {
+    const player = makePlayer({ house: ["chiller"] });
+    const opponent = makeOpponent();
+
+    const result = Game.activateAbility(
+      player,
+      opponent,
+      Game.VENUES.velvetRoom,
+      Game.VENUES.velvetRoom,
+      { source: "house", guestId: "chiller" },
+    );
+
+    expect(result).not.toBeNull();
+    expect(player.house[0].instanceId).toBeNull();
+  });
+
   test("returns null for guest without ability", () => {
     const player = makePlayer({ arrivingGuest: "regular" });
     const opponent = makeOpponent();

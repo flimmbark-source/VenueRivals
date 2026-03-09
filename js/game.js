@@ -953,7 +953,10 @@ const Game = (() => {
   function normalizeHouseEntry(player, index) {
     const entry = player.house[index];
     if (typeof entry !== "string") return entry || null;
-    const normalized = createHouseGuest(entry);
+    // Preserve legacy visual identity by avoiding a new numeric instanceId.
+    // Using a null instanceId keeps existing guest/index-based slot keys stable,
+    // which prevents a mid-round re-mount/flicker when an ability is used.
+    const normalized = { instanceId: null, guestId: entry, lockUntilClose: false, abilityUsed: false };
     player.house[index] = normalized;
     return normalized;
   }
