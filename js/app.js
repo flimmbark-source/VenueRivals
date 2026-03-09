@@ -904,21 +904,25 @@
 
         const r = gameState.rival;
         const hudActor = activePartyView === 'rival' ? r : p;
+        const displayedPlayerPoints = hudActor.points + (hudActor.roundPoints || 0);
+        const displayedPlayerMoney = hudActor.money + (hudActor.roundMoney || 0);
+        const displayedRivalPoints = r.points + (r.roundPoints || 0);
+        const displayedRivalMoney = r.money + (r.roundMoney || 0);
 
-        emitHudDeltaPing('points', hudActor.points, hudDeltaSnapshot.player.points, hudPlayerPtsEl, 'below');
-        emitHudDeltaPing('money', hudActor.money, hudDeltaSnapshot.player.money, playerMoneyEl, 'below');
+        emitHudDeltaPing('points', displayedPlayerPoints, hudDeltaSnapshot.player.points, hudPlayerPtsEl, 'below');
+        emitHudDeltaPing('money', displayedPlayerMoney, hudDeltaSnapshot.player.money, playerMoneyEl, 'below');
         emitHudDeltaPing('heat', hudActor.heat, hudDeltaSnapshot.player.heat, document.getElementById('player-heat-text'), 'above');
         emitHudDeltaPing('heat', r.heat, hudDeltaSnapshot.rival.heat, document.getElementById('rival-heat-text'), 'above');
 
-        hudDeltaSnapshot.player.points = hudActor.points;
-        hudDeltaSnapshot.player.money = hudActor.money;
+        hudDeltaSnapshot.player.points = displayedPlayerPoints;
+        hudDeltaSnapshot.player.money = displayedPlayerMoney;
         hudDeltaSnapshot.player.heat = hudActor.heat;
         hudDeltaSnapshot.rival.heat = r.heat;
-        hudDeltaSnapshot.rival.points = r.points;
-        hudDeltaSnapshot.rival.money = r.money;
+        hudDeltaSnapshot.rival.points = displayedRivalPoints;
+        hudDeltaSnapshot.rival.money = displayedRivalMoney;
 
-        hudPlayerPtsEl.textContent = `⭐ ${hudActor.points}`;
-        playerMoneyEl.textContent = `💵 $${hudActor.money}`;
+        hudPlayerPtsEl.textContent = `⭐ ${displayedPlayerPoints}`;
+        playerMoneyEl.textContent = `💵 $${displayedPlayerMoney}`;
 
         const hudVenue = Game.VENUES[hudActor.venueId];
         updateHeatBar('player', hudActor.heat, Game.getHeatCapacity(hudVenue, hudActor), hudActor.busted);
