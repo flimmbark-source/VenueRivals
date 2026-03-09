@@ -2612,8 +2612,8 @@
         const r = gameState.rival;
 
         // Capture round earnings before endGuestPhase resets them.
-        const pEarned = { money: p.roundMoney + p.guestMoney, points: p.roundPoints + p.guestPoints, busted: p.busted };
-        const rEarned = { money: r.roundMoney + r.guestMoney, points: r.roundPoints + r.guestPoints, busted: r.busted };
+        const pEarned = Game.getRoundEarnings(p);
+        const rEarned = Game.getRoundEarnings(r);
 
         Game.endGuestPhase(gameState);
         updateHUD();

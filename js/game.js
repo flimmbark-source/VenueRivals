@@ -1474,6 +1474,28 @@ const Game = (() => {
   function bothDone(state) {
     return state.player.phaseComplete && state.rival.phaseComplete;
   }
+
+  function getRoundEarnings(player) {
+    if (!player) return { money: 0, points: 0, busted: false };
+
+    let guestMoney = player.guestMoney;
+    let guestPoints = player.guestPoints;
+
+    if (player.arrivingGuest && !player.busted) {
+      const arriving = GUESTS[player.arrivingGuest];
+      if (arriving) {
+        guestMoney += arriving.money;
+        guestPoints += arriving.points;
+      }
+    }
+
+    return {
+      money: player.roundMoney + guestMoney,
+      points: player.roundPoints + guestPoints,
+      busted: !!player.busted,
+    };
+  }
+
   function endGuestPhase(state) {
     if (state.guestPhaseScoredRound === state.round) return;
     [state.player, state.rival].forEach((p) => {
@@ -1489,8 +1511,9 @@ const Game = (() => {
       p.arrivingGuest = null;
       p.arrivingAbilityUsed = false;
       if (!p.busted) {
-        p.money += p.roundMoney + p.guestMoney;
-        p.points += p.roundPoints + p.guestPoints;
+        const earned = getRoundEarnings(p);
+        p.money += earned.money;
+        p.points += earned.points;
       }
       p.roundMoney = 0;
       p.roundPoints = 0;
@@ -1580,6 +1603,7 @@ const Game = (() => {
     activateAbility,
     closeDoor,
     bothDone,
+    getRoundEarnings,
     endGuestPhase,
     getMarket,
     buyGuest,

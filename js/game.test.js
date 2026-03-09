@@ -813,3 +813,41 @@ describe("bust scoring", () => {
     expect(state.player.money).toBe(6);
   });
 });
+
+describe("round earnings parity", () => {
+  test("counts arriving guest for both player and rival when scoring round", () => {
+    const state = {
+      round: 2,
+      guestPhaseScoredRound: null,
+      winner: null,
+      player: makePlayer({
+        phaseComplete: true,
+        roundMoney: 1,
+        roundPoints: 2,
+        guestMoney: 3,
+        guestPoints: 4,
+        arrivingGuest: "tipper",
+      }),
+      rival: makeOpponent({
+        phaseComplete: true,
+        roundMoney: 2,
+        roundPoints: 1,
+        guestMoney: 1,
+        guestPoints: 2,
+        arrivingGuest: "regular",
+      }),
+    };
+
+    const playerEarned = Game.getRoundEarnings(state.player);
+    const rivalEarned = Game.getRoundEarnings(state.rival);
+    expect(playerEarned).toEqual({ money: 6, points: 6, busted: false });
+    expect(rivalEarned).toEqual({ money: 3, points: 4, busted: false });
+
+    Game.endGuestPhase(state);
+
+    expect(state.player.money).toBe(16);
+    expect(state.player.points).toBe(6);
+    expect(state.rival.money).toBe(13);
+    expect(state.rival.points).toBe(4);
+  });
+});
