@@ -2279,15 +2279,15 @@ body {
 }
 
 .shop-inspect-mode .shop-card-wrapper {
-    animation: shopWaggle 3s ease-in-out infinite;
+    animation: shopWaggle 1.75s ease-in-out infinite;
 }
 
 .shop-inspect-mode .shop-card-wrapper:nth-child(even) {
-    animation-delay: -1.5s;
+    animation-delay: -0.875s;
 }
 
 .shop-inspect-mode .shop-card-wrapper:nth-child(3n) {
-    animation-delay: -0.75s;
+    animation-delay: -0.44s;
 }
 
 .shop-card-wrapper:hover .guest-slot {
