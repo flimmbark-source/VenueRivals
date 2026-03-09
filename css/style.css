@@ -2272,22 +2272,12 @@ body {
     animation: shopPurchasePulse 0.22s ease;
 }
 
-@keyframes shopWaggle {
-    0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(2deg); }
-    75% { transform: rotate(-2deg); }
-}
-
-.shop-inspect-mode .shop-card-wrapper {
-    animation: shopWaggle 1.75s ease-in-out infinite;
-}
-
-.shop-inspect-mode .shop-card-wrapper:nth-child(even) {
-    animation-delay: -0.875s;
-}
-
-.shop-inspect-mode .shop-card-wrapper:nth-child(3n) {
-    animation-delay: -0.44s;
+.shop-inspect-indicator {
+    text-align: center;
+    font-size: 1.4rem;
+    line-height: 1;
+    margin-bottom: 4px;
+    animation: tooltipIn 0.15s ease;
 }
 
 .shop-card-wrapper:hover .guest-slot {

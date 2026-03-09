@@ -1743,19 +1743,20 @@
     function activateShopInspectMode() {
         if (shopInspectMode) return;
         shopInspectMode = true;
-        const grid = document.getElementById('shop-grid');
-        if (grid) grid.classList.add('shop-inspect-mode');
-        const upgrades = document.getElementById('shop-upgrades');
-        if (upgrades) upgrades.classList.add('shop-inspect-mode');
+        const panel = document.getElementById('buy-phase-panel');
+        if (panel && !panel.querySelector('.shop-inspect-indicator')) {
+            const indicator = document.createElement('div');
+            indicator.className = 'shop-inspect-indicator';
+            indicator.textContent = '🔍';
+            panel.insertBefore(indicator, panel.firstChild);
+        }
     }
 
     function deactivateShopInspectMode() {
         if (!shopInspectMode) return;
         shopInspectMode = false;
-        const grid = document.getElementById('shop-grid');
-        if (grid) grid.classList.remove('shop-inspect-mode');
-        const upgrades = document.getElementById('shop-upgrades');
-        if (upgrades) upgrades.classList.remove('shop-inspect-mode');
+        const indicator = document.querySelector('.shop-inspect-indicator');
+        if (indicator) indicator.remove();
     }
 
     function bindShopCardInteractions(el, guestId, canAfford) {
@@ -2569,12 +2570,6 @@
         grid.innerHTML = '';
         const upgradesPanel = document.getElementById('shop-upgrades');
         upgradesPanel.innerHTML = '';
-
-        // Preserve inspect mode class across re-renders
-        if (shopInspectMode) {
-            grid.classList.add('shop-inspect-mode');
-            upgradesPanel.classList.add('shop-inspect-mode');
-        }
 
         const readOnlyShop = false;
 
