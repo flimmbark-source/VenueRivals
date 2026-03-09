@@ -1434,6 +1434,18 @@
         syncVenueActors(who);
     }
 
+    function getHouseRenderKey(playerState) {
+        if (!playerState) return '';
+        const houseKey = (playerState.house || []).map((entry) => {
+            if (!entry) return '';
+            if (typeof entry === 'string') return entry;
+            const guestId = entry.guestId || '';
+            const instanceId = entry.instanceId != null ? entry.instanceId : '';
+            return `${guestId}:${instanceId}`;
+        }).join('|');
+        return `${houseKey}::arriving:${playerState.arrivingGuest || ''}`;
+    }
+
     function renderArrivingGuest(who) {
         const arrivingEl = document.getElementById(`${who}-arriving`);
         if (!arrivingEl) return;
@@ -2255,6 +2267,8 @@
 
         const selfVenue = Game.VENUES[self.venueId];
         const opponentVenue = Game.VENUES[opponent.venueId];
+        const selfHouseBefore = getHouseRenderKey(self);
+        const opponentHouseBefore = getHouseRenderKey(opponent);
         // Snapshot player's visible state
         const playerSnapshot = {
             arrivingGuest: gameState.player.arrivingGuest,
@@ -2284,8 +2298,8 @@
             animateExitGuest(selfKey, result.pendingOut);
         }
 
-        renderHouseGrid(selfKey);
-        renderHouseGrid(opponentKey);
+        if (getHouseRenderKey(self) !== selfHouseBefore) renderHouseGrid(selfKey);
+        if (getHouseRenderKey(opponent) !== opponentHouseBefore) renderHouseGrid(opponentKey);
         renderArrivingGuest(selfKey);
         // Only re-render the opponent's arriving area if the player's visible arriving state changed
         if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
