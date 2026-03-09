@@ -1427,11 +1427,11 @@
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
-                    showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving' });
+                    showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving', guestId: arrivingGuestId });
                 });
             } else {
                 slot.addEventListener('click', () => {
-                    showTooltipForTarget(slot, arrivingGuestId, { who: 'rival', source: 'arriving' });
+                    showTooltipForTarget(slot, arrivingGuestId, { who: 'rival', source: 'arriving', guestId: arrivingGuestId });
                 });
             }
             slotsEl.appendChild(slot);
