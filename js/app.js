@@ -705,6 +705,10 @@
         activePartyView = view;
         removeTooltip();
         applyPartyView(animate);
+        // Reset snapshot so the view switch doesn't trigger delta pings
+        // (the displayed actor changes, but that's not a real stat change).
+        hudDeltaSnapshot.player = { heat: null, money: null, points: null };
+        hudDeltaSnapshot.rival = { heat: null, money: null, points: null };
         updateHUD();
         updateGuestDetail();
     }
@@ -1955,16 +1959,6 @@
         });
     }
 
-    function getQueuedGuestPreview(player, count) {
-        if (!player || !Array.isArray(player.roundDeck) || count <= 0) return [];
-        const previewCount = Math.min(count, player.roundDeck.length);
-        const ids = [];
-        for (let i = player.roundDeck.length - 1; i >= player.roundDeck.length - previewCount; i--) {
-            ids.push(player.roundDeck[i]);
-        }
-        return ids;
-    }
-
     function clearRevealDoorIntel(who = null) {
         if (who) {
             revealDoorIntel[who] = null;
@@ -1984,7 +1978,7 @@
             return;
         }
         revealDoorIntel[who] = {
-            count: ids.length,
+            ids: ids.slice(),
             index: 0,
         };
         renderRevealDoorIntel(who);
@@ -2003,7 +1997,9 @@
 
         if (!intel) return;
 
-        const queued = getQueuedGuestPreview(player, intel.count);
+        // Only show guests that are still in the queue (roundDeck).
+        const deck = player.roundDeck || [];
+        const queued = intel.ids.filter(id => deck.includes(id));
         if (!queued.length) {
             clearRevealDoorIntel(who);
             return;
@@ -2272,6 +2268,9 @@
         }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
+        // Re-render reveal overlay — admitted/drawn guests are no longer in
+        // the deck so the ID-based filter will drop them automatically.
+        if (revealDoorIntel[selfKey]) renderRevealDoorIntel(selfKey);
         // Only refresh player detail if the action was by the player, or
         // if the opponent's action changed the player's visible state.
         if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
@@ -2334,6 +2333,9 @@
 
         showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500, selfKey);
         if (result.revealedGuests) setRevealDoorIntel(selfKey, result.revealedGuests);
+        // Abilities may remove guests from either queue; refresh reveal overlays.
+        if (!result.revealedGuests && revealDoorIntel[selfKey]) renderRevealDoorIntel(selfKey);
+        if (revealDoorIntel[opponentKey]) renderRevealDoorIntel(opponentKey);
 
         if (result.pushedOut) {
             animateExitGuest(selfKey, result.pushedOut);
@@ -2507,6 +2509,8 @@
             if (gameState.rival.house.length !== rivalHouseSnapshot) {
                 renderHouseGrid('rival');
             }
+            // Re-render reveal overlay — drawn guest no longer in deck.
+            if (revealDoorIntel.rival) renderRevealDoorIntel('rival');
 
             if (result.busted) {
                 document.getElementById('rival-area').classList.add('bust-flash');
@@ -2520,6 +2524,9 @@
             if (!result) return;
             showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500, 'rival');
             if (result.revealedGuests) setRevealDoorIntel('rival', result.revealedGuests);
+            // Refresh reveal overlays in case ability removed guests from queues.
+            if (!result.revealedGuests && revealDoorIntel.rival) renderRevealDoorIntel('rival');
+            if (revealDoorIntel.player) renderRevealDoorIntel('player');
             if (result.pushedOut) {
                 animateExitGuest('rival', result.pushedOut);
             }
@@ -2601,26 +2608,31 @@
     }
 
     function showRoundResults() {
+        const p = gameState.player;
+        const r = gameState.rival;
+
+        // Capture round earnings before endGuestPhase resets them.
+        const pEarned = { money: p.roundMoney + p.guestMoney, points: p.roundPoints + p.guestPoints, busted: p.busted };
+        const rEarned = { money: r.roundMoney + r.guestMoney, points: r.roundPoints + r.guestPoints, busted: r.busted };
+
         Game.endGuestPhase(gameState);
         updateHUD();
 
-        const p = gameState.player;
-        const r = gameState.rival;
         const targetReached = !!gameState.winner;
 
         let html = `<h3>Round ${gameState.round} Results</h3>`;
 
         // Player results
         html += `<div class="results-row"><span class="label player-color">${p.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+$${p.roundMoney}${p.busted ? ' (busted)' : ''}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+${p.roundPoints}${p.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+$${pEarned.money}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+${pEarned.points}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
 
         html += '<div class="results-divider"></div>';
 
         // Rival results
         html += `<div class="results-row"><span class="label rival-color">${r.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+$${r.roundMoney}${r.busted ? ' (busted)' : ''}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+${r.roundPoints}${r.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+$${rEarned.money}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+${rEarned.points}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
 
         document.getElementById('results-content').innerHTML = html;
         document.getElementById('btn-next-phase').textContent = targetReached ? 'Final Results' : 'Continue to Shop';

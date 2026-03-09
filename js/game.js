@@ -3,7 +3,7 @@
    ============================================ */
 
 const Game = (() => {
-  const DEFAULT_POINT_TARGET = 30;
+  const DEFAULT_POINT_TARGET = 50;
   const BUST_PENALTY = 0;
   const TAGS = ["VIP", "Performer", "Scout", "Broker", "Outlaw"];
 
@@ -950,6 +950,17 @@ const Game = (() => {
     return typeof entry === "string" ? entry : entry.guestId;
   }
 
+  function normalizeHouseEntry(player, index) {
+    const entry = player.house[index];
+    if (typeof entry !== "string") return entry || null;
+    // Preserve legacy visual identity by avoiding a new numeric instanceId.
+    // Using a null instanceId keeps existing guest/index-based slot keys stable,
+    // which prevents a mid-round re-mount/flicker when an ability is used.
+    const normalized = { instanceId: null, guestId: entry, lockUntilClose: false, abilityUsed: false };
+    player.house[index] = normalized;
+    return normalized;
+  }
+
   function getHouseCapacity(venue, player) {
     // House capacity matches the visible grid size; arriving guest is
     // rendered into the grid now, so don't subtract 1.
@@ -979,6 +990,8 @@ const Game = (() => {
       arrivingAbilityUsed: false,
       roundMoney: 0,
       roundPoints: 0,
+      guestMoney: 0,
+      guestPoints: 0,
       money: 0,
       points: 0,
       heat: 0,
@@ -1034,6 +1047,8 @@ const Game = (() => {
       p.arrivingAbilityUsed = false;
       p.roundMoney = 0;
       p.roundPoints = 0;
+      p.guestMoney = 0;
+      p.guestPoints = 0;
       p.heat = 0;
       p.doorClosed = false;
       p.busted = false;
@@ -1081,8 +1096,10 @@ const Game = (() => {
   function applyGuestImpact(player, guestId) {
     const guest = GUESTS[guestId];
     if (!guest) return;
-    player.roundMoney += guest.money;
-    player.roundPoints += guest.points;
+    // Guest base stats are deferred until the round results screen.
+    // Only ability-granted values go into roundMoney/roundPoints.
+    player.guestMoney += guest.money;
+    player.guestPoints += guest.points;
   }
 
   function applyBustState(player) {
@@ -1090,6 +1107,8 @@ const Game = (() => {
     player.phaseComplete = true;
     player.roundMoney = Math.floor(player.roundMoney * BUST_PENALTY);
     player.roundPoints = Math.floor(player.roundPoints * BUST_PENALTY);
+    player.guestMoney = Math.floor(player.guestMoney * BUST_PENALTY);
+    player.guestPoints = Math.floor(player.guestPoints * BUST_PENALTY);
   }
 
   function moveArrivingGuestIntoHouse(player, venue) {
@@ -1171,7 +1190,7 @@ const Game = (() => {
     return result;
   }
 
-  function applyAbilityEffects(player, opponent, guest, result) {
+  function applyAbilityEffects(player, opponent, guest, result, sourceIndex) {
     switch (guest.ability.type) {
       case "coolHeat": {
         player.heat = Math.max(0, player.heat - guest.ability.value);
@@ -1268,17 +1287,44 @@ const Game = (() => {
         break;
       }
       case "lockAnother": {
-        if (player.house.length > 1) {
-          player.house[1].lockUntilClose = true;
-          result.effects.push("locked a guest");
+        let lockedOne = false;
+        if (sourceIndex === -1) {
+          // Arriving guest: adjacent to future position 0 is current index 0
+          if (player.house.length > 0 && typeof player.house[0] !== "string") {
+            player.house[0].lockUntilClose = true;
+            lockedOne = true;
+          }
+        } else {
+          // House guest: lock one adjacent (prefer toward front)
+          if (sourceIndex > 0 && player.house[sourceIndex - 1] && typeof player.house[sourceIndex - 1] !== "string") {
+            player.house[sourceIndex - 1].lockUntilClose = true;
+            lockedOne = true;
+          } else if (sourceIndex < player.house.length - 1 && player.house[sourceIndex + 1] && typeof player.house[sourceIndex + 1] !== "string") {
+            player.house[sourceIndex + 1].lockUntilClose = true;
+            lockedOne = true;
+          }
         }
+        result.effects.push(lockedOne ? "locked a guest" : "no adjacent guest");
         break;
       }
       case "lockAdjacent": {
         let locked = 0;
-        if (player.house.length > 1) {
-          player.house[1].lockUntilClose = true;
-          locked++;
+        if (sourceIndex === -1) {
+          // Arriving guest: adjacent to future position 0 is current index 0
+          if (player.house.length > 0 && typeof player.house[0] !== "string") {
+            player.house[0].lockUntilClose = true;
+            locked++;
+          }
+        } else {
+          // House guest: lock both adjacent
+          if (sourceIndex > 0 && player.house[sourceIndex - 1] && typeof player.house[sourceIndex - 1] !== "string") {
+            player.house[sourceIndex - 1].lockUntilClose = true;
+            locked++;
+          }
+          if (sourceIndex < player.house.length - 1 && player.house[sourceIndex + 1] && typeof player.house[sourceIndex + 1] !== "string") {
+            player.house[sourceIndex + 1].lockUntilClose = true;
+            locked++;
+          }
         }
         result.effects.push(
           locked ? `locked ${locked} adjacent` : "no adjacent guests",
@@ -1296,8 +1342,12 @@ const Game = (() => {
         break;
       }
       case "stealMoney": {
-        const stolen = Math.min(guest.ability.value, opponent.roundMoney);
-        opponent.roundMoney -= stolen;
+        const opponentTotal = opponent.roundMoney + opponent.guestMoney;
+        const stolen = Math.min(guest.ability.value, opponentTotal);
+        // Steal from guestMoney first, then roundMoney
+        const fromGuest = Math.min(stolen, opponent.guestMoney);
+        opponent.guestMoney -= fromGuest;
+        opponent.roundMoney -= (stolen - fromGuest);
         player.roundMoney += stolen;
         result.effects.push(
           stolen ? `stole ${stolen} money` : "nothing to steal",
@@ -1321,7 +1371,14 @@ const Game = (() => {
       }
       case "boostAdjacent": {
         let adjacent = 0;
-        if (player.house.length > 1) adjacent++;
+        if (sourceIndex === -1) {
+          // Arriving guest: adjacent to future position 0 is current index 0
+          if (player.house.length > 0) adjacent++;
+        } else {
+          // House guest: count both sides
+          if (sourceIndex > 0) adjacent++;
+          if (sourceIndex < player.house.length - 1) adjacent++;
+        }
         const bonus = adjacent * guest.ability.value;
         player.roundPoints += bonus;
         result.effects.push(
@@ -1356,13 +1413,13 @@ const Game = (() => {
       // of activating a different guest unexpectedly.
       if (selectedIndex < 0) return null;
 
-      const entry = player.house[selectedIndex];
+      const entry = normalizeHouseEntry(player, selectedIndex);
       const guestId = getGuestId(entry);
       const guest = GUESTS[guestId];
       if (!guest?.ability || guest.ability.trigger !== "flash") {
         return null;
       }
-      if (typeof entry !== "string" && entry.abilityUsed) {
+      if (entry.abilityUsed) {
         return null;
       }
 
@@ -1374,8 +1431,8 @@ const Game = (() => {
         pendingOut: null,
         busted: false,
       };
-      applyAbilityEffects(player, opponent, guest, result);
-      if (typeof entry !== "string") entry.abilityUsed = true;
+      applyAbilityEffects(player, opponent, guest, result, selectedIndex);
+      entry.abilityUsed = true;
       return result;
     }
 
@@ -1393,7 +1450,7 @@ const Game = (() => {
       pendingOut: null,
       busted: false,
     };
-    applyAbilityEffects(player, opponent, guest, result);
+    applyAbilityEffects(player, opponent, guest, result, -1);
     player.arrivingAbilityUsed = true;
 
     return result;
@@ -1420,16 +1477,25 @@ const Game = (() => {
   function endGuestPhase(state) {
     if (state.guestPhaseScoredRound === state.round) return;
     [state.player, state.rival].forEach((p) => {
-      // If there's an arriving guest still waiting, move them into the house
-      // so they persist to the next round
-      if (p.arrivingGuest) {
+      // If there's an arriving guest still waiting and the player hasn't
+      // busted, move them into the house so they persist to the next round.
+      // Busted players don't benefit from persistence and skipping this
+      // prevents applyGuestImpact from adding the guest's money/points to
+      // roundMoney/roundPoints after applyBustState already zeroed them.
+      if (p.arrivingGuest && !p.busted) {
         const venue = VENUES[p.venueId];
         moveArrivingGuestIntoHouse(p, venue);
-        p.arrivingGuest = null;
-        p.arrivingAbilityUsed = false;
       }
-      p.money += p.roundMoney;
-      p.points += p.roundPoints;
+      p.arrivingGuest = null;
+      p.arrivingAbilityUsed = false;
+      if (!p.busted) {
+        p.money += p.roundMoney + p.guestMoney;
+        p.points += p.roundPoints + p.guestPoints;
+      }
+      p.roundMoney = 0;
+      p.roundPoints = 0;
+      p.guestMoney = 0;
+      p.guestPoints = 0;
     });
     state.winner = determineWinner(state);
     state.guestPhaseScoredRound = state.round;
@@ -1522,3 +1588,7 @@ const Game = (() => {
     getHeatCapacity,
   };
 })();
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = Game;
+}
