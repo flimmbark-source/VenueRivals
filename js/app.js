@@ -2608,26 +2608,31 @@
     }
 
     function showRoundResults() {
+        const p = gameState.player;
+        const r = gameState.rival;
+
+        // Capture round earnings before endGuestPhase resets them.
+        const pEarned = { money: p.roundMoney + p.guestMoney, points: p.roundPoints + p.guestPoints, busted: p.busted };
+        const rEarned = { money: r.roundMoney + r.guestMoney, points: r.roundPoints + r.guestPoints, busted: r.busted };
+
         Game.endGuestPhase(gameState);
         updateHUD();
 
-        const p = gameState.player;
-        const r = gameState.rival;
         const targetReached = !!gameState.winner;
 
         let html = `<h3>Round ${gameState.round} Results</h3>`;
 
         // Player results
         html += `<div class="results-row"><span class="label player-color">${p.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+$${p.roundMoney}${p.busted ? ' (busted)' : ''}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${p.busted ? 'bust-value' : 'positive'}">+${p.roundPoints}${p.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+$${pEarned.money}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+${pEarned.points}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
 
         html += '<div class="results-divider"></div>';
 
         // Rival results
         html += `<div class="results-row"><span class="label rival-color">${r.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+$${r.roundMoney}${r.busted ? ' (busted)' : ''}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+${r.roundPoints}${r.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+$${rEarned.money}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
+        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+${rEarned.points}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
 
         document.getElementById('results-content').innerHTML = html;
         document.getElementById('btn-next-phase').textContent = targetReached ? 'Final Results' : 'Continue to Shop';

@@ -14,6 +14,8 @@ function makePlayer(overrides = {}) {
     arrivingAbilityUsed: false,
     roundMoney: 0,
     roundPoints: 0,
+    guestMoney: 0,
+    guestPoints: 0,
     money: 10,
     points: 0,
     heat: 0,

@@ -979,6 +979,8 @@ const Game = (() => {
       arrivingAbilityUsed: false,
       roundMoney: 0,
       roundPoints: 0,
+      guestMoney: 0,
+      guestPoints: 0,
       money: 0,
       points: 0,
       heat: 0,
@@ -1034,6 +1036,8 @@ const Game = (() => {
       p.arrivingAbilityUsed = false;
       p.roundMoney = 0;
       p.roundPoints = 0;
+      p.guestMoney = 0;
+      p.guestPoints = 0;
       p.heat = 0;
       p.doorClosed = false;
       p.busted = false;
@@ -1081,8 +1085,10 @@ const Game = (() => {
   function applyGuestImpact(player, guestId) {
     const guest = GUESTS[guestId];
     if (!guest) return;
-    player.roundMoney += guest.money;
-    player.roundPoints += guest.points;
+    // Guest base stats are deferred until the round results screen.
+    // Only ability-granted values go into roundMoney/roundPoints.
+    player.guestMoney += guest.money;
+    player.guestPoints += guest.points;
   }
 
   function applyBustState(player) {
@@ -1090,6 +1096,8 @@ const Game = (() => {
     player.phaseComplete = true;
     player.roundMoney = Math.floor(player.roundMoney * BUST_PENALTY);
     player.roundPoints = Math.floor(player.roundPoints * BUST_PENALTY);
+    player.guestMoney = Math.floor(player.guestMoney * BUST_PENALTY);
+    player.guestPoints = Math.floor(player.guestPoints * BUST_PENALTY);
   }
 
   function moveArrivingGuestIntoHouse(player, venue) {
@@ -1323,8 +1331,12 @@ const Game = (() => {
         break;
       }
       case "stealMoney": {
-        const stolen = Math.min(guest.ability.value, opponent.roundMoney);
-        opponent.roundMoney -= stolen;
+        const opponentTotal = opponent.roundMoney + opponent.guestMoney;
+        const stolen = Math.min(guest.ability.value, opponentTotal);
+        // Steal from guestMoney first, then roundMoney
+        const fromGuest = Math.min(stolen, opponent.guestMoney);
+        opponent.guestMoney -= fromGuest;
+        opponent.roundMoney -= (stolen - fromGuest);
         player.roundMoney += stolen;
         result.effects.push(
           stolen ? `stole ${stolen} money` : "nothing to steal",
@@ -1466,11 +1478,13 @@ const Game = (() => {
       p.arrivingGuest = null;
       p.arrivingAbilityUsed = false;
       if (!p.busted) {
-        p.money += p.roundMoney;
-        p.points += p.roundPoints;
+        p.money += p.roundMoney + p.guestMoney;
+        p.points += p.roundPoints + p.guestPoints;
       }
       p.roundMoney = 0;
       p.roundPoints = 0;
+      p.guestMoney = 0;
+      p.guestPoints = 0;
     });
     state.winner = determineWinner(state);
     state.guestPhaseScoredRound = state.round;
