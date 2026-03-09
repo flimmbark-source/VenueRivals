@@ -1757,6 +1757,7 @@
         shopInspectMode = false;
         const indicator = document.querySelector('.shop-inspect-indicator');
         if (indicator) indicator.remove();
+        removeTooltip();
     }
 
     function bindShopCardInteractions(el, guestId, canAfford) {
