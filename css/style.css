@@ -2257,18 +2257,37 @@ body {
     pointer-events: none;
 }
 
-.shop-card-wrapper.purchase-arming::after {
+.shop-card-wrapper.inspect-arming::after {
     opacity: 1;
+    background: rgba(127, 90, 240, 0.3);
     animation: shopHoldProgress 1.3s linear forwards;
 }
 
-.shop-card-wrapper.purchase-arming .guest-slot {
-    border-color: var(--accent-gold);
-    box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.25);
+.shop-card-wrapper.inspect-arming .guest-slot {
+    border-color: var(--accent-secondary);
+    box-shadow: 0 0 0 2px rgba(127, 90, 240, 0.25);
 }
 
 .shop-card-wrapper.purchase-confirmed .guest-slot {
     animation: shopPurchasePulse 0.22s ease;
+}
+
+@keyframes shopWaggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(2deg); }
+    75% { transform: rotate(-2deg); }
+}
+
+.shop-inspect-mode .shop-card-wrapper {
+    animation: shopWaggle 0.8s ease-in-out infinite;
+}
+
+.shop-inspect-mode .shop-card-wrapper:nth-child(even) {
+    animation-delay: -0.4s;
+}
+
+.shop-inspect-mode .shop-card-wrapper:nth-child(3n) {
+    animation-delay: -0.2s;
 }
 
 .shop-card-wrapper:hover .guest-slot {
