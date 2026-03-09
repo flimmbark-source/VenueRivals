@@ -1413,23 +1413,25 @@
 
         // Render arriving guest as the rightmost/newest slot
         if (player.arrivingGuest) {
-            const slot = createGuestSlot(player.arrivingGuest, false, { interactive: false });
+            const arrivingGuestId = player.arrivingGuest;
+            const slot = createGuestSlot(arrivingGuestId, false, { interactive: false });
             slot.classList.add('arriving-in-grid');
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
-                if (selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === player.arrivingGuest) {
+                slot.dataset.guestId = arrivingGuestId;
+                if (selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === arrivingGuestId) {
                     slot.classList.add('selected');
                 }
                 slot.addEventListener('click', () => {
-                    selectedGridGuest = { guestId: player.arrivingGuest, source: 'arriving' };
+                    selectedGridGuest = { guestId: arrivingGuestId, source: 'arriving' };
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
-                    showTooltipForTarget(slot, player.arrivingGuest, { who: 'player', source: 'arriving' });
+                    showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving' });
                 });
             } else {
                 slot.addEventListener('click', () => {
-                    showTooltipForTarget(slot, player.arrivingGuest, { who: 'rival', source: 'arriving' });
+                    showTooltipForTarget(slot, arrivingGuestId, { who: 'rival', source: 'arriving' });
                 });
             }
             slotsEl.appendChild(slot);
