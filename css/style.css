@@ -3304,6 +3304,11 @@ body {
     text-shadow: 0 0 5px rgba(255, 209, 102, 0.3);
 }
 
+.phone-connection #hud-round-total {
+    color: var(--color-points);
+    text-shadow: 0 0 5px rgba(255, 209, 102, 0.3);
+}
+
 /* --- Security Meter Heat Row --- */
 .phone-heat-row {
     display: flex;
