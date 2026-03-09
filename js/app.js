@@ -1955,16 +1955,6 @@
         });
     }
 
-    function getQueuedGuestPreview(player, count) {
-        if (!player || !Array.isArray(player.roundDeck) || count <= 0) return [];
-        const previewCount = Math.min(count, player.roundDeck.length);
-        const ids = [];
-        for (let i = player.roundDeck.length - 1; i >= player.roundDeck.length - previewCount; i--) {
-            ids.push(player.roundDeck[i]);
-        }
-        return ids;
-    }
-
     function clearRevealDoorIntel(who = null) {
         if (who) {
             revealDoorIntel[who] = null;
@@ -1984,7 +1974,7 @@
             return;
         }
         revealDoorIntel[who] = {
-            count: ids.length,
+            ids: ids.slice(),
             index: 0,
         };
         renderRevealDoorIntel(who);
@@ -2003,7 +1993,9 @@
 
         if (!intel) return;
 
-        const queued = getQueuedGuestPreview(player, intel.count);
+        // Only show guests that are still in the queue (roundDeck).
+        const deck = player.roundDeck || [];
+        const queued = intel.ids.filter(id => deck.includes(id));
         if (!queued.length) {
             clearRevealDoorIntel(who);
             return;
@@ -2272,16 +2264,9 @@
         }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
-        // Admitting a guest draws the next one from the deck, consuming one
-        // revealed queue position. Decrement and clear the overlay if exhausted.
-        if (!result.busted && revealDoorIntel[selfKey]) {
-            revealDoorIntel[selfKey].count -= 1;
-            if (revealDoorIntel[selfKey].count <= 0) {
-                clearRevealDoorIntel(selfKey);
-            } else {
-                renderRevealDoorIntel(selfKey);
-            }
-        }
+        // Re-render reveal overlay — admitted/drawn guests are no longer in
+        // the deck so the ID-based filter will drop them automatically.
+        if (revealDoorIntel[selfKey]) renderRevealDoorIntel(selfKey);
         // Only refresh player detail if the action was by the player, or
         // if the opponent's action changed the player's visible state.
         if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
@@ -2344,6 +2329,9 @@
 
         showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500, selfKey);
         if (result.revealedGuests) setRevealDoorIntel(selfKey, result.revealedGuests);
+        // Abilities may remove guests from either queue; refresh reveal overlays.
+        if (!result.revealedGuests && revealDoorIntel[selfKey]) renderRevealDoorIntel(selfKey);
+        if (revealDoorIntel[opponentKey]) renderRevealDoorIntel(opponentKey);
 
         if (result.pushedOut) {
             animateExitGuest(selfKey, result.pushedOut);
@@ -2517,15 +2505,8 @@
             if (gameState.rival.house.length !== rivalHouseSnapshot) {
                 renderHouseGrid('rival');
             }
-            // Admitting draws the next deck card, consuming one revealed position.
-            if (!result.busted && revealDoorIntel.rival) {
-                revealDoorIntel.rival.count -= 1;
-                if (revealDoorIntel.rival.count <= 0) {
-                    clearRevealDoorIntel('rival');
-                } else {
-                    renderRevealDoorIntel('rival');
-                }
-            }
+            // Re-render reveal overlay — drawn guest no longer in deck.
+            if (revealDoorIntel.rival) renderRevealDoorIntel('rival');
 
             if (result.busted) {
                 document.getElementById('rival-area').classList.add('bust-flash');
@@ -2539,6 +2520,9 @@
             if (!result) return;
             showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500, 'rival');
             if (result.revealedGuests) setRevealDoorIntel('rival', result.revealedGuests);
+            // Refresh reveal overlays in case ability removed guests from queues.
+            if (!result.revealedGuests && revealDoorIntel.rival) renderRevealDoorIntel('rival');
+            if (revealDoorIntel.player) renderRevealDoorIntel('player');
             if (result.pushedOut) {
                 animateExitGuest('rival', result.pushedOut);
             }
