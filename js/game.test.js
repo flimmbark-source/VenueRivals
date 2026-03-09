@@ -673,3 +673,66 @@ describe("activateAbility guards", () => {
     expect(result).toBeNull();
   });
 });
+
+// ── Bust scoring ──────────────────────────────────────────────────
+
+describe("bust scoring", () => {
+  function makeState(playerOverrides = {}, rivalOverrides = {}) {
+    return {
+      round: 1,
+      pointTarget: 30,
+      phase: "guest",
+      guestPhaseScoredRound: null,
+      player: makePlayer({ name: "Player", ...playerOverrides }),
+      rival: makePlayer({ name: "Rival", isAI: true, ...rivalOverrides }),
+      winner: null,
+    };
+  }
+
+  test("busted player does not gain round points or money", () => {
+    const state = makeState(
+      { busted: true, phaseComplete: true, roundPoints: 5, roundMoney: 3, points: 0, money: 0 },
+      { phaseComplete: true, roundPoints: 10, roundMoney: 2, points: 0, money: 0 },
+    );
+    Game.endGuestPhase(state);
+    expect(state.player.points).toBe(0);
+    expect(state.player.money).toBe(0);
+    // Non-busted rival still scores normally
+    expect(state.rival.points).toBe(10);
+    expect(state.rival.money).toBe(2);
+  });
+
+  test("busted player with pending arriving guest does not score guest money/points", () => {
+    // Simulate: player busted mid-round but still has an arriving guest
+    // endGuestPhase moves the arriving guest into house (applyGuestImpact runs),
+    // but the totals must NOT be applied since the player busted.
+    const state = makeState(
+      {
+        busted: true,
+        phaseComplete: true,
+        roundPoints: 0,
+        roundMoney: 0,
+        points: 2,
+        money: 1,
+        arrivingGuest: "tipper", // tipper gives 2 money
+        roundDeck: [],
+      },
+      { phaseComplete: true, roundPoints: 0, roundMoney: 0 },
+    );
+    state.player.house = [];
+    Game.endGuestPhase(state);
+    // tipper's 2 money from moveArrivingGuestIntoHouse must NOT reach player.money
+    expect(state.player.points).toBe(2); // unchanged
+    expect(state.player.money).toBe(1);  // unchanged
+  });
+
+  test("non-busted player scores normally", () => {
+    const state = makeState(
+      { busted: false, phaseComplete: true, roundPoints: 7, roundMoney: 4, points: 3, money: 2 },
+      { phaseComplete: true },
+    );
+    Game.endGuestPhase(state);
+    expect(state.player.points).toBe(10);
+    expect(state.player.money).toBe(6);
+  });
+});

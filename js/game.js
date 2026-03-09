@@ -1462,8 +1462,10 @@ const Game = (() => {
         p.arrivingGuest = null;
         p.arrivingAbilityUsed = false;
       }
-      p.money += p.roundMoney;
-      p.points += p.roundPoints;
+      if (!p.busted) {
+        p.money += p.roundMoney;
+        p.points += p.roundPoints;
+      }
     });
     state.winner = determineWinner(state);
     state.guestPhaseScoredRound = state.round;
