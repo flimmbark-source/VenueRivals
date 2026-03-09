@@ -1171,7 +1171,7 @@ const Game = (() => {
     return result;
   }
 
-  function applyAbilityEffects(player, opponent, guest, result) {
+  function applyAbilityEffects(player, opponent, guest, result, sourceIndex) {
     switch (guest.ability.type) {
       case "coolHeat": {
         player.heat = Math.max(0, player.heat - guest.ability.value);
@@ -1268,17 +1268,44 @@ const Game = (() => {
         break;
       }
       case "lockAnother": {
-        if (player.house.length > 1) {
-          player.house[1].lockUntilClose = true;
-          result.effects.push("locked a guest");
+        let lockedOne = false;
+        if (sourceIndex === -1) {
+          // Arriving guest: adjacent to future position 0 is current index 0
+          if (player.house.length > 0 && typeof player.house[0] !== "string") {
+            player.house[0].lockUntilClose = true;
+            lockedOne = true;
+          }
+        } else {
+          // House guest: lock one adjacent (prefer toward front)
+          if (sourceIndex > 0 && player.house[sourceIndex - 1] && typeof player.house[sourceIndex - 1] !== "string") {
+            player.house[sourceIndex - 1].lockUntilClose = true;
+            lockedOne = true;
+          } else if (sourceIndex < player.house.length - 1 && player.house[sourceIndex + 1] && typeof player.house[sourceIndex + 1] !== "string") {
+            player.house[sourceIndex + 1].lockUntilClose = true;
+            lockedOne = true;
+          }
         }
+        result.effects.push(lockedOne ? "locked a guest" : "no adjacent guest");
         break;
       }
       case "lockAdjacent": {
         let locked = 0;
-        if (player.house.length > 1) {
-          player.house[1].lockUntilClose = true;
-          locked++;
+        if (sourceIndex === -1) {
+          // Arriving guest: adjacent to future position 0 is current index 0
+          if (player.house.length > 0 && typeof player.house[0] !== "string") {
+            player.house[0].lockUntilClose = true;
+            locked++;
+          }
+        } else {
+          // House guest: lock both adjacent
+          if (sourceIndex > 0 && player.house[sourceIndex - 1] && typeof player.house[sourceIndex - 1] !== "string") {
+            player.house[sourceIndex - 1].lockUntilClose = true;
+            locked++;
+          }
+          if (sourceIndex < player.house.length - 1 && player.house[sourceIndex + 1] && typeof player.house[sourceIndex + 1] !== "string") {
+            player.house[sourceIndex + 1].lockUntilClose = true;
+            locked++;
+          }
         }
         result.effects.push(
           locked ? `locked ${locked} adjacent` : "no adjacent guests",
@@ -1321,7 +1348,14 @@ const Game = (() => {
       }
       case "boostAdjacent": {
         let adjacent = 0;
-        if (player.house.length > 1) adjacent++;
+        if (sourceIndex === -1) {
+          // Arriving guest: adjacent to future position 0 is current index 0
+          if (player.house.length > 0) adjacent++;
+        } else {
+          // House guest: count both sides
+          if (sourceIndex > 0) adjacent++;
+          if (sourceIndex < player.house.length - 1) adjacent++;
+        }
         const bonus = adjacent * guest.ability.value;
         player.roundPoints += bonus;
         result.effects.push(
@@ -1374,7 +1408,7 @@ const Game = (() => {
         pendingOut: null,
         busted: false,
       };
-      applyAbilityEffects(player, opponent, guest, result);
+      applyAbilityEffects(player, opponent, guest, result, selectedIndex);
       if (typeof entry !== "string") entry.abilityUsed = true;
       return result;
     }
@@ -1393,7 +1427,7 @@ const Game = (() => {
       pendingOut: null,
       busted: false,
     };
-    applyAbilityEffects(player, opponent, guest, result);
+    applyAbilityEffects(player, opponent, guest, result, -1);
     player.arrivingAbilityUsed = true;
 
     return result;
@@ -1522,3 +1556,7 @@ const Game = (() => {
     getHeatCapacity,
   };
 })();
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = Game;
+}
