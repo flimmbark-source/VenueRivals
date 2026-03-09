@@ -37,6 +37,7 @@
     let venueBackgroundPreloadImage = null;
     let roundActionLog = [];
     let actionLogPopupEl = null;
+    let shopInspectMode = false;
     const hudDeltaSnapshot = {
         player: { heat: null, money: null, points: null },
         rival: { heat: null, money: null, points: null },
@@ -1720,7 +1721,6 @@
             multiplayerSession?.publish('request-action', { action: 'buy', actor: 'rival', guestId });
             showFeedback(`Bought ${guestName}!`, 'money', 1500, 'player');
             if (wrapper) {
-                wrapper.classList.remove('purchase-arming');
                 wrapper.classList.add('purchase-confirmed');
                 setTimeout(() => wrapper.classList.remove('purchase-confirmed'), 240);
             }
@@ -1731,7 +1731,6 @@
 
         showFeedback(`Bought ${guestName}!`, 'money', 1500, 'player');
         if (wrapper) {
-            wrapper.classList.remove('purchase-arming');
             wrapper.classList.add('purchase-confirmed');
             setTimeout(() => wrapper.classList.remove('purchase-confirmed'), 240);
         }
@@ -1741,10 +1740,27 @@
         return true;
     }
 
+    function activateShopInspectMode() {
+        if (shopInspectMode) return;
+        shopInspectMode = true;
+        const grid = document.getElementById('shop-grid');
+        if (grid) grid.classList.add('shop-inspect-mode');
+        const upgrades = document.getElementById('shop-upgrades');
+        if (upgrades) upgrades.classList.add('shop-inspect-mode');
+    }
+
+    function deactivateShopInspectMode() {
+        if (!shopInspectMode) return;
+        shopInspectMode = false;
+        const grid = document.getElementById('shop-grid');
+        if (grid) grid.classList.remove('shop-inspect-mode');
+        const upgrades = document.getElementById('shop-upgrades');
+        if (upgrades) upgrades.classList.remove('shop-inspect-mode');
+    }
+
     function bindShopCardInteractions(el, guestId, canAfford) {
         if (!el || !guestId) return;
         const guest = Game.GUESTS[guestId];
-        // Keep hold threshold below common mobile long-press context-menu delays.
         const holdMs = 550;
 
         let pressTimer = null;
@@ -1762,19 +1778,25 @@
             if (releasePointer) {
                 activePointerId = null;
             }
-            el.classList.remove('purchase-arming');
+            el.classList.remove('inspect-arming');
         };
 
         const startPress = () => {
             consumedPress = false;
             clearPressState({ releasePointer: false });
             pressActive = true;
-            el.classList.add('purchase-arming');
+            el.classList.add('inspect-arming');
             pressTimer = setTimeout(() => {
                 pressTimer = null;
                 if (!pressActive) return;
-                consumedPress = tryPurchaseFromShop(guestId, guest.name, el);
+                consumedPress = true;
                 pressActive = false;
+                el.classList.remove('inspect-arming');
+                if (shopInspectMode) {
+                    deactivateShopInspectMode();
+                } else {
+                    activateShopInspectMode();
+                }
             }, holdMs);
         };
 
@@ -1790,15 +1812,18 @@
                 return;
             }
             e.stopPropagation();
-            showTooltipForTarget(el, guestId, { who: 'shop', source: 'shop' });
+            if (shopInspectMode) {
+                showTooltipForTarget(el, guestId, { who: 'shop', source: 'shop' });
+            } else if (canAfford) {
+                tryPurchaseFromShop(guestId, guest.name, el);
+            }
         });
 
         el.addEventListener('contextmenu', (e) => {
             e.preventDefault();
         });
 
-        if (!canAfford) return;
-
+        // Hold detection for toggling inspect mode
         el.addEventListener('pointerdown', (e) => {
             if (e.pointerType === 'mouse' && e.button !== 0) return;
             if (activePointerId !== null && activePointerId !== e.pointerId) return;
@@ -2545,6 +2570,12 @@
         const upgradesPanel = document.getElementById('shop-upgrades');
         upgradesPanel.innerHTML = '';
 
+        // Preserve inspect mode class across re-renders
+        if (shopInspectMode) {
+            grid.classList.add('shop-inspect-mode');
+            upgradesPanel.classList.add('shop-inspect-mode');
+        }
+
         const readOnlyShop = false;
 
         // Sort guest cards by cost (cheapest first)
@@ -2606,6 +2637,7 @@
     }
 
     function handleDoneShopping() {
+        deactivateShopInspectMode();
         dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'done-shopping', actor: 'rival' });
@@ -2646,6 +2678,7 @@
     }
 
     function startNewRound() {
+        deactivateShopInspectMode();
         Game.startGuestPhase(gameState);
         roundActionLog = [];
         closeActionLogPopup();
