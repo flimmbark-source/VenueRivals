@@ -1401,7 +1401,7 @@
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
-                    showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', instanceId });
+                    showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', guestId, instanceId });
                 });
             } else {
                 slot.addEventListener('click', () => {
@@ -1603,7 +1603,7 @@
 
     function buildAbilityTargetFromOptions(options = {}) {
         if (!gameState) return null;
-        if (options.source === 'house' && options.guestId) {
+        if (options.source === 'house' && (options.guestId || options.instanceId != null)) {
             const entry = gameState.player.house.find((houseEntry) => {
                 if (typeof houseEntry === 'string') return false;
                 if (options.instanceId != null) {
