@@ -1454,14 +1454,17 @@ const Game = (() => {
   function endGuestPhase(state) {
     if (state.guestPhaseScoredRound === state.round) return;
     [state.player, state.rival].forEach((p) => {
-      // If there's an arriving guest still waiting, move them into the house
-      // so they persist to the next round
-      if (p.arrivingGuest) {
+      // If there's an arriving guest still waiting and the player hasn't
+      // busted, move them into the house so they persist to the next round.
+      // Busted players don't benefit from persistence and skipping this
+      // prevents applyGuestImpact from adding the guest's money/points to
+      // roundMoney/roundPoints after applyBustState already zeroed them.
+      if (p.arrivingGuest && !p.busted) {
         const venue = VENUES[p.venueId];
         moveArrivingGuestIntoHouse(p, venue);
-        p.arrivingGuest = null;
-        p.arrivingAbilityUsed = false;
       }
+      p.arrivingGuest = null;
+      p.arrivingAbilityUsed = false;
       if (!p.busted) {
         p.money += p.roundMoney;
         p.points += p.roundPoints;

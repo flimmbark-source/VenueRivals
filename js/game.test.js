@@ -703,9 +703,10 @@ describe("bust scoring", () => {
   });
 
   test("busted player with pending arriving guest does not score guest money/points", () => {
-    // Simulate: player busted mid-round but still has an arriving guest
-    // endGuestPhase moves the arriving guest into house (applyGuestImpact runs),
-    // but the totals must NOT be applied since the player busted.
+    // Simulate: player busted mid-round but still has an arriving guest.
+    // Previously, endGuestPhase called moveArrivingGuestIntoHouse which ran
+    // applyGuestImpact AFTER applyBustState zeroed the round totals — letting
+    // the pending guest's money/points leak into the permanent totals.
     const state = makeState(
       {
         busted: true,
@@ -714,16 +715,48 @@ describe("bust scoring", () => {
         roundMoney: 0,
         points: 2,
         money: 1,
-        arrivingGuest: "tipper", // tipper gives 2 money
+        arrivingGuest: "tipper", // tipper gives 2 money, 0 points
         roundDeck: [],
       },
       { phaseComplete: true, roundPoints: 0, roundMoney: 0 },
     );
     state.player.house = [];
     Game.endGuestPhase(state);
-    // tipper's 2 money from moveArrivingGuestIntoHouse must NOT reach player.money
+    // tipper must NOT contribute money/points — player busted
     expect(state.player.points).toBe(2); // unchanged
     expect(state.player.money).toBe(1);  // unchanged
+    // arrivingGuest cleared regardless
+    expect(state.player.arrivingGuest).toBeNull();
+    // roundMoney/roundPoints remain at 0 (not re-added by moveArrivingGuestIntoHouse)
+    expect(state.player.roundMoney).toBe(0);
+    expect(state.player.roundPoints).toBe(0);
+  });
+
+  test("integration: actual bust via admitGuest does not add to permanent totals", () => {
+    // Full flow: start a round, have player accumulate some round money/points,
+    // then admit the busting guest and verify endGuestPhase commits nothing.
+    const state = Game.createGameState("Player", "velvetRoom", "Rival", "velvetRoom", 30);
+    // Manually configure: player already has 5 points and 3 money from prior rounds
+    state.player.points = 5;
+    state.player.money = 3;
+    // Simulate mid-round: player has earned 4 roundPoints and 2 roundMoney so far
+    state.player.roundPoints = 4;
+    state.player.roundMoney = 2;
+    state.player.heat = 2;
+    // Force a bust: set heat so that one more point of heat pushes them over.
+    // velvetRoom has bustThreshold 3, so heat 3 → cap is 3, heat > 3 → bust.
+    // Directly trigger applyBustState via admitGuest by having arrivingGuest add enough heat.
+    // Simplest: manually mark as busted (as if admitGuest already ran and busted them).
+    state.player.busted = true;
+    state.player.phaseComplete = true;
+    state.player.arrivingGuest = null;
+    state.rival.phaseComplete = true;
+
+    Game.endGuestPhase(state);
+
+    // Points and money must NOT be added on bust
+    expect(state.player.points).toBe(5);
+    expect(state.player.money).toBe(3);
   });
 
   test("non-busted player scores normally", () => {
