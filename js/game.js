@@ -3,7 +3,7 @@
    ============================================ */
 
 const Game = (() => {
-  const DEFAULT_POINT_TARGET = 30;
+  const DEFAULT_POINT_TARGET = 50;
   const BUST_PENALTY = 0;
   const TAGS = ["VIP", "Performer", "Scout", "Broker", "Outlaw"];
 

@@ -117,9 +117,9 @@
                 <div class="arcade-settings-row">
                     <span class="arcade-settings-label">POINTS</span>
                     <div class="arcade-selector" id="arcade-rounds-selector">
-                        <button class="arcade-sel-btn" data-value="20">20</button>
                         <button class="arcade-sel-btn" data-value="30">30</button>
-                        <button class="arcade-sel-btn" data-value="40">40</button>
+                        <button class="arcade-sel-btn" data-value="50">50</button>
+                        <button class="arcade-sel-btn" data-value="80">80</button>
                     </div>
                     <span class="arcade-settings-label">MODE</span>
                     <div class="arcade-selector" id="arcade-mode-selector">
@@ -137,9 +137,9 @@
 
             <!-- Hidden selects for JS compatibility -->
             <select id="round-count-input" style="display:none;">
-                <option value="20">20</option>
-                <option value="30" selected>30</option>
-                <option value="40">40</option>
+                <option value="30">30</option>
+                <option value="50" selected>50</option>
+                <option value="80">80</option>
             </select>
             <select id="game-mode-input" style="display:none;">
                 <option value="single" selected>Single Player</option>
@@ -247,7 +247,7 @@
                         <span class="phone-phase" id="hud-phase">GUEST PHASE</span>
                         <span class="phone-connection">
                             <span id="player-money">💵 $0</span>
-                            <span id="hud-player-pts">⭐ 0</span>/<span id="hud-round-total">30</span>
+                            <span id="hud-player-pts">⭐ 0</span>/<span id="hud-round-total">50</span>
                         </span>
                     </div>
                 </div>
