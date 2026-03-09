@@ -789,7 +789,7 @@
             const profile = evt.payload?.profile || {};
             updateWaitingPopup('Connected!');
             setMultiplayerStatus('Connected! Starting match...');
-            startGame(pendingHostMatchConfig.name, pendingHostMatchConfig.venueType, pendingHostMatchConfig.totalRounds, {
+            startGame(pendingHostMatchConfig.name, pendingHostMatchConfig.venueType, pendingHostMatchConfig.pointTarget, {
                 rivalName: profile.name || 'Challenger',
                 rivalVenue: profile.venueId,
                 rivalDeck: profile.deck,
@@ -810,7 +810,7 @@
             const hostConfig = evt.payload?.hostConfig;
             if (!hostConfig) return;
             const localName = document.getElementById('venue-name-input')?.value.trim() || 'My Venue';
-            startGame(escapeHtml(localName), loadoutState?.venueId || hostConfig.venueType, hostConfig.totalRounds, {
+            startGame(escapeHtml(localName), loadoutState?.venueId || hostConfig.venueType, hostConfig.pointTarget, {
                 rivalName: hostConfig.name,
                 rivalVenue: hostConfig.venueType,
             });
@@ -896,7 +896,7 @@
         }
 
         hudRoundNumEl.textContent = gameState.round;
-        hudRoundTotalEl.textContent = gameState.totalRounds;
+        hudRoundTotalEl.textContent = gameState.pointTarget;
         hudPhaseEl.textContent =
             gameState.phase === 'guest' ? 'GUEST PHASE' :
                 gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
@@ -2418,7 +2418,7 @@
 
         const p = gameState.player;
         const r = gameState.rival;
-        const isFinalRound = gameState.round >= gameState.totalRounds;
+        const targetReached = !!gameState.winner;
 
         let html = `<h3>Round ${gameState.round} Results</h3>`;
 
@@ -2435,7 +2435,7 @@
         html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${r.busted ? 'bust-value' : 'positive'}">+${r.roundPoints}${r.busted ? ' (busted)' : ''}</span></div>`;
 
         document.getElementById('results-content').innerHTML = html;
-        document.getElementById('btn-next-phase').textContent = isFinalRound ? 'Final Results' : 'Continue to Shop';
+        document.getElementById('btn-next-phase').textContent = targetReached ? 'Final Results' : 'Continue to Shop';
 
         // Show results panel
         document.getElementById('guest-phase-panel').style.display = 'none';
@@ -2443,7 +2443,7 @@
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
 
-        if (!isFinalRound) {
+        if (!targetReached) {
             // Enter buy phase immediately when results appear, but keep results visible
             // until player confirms and opens the shop panel.
             startBuyPhase({ deferPanel: true });
@@ -2455,9 +2455,9 @@
 
     function handleNextPhase() {
         dismissInfoPanelPopup();
-        const isFinalRound = gameState.round >= gameState.totalRounds;
+        const targetReached = !!gameState.winner;
 
-        if (isFinalRound) {
+        if (targetReached) {
             Game.endBuyPhase(gameState);
             showGameOver();
         } else {
@@ -2617,7 +2617,7 @@
     }
 
     // === Game Flow ===
-    function startGame(name, venueType, totalRounds, options = {}) {
+    function startGame(name, venueType, pointTarget, options = {}) {
         Renderer.resetAnimState();
 
         // Pick rival
@@ -2625,7 +2625,7 @@
         const rivalVenue = options.rivalVenue || venueKeys[Math.floor(Math.random() * venueKeys.length)];
         const rivalName = options.rivalName || RIVAL_NAMES[Math.floor(Math.random() * RIVAL_NAMES.length)];
 
-        gameState = Game.createGameState(name, venueType, rivalName, rivalVenue, totalRounds);
+        gameState = Game.createGameState(name, venueType, rivalName, rivalVenue, pointTarget);
         clearVenueActors();
 
         // Override player deck with the loadout deck
@@ -3169,13 +3169,13 @@
         modeInput?.addEventListener('change', syncModeSettings);
         syncModeSettings();
 
-        // Arcade selector buttons for Rounds
+        // Arcade selector buttons for Point Target
         const roundsSelector = document.getElementById('arcade-rounds-selector');
         if (roundsSelector) {
             const roundBtns = roundsSelector.querySelectorAll('.arcade-sel-btn');
             // Set default active
             roundBtns.forEach(btn => {
-                if (btn.dataset.value === (roundsInput?.value || '14')) btn.classList.add('active')
+                if (btn.dataset.value === (roundsInput?.value || String(Game.POINT_TARGET))) btn.classList.add('active')
                 btn.addEventListener('click', () => {
                     roundBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
@@ -3207,13 +3207,13 @@
 
         document.getElementById('btn-start-game').addEventListener('click', async () => {
             const rawName = document.getElementById('venue-name-input').value.trim() || 'My Venue';
-            const roundCount = parseInt(document.getElementById('round-count-input').value, 10) || Game.TOTAL_ROUNDS;
+            const pointTarget = parseInt(document.getElementById('round-count-input').value, 10) || Game.POINT_TARGET;
             const selectedMode = modeInput?.value || 'single';
             multiplayerMode = selectedMode === 'single' ? 'single' : 'multiplayer';
             multiplayerRole = selectedMode === 'join' ? 'join' : 'host';
 
             if (!isMultiplayer()) {
-                startGame(escapeHtml(rawName), loadoutState.venueId, roundCount);
+                startGame(escapeHtml(rawName), loadoutState.venueId, pointTarget);
                 return;
             }
 
@@ -3237,7 +3237,7 @@
                     pendingHostMatchConfig = {
                         name: escapeHtml(rawName),
                         venueType: loadoutState.venueId,
-                        totalRounds: roundCount,
+                        pointTarget,
                     };
                     showWaitingPopup('Waiting');
                     setMultiplayerStatus('Waiting for another player...');
@@ -3294,7 +3294,7 @@
             pendingHostMatchConfig = null;
             multiplayerMode = 'single';
             document.getElementById('venue-name-input').value = '';
-            document.getElementById('round-count-input').value = String(Game.TOTAL_ROUNDS);
+            document.getElementById('round-count-input').value = String(Game.POINT_TARGET);
             const modeSelect = document.getElementById('game-mode-input');
             if (modeSelect) modeSelect.value = 'single';
             const roundSelect = document.getElementById('round-count-input');
@@ -3303,7 +3303,7 @@
             if (multiplayerFields) multiplayerFields.style.display = 'none';
             // Reset arcade selector buttons
             document.querySelectorAll('#arcade-rounds-selector .arcade-sel-btn').forEach(b => {
-                b.classList.toggle('active', b.dataset.value === String(Game.TOTAL_ROUNDS));
+                b.classList.toggle('active', b.dataset.value === String(Game.POINT_TARGET));
             });
             document.querySelectorAll('#arcade-mode-selector .arcade-sel-btn').forEach(b => {
                 b.classList.toggle('active', b.dataset.value === 'single');
