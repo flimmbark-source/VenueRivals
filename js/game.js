@@ -3,7 +3,7 @@
    ============================================ */
 
 const Game = (() => {
-  const DEFAULT_TOTAL_ROUNDS = 14;
+  const DEFAULT_POINT_TARGET = 30;
   const BUST_PENALTY = 0;
   const TAGS = ["VIP", "Performer", "Scout", "Broker", "Outlaw"];
 
@@ -994,17 +994,32 @@ const Game = (() => {
     playerVenue,
     rivalName,
     rivalVenue,
-    totalRounds = DEFAULT_TOTAL_ROUNDS,
+    pointTarget = DEFAULT_POINT_TARGET,
   ) {
     return {
       round: 1,
-      totalRounds,
+      pointTarget,
       phase: "guest",
       guestPhaseScoredRound: null,
       player: createPlayer(playerName, playerVenue, false),
       rival: createPlayer(rivalName, rivalVenue, true),
       winner: null,
     };
+  }
+
+  function determineWinner(state) {
+    const target = Math.max(1, state.pointTarget || DEFAULT_POINT_TARGET);
+    const playerReached = state.player.points >= target;
+    const rivalReached = state.rival.points >= target;
+
+    if (!playerReached && !rivalReached) return null;
+    if (playerReached && !rivalReached) return "player";
+    if (rivalReached && !playerReached) return "rival";
+
+    if (state.player.points === state.rival.points) {
+      return null;
+    }
+    return state.player.points > state.rival.points ? "player" : "rival";
   }
 
   function startGuestPhase(state) {
@@ -1397,6 +1412,7 @@ const Game = (() => {
       p.money += p.roundMoney;
       p.points += p.roundPoints;
     });
+    state.winner = determineWinner(state);
     state.guestPhaseScoredRound = state.round;
   }
   function getMarket(venueId) {
@@ -1448,16 +1464,8 @@ const Game = (() => {
     return true;
   }
   function endBuyPhase(state) {
-    if (state.round >= state.totalRounds) {
+    if (state.winner) {
       state.phase = "gameover";
-      state.winner =
-        state.player.points === state.rival.points
-          ? state.player.money >= state.rival.money
-            ? "player"
-            : "rival"
-          : state.player.points > state.rival.points
-            ? "player"
-            : "rival";
     } else {
       // Clear venue grids just before the next round begins so guests
       // are removed from the house at the round boundary.
@@ -1476,7 +1484,7 @@ const Game = (() => {
     GUEST_LISTS,
     DECKS,
     TAGS,
-    TOTAL_ROUNDS: DEFAULT_TOTAL_ROUNDS,
+    POINT_TARGET: DEFAULT_POINT_TARGET,
     BUST_PENALTY,
     shuffle,
     createGameState,

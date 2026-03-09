@@ -32,7 +32,7 @@
             <div class="how-to-play-content">
                 <div class="how-section">
                     <h3>The Goal</h3>
-                    <p>Score the most <strong>points</strong> over 3 rounds. Each round has a <strong>Guest Phase</strong> followed by a <strong>Buy Phase</strong>.</p>
+                    <p>Be the first to reach the <strong>point target</strong>. If both players pass it in the same round, the higher score wins; if tied, play another round.</p>
                 </div>
                 <div class="how-section">
                     <h3>Guest Phase</h3>
@@ -115,11 +115,11 @@
             <!-- Game Settings Panel -->
             <div class="arcade-panel arcade-settings-panel">
                 <div class="arcade-settings-row">
-                    <span class="arcade-settings-label">ROUNDS</span>
+                    <span class="arcade-settings-label">POINTS</span>
                     <div class="arcade-selector" id="arcade-rounds-selector">
-                        <button class="arcade-sel-btn" data-value="8">8</button>
-                        <button class="arcade-sel-btn" data-value="14">14</button>
                         <button class="arcade-sel-btn" data-value="20">20</button>
+                        <button class="arcade-sel-btn" data-value="30">30</button>
+                        <button class="arcade-sel-btn" data-value="40">40</button>
                     </div>
                     <span class="arcade-settings-label">MODE</span>
                     <div class="arcade-selector" id="arcade-mode-selector">
@@ -137,9 +137,9 @@
 
             <!-- Hidden selects for JS compatibility -->
             <select id="round-count-input" style="display:none;">
-                <option value="8">8</option>
-                <option value="14" selected>14</option>
                 <option value="20">20</option>
+                <option value="30" selected>30</option>
+                <option value="40">40</option>
             </select>
             <select id="game-mode-input" style="display:none;">
                 <option value="single" selected>Single Player</option>
@@ -243,7 +243,7 @@
             <div class="party-carousel" id="party-carousel" aria-label="Party view carousel">
                 <div class="party-top-hud" id="party-top-hud">
                     <div class="phone-status-strip">
-                        <span class="phone-round">Round <span id="hud-round-num">1</span>/<span id="hud-round-total">3</span></span>
+                        <span class="phone-round">Round <span id="hud-round-num">1</span> • Target <span id="hud-round-total">30</span></span>
                         <span class="phone-phase" id="hud-phase">GUEST PHASE</span>
                         <span class="phone-connection">
                             <span id="player-money">💵 $0</span>
