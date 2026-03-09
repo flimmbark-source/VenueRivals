@@ -1970,14 +1970,107 @@
         overlay.appendChild(card);
         overlay.appendChild(idx);
 
+        bindRevealDoorOverlayInteractions({ overlay, card, who, guestId, intel, total: queued.length });
+
         overlay.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (overlay.dataset.holdConsumed === 'true') {
+                overlay.dataset.holdConsumed = 'false';
+                e.preventDefault();
+                return;
+            }
             if (queued.length <= 1) return;
             intel.index = (intel.index + 1) % queued.length;
             renderRevealDoorIntel(who);
         });
 
         doorEl.appendChild(overlay);
+    }
+
+    function bindRevealDoorOverlayInteractions({ overlay, card, who, guestId, intel, total }) {
+        if (!overlay || !card || !guestId || !intel) return;
+        const holdMs = 550;
+        let holdTimer = null;
+        let holdTriggered = false;
+        let activePointerId = null;
+
+        const clearHold = ({ clearPointer = true } = {}) => {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            if (clearPointer) activePointerId = null;
+        };
+
+        const startHold = () => {
+            holdTriggered = false;
+            clearHold({ clearPointer: false });
+            holdTimer = setTimeout(() => {
+                holdTimer = null;
+                holdTriggered = true;
+                overlay.dataset.holdConsumed = 'true';
+                const guest = Game.GUESTS[guestId];
+                showTooltipForTarget(card, guestId, { who, source: 'reveal-door' });
+                if (guest) {
+                    overlay.title = `${guest.name} (${intel.index + 1}/${total})`;
+                }
+            }, holdMs);
+        };
+
+        const endHold = () => clearHold();
+
+        overlay.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        overlay.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            if (activePointerId !== null && activePointerId !== e.pointerId) return;
+            activePointerId = e.pointerId;
+            startHold();
+        });
+        overlay.addEventListener('pointerup', (e) => {
+            if (activePointerId !== null && e.pointerId !== activePointerId) return;
+            endHold();
+        });
+        overlay.addEventListener('pointercancel', (e) => {
+            if (activePointerId !== null && e.pointerId !== activePointerId) return;
+            endHold();
+        });
+        overlay.addEventListener('lostpointercapture', (e) => {
+            if (activePointerId !== null && e.pointerId !== activePointerId) return;
+            endHold();
+        });
+
+        overlay.addEventListener('touchstart', () => {
+            if (window.PointerEvent) return;
+            startHold();
+        }, { passive: true });
+        overlay.addEventListener('touchend', () => {
+            if (window.PointerEvent) return;
+            endHold();
+        });
+        overlay.addEventListener('touchcancel', () => {
+            if (window.PointerEvent) return;
+            endHold();
+        });
+
+        // Safety net for non-pointer mouse interactions.
+        overlay.addEventListener('mousedown', (e) => {
+            if (window.PointerEvent || e.button !== 0) return;
+            startHold();
+        });
+        overlay.addEventListener('mouseup', () => {
+            if (window.PointerEvent) return;
+            endHold();
+        });
+        overlay.addEventListener('mouseleave', () => {
+            if (window.PointerEvent) return;
+            endHold();
+        });
+
+        overlay.addEventListener('click', () => {
+            if (!holdTriggered) return;
+            holdTriggered = false;
+        });
     }
 
 
