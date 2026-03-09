@@ -231,7 +231,7 @@ const AI = (() => {
         // Already over threshold while this guest is at the door.
         const rivalHeatCap = getHeatCapacity(venue, rival);
         if (rival.heat > rivalHeatCap) {
-            if (guest.ability && guest.ability.type === 'coolHeat') {
+            if (!rival.arrivingAbilityUsed && guest.ability && guest.ability.type === 'coolHeat') {
                 return 'ability';
             }
             return 'close';
@@ -250,7 +250,9 @@ const AI = (() => {
 
         // Monte Carlo decision between admitting, ability usage, and banking current value.
         const values = estimateAdmitVsCloseValue(rival, venue);
-        const abilityValue = estimateAbilityValue(rival, player, venue, playerVenue, guest);
+        const abilityValue = rival.arrivingAbilityUsed
+            ? Number.NEGATIVE_INFINITY
+            : estimateAbilityValue(rival, player, venue, playerVenue, guest);
 
         if (abilityValue >= values.admitValue && abilityValue >= values.closeValue) {
             return 'ability';
