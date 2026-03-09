@@ -1469,6 +1469,8 @@ const Game = (() => {
         p.money += p.roundMoney;
         p.points += p.roundPoints;
       }
+      p.roundMoney = 0;
+      p.roundPoints = 0;
     });
     state.winner = determineWinner(state);
     state.guestPhaseScoredRound = state.round;

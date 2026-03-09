@@ -705,6 +705,10 @@
         activePartyView = view;
         removeTooltip();
         applyPartyView(animate);
+        // Reset snapshot so the view switch doesn't trigger delta pings
+        // (the displayed actor changes, but that's not a real stat change).
+        hudDeltaSnapshot.player = { heat: null, money: null, points: null };
+        hudDeltaSnapshot.rival = { heat: null, money: null, points: null };
         updateHUD();
         updateGuestDetail();
     }
