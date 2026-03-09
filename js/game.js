@@ -1339,12 +1339,19 @@ const Game = (() => {
 
     const selectedSource = selectedGuest?.source;
     if (selectedSource === "house") {
-      const selectedIndex = player.house.findIndex((entry) => {
-        if (selectedGuest.instanceId != null && typeof entry !== "string") {
-          return entry.instanceId === selectedGuest.instanceId;
-        }
-        return getGuestId(entry) === selectedGuest.guestId;
-      });
+      let selectedIndex = -1;
+      if (selectedGuest.instanceId != null) {
+        selectedIndex = player.house.findIndex(
+          (entry) =>
+            typeof entry !== "string" &&
+            entry.instanceId === selectedGuest.instanceId,
+        );
+      }
+      if (selectedIndex < 0 && selectedGuest.guestId) {
+        selectedIndex = player.house.findIndex(
+          (entry) => getGuestId(entry) === selectedGuest.guestId,
+        );
+      }
       if (selectedIndex < 0) return null;
 
       const entry = player.house[selectedIndex];
