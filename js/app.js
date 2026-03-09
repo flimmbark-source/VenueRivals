@@ -2272,6 +2272,16 @@
         }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
+        // Admitting a guest draws the next one from the deck, consuming one
+        // revealed queue position. Decrement and clear the overlay if exhausted.
+        if (!result.busted && revealDoorIntel[selfKey]) {
+            revealDoorIntel[selfKey].count -= 1;
+            if (revealDoorIntel[selfKey].count <= 0) {
+                clearRevealDoorIntel(selfKey);
+            } else {
+                renderRevealDoorIntel(selfKey);
+            }
+        }
         // Only refresh player detail if the action was by the player, or
         // if the opponent's action changed the player's visible state.
         if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
@@ -2506,6 +2516,15 @@
             // Only re-render rival grid if their house visibly changed
             if (gameState.rival.house.length !== rivalHouseSnapshot) {
                 renderHouseGrid('rival');
+            }
+            // Admitting draws the next deck card, consuming one revealed position.
+            if (!result.busted && revealDoorIntel.rival) {
+                revealDoorIntel.rival.count -= 1;
+                if (revealDoorIntel.rival.count <= 0) {
+                    clearRevealDoorIntel('rival');
+                } else {
+                    renderRevealDoorIntel('rival');
+                }
             }
 
             if (result.busted) {
