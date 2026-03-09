@@ -1352,18 +1352,18 @@ const Game = (() => {
           (entry) => getGuestId(entry) === selectedGuest.guestId,
         );
       }
-      // If selection is stale (e.g. tooltip/flash target changed), fall back
-      // to the arriving guest instead of failing the action outright.
-      if (selectedIndex < 0) return activateAbility(player, opponent, playerVenue, opponentVenue, null);
+      // If selection is stale (e.g. guest already left the grid), fail instead
+      // of activating a different guest unexpectedly.
+      if (selectedIndex < 0) return null;
 
       const entry = player.house[selectedIndex];
       const guestId = getGuestId(entry);
       const guest = GUESTS[guestId];
       if (!guest?.ability || guest.ability.trigger !== "flash") {
-        return activateAbility(player, opponent, playerVenue, opponentVenue, null);
+        return null;
       }
       if (typeof entry !== "string" && entry.abilityUsed) {
-        return activateAbility(player, opponent, playerVenue, opponentVenue, null);
+        return null;
       }
 
       const result = {

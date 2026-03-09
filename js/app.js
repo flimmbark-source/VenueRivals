@@ -1576,6 +1576,52 @@
         return !!(guest?.ability && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
     }
 
+    function getSelectedPlayerAbilityTarget() {
+        if (!gameState) return null;
+        syncSelectedGridGuest();
+
+        if (selectedGridGuest?.source === 'house') {
+            const entry = getSelectedPlayerHouseEntry();
+            if (!entry) return null;
+            return { source: 'house', guestId: entry.guestId, instanceId: entry.instanceId };
+        }
+
+        if (isPlayerDoorAbilityAvailable()) {
+            return { source: 'arriving', guestId: gameState.player.arrivingGuest };
+        }
+
+        return null;
+    }
+
+    function isSelectedPlayerAbilityAvailable() {
+        if (!gameState || gameState.player.doorClosed || gameState.player.busted) return false;
+        const target = getSelectedPlayerAbilityTarget();
+        if (!target) return false;
+        if (target.source === 'house') return isSelectedPlayerHouseAbilityAvailable();
+        return isPlayerDoorAbilityAvailable();
+    }
+
+    function buildAbilityTargetFromOptions(options = {}) {
+        if (!gameState) return null;
+        if (options.source === 'house' && options.guestId) {
+            const entry = gameState.player.house.find((houseEntry) => {
+                if (typeof houseEntry === 'string') return false;
+                if (options.instanceId != null) {
+                    return houseEntry.instanceId === options.instanceId;
+                }
+                return houseEntry.guestId === options.guestId;
+            });
+            if (!entry) return null;
+            return { source: 'house', guestId: entry.guestId, instanceId: entry.instanceId };
+        }
+
+        if (options.source === 'arriving' && options.guestId === gameState.player.arrivingGuest && isPlayerDoorAbilityAvailable()) {
+            return { source: 'arriving', guestId: options.guestId };
+        }
+
+        return null;
+    }
+
     function setGuestPhaseControls({ canAdmit = false, canClose = false, canFlash = false } = {}) {
         const entryDoors = [document.getElementById('player-door'), document.getElementById('player-door-card')].filter(Boolean);
         const exitDoors = [document.getElementById('player-exit'), document.getElementById('player-exit-card')].filter(Boolean);
@@ -1610,9 +1656,7 @@
             return;
         }
 
-        const canUseSelectedAbility = selectedGuestSource === 'house'
-            ? isSelectedPlayerHouseAbilityAvailable()
-            : (isPlayerDoorAbilityAvailable() || isPlayerFlashAvailable());
+        const canUseSelectedAbility = isSelectedPlayerAbilityAvailable();
 
         setGuestPhaseControls({ canAdmit: true, canClose: true, canFlash: canUseSelectedAbility });
     }
@@ -1627,10 +1671,8 @@
         el.className = 'guest-tooltip';
 
         const tooltipWho = options.who || 'rival';
-        const canTriggerAbility = tooltipWho === 'player'
-            && (options.source === 'house'
-                ? isSelectedPlayerHouseAbilityAvailable()
-                : (isPlayerDoorAbilityAvailable() || isPlayerFlashAvailable()));
+        const tooltipAbilityTarget = tooltipWho === 'player' ? buildAbilityTargetFromOptions(options) : null;
+        const canTriggerAbility = !!tooltipAbilityTarget;
 
         let abilityHTML = '';
         if (guest.ability) {
@@ -1674,7 +1716,7 @@
             tooltipAbilityBtn.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                handleAbility();
+                handleAbility(tooltipAbilityTarget);
             });
         }
 
@@ -2266,7 +2308,7 @@
         runAdmit('player');
     }
 
-    function runAbility(actor = 'player') {
+    function runAbility(actor = 'player', explicitTarget = null) {
         if (!gameState || gameState.phase !== 'guest') return;
         const { self, opponent, selfKey, opponentKey } = getActorState(actor);
         if (self.doorClosed || self.busted) return;
@@ -2284,12 +2326,8 @@
             roundMoney: gameState.player.roundMoney,
             roundPoints: gameState.player.roundPoints,
         };
-        const flashEntry = selfKey === 'player' ? getPlayerFlashWindowEntry() : null;
-        const selectedHouseEntry = selfKey === 'player' ? getSelectedPlayerHouseEntry() : null;
         const selectedForAbility = selfKey === 'player'
-            ? (selectedHouseEntry
-                ? { source: 'house', guestId: selectedHouseEntry.guestId, instanceId: selectedHouseEntry.instanceId }
-                : (flashEntry ? { source: 'house', guestId: flashEntry.guestId, instanceId: flashEntry.instanceId } : null))
+            ? (explicitTarget || getSelectedPlayerAbilityTarget())
             : null;
         const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue, selectedForAbility);
         if (!result) return;
@@ -2342,13 +2380,13 @@
         publishState();
     }
 
-    function handleAbility() {
+    function handleAbility(explicitTarget = null) {
         dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
             multiplayerSession?.publish('request-action', { action: 'ability', actor: 'rival' });
             return;
         }
-        runAbility('player');
+        runAbility('player', explicitTarget);
     }
 
     function runCloseDoor(actor = 'player') {
