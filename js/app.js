@@ -1532,6 +1532,14 @@
         return !!(guest?.ability && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
     }
 
+    function isPlayerDoorAbilityAvailable() {
+        if (!gameState) return false;
+        const { player } = gameState;
+        if (!player.arrivingGuest || player.doorClosed || player.busted) return false;
+        const guest = Game.GUESTS[player.arrivingGuest];
+        return !!(guest?.ability && guest.ability.trigger === 'flash');
+    }
+
     function getSelectedPlayerHouseEntry() {
         if (!gameState || selectedGridGuest?.source !== 'house') return null;
         return gameState.player.house.find((entry) => {
@@ -1586,7 +1594,7 @@
 
         const canUseSelectedAbility = selectedGuestSource === 'house'
             ? isSelectedPlayerHouseAbilityAvailable()
-            : isPlayerFlashAvailable();
+            : (isPlayerDoorAbilityAvailable() || isPlayerFlashAvailable());
 
         setGuestPhaseControls({ canAdmit: true, canClose: true, canFlash: canUseSelectedAbility });
     }
@@ -1602,7 +1610,9 @@
 
         const tooltipWho = options.who || 'rival';
         const canTriggerAbility = tooltipWho === 'player'
-            && (options.source === 'house' ? isSelectedPlayerHouseAbilityAvailable() : isPlayerFlashAvailable());
+            && (options.source === 'house'
+                ? isSelectedPlayerHouseAbilityAvailable()
+                : (isPlayerDoorAbilityAvailable() || isPlayerFlashAvailable()));
 
         let abilityHTML = '';
         if (guest.ability) {
