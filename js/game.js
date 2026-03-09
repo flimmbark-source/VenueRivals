@@ -3,7 +3,7 @@
    ============================================ */
 
 const Game = (() => {
-  const DEFAULT_POINT_TARGET = 30;
+  const DEFAULT_POINT_TARGET = 50;
   const BUST_PENALTY = 0;
   const TAGS = ["VIP", "Performer", "Scout", "Broker", "Outlaw"];
 
@@ -950,6 +950,17 @@ const Game = (() => {
     return typeof entry === "string" ? entry : entry.guestId;
   }
 
+  function normalizeHouseEntry(player, index) {
+    const entry = player.house[index];
+    if (typeof entry !== "string") return entry || null;
+    // Preserve legacy visual identity by avoiding a new numeric instanceId.
+    // Using a null instanceId keeps existing guest/index-based slot keys stable,
+    // which prevents a mid-round re-mount/flicker when an ability is used.
+    const normalized = { instanceId: null, guestId: entry, lockUntilClose: false, abilityUsed: false };
+    player.house[index] = normalized;
+    return normalized;
+  }
+
   function getHouseCapacity(venue, player) {
     // House capacity matches the visible grid size; arriving guest is
     // rendered into the grid now, so don't subtract 1.
@@ -1402,13 +1413,13 @@ const Game = (() => {
       // of activating a different guest unexpectedly.
       if (selectedIndex < 0) return null;
 
-      const entry = player.house[selectedIndex];
+      const entry = normalizeHouseEntry(player, selectedIndex);
       const guestId = getGuestId(entry);
       const guest = GUESTS[guestId];
       if (!guest?.ability || guest.ability.trigger !== "flash") {
         return null;
       }
-      if (typeof entry !== "string" && entry.abilityUsed) {
+      if (entry.abilityUsed) {
         return null;
       }
 
@@ -1421,7 +1432,7 @@ const Game = (() => {
         busted: false,
       };
       applyAbilityEffects(player, opponent, guest, result, selectedIndex);
-      if (typeof entry !== "string") entry.abilityUsed = true;
+      entry.abilityUsed = true;
       return result;
     }
 
