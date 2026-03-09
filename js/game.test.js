@@ -152,11 +152,10 @@ describe("revealNext ability", () => {
   });
 });
 
-// ── revealAndReorder ──────────────────────────────────────────────
+// ── revealAndReorder (STACK) ─────────────────────────────────────
 
-describe("revealAndReorder ability", () => {
-  test("peeks at 2 and reorders best on top (galleryScout Peek)", () => {
-    // regular: 1pt, 0m, 0h => val 1; hypeFriend: 2pt, 1m, 1h => val 2
+describe("revealAndReorder ability (STACK)", () => {
+  test("reveals 2 guests and sets needsStackChoice (galleryScout Stack)", () => {
     const player = makePlayer({
       arrivingGuest: "galleryScout",
       roundDeck: ["regular", "hypeFriend"],
@@ -165,8 +164,10 @@ describe("revealAndReorder ability", () => {
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).not.toBeNull();
     expect(result.revealedGuests).toHaveLength(2);
-    // hypeFriend (val 2) should be on top (last in array = drawn next)
-    expect(player.roundDeck[player.roundDeck.length - 1]).toBe("hypeFriend");
+    expect(result.needsStackChoice).toBe(true);
+    // Deck order should NOT have changed yet
+    expect(player.roundDeck[0]).toBe("regular");
+    expect(player.roundDeck[1]).toBe("hypeFriend");
   });
 
   test("handles single card in deck", () => {
@@ -177,6 +178,7 @@ describe("revealAndReorder ability", () => {
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result.revealedGuests).toHaveLength(1);
+    expect(result.needsStackChoice).toBeUndefined();
   });
 
   test("handles empty deck", () => {
@@ -184,19 +186,50 @@ describe("revealAndReorder ability", () => {
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).not.toBeNull();
-    // No revealedGuests when deck is empty
     expect(result.revealedGuests).toBeUndefined();
   });
 });
 
-// ── bounceLeftmost ────────────────────────────────────────────────
+// ── resolveStackChoice ──────────────────────────────────────────
 
-describe("bounceLeftmost ability", () => {
-  test("bounces leftmost guest back to queue (standIn Understudy)", () => {
+describe("resolveStackChoice", () => {
+  test("reorders top 2 so chosen card is drawn next", () => {
+    const player = makePlayer({ roundDeck: ["a", "b", "c"] });
+    // c is on top (drawn next), b is second
+    const ok = Game.resolveStackChoice(player, "b");
+    expect(ok).toBe(true);
+    expect(player.roundDeck[player.roundDeck.length - 1]).toBe("b");
+    expect(player.roundDeck[player.roundDeck.length - 2]).toBe("c");
+  });
+
+  test("no-op when chosen card is already on top", () => {
+    const player = makePlayer({ roundDeck: ["a", "b", "c"] });
+    const ok = Game.resolveStackChoice(player, "c");
+    expect(ok).toBe(true);
+    expect(player.roundDeck[player.roundDeck.length - 1]).toBe("c");
+  });
+
+  test("returns false for invalid choice", () => {
+    const player = makePlayer({ roundDeck: ["a", "b", "c"] });
+    const ok = Game.resolveStackChoice(player, "a");
+    expect(ok).toBe(false);
+  });
+
+  test("returns false when deck has fewer than 2 cards", () => {
+    const player = makePlayer({ roundDeck: ["a"] });
+    const ok = Game.resolveStackChoice(player, "a");
+    expect(ok).toBe(false);
+  });
+});
+
+// ── bounce (targeting) ───────────────────────────────────────────
+
+describe("bounce ability", () => {
+  test("bounces oldest guest back to queue (standIn Understudy)", () => {
     const entry = makeHouseEntry("regular");
     const player = makePlayer({
       arrivingGuest: "standIn",
-      house: [makeHouseEntry("hypeFriend"), entry], // entry at last index = leftmost
+      house: [makeHouseEntry("hypeFriend"), entry], // entry at last index = oldest
       roundDeck: ["chiller"],
     });
     const opponent = makeOpponent();
@@ -217,33 +250,80 @@ describe("bounceLeftmost ability", () => {
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(player.house).toHaveLength(2); // nothing bounced
+    expect(result.effects).toContain("target is locked");
+  });
+
+  test("no-op when house is empty", () => {
+    const player = makePlayer({
+      arrivingGuest: "standIn",
+      house: [],
+    });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
+    expect(result.effects).toContain("no valid target");
   });
 });
 
-// ── pullForward ───────────────────────────────────────────────────
+// ── nudge (targeting) ────────────────────────────────────────────
 
-describe("pullForward ability", () => {
-  test("pulls leftmost guest one step forward (usher Escort)", () => {
+describe("nudge ability", () => {
+  test("nudges oldest guest one step toward newest (usher Escort)", () => {
     const a = makeHouseEntry("regular");
     const b = makeHouseEntry("hypeFriend");
     const player = makePlayer({
       arrivingGuest: "usher",
-      house: [a, b], // b is leftmost (index 1)
+      house: [a, b], // b is oldest (index 1)
     });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).not.toBeNull();
-    expect(result.effects).toContain("pulled a guest forward");
+    expect(result.effects[0]).toMatch(/nudged/);
     // b should have moved from index 1 to index 0
     expect(player.house[0].guestId).toBe("hypeFriend");
     expect(player.house[1].guestId).toBe("regular");
   });
+
+  test("cannot nudge a locked guest", () => {
+    const a = makeHouseEntry("regular");
+    const b = makeHouseEntry("hypeFriend", { lockUntilClose: true });
+    const player = makePlayer({
+      arrivingGuest: "usher",
+      house: [a, b],
+    });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
+    expect(result.effects).toContain("blocked by lock");
+    expect(player.house[1].guestId).toBe("hypeFriend"); // unchanged
+  });
+
+  test("cannot nudge into a locked neighbor", () => {
+    const a = makeHouseEntry("regular", { lockUntilClose: true });
+    const b = makeHouseEntry("hypeFriend");
+    const player = makePlayer({
+      arrivingGuest: "usher",
+      house: [a, b],
+    });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
+    expect(result.effects).toContain("blocked by lock");
+  });
+
+  test("no-op when target is already at newest", () => {
+    const a = makeHouseEntry("regular");
+    const player = makePlayer({
+      arrivingGuest: "usher",
+      house: [a], // oldest = index 0, already at newest
+    });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
+    expect(result.effects).toContain("no valid move");
+  });
 });
 
-// ── pushLeftmost ──────────────────────────────────────────────────
+// ── boot (targeting) ─────────────────────────────────────────────
 
-describe("pushLeftmost ability", () => {
-  test("pushes leftmost guest out (floorRunner Crowd Surf)", () => {
+describe("boot ability", () => {
+  test("boots oldest guest out (floorRunner Crowd Surf)", () => {
     const player = makePlayer({
       arrivingGuest: "floorRunner",
       house: [makeHouseEntry("hypeFriend"), makeHouseEntry("regular")],
@@ -256,7 +336,7 @@ describe("pushLeftmost ability", () => {
     expect(player.house[0].guestId).toBe("hypeFriend");
   });
 
-  test("does not push locked leftmost", () => {
+  test("does not boot locked target", () => {
     const locked = makeHouseEntry("regular", { lockUntilClose: true });
     const player = makePlayer({
       arrivingGuest: "floorRunner",
@@ -265,42 +345,50 @@ describe("pushLeftmost ability", () => {
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(player.house).toHaveLength(2);
+    expect(result.effects).toContain("target is locked");
   });
-});
 
-// ── pushAnother ───────────────────────────────────────────────────
-
-describe("pushAnother ability", () => {
-  test("pushes a non-frontmost guest out (wheelman Getaway)", () => {
+  test("boot leftOfSelf targets correct guest (wheelman Getaway)", () => {
     const a = makeHouseEntry("regular");
     const b = makeHouseEntry("hypeFriend");
     const c = makeHouseEntry("chiller");
     const player = makePlayer({
       arrivingGuest: "wheelman",
-      house: [a, b, c], // a=front, c=leftmost
+      house: [a, b, c], // arriving will be at 0; leftOfSelf = current index 0
     });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).not.toBeNull();
-    // Should push leftmost non-locked non-frontmost (c at index 2, then b at index 1)
+    // leftOfSelf for arriving (sourceIndex -1) => current index 0
+    expect(result.pushedOut).toBe("regular");
     expect(player.house).toHaveLength(2);
-    expect(result.pushedOut).toBeDefined();
   });
 
-  test("skips locked guests", () => {
-    const a = makeHouseEntry("regular");
-    const b = makeHouseEntry("hypeFriend", { lockUntilClose: true });
-    const c = makeHouseEntry("chiller", { lockUntilClose: true });
+  test("boot leftOfSelf skips locked target", () => {
+    const a = makeHouseEntry("regular", { lockUntilClose: true });
+    const b = makeHouseEntry("hypeFriend");
     const player = makePlayer({
       arrivingGuest: "wheelman",
-      house: [a, b, c],
+      house: [a, b],
     });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("no guest to push");
-    expect(player.house).toHaveLength(3);
+    expect(result.effects).toContain("target is locked");
+    expect(player.house).toHaveLength(2);
+  });
+
+  test("boot leftOfSelf no-op on empty house", () => {
+    const player = makePlayer({
+      arrivingGuest: "wheelman",
+      house: [],
+    });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
+    expect(result.effects).toContain("no valid target");
   });
 });
+
+// (pushAnother tests removed — wheelman now uses boot/leftOfSelf, tested above)
 
 // ── lockAnother ───────────────────────────────────────────────────
 
@@ -518,103 +606,40 @@ describe("discardNext ability", () => {
   });
 });
 
-// ── scorePerGuest ─────────────────────────────────────────────────
+// ── stylist (migrated to coolHeat) ───────────────────────────────
 
-describe("scorePerGuest ability", () => {
-  test("scores 1 point per guest in house (stylist Runway)", () => {
+describe("stylist ability (Freshen Up)", () => {
+  test("cools 1 heat (stylist Freshen Up)", () => {
     const player = makePlayer({
       arrivingGuest: "stylist",
-      roundPoints: 0,
-      house: [makeHouseEntry("regular"), makeHouseEntry("hypeFriend"), makeHouseEntry("chiller")],
+      heat: 2,
     });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).not.toBeNull();
-    expect(result.effects).toContain("scored 3 points (3 guests)");
-    expect(player.roundPoints).toBe(3);
-  });
-
-  test("scores 0 when house is empty", () => {
-    const player = makePlayer({ arrivingGuest: "stylist", roundPoints: 0, house: [] });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("scored 0 points (0 guests)");
-    expect(player.roundPoints).toBe(0);
+    expect(result.effects).toContain("cooled 1 heat");
+    expect(player.heat).toBe(1);
   });
 });
 
-// ── boostAdjacent ─────────────────────────────────────────────────
+// ── trendBroker (migrated to stealMoney) ─────────────────────────
 
-describe("boostAdjacent ability", () => {
-  test("scores 1 point per adjacent from arriving position", () => {
-    const player = makePlayer({
-      arrivingGuest: "trendBroker",
-      roundPoints: 0,
-      house: [makeHouseEntry("regular"), makeHouseEntry("hypeFriend")],
-    });
-    const opponent = makeOpponent();
+describe("trendBroker ability (Insider Trade)", () => {
+  test("steals 1 money from opponent (trendBroker Insider Trade)", () => {
+    const player = makePlayer({ arrivingGuest: "trendBroker", roundMoney: 0 });
+    const opponent = makeOpponent({ roundMoney: 3 });
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).not.toBeNull();
-    expect(result.effects[0]).toMatch(/scored 1 from 1 adjacent/);
-    expect(player.roundPoints).toBe(1);
+    expect(result.effects).toContain("stole 1 money");
+    expect(player.roundMoney).toBe(1);
+    expect(opponent.roundMoney).toBe(2);
   });
 
-  test("scores from BOTH adjacent when in middle of house", () => {
-    const left = makeHouseEntry("regular");
-    const activator = makeHouseEntry("trendBroker");
-    const right = makeHouseEntry("hypeFriend");
-    const player = makePlayer({
-      roundPoints: 0,
-      house: [left, activator, right],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
-      source: "house", guestId: "trendBroker", instanceId: activator.instanceId,
-    });
-    expect(result).not.toBeNull();
-    expect(result.effects[0]).toMatch(/scored 2 from 2 adjacent/);
-    expect(player.roundPoints).toBe(2);
-  });
-
-  test("scores 1 when at edge of house", () => {
-    const activator = makeHouseEntry("trendBroker");
-    const neighbor = makeHouseEntry("regular");
-    const player = makePlayer({
-      roundPoints: 0,
-      house: [activator, neighbor],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
-      source: "house", guestId: "trendBroker", instanceId: activator.instanceId,
-    });
-    expect(result.effects[0]).toMatch(/scored 1 from 1 adjacent/);
-    expect(player.roundPoints).toBe(1);
-  });
-
-  test("no points when alone in house", () => {
-    const activator = makeHouseEntry("trendBroker");
-    const player = makePlayer({
-      roundPoints: 0,
-      house: [activator],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
-      source: "house", guestId: "trendBroker", instanceId: activator.instanceId,
-    });
-    expect(result.effects).toContain("no adjacent guests");
-    expect(player.roundPoints).toBe(0);
-  });
-
-  test("no points from arriving when house is empty", () => {
-    const player = makePlayer({
-      arrivingGuest: "trendBroker",
-      roundPoints: 0,
-      house: [],
-    });
-    const opponent = makeOpponent();
+  test("nothing to steal when opponent has 0", () => {
+    const player = makePlayer({ arrivingGuest: "trendBroker", roundMoney: 0 });
+    const opponent = makeOpponent({ roundMoney: 0 });
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("no adjacent guests");
-    expect(player.roundPoints).toBe(0);
+    expect(result.effects).toContain("nothing to steal");
   });
 });
 

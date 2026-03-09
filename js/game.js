@@ -116,14 +116,15 @@ const Game = (() => {
       cost: 5,
       venue: "Neutral",
       tags: ["Performer"],
-      desc: "Understudy: Bounce the Leftmost back to the queue.",
+      desc: "Understudy: Bounce Oldest.",
       tier: "common",
       ability: {
         name: "Understudy",
         icon: "🔄",
-        desc: "Bounce the Leftmost back to the queue",
+        desc: "Bounce Oldest",
         trigger: "flash",
-        type: "bounceLeftmost",
+        type: "bounce",
+        targeting: "oldest",
       },
     },
     usher: {
@@ -135,14 +136,15 @@ const Game = (() => {
       cost: 5,
       venue: "Neutral",
       tags: ["VIP"],
-      desc: "Escort: Pull 1 guest forward.",
+      desc: "Escort: Nudge Oldest.",
       tier: "common",
       ability: {
         name: "Escort",
         icon: "👋",
-        desc: "Pull 1 guest forward",
+        desc: "Nudge Oldest",
         trigger: "flash",
-        type: "pullForward",
+        type: "nudge",
+        targeting: "oldest",
       },
     },
     floorRunner: {
@@ -154,14 +156,15 @@ const Game = (() => {
       cost: 7,
       venue: "Neutral",
       tags: ["Scout"],
-      desc: "Crowd Surf: Push the Leftmost out.",
+      desc: "Crowd Surf: Boot Oldest.",
       tier: "common",
       ability: {
         name: "Crowd Surf",
         icon: "↩️",
-        desc: "Push the Leftmost out",
+        desc: "Boot Oldest",
         trigger: "flash",
-        type: "pushLeftmost",
+        type: "boot",
+        targeting: "oldest",
       },
     },
     bookkeeper: {
@@ -346,12 +349,12 @@ const Game = (() => {
       cost: 4,
       venue: "Night Market",
       tags: ["Scout"],
-      desc: "Peek: Reveal the next 2 guests. Choose their order.",
+      desc: "Stack: Reveal 2, choose their order.",
       tier: "common",
       ability: {
-        name: "Peek",
+        name: "Stack",
         icon: "🧭",
-        desc: "Reveal the next 2 guests. Choose their order",
+        desc: "Reveal 2, choose their order",
         trigger: "flash",
         type: "revealAndReorder",
       },
@@ -365,14 +368,14 @@ const Game = (() => {
       cost: 5,
       venue: "Night Market",
       tags: ["Broker"],
-      desc: "Insider Info: Score 1 Point per adjacent guest.",
+      desc: "Insider Trade: Lift 1.",
       tier: "uncommon",
       ability: {
-        name: "Insider Info",
+        name: "Insider Trade",
         icon: "🔮",
-        desc: "Score 1 Point per adjacent guest",
+        desc: "Steal 1 Money",
         trigger: "flash",
-        type: "boostAdjacent",
+        type: "stealMoney",
         value: 1,
       },
     },
@@ -405,14 +408,14 @@ const Game = (() => {
       cost: 6,
       venue: "Night Market",
       tags: ["Scout", "Broker"],
-      desc: "Runway: Score 1 Point per guest in house.",
+      desc: "Freshen Up: Cool 1 Heat.",
       tier: "uncommon",
       ability: {
-        name: "Runway",
+        name: "Freshen Up",
         icon: "✨",
-        desc: "Score 1 Point per guest in house",
+        desc: "Cool 1 Heat",
         trigger: "flash",
-        type: "scorePerGuest",
+        type: "coolHeat",
         value: 1,
       },
     },
@@ -446,14 +449,15 @@ const Game = (() => {
       cost: 8,
       venue: "Back Alley",
       tags: ["Outlaw"],
-      desc: "Getaway: Push another guest out.",
+      desc: "Getaway: Boot Left of Self.",
       tier: "common",
       ability: {
         name: "Getaway",
         icon: "↪️",
-        desc: "Push another guest out",
+        desc: "Boot Left of Self",
         trigger: "flash",
-        type: "pushAnother",
+        type: "boot",
+        targeting: "leftOfSelf",
       },
     },
     fence: {
@@ -1161,6 +1165,46 @@ const Game = (() => {
     return null;
   }
 
+  // --- Targeting support for lane abilities (boot/bounce/nudge/lock) ---
+  function resolveTargetIndex(player, sourceIndex, targeting) {
+    switch (targeting) {
+      case "oldest":
+        return player.house.length - 1;
+      case "newest":
+        return 0;
+      case "leftOfSelf":
+        if (sourceIndex === -1) {
+          // Arriving guest will be at index 0; left of self = current index 0
+          return player.house.length > 0 ? 0 : -1;
+        }
+        return sourceIndex + 1;
+      case "rightOfSelf":
+        if (sourceIndex === -1) {
+          // Arriving guest will be at index 0; right of self = invalid (nothing newer)
+          return -1;
+        }
+        return sourceIndex - 1;
+      default:
+        return -1;
+    }
+  }
+
+  function resolveStackChoice(player, firstId) {
+    const deck = player.roundDeck;
+    if (deck.length < 2) return false;
+    const topIdx = deck.length - 1;
+    const secondIdx = deck.length - 2;
+    const top = deck[topIdx];
+    const second = deck[secondIdx];
+    if (firstId !== top && firstId !== second) return false;
+    // Reorder so firstId is on top (drawn next = last in array)
+    if (deck[topIdx] !== firstId) {
+      deck[topIdx] = firstId;
+      deck[secondIdx] = firstId === top ? second : top;
+    }
+    return true;
+  }
+
   function admitGuest(player, venue, opponent = null, opponentVenue = null) {
     if (!player.arrivingGuest || player.doorClosed || player.busted)
       return null;
@@ -1229,24 +1273,78 @@ const Game = (() => {
       case "revealAndReorder": {
         const revealed = [];
         if (player.roundDeck.length >= 2) {
-          const a = player.roundDeck.pop();
-          const b = player.roundDeck.pop();
-          revealed.push(a, b);
-          const aVal = GUESTS[a].points + GUESTS[a].money - GUESTS[a].heat;
-          const bVal = GUESTS[b].points + GUESTS[b].money - GUESTS[b].heat;
-          if (aVal >= bVal) {
-            player.roundDeck.push(b);
-            player.roundDeck.push(a);
-          } else {
-            player.roundDeck.push(a);
-            player.roundDeck.push(b);
-          }
-          result.effects.push(`peeked: ${GUESTS[a].name}, ${GUESTS[b].name}`);
+          const topIdx = player.roundDeck.length - 1;
+          const secondIdx = player.roundDeck.length - 2;
+          revealed.push(player.roundDeck[topIdx], player.roundDeck[secondIdx]);
+          result.revealedGuests = revealed;
+          result.needsStackChoice = true;
+          result.effects.push(`peeked: ${GUESTS[revealed[0]].name}, ${GUESTS[revealed[1]].name} — choose order`);
         } else if (player.roundDeck.length === 1) {
           revealed.push(player.roundDeck[0]);
+          result.revealedGuests = revealed;
           result.effects.push(`peeked: ${GUESTS[player.roundDeck[0]].name}`);
         }
-        if (revealed.length) result.revealedGuests = revealed;
+        break;
+      }
+      case "boot": {
+        const targeting = guest.ability.targeting || "oldest";
+        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        if (targetIdx < 0 || targetIdx >= player.house.length) {
+          result.effects.push("no valid target");
+          break;
+        }
+        const locked = getLockedIndexes(player);
+        if (locked.has(targetIdx)) {
+          result.effects.push("target is locked");
+          break;
+        }
+        const exiting = player.house.splice(targetIdx, 1)[0];
+        result.effects.push(`booted ${GUESTS[getGuestId(exiting)].name}`);
+        result.pushedOut = getGuestId(exiting);
+        break;
+      }
+      case "bounce": {
+        const targeting = guest.ability.targeting || "oldest";
+        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        if (targetIdx < 0 || targetIdx >= player.house.length) {
+          result.effects.push("no valid target");
+          break;
+        }
+        const locked = getLockedIndexes(player);
+        if (locked.has(targetIdx)) {
+          result.effects.push("target is locked");
+          break;
+        }
+        const bounced = player.house.splice(targetIdx, 1)[0];
+        player.roundDeck.unshift(getGuestId(bounced));
+        result.effects.push(`bounced ${GUESTS[getGuestId(bounced)].name}`);
+        break;
+      }
+      case "nudge": {
+        const targeting = guest.ability.targeting || "oldest";
+        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        if (targetIdx < 0 || targetIdx >= player.house.length) {
+          result.effects.push("no valid target");
+          break;
+        }
+        const locked = getLockedIndexes(player);
+        if (locked.has(targetIdx)) {
+          result.effects.push("blocked by lock");
+          break;
+        }
+        // Nudge moves 1 step toward newest (toward index 0)
+        const newIdx = targetIdx - 1;
+        if (newIdx < 0) {
+          result.effects.push("no valid move");
+          break;
+        }
+        if (locked.has(newIdx)) {
+          result.effects.push("blocked by lock");
+          break;
+        }
+        const [entry] = player.house.splice(targetIdx, 1);
+        player.house.splice(newIdx, 0, entry);
+        result.effects.push(`nudged ${GUESTS[getGuestId(entry)].name} forward`);
         break;
       }
       case "bounceLeftmost": {
@@ -1610,6 +1708,7 @@ const Game = (() => {
     endBuyPhase,
     getHouseCapacity,
     getHeatCapacity,
+    resolveStackChoice,
   };
 })();
 

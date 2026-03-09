@@ -189,10 +189,13 @@ const AI = (() => {
             case 'revealAndReorder':
                 value += 1.5;
                 break;
+            case 'nudge':
+            case 'bounce':
             case 'pullForward':
             case 'bounceLeftmost':
                 value += 1;
                 break;
+            case 'boot':
             case 'pushLeftmost':
             case 'pushAnother':
                 value += 1.5;
@@ -211,10 +214,10 @@ const AI = (() => {
                 value += 1.5;
                 break;
             case 'scorePerGuest':
-                value += rival.house.length * guest.ability.value * 1.2;
+                value += player.house.length * guest.ability.value * 1.2;
                 break;
             case 'boostAdjacent':
-                value += rival.house.length > 0 ? guest.ability.value * 1.5 : 0;
+                value += player.house.length > 0 ? guest.ability.value * 1.5 : 0;
                 break;
         }
 
