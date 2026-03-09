@@ -652,6 +652,48 @@ describe("activateAbility guards", () => {
     expect(result).toBeNull();
   });
 
+  test("house guest ability cannot be used twice in one round for legacy string entries", () => {
+    const player = makePlayer({ house: ["chiller"] });
+    const opponent = makeOpponent();
+
+    const first = Game.activateAbility(
+      player,
+      opponent,
+      Game.VENUES.velvetRoom,
+      Game.VENUES.velvetRoom,
+      { source: "house", guestId: "chiller" },
+    );
+
+    expect(first).not.toBeNull();
+    expect(player.house[0].guestId).toBe("chiller");
+    expect(player.house[0].abilityUsed).toBe(true);
+
+    const second = Game.activateAbility(
+      player,
+      opponent,
+      Game.VENUES.velvetRoom,
+      Game.VENUES.velvetRoom,
+      { source: "house", guestId: "chiller" },
+    );
+    expect(second).toBeNull();
+  });
+
+  test("legacy house entry normalization keeps null instanceId to avoid visual remount", () => {
+    const player = makePlayer({ house: ["chiller"] });
+    const opponent = makeOpponent();
+
+    const result = Game.activateAbility(
+      player,
+      opponent,
+      Game.VENUES.velvetRoom,
+      Game.VENUES.velvetRoom,
+      { source: "house", guestId: "chiller" },
+    );
+
+    expect(result).not.toBeNull();
+    expect(player.house[0].instanceId).toBeNull();
+  });
+
   test("returns null for guest without ability", () => {
     const player = makePlayer({ arrivingGuest: "regular" });
     const opponent = makeOpponent();
