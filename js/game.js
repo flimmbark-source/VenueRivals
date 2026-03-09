@@ -976,6 +976,7 @@ const Game = (() => {
       roundDeck: [],
       house: [],
       arrivingGuest: null,
+      arrivingAbilityUsed: false,
       roundMoney: 0,
       roundPoints: 0,
       money: 0,
@@ -1030,6 +1031,7 @@ const Game = (() => {
       p.roundDeck = shuffle(equippedDeck || []);
       // Don't clear house - preserve guests from previous round
       p.arrivingGuest = null;
+      p.arrivingAbilityUsed = false;
       p.roundMoney = 0;
       p.roundPoints = 0;
       p.heat = 0;
@@ -1048,6 +1050,7 @@ const Game = (() => {
   function drawNextGuest(player, venue, skipBustCheck = false) {
     if (player.roundDeck.length === 0) {
       player.arrivingGuest = null;
+      player.arrivingAbilityUsed = false;
       player.phaseComplete = true;
       player.doorClosed = true;
       return { success: false, pendingOut: null };
@@ -1064,6 +1067,7 @@ const Game = (() => {
     }
 
     player.arrivingGuest = player.roundDeck.pop();
+    player.arrivingAbilityUsed = false;
     const guest = GUESTS[player.arrivingGuest];
     if (guest) {
       player.heat += guest.heat;
@@ -1092,7 +1096,10 @@ const Game = (() => {
     if (!player.arrivingGuest) return [];
     applyGuestImpact(player, player.arrivingGuest);
     const popped = [];
-    player.house.unshift(createHouseGuest(player.arrivingGuest));
+    const admittedEntry = createHouseGuest(player.arrivingGuest);
+    admittedEntry.abilityUsed = !!player.arrivingAbilityUsed;
+    player.house.unshift(admittedEntry);
+    player.arrivingAbilityUsed = false;
     // trim to capacity, collecting every removed guest
     while (player.house.length > getHouseCapacity(venue, player)) {
       popped.push(player.house.pop());
@@ -1153,6 +1160,7 @@ const Game = (() => {
       applyBustState(player);
     }
     player.arrivingGuest = null;
+    player.arrivingAbilityUsed = false;
     if (!result.busted) {
       const drawRes = drawNextGuest(player, venue);
       if (drawRes.pendingOut) {
@@ -1362,17 +1370,18 @@ const Game = (() => {
     const guest = GUESTS[player.arrivingGuest];
     if (!guest.ability || guest.ability.trigger !== "flash") return null;
 
-    const admitted = admitGuest(player, playerVenue, opponent, opponentVenue);
-    if (!admitted) return null;
+    if (player.arrivingAbilityUsed) return null;
+
     const result = {
       activated: guest.name,
       ability: guest.ability,
-      effects: [...(admitted.effects || [])],
-      pushedOut: admitted.pushedOut,
-      pendingOut: admitted.pendingOut,
-      busted: admitted.busted,
+      effects: [],
+      pushedOut: [],
+      pendingOut: null,
+      busted: false,
     };
     applyAbilityEffects(player, opponent, guest, result);
+    player.arrivingAbilityUsed = true;
 
     return result;
   }
@@ -1384,6 +1393,7 @@ const Game = (() => {
     player.doorClosed = true;
     player.phaseComplete = true;
     player.arrivingGuest = null;
+    player.arrivingAbilityUsed = false;
     return {
       closed: true,
       pushedOut: pushed.map(getGuestId),
@@ -1400,14 +1410,10 @@ const Game = (() => {
       // If there's an arriving guest still waiting, move them into the house
       // so they persist to the next round
       if (p.arrivingGuest) {
-        p.house.unshift(createHouseGuest(p.arrivingGuest));
-        applyGuestImpact(p, p.arrivingGuest);
-        p.arrivingGuest = null;
-        // Remove guests exceeding capacity
         const venue = VENUES[p.venueId];
-        while (p.house.length > getHouseCapacity(venue, p)) {
-          p.house.pop();
-        }
+        moveArrivingGuestIntoHouse(p, venue);
+        p.arrivingGuest = null;
+        p.arrivingAbilityUsed = false;
       }
       p.money += p.roundMoney;
       p.points += p.roundPoints;
@@ -1472,6 +1478,7 @@ const Game = (() => {
       [state.player, state.rival].forEach((p) => {
         p.house = [];
         p.arrivingGuest = null;
+        p.arrivingAbilityUsed = false;
       });
       state.round++;
       state.phase = "guest";

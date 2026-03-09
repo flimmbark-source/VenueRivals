@@ -1537,7 +1537,7 @@
         const { player } = gameState;
         if (!player.arrivingGuest || player.doorClosed || player.busted) return false;
         const guest = Game.GUESTS[player.arrivingGuest];
-        return !!(guest?.ability && guest.ability.trigger === 'flash');
+        return !!(guest?.ability && guest.ability.trigger === 'flash' && !player.arrivingAbilityUsed);
     }
 
     function getSelectedPlayerHouseEntry() {
