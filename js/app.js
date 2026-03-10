@@ -1423,6 +1423,7 @@
             const arrivingGuestId = player.arrivingGuest;
             const slot = createGuestSlot(arrivingGuestId, false, { interactive: false });
             slot.classList.add('arriving-in-grid');
+            if (player.arrivingAbilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
                 slot.dataset.guestId = arrivingGuestId;
@@ -1454,9 +1455,11 @@
             if (typeof entry === 'string') return entry;
             const guestId = entry.guestId || '';
             const instanceId = entry.instanceId != null ? entry.instanceId : '';
-            return `${guestId}:${instanceId}`;
+            const used = entry.abilityUsed ? '1' : '0';
+            return `${guestId}:${instanceId}:${used}`;
         }).join('|');
-        return `${houseKey}::arriving:${playerState.arrivingGuest || ''}`;
+        const arrivingUsed = playerState.arrivingAbilityUsed ? '1' : '0';
+        return `${houseKey}::arriving:${playerState.arrivingGuest || ''}:${arrivingUsed}`;
     }
 
     function renderArrivingGuest(who) {
