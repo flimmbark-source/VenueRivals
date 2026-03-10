@@ -22,6 +22,26 @@ const GUESTS = {
     heat: 0, money: 2, points: 0, cost: 3,
     venue: "Neutral", tags: ["Broker"],
     desc: "No ability.", tier: "common",
+
+  chiller: {
+    name: "Chill Bro",
+    emoji: "❄️",
+    heat: 0,
+    money: 0,
+    points: 1,
+    cost: 2,
+    venue: "Neutral",
+    tags: ["VIP"],
+    tier: "common",
+    ability: {
+      name: "Cool",
+      icon: "❄️",
+      desc: "Cool 1 Heat.",
+      trigger: "flash",
+      type: "coolHeat",
+      value: 1,
+    },
+    desc: "Cool 1 Heat.",
   },
   loudFriend: {
     name: "Loud Friend", emoji: "📢",
@@ -42,6 +62,18 @@ const GUESTS = {
     venue: "Neutral", tags: ["Broker"], tier: "uncommon",
     ability: { name: "Guest List", icon: "📋", desc: "Reveal the next 2 guests and choose their order.", trigger: "arrival", type: "stackChoice", value: 2 },
     desc: "GUEST LIST — When this guest enters, reveal the next 2 guests and choose their order.",
+
+  hypeFriend: {
+    name: "Hype Friend",
+    emoji: "🙌",
+    heat: 1,
+    money: 1,
+    points: 1,
+    cost: 3,
+    venue: "Neutral",
+    tags: ["Performer"],
+    desc: "No special move.",
+    tier: "common",
   },
   plusOnePrince: {
     name: "Plus-One Prince", emoji: "👑",
@@ -63,6 +95,47 @@ const GUESTS = {
     venue: "Neutral", tags: ["VIP"], tier: "common",
     ability: { name: "Bounce", icon: "🔄", desc: "Return a guest in your house to the top of your queue.", trigger: "flash", type: "bounce", targeting: "choice" },
     desc: "BOUNCE — A: Return a guest in your house to the top of your queue.",
+
+  standIn: {
+    name: "Stand-In",
+    emoji: "🎭",
+    heat: 1,
+    money: 1,
+    points: 2,
+    cost: 5,
+    venue: "Neutral",
+    tags: ["Performer"],
+    tier: "common",
+    ability: {
+      name: "Nudge",
+      icon: "🔄",
+      desc: "Nudge your Oldest guest.",
+      trigger: "flash",
+      type: "nudge",
+      targeting: "oldest",
+    },
+    desc: "Nudge your Oldest guest.",
+  },
+
+  usher: {
+    name: "Usher",
+    emoji: "🧤",
+    heat: 0,
+    money: 0,
+    points: 2,
+    cost: 5,
+    venue: "Neutral",
+    tags: ["VIP"],
+    tier: "common",
+    ability: {
+      name: "Bounce",
+      icon: "👋",
+      desc: "Bounce the Oldest guest to top of Queue",
+      trigger: "flash",
+      type: "bounce",
+      targeting: "oldest",
+    },
+    desc: "Bounce the Oldest guest to top of Queue",
   },
   fedUpRoommate: {
     name: "Fed-Up Roommate", emoji: "😤",
@@ -121,6 +194,26 @@ const GUESTS = {
     venue: "Velvet Room", tags: ["VIP", "Broker"], tier: "uncommon",
     ability: { name: "Clique", icon: "🔗", desc: "+1 Point for each adjacent guest sharing a tag.", trigger: "scoring", type: "clique" },
     desc: "CLIQUE — At scoring, +1 Point for each adjacent guest sharing a tag with this guest.",
+
+  celebrity: {
+    name: "Celebrity",
+    emoji: "🎬",
+    heat: 1,
+    money: 0,
+    points: 4,
+    cost: 7,
+    venue: "Neutral",
+    tags: ["VIP", "Performer"],
+    tier: "rare",
+    ability: {
+      name: "VIP Rope",
+      icon: "⭐",
+      desc: "Bounce the guest on the Left.",
+      trigger: "flash",
+      type: "bounce",
+      targeting: "leftOfSelf",
+    },
+    desc: "Bounce the guest on the Left",
   },
   headliner: {
     name: "Headliner", emoji: "🌟",
@@ -128,6 +221,24 @@ const GUESTS = {
     venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "rare",
     ability: { name: "Center of Attention", icon: "🔦", desc: "+2 Points if this guest is Newest.", trigger: "scoring", type: "centerOfAttention", value: 2 },
     desc: "CENTER OF ATTENTION — At scoring, +2 Points if this guest is Newest.",
+    name: "Headliner",
+    emoji: "🌟",
+    heat: 2,
+    money: 0,
+    points: 4,
+    cost: 6,
+    venue: "Velvet Room",
+    tags: ["VIP", "Performer"],
+    tier: "rare",
+    ability: {
+      name: "Spotlight",
+      icon: "🔦",
+      desc: "Nudge the guest on the Left.",
+      trigger: "flash",
+      type: "nudge",
+      targeting: "leftOfSelf",
+    },
+    desc: "Nudge the guest on the Left.",
   },
   socialClimber: {
     name: "Social Climber", emoji: "📈",
@@ -165,6 +276,26 @@ const GUESTS = {
     venue: "Night Market", tags: ["VIP", "Broker"], tier: "rare",
     ability: { name: "VIP List", icon: "📇", desc: "Reveal the next 3 guests. Admit 1 now. Put the rest back in any order.", trigger: "flash", type: "nameDrop", value: 3 },
     desc: "VIP LIST — A: Reveal the next 3 guests. Admit 1 now. Put the rest back in any order.",
+
+  trendBroker: {
+    name: "Trend Broker",
+    emoji: "📈",
+    heat: 2,
+    money: 3,
+    points: 2,
+    cost: 5,
+    venue: "Night Market",
+    tags: ["Broker"],
+    tier: "uncommon",
+    ability: {
+      name: "Insider Trade",
+      icon: "💸",
+      desc: "Trash the top of your Queue.",
+      trigger: "flash",
+      type: "discardnext",
+      value: 1,
+    },
+    desc: "Trash the top of your Queue.",
   },
   tabRunner: {
     name: "Tab Runner", emoji: "💸",
@@ -229,6 +360,26 @@ const GUESTS = {
     venue: "Back Alley", tags: ["Outlaw"], tier: "common",
     ability: { name: "Leaves a Mess", icon: "💥", desc: "Plant a Gatecrasher in your opponent’s queue.", trigger: "departure", type: "queueGatecrasher" },
     desc: "LEAVES A MESS — When this guest leaves, PLANT a Gatecrasher in your opponent’s queue.",
+
+  wheelman: {
+    name: "Wheelman",
+    emoji: "🚗",
+    heat: 1,
+    money: 4,
+    points: 1,
+    cost: 7,
+    venue: "Back Alley",
+    tags: ["Outlaw"],
+    tier: "common",
+    ability: {
+      name: "Getaway",
+      icon: "↪️",
+      desc: "Boot out the guest on the Left.",
+      trigger: "flash",
+      type: "boot",
+      targeting: "leftOfSelf",
+    },
+    desc: "Boot out the guest on the Left.",
   },
   dramaStarter: {
     name: "Drama Starter", emoji: "🎭",
@@ -1301,6 +1452,36 @@ const GUESTS = {
           }
         } else {
           result.effects.push("no guest to copy from");
+        }
+        break;
+      }
+      case "lock": {
+        const targeting = guest.ability.targeting || "rightOfSelf";
+        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        if (targetIdx < 0 || targetIdx >= player.house.length) {
+          result.effects.push("no valid target");
+          break;
+        }
+        const entry = normalizeHouseEntry(player, targetIdx);
+        entry.lockUntilClose = true;
+        result.effects.push(`locked ${GUESTS[getGuestId(entry)].name}`);
+        break;
+      }
+      case "stackChoice": {
+        const revealed = [];
+        if (player.roundDeck.length >= 2) {
+          const topIdx = player.roundDeck.length - 1;
+          const secondIdx = player.roundDeck.length - 2;
+          revealed.push(player.roundDeck[topIdx], player.roundDeck[secondIdx]);
+          result.revealedGuests = revealed;
+          result.needsStackChoice = true;
+          result.effects.push(`peeked: ${GUESTS[revealed[0]].name}, ${GUESTS[revealed[1]].name} — choose order`);
+        } else if (player.roundDeck.length === 1) {
+          revealed.push(player.roundDeck[0]);
+          result.revealedGuests = revealed;
+          result.effects.push(`peeked: ${GUESTS[player.roundDeck[0]].name}`);
+        } else {
+          result.effects.push("queue empty");
         }
         break;
       }

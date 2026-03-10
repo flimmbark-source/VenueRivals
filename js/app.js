@@ -1388,24 +1388,36 @@
         const venue = Game.VENUES[player.venueId];
 
         const houseCapacity = Game.getHouseCapacity(venue, player);
+        const stacked = houseCapacity > 5;
+        if (stacked) {
+            slotsEl.classList.add('has-stacked-slots');
+        } else {
+            slotsEl.classList.remove('has-stacked-slots');
+        }
+
+        // Collect all house slot elements (empty + guests) into an array
+        const houseSlots = [];
+
         // Count occupied slots: house + arriving guest (cap to capacity for empties)
         const occupiedCount = Math.min(player.house.length, houseCapacity) + (player.arrivingGuest ? 1 : 0);
-        
-        // Render empty slots for remaining capacity
+
+        // Empty slots
         for (let i = 0; i < houseCapacity - occupiedCount; i++) {
             const empty = document.createElement('div');
             empty.className = 'guest-slot empty-slot';
-            slotsEl.appendChild(empty);
+            houseSlots.push(empty);
         }
 
-        // Render oldest-to-newest but only up to capacity
+        // House guests oldest-to-newest but only up to capacity
         let guests = [...player.house].reverse();
         if (guests.length > houseCapacity) {
             guests = guests.slice(guests.length - houseCapacity);
         }
         guests.forEach((entry) => {
             const guestId = entry.guestId || entry;
+            const abilityUsed = typeof entry !== 'string' && !!entry.abilityUsed;
             const slot = createGuestSlot(guestId, false, { interactive: false });
+            if (abilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
                 const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
@@ -1421,21 +1433,23 @@
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
-                    showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', guestId, instanceId });
+                    showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', guestId, instanceId, abilityUsed });
                 });
             } else {
                 slot.addEventListener('click', () => {
-                    showTooltipForTarget(slot, guestId, { who: 'rival', source: 'house' });
+                    showTooltipForTarget(slot, guestId, { who: 'rival', source: 'house', abilityUsed });
                 });
             }
-            slotsEl.appendChild(slot);
+            houseSlots.push(slot);
         });
 
-        // Render arriving guest as the rightmost/newest slot
+        // Build arriving slot element (always anchored to main row)
+        let arrivingSlot = null;
         if (player.arrivingGuest) {
             const arrivingGuestId = player.arrivingGuest;
             const slot = createGuestSlot(arrivingGuestId, false, { interactive: false });
             slot.classList.add('arriving-in-grid');
+            if (who === 'player' && player.arrivingAbilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
                 slot.dataset.guestId = arrivingGuestId;
@@ -1447,14 +1461,38 @@
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
-                    showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving', guestId: arrivingGuestId });
+                    const arrivingAbilityUsed = !!gameState.player.arrivingAbilityUsed;
+                    showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving', guestId: arrivingGuestId, abilityUsed: arrivingAbilityUsed });
                 });
             } else {
                 slot.addEventListener('click', () => {
                     showTooltipForTarget(slot, arrivingGuestId, { who: 'rival', source: 'arriving', guestId: arrivingGuestId });
                 });
             }
-            slotsEl.appendChild(slot);
+            arrivingSlot = slot;
+        }
+
+        if (stacked) {
+            // Combine house slots and arriving slot into a unified list so the
+            // layout stays consistent before and after the door is closed.
+            const allSlots = [...houseSlots];
+            if (arrivingSlot) allSlots.push(arrivingSlot);
+
+            // Main row (top): first 5 slots
+            const mainRow = document.createElement('div');
+            mainRow.className = 'slots-main-row';
+            allSlots.slice(0, 5).forEach(s => mainRow.appendChild(s));
+
+            // Overflow row (below main): slots 6+
+            const overflowRow = document.createElement('div');
+            overflowRow.className = 'slots-overflow-row';
+            allSlots.slice(5).forEach(s => overflowRow.appendChild(s));
+
+            slotsEl.appendChild(mainRow);
+            slotsEl.appendChild(overflowRow);
+        } else {
+            houseSlots.forEach(s => slotsEl.appendChild(s));
+            if (arrivingSlot) slotsEl.appendChild(arrivingSlot);
         }
 
         syncVenueActors(who);
@@ -1466,8 +1504,8 @@
             if (!entry) return '';
             if (typeof entry === 'string') return entry;
             const guestId = entry.guestId || '';
-            const instanceId = entry.instanceId != null ? entry.instanceId : '';
-            return `${guestId}:${instanceId}`;
+            if (entry.instanceId == null) return guestId;
+            return `${guestId}:${entry.instanceId}`;
         }).join('|');
         return `${houseKey}::arriving:${playerState.arrivingGuest || ''}`;
     }
@@ -1692,16 +1730,23 @@
 
         const tooltipWho = options.who || 'rival';
         const tooltipAbilityTarget = tooltipWho === 'player' ? buildAbilityTargetFromOptions(options) : null;
-        const canTriggerAbility = !!tooltipAbilityTarget;
+        const isAbilityUsed = !!options.abilityUsed;
+        const canTriggerAbility = !!tooltipAbilityTarget && !isAbilityUsed;
 
         let abilityHTML = '';
         if (guest.ability) {
-            abilityHTML = `<div class="tt-ability">${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
+            const abilityStyle = isAbilityUsed ? ' style="opacity:0.5"' : '';
+            abilityHTML = `<div class="tt-ability"${abilityStyle}>${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
         }
 
-        const abilityBtnHTML = tooltipWho === 'player'
-            ? `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>Ability</button>`
-            : '';
+        let abilityBtnHTML = '';
+        if (tooltipWho === 'player') {
+            if (isAbilityUsed && guest.ability) {
+                abilityBtnHTML = `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" disabled>Used</button>`;
+            } else {
+                abilityBtnHTML = `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>Ability</button>`;
+            }
+        }
 
         el.innerHTML = `
             <div class="tt-name">${guest.emoji} ${guest.name}</div>
@@ -2383,7 +2428,27 @@
         updateVenueStatus(selfKey);
         updateVenueStatus(opponentKey);
         updateHUD();
-        removeTooltip();
+
+        // Keep tooltip open for player ability use — pulse it and disable button
+        if (selfKey === 'player' && tooltipEl) {
+            tooltipEl.classList.add('tooltip-pulse');
+            const abilityBtn = tooltipEl.querySelector('#btn-tooltip-ability');
+            if (abilityBtn) {
+                abilityBtn.disabled = true;
+                abilityBtn.textContent = 'Used';
+            }
+            // Show the ability description as used
+            const abilityDesc = tooltipEl.querySelector('.tt-ability');
+            if (abilityDesc) {
+                abilityDesc.style.opacity = '0.5';
+            }
+            setTimeout(() => {
+                if (tooltipEl) tooltipEl.classList.remove('tooltip-pulse');
+                removeTooltip();
+            }, 600);
+        } else {
+            removeTooltip();
+        }
         removeIconTooltip();
 
         if (opponent.busted) {
@@ -2399,8 +2464,8 @@
     }
 
     function handleAbility(explicitTarget = null) {
-        dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
+            dismissInfoPanelPopup();
             multiplayerSession?.publish('request-action', { action: 'ability', actor: 'rival' });
             return;
         }
@@ -3433,8 +3498,8 @@
                         <tr><td>TRASH</td><td>Discard the next queued guest</td></tr>
                         <tr><td>PLANT</td><td>Queue a Gatecrasher for opponent</td></tr>
                         <tr><td>LOCK</td><td>Lock a guest until door close</td></tr>
-                        <tr><td>BOOT</td><td>Remove a guest from the house (they leave)</td></tr>
-                        <tr><td>BOUNCE</td><td>Remove a guest and put them back on top of your queue</td></tr>
+                        <tr><td>BOOT</td><td>Remove a guest from the house (they leave). Your Heat drops by that guest's Heat value.</td></tr>
+                        <tr><td>BOUNCE</td><td>Remove a guest and put them back on top of your queue. Your Heat drops by that guest's Heat value.</td></tr>
                         <tr><td>NUDGE</td><td>Move a guest 1 step toward Newest (toward entry)</td></tr>
                     </table>
                 `;
@@ -3442,7 +3507,7 @@
             case 'targeting':
                 el.innerHTML = `
                     <h4>Targeting</h4>
-                    <p>Lane abilities (Boot, Bounce, Nudge, Lock) target a specific guest by position in your house.</p>
+                    <p>Lane abilities (Boot, Bounce, Nudge, Lock) target a specific guest by position in your house. Booting or Bouncing a guest also reduces your Heat by that guest's Heat value.</p>
                     <table class="glossary-table">
                         <tr><th>Target</th><th>Meaning</th></tr>
                         <tr><td>Oldest</td><td>Guest closest to the exit (last in house)</td></tr>
