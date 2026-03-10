@@ -2394,6 +2394,7 @@
             }
             setTimeout(() => {
                 if (tooltipEl) tooltipEl.classList.remove('tooltip-pulse');
+                removeTooltip();
             }, 600);
         } else {
             removeTooltip();
