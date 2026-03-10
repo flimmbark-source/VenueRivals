@@ -1372,22 +1372,27 @@
         const venue = Game.VENUES[player.venueId];
 
         const houseCapacity = Game.getHouseCapacity(venue, player);
-        if (houseCapacity > 5) {
+        const stacked = houseCapacity > 5;
+        if (stacked) {
             slotsEl.classList.add('has-stacked-slots');
         } else {
             slotsEl.classList.remove('has-stacked-slots');
         }
+
+        // Collect all house slot elements (empty + guests) into an array
+        const houseSlots = [];
+
         // Count occupied slots: house + arriving guest (cap to capacity for empties)
         const occupiedCount = Math.min(player.house.length, houseCapacity) + (player.arrivingGuest ? 1 : 0);
-        
-        // Render empty slots for remaining capacity
+
+        // Empty slots
         for (let i = 0; i < houseCapacity - occupiedCount; i++) {
             const empty = document.createElement('div');
             empty.className = 'guest-slot empty-slot';
-            slotsEl.appendChild(empty);
+            houseSlots.push(empty);
         }
 
-        // Render oldest-to-newest but only up to capacity
+        // House guests oldest-to-newest but only up to capacity
         let guests = [...player.house].reverse();
         if (guests.length > houseCapacity) {
             guests = guests.slice(guests.length - houseCapacity);
@@ -1419,10 +1424,11 @@
                     showTooltipForTarget(slot, guestId, { who: 'rival', source: 'house', abilityUsed });
                 });
             }
-            slotsEl.appendChild(slot);
+            houseSlots.push(slot);
         });
 
-        // Render arriving guest as the rightmost/newest slot
+        // Build arriving slot element (always anchored to main row)
+        let arrivingSlot = null;
         if (player.arrivingGuest) {
             const arrivingGuestId = player.arrivingGuest;
             const slot = createGuestSlot(arrivingGuestId, false, { interactive: false });
@@ -1447,7 +1453,26 @@
                     showTooltipForTarget(slot, arrivingGuestId, { who: 'rival', source: 'arriving', guestId: arrivingGuestId });
                 });
             }
-            slotsEl.appendChild(slot);
+            arrivingSlot = slot;
+        }
+
+        if (stacked) {
+            // Main row (top): first 5 house slots + arriving guest (entry stays here)
+            const mainRow = document.createElement('div');
+            mainRow.className = 'slots-main-row';
+            houseSlots.slice(0, 5).forEach(s => mainRow.appendChild(s));
+            if (arrivingSlot) mainRow.appendChild(arrivingSlot);
+
+            // Overflow row (below main): slots 6+
+            const overflowRow = document.createElement('div');
+            overflowRow.className = 'slots-overflow-row';
+            houseSlots.slice(5).forEach(s => overflowRow.appendChild(s));
+
+            slotsEl.appendChild(mainRow);
+            slotsEl.appendChild(overflowRow);
+        } else {
+            houseSlots.forEach(s => slotsEl.appendChild(s));
+            if (arrivingSlot) slotsEl.appendChild(arrivingSlot);
         }
 
         syncVenueActors(who);
