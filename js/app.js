@@ -3448,8 +3448,8 @@
                         <tr><td>TRASH</td><td>Discard the next queued guest</td></tr>
                         <tr><td>PLANT</td><td>Queue a Gatecrasher for opponent</td></tr>
                         <tr><td>LOCK</td><td>Lock a guest until door close</td></tr>
-                        <tr><td>BOOT</td><td>Remove a guest from the house (they leave)</td></tr>
-                        <tr><td>BOUNCE</td><td>Remove a guest and put them back on top of your queue</td></tr>
+                        <tr><td>BOOT</td><td>Remove a guest from the house (they leave). Your Heat drops by that guest's Heat value.</td></tr>
+                        <tr><td>BOUNCE</td><td>Remove a guest and put them back on top of your queue. Your Heat drops by that guest's Heat value.</td></tr>
                         <tr><td>NUDGE</td><td>Move a guest 1 step toward Newest (toward entry)</td></tr>
                     </table>
                 `;
@@ -3457,7 +3457,7 @@
             case 'targeting':
                 el.innerHTML = `
                     <h4>Targeting</h4>
-                    <p>Lane abilities (Boot, Bounce, Nudge, Lock) target a specific guest by position in your house.</p>
+                    <p>Lane abilities (Boot, Bounce, Nudge, Lock) target a specific guest by position in your house. Booting or Bouncing a guest also reduces your Heat by that guest's Heat value.</p>
                     <table class="glossary-table">
                         <tr><th>Target</th><th>Meaning</th></tr>
                         <tr><td>Oldest</td><td>Guest closest to the exit (last in house)</td></tr>
