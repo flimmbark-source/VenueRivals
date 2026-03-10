@@ -1573,7 +1573,12 @@ body {
 
 .guest-slots.has-stacked-slots {
     flex-direction: column;
+    flex-wrap: nowrap;
+    flex: initial;
     align-items: flex-start;
+    justify-content: flex-end;
+    overflow-x: visible;
+    gap: 4px;
 }
 
 .slots-main-row,
@@ -1584,8 +1589,10 @@ body {
     flex-shrink: 0;
 }
 
-.venue-scene .guest-slots.has-stacked-slots {
+.venue-scene #player-slots.has-stacked-slots,
+.venue-scene #rival-slots.has-stacked-slots {
     width: fit-content;
+    justify-content: flex-end;
 }
 
 .guest-slots::after {
