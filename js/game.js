@@ -373,7 +373,7 @@ const GUESTS = {
       icon: "🧭",
       desc: "Peek 2, choose their order.",
       trigger: "flash",
-      type: "stackChoice", // or keep revealAndReorder but refactor to choice
+      type: "revealAndReorder",
       value: 2,
     },
     desc: "Peek 2, choose their order.",
@@ -1371,6 +1371,22 @@ const GUESTS = {
         const [entry] = player.house.splice(targetIdx, 1);
         player.house.splice(newIdx, 0, entry);
         result.effects.push(`nudged ${GUESTS[getGuestId(entry)].name} forward`);
+        break;
+      }
+      case "lock": {
+        const targeting = guest.ability.targeting || "rightOfSelf";
+        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        if (targetIdx < 0 || targetIdx >= player.house.length) {
+          result.effects.push("no valid target");
+          break;
+        }
+        const lockTarget = player.house[targetIdx];
+        if (typeof lockTarget !== "string") {
+          lockTarget.lockUntilClose = true;
+          result.effects.push(`locked ${GUESTS[getGuestId(lockTarget)].name}`);
+        } else {
+          result.effects.push("no valid target");
+        }
         break;
       }
       case "bounceLeftmost": {

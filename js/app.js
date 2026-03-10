@@ -1390,6 +1390,9 @@
         guests.forEach((entry) => {
             const guestId = entry.guestId || entry;
             const slot = createGuestSlot(guestId, false, { interactive: false });
+            if (typeof entry !== 'string' && entry.abilityUsed) {
+                slot.classList.add('ability-used');
+            }
             if (who === 'player') {
                 const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';

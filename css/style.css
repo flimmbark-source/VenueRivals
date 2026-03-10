@@ -1683,6 +1683,11 @@ body {
     filter: drop-shadow(0 0 4px rgba(255, 209, 102, 0.45));
 }
 
+.guest-slot.ability-used .ability-icon-badge {
+    opacity: 0.35;
+    filter: grayscale(1);
+}
+
 .guest-slot.tier-common { border-color: #444; }
 .guest-slot.tier-uncommon { border-color: rgba(76, 201, 240, 0.5); }
 .guest-slot.tier-rare { border-color: rgba(127, 90, 240, 0.6); }
