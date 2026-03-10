@@ -1454,8 +1454,8 @@
             if (!entry) return '';
             if (typeof entry === 'string') return entry;
             const guestId = entry.guestId || '';
-            const instanceId = entry.instanceId != null ? entry.instanceId : '';
-            return `${guestId}:${instanceId}`;
+            if (entry.instanceId == null) return guestId;
+            return `${guestId}:${entry.instanceId}`;
         }).join('|');
         return `${houseKey}::arriving:${playerState.arrivingGuest || ''}`;
     }
