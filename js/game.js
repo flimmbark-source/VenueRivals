@@ -25,7 +25,7 @@ const GUESTS = {
   },
 
   chiller: {
-    name: "Chiller",
+    name: "Chill Bro",
     emoji: "❄️",
     heat: 0,
     money: 0,
@@ -84,7 +84,7 @@ const GUESTS = {
     emoji: "🙌",
     heat: 1,
     money: 1,
-    points: 2,
+    points: 1,
     cost: 3,
     venue: "Neutral",
     tags: ["Performer"],
@@ -124,14 +124,14 @@ const GUESTS = {
     tags: ["Performer"],
     tier: "common",
     ability: {
-      name: "Bounce",
+      name: "Nudge",
       icon: "🔄",
-      desc: "Bounce Oldest guest to top of Queue.",
+      desc: "Nudge your Oldest guest.",
       trigger: "flash",
-      type: "bounce",
+      type: "nudge",
       targeting: "oldest",
     },
-    desc: "Bounce Oldest guest to top of Queue.",
+    desc: "Nudge your Oldest guest.",
   },
 
   usher: {
@@ -145,14 +145,14 @@ const GUESTS = {
     tags: ["VIP"],
     tier: "common",
     ability: {
-      name: "Nudge",
+      name: "Bounce",
       icon: "👋",
-      desc: "Nudge Oldest guest right 1 slot.",
+      desc: "Bounce the Oldest guest to top of Queue",
       trigger: "flash",
-      type: "nudge",
+      type: "bounce",
       targeting: "oldest",
     },
-    desc: "Nudge Oldest guest right 1 slot.",
+    desc: "Bounce the Oldest guest to top of Queue",
   },
 
   floorRunner: {
@@ -265,12 +265,12 @@ const GUESTS = {
     ability: {
       name: "VIP Rope",
       icon: "⭐",
-      desc: "Lock the guest Right of this one.",
+      desc: "Bounce the guest on the Left.",
       trigger: "flash",
-      type: "lock",
-      targeting: "rightOfSelf",
+      type: "bounce",
+      targeting: "leftOfSelf",
     },
-    desc: "Lock the guest Right of this one.",
+    desc: "Bounce the guest on the Left",
   },
 
   // === VELVET ROOM ===
@@ -287,12 +287,12 @@ const GUESTS = {
     ability: {
       name: "Spotlight",
       icon: "🔦",
-      desc: "Lock the guest Left of this one.",
+      desc: "Nudge the guest on the Left.",
       trigger: "flash",
-      type: "lock",
+      type: "nudge",
       targeting: "leftOfSelf",
     },
-    desc: "Lock the guest Left of this one.",
+    desc: "Nudge the guest on the Left.",
   },
 
   champagneHost: {
@@ -382,9 +382,9 @@ const GUESTS = {
   trendBroker: {
     name: "Trend Broker",
     emoji: "📈",
-    heat: 1,
+    heat: 2,
     money: 3,
-    points: 0,
+    points: 2,
     cost: 5,
     venue: "Night Market",
     tags: ["Broker"],
@@ -392,12 +392,12 @@ const GUESTS = {
     ability: {
       name: "Insider Trade",
       icon: "💸",
-      desc: "Steal 1 Money from your opponent.",
+      desc: "Trash the top of your Queue.",
       trigger: "flash",
-      type: "stealMoney",
+      type: "discardnext",
       value: 1,
     },
-    desc: "Steal 1 Money from your opponent.",
+    desc: "Trash the top of your Queue.",
   },
 
   curioDealer: {
@@ -469,19 +469,19 @@ const GUESTS = {
     heat: 1,
     money: 4,
     points: 1,
-    cost: 8,
+    cost: 7,
     venue: "Back Alley",
     tags: ["Outlaw"],
     tier: "common",
     ability: {
       name: "Getaway",
       icon: "↪️",
-      desc: "Boot out guest Left of this one.",
+      desc: "Boot out the guest on the Left.",
       trigger: "flash",
       type: "boot",
       targeting: "leftOfSelf",
     },
-    desc: "Boot out guest Left of this one.",
+    desc: "Boot out the guest on the Left.",
   },
 
   fence: {
@@ -937,9 +937,9 @@ const GUESTS = {
       guests: [
         "regular",
         "regular",
-        "regular",
         "tipper",
         "tipper",
+        "hypeFriend",
         "hypeFriend",
         "hypeFriend",
         "bigSpender",
@@ -1510,6 +1510,36 @@ const GUESTS = {
             ? `scored ${bonus} from ${adjacent} adjacent`
             : "no adjacent guests",
         );
+        break;
+      }
+      case "lock": {
+        const targeting = guest.ability.targeting || "rightOfSelf";
+        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        if (targetIdx < 0 || targetIdx >= player.house.length) {
+          result.effects.push("no valid target");
+          break;
+        }
+        const entry = normalizeHouseEntry(player, targetIdx);
+        entry.lockUntilClose = true;
+        result.effects.push(`locked ${GUESTS[getGuestId(entry)].name}`);
+        break;
+      }
+      case "stackChoice": {
+        const revealed = [];
+        if (player.roundDeck.length >= 2) {
+          const topIdx = player.roundDeck.length - 1;
+          const secondIdx = player.roundDeck.length - 2;
+          revealed.push(player.roundDeck[topIdx], player.roundDeck[secondIdx]);
+          result.revealedGuests = revealed;
+          result.needsStackChoice = true;
+          result.effects.push(`peeked: ${GUESTS[revealed[0]].name}, ${GUESTS[revealed[1]].name} — choose order`);
+        } else if (player.roundDeck.length === 1) {
+          revealed.push(player.roundDeck[0]);
+          result.revealedGuests = revealed;
+          result.effects.push(`peeked: ${GUESTS[player.roundDeck[0]].name}`);
+        } else {
+          result.effects.push("queue empty");
+        }
         break;
       }
     }
