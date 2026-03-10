@@ -97,40 +97,56 @@
     //        'scarf','bag','backpack','camera','clipboard','headphones',
     //        'cape','vest','apron','holster','cane','crown','gloves','bandolier'
     const GUEST_SPRITES = {
-        regular:       { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#7788aa', pants:'#445566', shoes:'#333344', items:[] },
-        chiller:       { skin:'light',  hair:'slick',    hairColor:'blue',   shirt:'#44aadd', pants:'#335577', shoes:'#224466', items:['shades','scarf'] },
-        tipper:        { skin:'medium', hair:'short',    hairColor:'black',  shirt:'#2cb67d', pants:'#445544', shoes:'#333333', items:['bowtie','chain'] },
-        tipOffArtist:  { skin:'tan',    hair:'slick',    hairColor:'black',  shirt:'#333344', pants:'#222233', shoes:'#111122', items:['shades','holster'] },
-        hypeFriend:    { skin:'medium', hair:'spiky',    hairColor:'orange', shirt:'#ffaa33', pants:'#886622', shoes:'#664411', items:['headphones'] },
-        hypester:      { skin:'tan',    hair:'spiky',    hairColor:'red',    shirt:'#ee4422', pants:'#882211', shoes:'#661100', items:['earring','chain','vest'] },
-        standIn:       { skin:'light',  hair:'long',     hairColor:'purple', shirt:'#7755bb', pants:'#554488', shoes:'#332266', items:['mask','cape'] },
-        usher:         { skin:'medium', hair:'slick',    hairColor:'black',  shirt:'#222233', pants:'#111122', shoes:'#0a0a18', items:['gloves','badge'] },
-        floorRunner:   { skin:'tan',    hair:'bandana',  hairColor:'brown',  shirt:'#55cc77', pants:'#336644', shoes:'#224422', items:['badge','backpack'] },
-        bookkeeper:    { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#bbaa77', pants:'#665544', shoes:'#443322', items:['glasses','clipboard'] },
-        rovingCritic:  { skin:'light',  hair:'tophat',   hairColor:'white',  shirt:'#886644', pants:'#443322', shoes:'#221100', items:['monocle','cane'] },
-        partyPromoter: { skin:'medium', hair:'afro',     hairColor:'blonde', shirt:'#ee6633', pants:'#aa4422', shoes:'#882211', items:['headphones','chain'] },
-        bigSpender:    { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#ffd166', pants:'#aa8833', shoes:'#886622', items:['bowtie','bag','crown'] },
-        celebrity:     { skin:'tan',    hair:'long',     hairColor:'blonde', shirt:'#dd33aa', pants:'#882266', shoes:'#661155', items:['shades','scarf','earring'] },
-        headliner:     { skin:'medium', hair:'ponytail', hairColor:'pink',   shirt:'#ffcc00', pants:'#aa8800', shoes:'#886600', items:['earring','cape','crown'] },
-        champagneHost: { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#111122', pants:'#0a0a18', shoes:'#050510', items:['bowtie','vest'] },
-        velvetBouncer: { skin:'dark',   hair:'bald',     hairColor:'black',  shirt:'#222233', pants:'#111122', shoes:'#0a0a18', items:['badge','earring'] },
-        spotlightPhotographer: { skin:'medium', hair:'beanie', hairColor:'brown', shirt:'#666688', pants:'#444466', shoes:'#333355', items:['camera','bag'] },
-        galleryScout:  { skin:'tan',    hair:'cap',      hairColor:'brown',  shirt:'#558844', pants:'#445533', shoes:'#334422', items:['backpack'] },
-        trendBroker:   { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#334466', pants:'#222244', shoes:'#111133', items:['glasses','tie','clipboard'] },
-        curioDealer:   { skin:'medium', hair:'cap',      hairColor:'red',    shirt:'#885533', pants:'#664422', shoes:'#553311', items:['earring','bag','apron'] },
-        stylist:       { skin:'light',  hair:'pigtails', hairColor:'pink',   shirt:'#cc44cc', pants:'#883388', shoes:'#662266', items:['scarf','bag'] },
-        gateRunner:    { skin:'tan',    hair:'hood',     hairColor:'black',  shirt:'#cc2222', pants:'#661111', shoes:'#440000', items:['scar','bandolier'] },
-        wheelman:      { skin:'medium', hair:'cap',      hairColor:'brown',  shirt:'#555555', pants:'#333333', shoes:'#222222', items:['shades','gloves'] },
-        fence:         { skin:'dark',   hair:'hood',     hairColor:'black',  shirt:'#444433', pants:'#332222', shoes:'#221111', items:['bag','holster'] },
-        provocateur:   { skin:'tan',    hair:'mohawk',   hairColor:'red',    shirt:'#881133', pants:'#440022', shoes:'#330011', items:['scar','chain','earring'] },
-        gatecrasher:   { skin:'dark',   hair:'mohawk',   hairColor:'red',    shirt:'#aa1111', pants:'#551111', shoes:'#330000', items:['scar','bandolier'] },
+        // === NEUTRAL / MAIN FLOOR ===
+        familiarFace:    { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#7788aa', pants:'#445566', shoes:'#333344', items:[] },
+        bottleBringer:   { skin:'medium', hair:'short',    hairColor:'black',  shirt:'#2cb67d', pants:'#445544', shoes:'#333333', items:['bag'] },
+        loudFriend:      { skin:'medium', hair:'spiky',    hairColor:'orange', shirt:'#ffaa33', pants:'#886622', shoes:'#664411', items:['headphones'] },
+        doorWatcher:     { skin:'tan',    hair:'slick',    hairColor:'black',  shirt:'#333344', pants:'#222233', shoes:'#111122', items:['shades'] },
+        groupChatHost:   { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#5577cc', pants:'#334466', shoes:'#223355', items:['clipboard','badge'] },
+        plusOnePrince:   { skin:'light',  hair:'slick',    hairColor:'blonde', shirt:'#ffd166', pants:'#aa8833', shoes:'#886622', items:['crown','bowtie'] },
+        nameDropper:     { skin:'tan',    hair:'long',     hairColor:'blonde', shirt:'#dd33aa', pants:'#882266', shoes:'#661155', items:['shades','scarf','earring'] },
+        porchBuddy:      { skin:'medium', hair:'cap',      hairColor:'brown',  shirt:'#66aa88', pants:'#447755', shoes:'#335544', items:[] },
+        fedUpRoommate:   { skin:'tan',    hair:'spiky',    hairColor:'red',    shirt:'#ee4422', pants:'#882211', shoes:'#661100', items:['earring'] },
+        resetHost:       { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#bbaa77', pants:'#665544', shoes:'#443322', items:['clipboard'] },
+        // === VELVET ROOM ===
+        mainCharacter:   { skin:'tan',    hair:'long',     hairColor:'purple', shirt:'#cc44cc', pants:'#882288', shoes:'#661166', items:['cape','crown'] },
+        storyPoster:     { skin:'medium', hair:'beanie',   hairColor:'brown',  shirt:'#666688', pants:'#444466', shoes:'#333355', items:['camera'] },
+        danceCaptain:    { skin:'light',  hair:'ponytail', hairColor:'pink',   shirt:'#ff6699', pants:'#aa4466', shoes:'#882244', items:['earring','headphones'] },
+        afterpartyHost:  { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#111122', pants:'#0a0a18', shoes:'#050510', items:['bowtie','vest'] },
+        wallflower:      { skin:'light',  hair:'long',     hairColor:'brown',  shirt:'#99aa88', pants:'#667755', shoes:'#445533', items:['scarf'] },
+        linkUpFriend:    { skin:'medium', hair:'short',    hairColor:'black',  shirt:'#5577cc', pants:'#334477', shoes:'#223366', items:['chain','badge'] },
+        headliner:       { skin:'medium', hair:'ponytail', hairColor:'pink',   shirt:'#ffcc00', pants:'#aa8800', shoes:'#886600', items:['earring','cape','crown'] },
+        socialClimber:   { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#334466', pants:'#222244', shoes:'#111133', items:['glasses','tie'] },
+        hypeSquad:       { skin:'medium', hair:'afro',     hairColor:'blonde', shirt:'#ee6633', pants:'#aa4422', shoes:'#882211', items:['headphones','chain'] },
+        partyPhotographer: { skin:'medium', hair:'beanie', hairColor:'brown',  shirt:'#666688', pants:'#444466', shoes:'#333355', items:['camera','bag'] },
+        // === NIGHT MARKET ===
+        windowWatcher:   { skin:'tan',    hair:'cap',      hairColor:'brown',  shirt:'#558844', pants:'#445533', shoes:'#334422', items:['backpack'] },
+        vipWrangler:     { skin:'light',  hair:'tophat',   hairColor:'white',  shirt:'#886644', pants:'#443322', shoes:'#221100', items:['monocle','cane'] },
+        tabRunner:       { skin:'medium', hair:'short',    hairColor:'black',  shirt:'#2cb67d', pants:'#445544', shoes:'#333333', items:['bowtie','chain'] },
+        coolOffSmoker:   { skin:'tan',    hair:'slick',    hairColor:'black',  shirt:'#44aadd', pants:'#335577', shoes:'#224466', items:['shades'] },
+        bottlePopper:    { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#ffd166', pants:'#aa8833', shoes:'#886622', items:['bowtie','bag'] },
+        bigPlanner:      { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#bbaa77', pants:'#665544', shoes:'#443322', items:['glasses','clipboard'] },
+        highRoller:      { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#ffd166', pants:'#aa8833', shoes:'#886622', items:['crown','chain'] },
+        socialButterfly: { skin:'light',  hair:'pigtails', hairColor:'pink',   shirt:'#cc44cc', pants:'#883388', shoes:'#662266', items:['scarf','bag'] },
+        magnetGuest:     { skin:'dark',   hair:'short',    hairColor:'black',  shirt:'#7755bb', pants:'#554488', shoes:'#332266', items:['chain','earring'] },
+        // === BACK ALLEY ===
+        addressLeaker:   { skin:'tan',    hair:'hood',     hairColor:'black',  shirt:'#cc2222', pants:'#661111', shoes:'#440000', items:['scar','bandolier'] },
+        messyDrunk:      { skin:'medium', hair:'spiky',    hairColor:'red',    shirt:'#aa4422', pants:'#663311', shoes:'#442200', items:['scar'] },
+        dramaStarter:    { skin:'tan',    hair:'mohawk',   hairColor:'red',    shirt:'#881133', pants:'#440022', shoes:'#330011', items:['scar','chain','earring'] },
+        chaosChaser:     { skin:'medium', hair:'bandana',  hairColor:'brown',  shirt:'#55cc77', pants:'#336644', shoes:'#224422', items:['bandolier'] },
+        lateLegend:      { skin:'light',  hair:'long',     hairColor:'purple', shirt:'#7755bb', pants:'#554488', shoes:'#332266', items:['mask','cape'] },
+        rumorQueen:      { skin:'light',  hair:'pigtails', hairColor:'blonde', shirt:'#aa5588', pants:'#773366', shoes:'#552244', items:['earring','bag'] },
+        counselor:       { skin:'dark',   hair:'bald',     hairColor:'black',  shirt:'#556677', pants:'#334455', shoes:'#223344', items:['glasses'] },
+        cupid:           { skin:'light',  hair:'long',     hairColor:'pink',   shirt:'#ff6699', pants:'#cc4477', shoes:'#aa2255', items:['cape','earring'] },
+        // === TROUBLE ===
+        gatecrasher:     { skin:'dark',   hair:'mohawk',   hairColor:'red',    shirt:'#aa1111', pants:'#551111', shoes:'#330000', items:['scar','bandolier'] },
     };
 
     // ---- Sprite drawing engine ----
     function generateSpriteSheet(guestId) {
         if (_spriteCache[guestId]) return _spriteCache[guestId];
 
-        const bp = GUEST_SPRITES[guestId] || GUEST_SPRITES.regular;
+        const bp = GUEST_SPRITES[guestId] || GUEST_SPRITES.familiarFace;
         const skin = SKIN[bp.skin] || SKIN.light;
         const skinDark = skinShade(skin, 30);
         const hairC = HAIR_COLORS[bp.hairColor] || bp.hairColor;
