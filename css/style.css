@@ -1571,6 +1571,17 @@ body {
     position: relative;
 }
 
+.guest-slots.has-stacked-slots {
+    flex-wrap: wrap-reverse;
+    justify-content: flex-start;
+    max-width: calc(5 * 46px + 4 * 3px);
+    align-content: flex-end;
+}
+
+.venue-scene .guest-slots.has-stacked-slots {
+    width: fit-content;
+    max-width: calc(5 * 46px + 4 * 3px);
+}
 
 .guest-slots::after {
     content: '';
@@ -2576,6 +2587,12 @@ body {
     }
 
     .guest-slot { width: 52px; height: 64px; font-size: 26px; }
+    .guest-slots.has-stacked-slots {
+        max-width: calc(5 * 52px + 4 * 3px);
+    }
+    .venue-scene .guest-slots.has-stacked-slots {
+        max-width: calc(5 * 52px + 4 * 3px);
+    }
     .arriving-guest-card { width: 44px; height: 52px; font-size: 28px; }
 }
 

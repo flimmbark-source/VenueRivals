@@ -1372,6 +1372,11 @@
         const venue = Game.VENUES[player.venueId];
 
         const houseCapacity = Game.getHouseCapacity(venue, player);
+        if (houseCapacity > 5) {
+            slotsEl.classList.add('has-stacked-slots');
+        } else {
+            slotsEl.classList.remove('has-stacked-slots');
+        }
         // Count occupied slots: house + arriving guest (cap to capacity for empties)
         const occupiedCount = Math.min(player.house.length, houseCapacity) + (player.arrivingGuest ? 1 : 0);
         
