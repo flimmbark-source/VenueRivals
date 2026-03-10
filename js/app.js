@@ -1457,16 +1457,20 @@
         }
 
         if (stacked) {
-            // Main row (top): first 5 house slots + arriving guest (entry stays here)
+            // Combine house slots and arriving slot into a unified list so the
+            // layout stays consistent before and after the door is closed.
+            const allSlots = [...houseSlots];
+            if (arrivingSlot) allSlots.push(arrivingSlot);
+
+            // Main row (top): first 5 slots
             const mainRow = document.createElement('div');
             mainRow.className = 'slots-main-row';
-            houseSlots.slice(0, 5).forEach(s => mainRow.appendChild(s));
-            if (arrivingSlot) mainRow.appendChild(arrivingSlot);
+            allSlots.slice(0, 5).forEach(s => mainRow.appendChild(s));
 
             // Overflow row (below main): slots 6+
             const overflowRow = document.createElement('div');
             overflowRow.className = 'slots-overflow-row';
-            houseSlots.slice(5).forEach(s => overflowRow.appendChild(s));
+            allSlots.slice(5).forEach(s => overflowRow.appendChild(s));
 
             slotsEl.appendChild(mainRow);
             slotsEl.appendChild(overflowRow);
