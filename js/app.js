@@ -1389,7 +1389,9 @@
         }
         guests.forEach((entry) => {
             const guestId = entry.guestId || entry;
+            const abilityUsed = typeof entry !== 'string' && !!entry.abilityUsed;
             const slot = createGuestSlot(guestId, false, { interactive: false });
+            if (abilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
                 const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
@@ -1405,11 +1407,11 @@
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
-                    showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', guestId, instanceId });
+                    showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', guestId, instanceId, abilityUsed });
                 });
             } else {
                 slot.addEventListener('click', () => {
-                    showTooltipForTarget(slot, guestId, { who: 'rival', source: 'house' });
+                    showTooltipForTarget(slot, guestId, { who: 'rival', source: 'house', abilityUsed });
                 });
             }
             slotsEl.appendChild(slot);
@@ -1420,6 +1422,7 @@
             const arrivingGuestId = player.arrivingGuest;
             const slot = createGuestSlot(arrivingGuestId, false, { interactive: false });
             slot.classList.add('arriving-in-grid');
+            if (who === 'player' && player.arrivingAbilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
                 slot.dataset.guestId = arrivingGuestId;
@@ -1431,7 +1434,8 @@
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
-                    showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving', guestId: arrivingGuestId });
+                    const arrivingAbilityUsed = !!gameState.player.arrivingAbilityUsed;
+                    showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving', guestId: arrivingGuestId, abilityUsed: arrivingAbilityUsed });
                 });
             } else {
                 slot.addEventListener('click', () => {
@@ -1676,16 +1680,23 @@
 
         const tooltipWho = options.who || 'rival';
         const tooltipAbilityTarget = tooltipWho === 'player' ? buildAbilityTargetFromOptions(options) : null;
-        const canTriggerAbility = !!tooltipAbilityTarget;
+        const isAbilityUsed = !!options.abilityUsed;
+        const canTriggerAbility = !!tooltipAbilityTarget && !isAbilityUsed;
 
         let abilityHTML = '';
         if (guest.ability) {
-            abilityHTML = `<div class="tt-ability">${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
+            const abilityStyle = isAbilityUsed ? ' style="opacity:0.5"' : '';
+            abilityHTML = `<div class="tt-ability"${abilityStyle}>${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
         }
 
-        const abilityBtnHTML = tooltipWho === 'player'
-            ? `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>Ability</button>`
-            : '';
+        let abilityBtnHTML = '';
+        if (tooltipWho === 'player') {
+            if (isAbilityUsed && guest.ability) {
+                abilityBtnHTML = `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" disabled>Used</button>`;
+            } else {
+                abilityBtnHTML = `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>Ability</button>`;
+            }
+        }
 
         el.innerHTML = `
             <div class="tt-name">${guest.emoji} ${guest.name}</div>
@@ -2367,7 +2378,26 @@
         updateVenueStatus(selfKey);
         updateVenueStatus(opponentKey);
         updateHUD();
-        removeTooltip();
+
+        // Keep tooltip open for player ability use — pulse it and disable button
+        if (selfKey === 'player' && tooltipEl) {
+            tooltipEl.classList.add('tooltip-pulse');
+            const abilityBtn = tooltipEl.querySelector('#btn-tooltip-ability');
+            if (abilityBtn) {
+                abilityBtn.disabled = true;
+                abilityBtn.textContent = 'Used';
+            }
+            // Show the ability description as used
+            const abilityDesc = tooltipEl.querySelector('.tt-ability');
+            if (abilityDesc) {
+                abilityDesc.style.opacity = '0.5';
+            }
+            setTimeout(() => {
+                if (tooltipEl) tooltipEl.classList.remove('tooltip-pulse');
+            }, 600);
+        } else {
+            removeTooltip();
+        }
         removeIconTooltip();
 
         if (opponent.busted) {
@@ -2383,8 +2413,8 @@
     }
 
     function handleAbility(explicitTarget = null) {
-        dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
+            dismissInfoPanelPopup();
             multiplayerSession?.publish('request-action', { action: 'ability', actor: 'rival' });
             return;
         }

@@ -1512,6 +1512,36 @@ const GUESTS = {
         );
         break;
       }
+      case "lock": {
+        const targeting = guest.ability.targeting || "rightOfSelf";
+        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        if (targetIdx < 0 || targetIdx >= player.house.length) {
+          result.effects.push("no valid target");
+          break;
+        }
+        const entry = normalizeHouseEntry(player, targetIdx);
+        entry.lockUntilClose = true;
+        result.effects.push(`locked ${GUESTS[getGuestId(entry)].name}`);
+        break;
+      }
+      case "stackChoice": {
+        const revealed = [];
+        if (player.roundDeck.length >= 2) {
+          const topIdx = player.roundDeck.length - 1;
+          const secondIdx = player.roundDeck.length - 2;
+          revealed.push(player.roundDeck[topIdx], player.roundDeck[secondIdx]);
+          result.revealedGuests = revealed;
+          result.needsStackChoice = true;
+          result.effects.push(`peeked: ${GUESTS[revealed[0]].name}, ${GUESTS[revealed[1]].name} — choose order`);
+        } else if (player.roundDeck.length === 1) {
+          revealed.push(player.roundDeck[0]);
+          result.revealedGuests = revealed;
+          result.effects.push(`peeked: ${GUESTS[player.roundDeck[0]].name}`);
+        } else {
+          result.effects.push("queue empty");
+        }
+        break;
+      }
     }
   }
 
