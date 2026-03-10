@@ -2370,8 +2370,21 @@
         updateVenueStatus(selfKey);
         updateVenueStatus(opponentKey);
         updateHUD();
-        removeTooltip();
-        removeIconTooltip();
+        if (tooltipEl) {
+            const el = tooltipEl;
+            el.classList.remove('tooltip-pulse');
+            // Force reflow so re-adding the class restarts the animation
+            void el.offsetWidth;
+            el.classList.add('tooltip-pulse');
+            // Disable the ability button immediately so it can't be double-fired
+            const abilityBtn = el.querySelector('#btn-tooltip-ability');
+            if (abilityBtn) abilityBtn.disabled = true;
+            el.addEventListener('animationend', () => {
+                el.classList.remove('tooltip-pulse');
+            }, { once: true });
+        } else {
+            removeIconTooltip();
+        }
 
         if (opponent.busted) {
             document.getElementById(`${opponentKey}-area`).classList.add('bust-flash');
