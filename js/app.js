@@ -1793,8 +1793,10 @@
             exitDoor.setAttribute('aria-disabled', canClose ? 'false' : 'true');
         });
 
-        const flashButton = tooltipEl?.querySelector('#btn-tooltip-ability');
-        if (flashButton) flashButton.disabled = !canFlash;
+        // Tooltip ability button state is decided when the tooltip opens based on
+        // the hovered/selected guest context. Avoid overriding it here with
+        // panel-level selection state, which can incorrectly disable arriving
+        // guest abilities.
     }
 
     // === Guest Detail Panel ===

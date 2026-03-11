@@ -344,7 +344,7 @@ const AI = (() => {
                     if (typeof te === 'string') continue;
                     const tg = Game.GUESTS[te.guestId];
                     if (!tg) continue;
-                    const tv = tg.points + ((te.bonusPoints) || 0);
+                    const tv = tg.points + tg.money + ((te.bonusPoints) || 0);
                     if (tv > bestTargetValue) {
                         bestTargetValue = tv;
                         bestTarget = te;

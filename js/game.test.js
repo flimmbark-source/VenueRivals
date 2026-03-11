@@ -242,17 +242,18 @@ describe("scoreGuest ability", () => {
     expect(result.needsTargetChoice).toBe(true);
   });
 
-  test("scores target guest's points", () => {
+  test("scores target guest's points and money", () => {
     const activator = makeHouseEntry("storyPoster");
-    const target = makeHouseEntry("headliner"); // headliner has 2 points
-    const player = makePlayer({ house: [activator, target], roundPoints: 0 });
+    const target = makeHouseEntry("loudFriend"); // loudFriend has 1 point, 1 money
+    const player = makePlayer({ house: [activator, target], roundPoints: 0, roundMoney: 0 });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
       source: "house", guestId: "storyPoster", instanceId: activator.instanceId,
       targetInstanceId: target.instanceId,
     });
-    expect(player.roundPoints).toBe(2); // headliner's base points
-    expect(result.effects[0]).toMatch(/scored 2 points from Headliner/);
+    expect(player.roundPoints).toBe(1); // loudFriend's base points
+    expect(player.roundMoney).toBe(1); // loudFriend's base money
+    expect(result.effects[0]).toMatch(/scored 1 points and 1 money from Loud Friend/);
   });
 });
 
