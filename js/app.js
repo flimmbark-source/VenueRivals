@@ -1499,18 +1499,19 @@
             const allSlots = [...houseSlots];
             if (arrivingSlot) allSlots.push(arrivingSlot);
 
-            // Main row (top): first 5 slots
+            // Base row (bottom): first 5 slots stay fixed in place.
             const mainRow = document.createElement('div');
             mainRow.className = 'slots-main-row';
             allSlots.slice(0, 5).forEach(s => mainRow.appendChild(s));
 
-            // Overflow row (below main): slots 6+
+            // Overflow row (above base): slots 6+ stack upward.
             const overflowRow = document.createElement('div');
             overflowRow.className = 'slots-overflow-row';
             allSlots.slice(5).forEach(s => overflowRow.appendChild(s));
 
-            slotsEl.appendChild(mainRow);
+            // Append overflow first so extra slots appear above the original row.
             slotsEl.appendChild(overflowRow);
+            slotsEl.appendChild(mainRow);
         } else {
             houseSlots.forEach(s => slotsEl.appendChild(s));
             if (arrivingSlot) slotsEl.appendChild(arrivingSlot);
