@@ -94,7 +94,7 @@ const GUESTS = {
   // === VELVET ROOM ===
   mainCharacter: {
     name: "Main Character", emoji: "⭐",
-    heat: 1, money: 0, points: 3, cost: 6,
+    heat: 2, money: 3, points: 3, cost: 6,
     venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "uncommon",
     ability: { name: "Make an Entrance", icon: "✨", desc: "On arrival, Score 2.", trigger: "arrival", type: "scoreNow", value: 2 },
     desc: "MAKE AN ENTRANCE — On arrival, score 2.",
@@ -122,7 +122,7 @@ const GUESTS = {
   },
   wallflower: {
     name: "Wallflower", emoji: "🌸",
-    heat: 0, money: 0, points: 1, cost: 4,
+    heat: 0, money: 3, points: 0, cost: 4,
     venue: "Velvet Room", tags: ["VIP"], tier: "common",
     ability: { name: "Wallflower", icon: "🌸", desc: "+1 Point for each empty slot.", trigger: "scoring", type: "wallflower" },
     desc: "WALLFLOWER — At scoring, +1 Point for each empty slot.",
@@ -136,7 +136,7 @@ const GUESTS = {
   },
   headliner: {
     name: "Headliner", emoji: "🌟",
-    heat: 2, money: 0, points: 2, cost: 7,
+    heat: 0, money: 4, points: 2, cost: 7,
     venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "rare",
     ability: { name: "Center of Attention", icon: "🔦", desc: "+2 Points if this guest is Newest.", trigger: "scoring", type: "centerOfAttention", value: 2 },
     desc: "CENTER OF ATTENTION — At scoring, +2 Points if this guest is Newest.",
@@ -145,7 +145,7 @@ const GUESTS = {
     name: "Social Climber", emoji: "📈",
     heat: 1, money: 0, points: 2, cost: 7,
     venue: "Velvet Room", tags: ["VIP"], tier: "rare",
-    ability: { name: "Social Climber", icon: "📈", desc: "Permanently gains +1 Point each time it enters, up to +9.", trigger: "arrival", type: "socialClimber", maxBonus: 9 },
+    ability: { name: "Social Climber", icon: "📈", desc: "On arrival, Permanently gains +1 Point each time it enters, up to +9.", trigger: "arrival", type: "socialClimber", maxBonus: 9 },
     desc: "SOCIAL CLIMBER — Each time this guest enters for the first time in a round, it permanently gains +1 Point, up to +9.",
   },
   hypeSquad: {
