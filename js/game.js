@@ -920,17 +920,22 @@ const GUESTS = {
       handleArrivalEffects(player, opponent, guestId, venue, result);
     }
 
-    if (!result.busted) {
+    // Defer drawing the next guest when the arrival ability needs the
+    // player to make a choice (stackChoice / nameDrop) so the deck stays
+    // intact until the choice is resolved.
+    if (!result.busted && !result.needsStackChoice && !result.needsNameDropChoice) {
       const drawRes = drawNextGuest(player, venue);
       if (drawRes.pendingOut) {
         result.pendingOut = drawRes.pendingOut;
         handleDepartureEffects(player, opponent, drawRes.pendingOut, result);
       }
       if (player.busted) result.busted = true;
+    } else if (!result.busted && (result.needsStackChoice || result.needsNameDropChoice)) {
+      result.deferredDraw = true;
     }
 
     // Handle plusOne / magnet: auto-admit the next drawn guest
-    if (!result.busted && (result.plusOneTriggered || result.magnetTriggered) && _depth < 3) {
+    if (!result.busted && !result.deferredDraw && (result.plusOneTriggered || result.magnetTriggered) && _depth < 3) {
       if (player.arrivingGuest && !player.doorClosed && !player.busted) {
         const autoResult = admitGuest(player, venue, opponent, opponentVenue, _depth + 1);
         if (autoResult) {
