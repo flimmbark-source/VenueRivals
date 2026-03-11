@@ -90,6 +90,27 @@ const GUESTS = {
     ability: { name: "Last Call", icon: "🧹", desc: "Clear your house.", trigger: "flash", type: "clearHouse" },
     desc: "LAST CALL — A: Clear your house.",
   },
+    wingMan: {
+    name: "Wingman", emoji: "🤛",
+    heat: 0, money: 2, points: 3, cost: 5,
+    venue: "Neutral", tags: ["VIP"], tier: "common",
+    ability: { name: "Distract", icon: "🔄", desc: "Nudge the guest on the Left.", trigger: "flash", type: "nudge", targeting: "leftOfSelf" },
+    desc: "DISTRACT — A: Nudge the guest on the Left.",
+  },
+    stagehand: {
+    name: "Stagehand", emoji: "👏",
+    heat: 0, money: 2, points: 2, cost: 6,
+    venue: "Neutral", tags: ["Performer"], tier: "uncommon",
+    ability: { name: "Bump Into", icon: "🔄", desc: "Nudge a guest.", trigger: "flash", type: "nudge", targeting: "choice" },
+    desc: "BUMP INTO — A: Nudge a guest.",
+  },
+    dealer: {
+    name: "Dealer", emoji: "🤛",
+    heat: 0, money: 2, points: 4, cost: 8,
+    venue: "Neutral", tags: ["Outlaw"], tier: "Rare",
+    ability: { name: "Annoy", icon: "🔄", desc: "Nudge the oldest guest.", trigger: "flash", type: "nudge", targeting: "oldest" },
+    desc: "ANNOY — A: Nudge the oldest guest.",
+  },
 
   // === VELVET ROOM ===
   mainCharacter: {
@@ -300,9 +321,6 @@ const GUESTS = {
     venue: "Shop", tags: [],
     desc: "Increase your house capacity by 1.",
     tier: "shop", isShopItem: true,
-  },
-  heatCapIncrease: {
-    name: "+1 Heat", emoji: "🌡️",
     money: 0, heat: 0, points: 0, cost: 4,
     venue: "Shop", tags: [],
     desc: "Increase your heat capacity by 1.",
