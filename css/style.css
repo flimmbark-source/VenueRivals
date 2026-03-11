@@ -2307,7 +2307,6 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 8px;
     margin-bottom: 3px;
 }
 
@@ -2317,12 +2316,16 @@ body {
     font-size: 0.9rem;
     color: var(--accent-gold);
     letter-spacing: 2px;
+    position: relative;
+    top: 4px;
 }
 
 .shop-money {
     font-weight: 700;
     font-size: 0.85rem;
     color: var(--accent-tertiary);
+    position: relative;
+    top: 4px;
 }
 
 .shop-layout {
@@ -2356,7 +2359,7 @@ body {
     letter-spacing: 1px;
     text-align: center;
     padding-top: 2px;
-    border-top: 1px solid var(--bg-light);
+    margin-top: 2px;
     width: 100%;
 }
 

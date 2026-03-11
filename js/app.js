@@ -3185,7 +3185,6 @@
         const upgradeLabel = document.createElement('div');
         upgradeLabel.className = 'shop-upgrades-label';
         upgradeLabel.textContent = 'UPGRADES';
-        upgradesPanel.appendChild(upgradeLabel);
 
         ['slotIncrease', 'heatCapIncrease'].forEach(guestId => {
             const guest = Game.GUESTS[guestId];
@@ -3198,6 +3197,7 @@
             const canAfford = !readOnlyShop && shopPlayer.money >= cost;
             renderShopCard(guestId, cost, canAfford, upgradesPanel);
         });
+        upgradesPanel.appendChild(upgradeLabel);
     }
 
     function runDoneShopping(actor = 'player') {
