@@ -2053,6 +2053,7 @@
                     deactivateShopInspectMode();
                 } else {
                     activateShopInspectMode();
+                    showTooltipForTarget(el, guestId, { who: 'shop', source: 'shop' });
                 }
             }, holdMs);
         };
