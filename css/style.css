@@ -843,6 +843,7 @@ body {
     padding: 0;
 }
 
+/* Title is baked into the background image */
 #setup-screen .arcade-title {
     visibility: hidden;
     height: 0;
@@ -852,31 +853,72 @@ body {
 }
 
 #setup-screen .setup-container {
-    margin: auto;
-    padding-top: 8px;
-    padding-bottom: 20px;
+    margin: 0 auto;
+    padding: 6px 14px 10px;
+    max-width: 500px;
+    width: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
+/* --- Header sits above the frame title --- */
+#setup-screen .arcade-header-panel {
+    position: relative;
+    z-index: 2;
+    padding: 4px 2px;
+}
+
+/* --- All panels: transparent to show background frame --- */
 #setup-screen .arcade-panel {
-    background: rgba(15, 14, 23, 0.55);
-    border-color: transparent;
+    background: rgba(10, 9, 24, 0.45);
+    border: 1px solid rgba(127, 90, 240, 0.15);
     box-shadow: none;
+    border-radius: 4px;
 }
 
 #setup-screen .arcade-panel::before {
     display: none;
 }
 
+/* --- Venue Panel (large top area) --- */
 #setup-screen .arcade-venue-panel {
-    border-color: transparent;
-    box-shadow: none;
+    flex: 1 1 auto;
+    min-height: 120px;
+    border-color: rgba(255, 209, 102, 0.2);
 }
 
+/* --- Venue Name Input --- */
+#setup-screen .arcade-sign-panel {
+    padding: 6px 10px;
+    border-color: rgba(255, 209, 102, 0.2);
+}
+
+/* --- Deck & Roster panels --- */
+#setup-screen .arcade-deck-panel,
+#setup-screen .arcade-roster-panel {
+    padding: 8px 10px;
+}
+
+#setup-screen .arcade-panel-header {
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px dotted rgba(255, 209, 102, 0.2);
+}
+
+/* --- Settings row --- */
+#setup-screen .arcade-settings-panel {
+    padding: 8px 10px;
+}
+
+/* --- Start Button: overlays the golden button in background --- */
 #setup-screen .arcade-start-btn {
     background: transparent;
     border: none;
     box-shadow: none;
-    padding: 18px 20px;
+    padding: 14px 20px;
+    margin-top: auto;
 }
 
 #setup-screen .arcade-start-btn::before {
@@ -893,15 +935,6 @@ body {
 #setup-screen .arcade-start-btn:disabled .arcade-start-text {
     color: rgba(255, 209, 102, 0.3);
     text-shadow: none;
-}
-
-#setup-screen .arcade-header-panel {
-    position: relative;
-    z-index: 2;
-}
-
-#setup-screen .arcade-sign-panel {
-    border-color: transparent;
 }
 
 /* Arcade deck/roster card previews in horizontal scroll */
