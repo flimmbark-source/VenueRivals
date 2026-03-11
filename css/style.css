@@ -831,12 +831,9 @@ body {
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     background:
-        radial-gradient(ellipse at 50% 0%, rgba(127, 90, 240, 0.12) 0%, transparent 40%),
-        radial-gradient(ellipse at 50% 100%, rgba(255, 92, 92, 0.05) 0%, transparent 40%),
-        linear-gradient(180deg, #0a0918 0%, #0f0e17 50%, #0a0918 100%);
-    /* Arcade cabinet edge glow */
-    border-left: 3px solid rgba(127, 90, 240, 0.12);
-    border-right: 3px solid rgba(127, 90, 240, 0.12);
+        url('../public/SetupPageBackground.png') center top / 100% 100% no-repeat;
+    background-color: #0a0918;
+    border: none;
 }
 
 #setup-screen.active {
@@ -846,10 +843,65 @@ body {
     padding: 0;
 }
 
+#setup-screen .arcade-title {
+    visibility: hidden;
+    height: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
 #setup-screen .setup-container {
     margin: auto;
     padding-top: 8px;
     padding-bottom: 20px;
+}
+
+#setup-screen .arcade-panel {
+    background: rgba(15, 14, 23, 0.55);
+    border-color: transparent;
+    box-shadow: none;
+}
+
+#setup-screen .arcade-panel::before {
+    display: none;
+}
+
+#setup-screen .arcade-venue-panel {
+    border-color: transparent;
+    box-shadow: none;
+}
+
+#setup-screen .arcade-start-btn {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 18px 20px;
+}
+
+#setup-screen .arcade-start-btn::before {
+    display: none;
+}
+
+#setup-screen .arcade-start-text {
+    color: var(--accent-gold);
+    text-shadow:
+        0 0 10px rgba(255, 209, 102, 0.8),
+        0 0 30px rgba(255, 209, 102, 0.4);
+}
+
+#setup-screen .arcade-start-btn:disabled .arcade-start-text {
+    color: rgba(255, 209, 102, 0.3);
+    text-shadow: none;
+}
+
+#setup-screen .arcade-header-panel {
+    position: relative;
+    z-index: 2;
+}
+
+#setup-screen .arcade-sign-panel {
+    border-color: transparent;
 }
 
 /* Arcade deck/roster card previews in horizontal scroll */
