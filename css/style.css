@@ -976,12 +976,12 @@ body {
 .venue-area-stats {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 10px;
     padding: 6px 10px;
     border-radius: 10px;
-    background: rgba(7, 9, 20, 0.62);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: transparent;
+    border: 0;
     font-family: 'Poppins', sans-serif;
     font-size: 0.68rem;
     font-weight: 700;
@@ -993,9 +993,9 @@ body {
 .venue-area-values {
     display: inline-flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: 10px;
-    margin-left: auto;
+    margin-left: 0;
 }
 
 .venue-area-label {
@@ -1923,8 +1923,19 @@ body {
     margin-bottom: 0;
 }
 
+.venue-info-panel .phone-heat-row {
+    justify-content: center;
+    width: 100%;
+}
+
+.venue-info-panel .phone-phase-progress {
+    flex: 0 1 min(62vw, 280px);
+    width: min(62vw, 280px);
+}
+
 .venue-info-panel .phone-heat-text {
-    min-width: 64px;
+    min-width: 72px;
+    text-align: center;
 }
 
 
