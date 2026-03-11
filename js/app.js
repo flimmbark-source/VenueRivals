@@ -3422,7 +3422,7 @@
             heading: 'Definitions',
             items: [
                 { id: 'verbs', label: 'Ability Verbs' },
-                { id: 'targeting', label: 'Targeting' },
+                { id: 'targeting', label: 'Triggers & Targeting' },
                 { id: 'terms', label: 'Term Glossary' },
                 { id: 'phases', label: 'Game Phases' },
             ],
@@ -3462,11 +3462,16 @@
                     <p>Each round has two phases: <strong>Guest Phase</strong> and <strong>Buy Phase</strong>.</p>
                     <p><strong>Guest Phase:</strong> Guests arrive at your venue one at a time. For each guest you decide:</p>
                     <p>• <strong>Admit</strong> — Let them into your house. They add their Money, Points, and Heat to your round totals.</p>
-                    <p>• <strong>Use Ability</strong> — If the guest (or a guest already in your house) has a special ability, activate it.</p>
+                    <p>• <strong>Use Ability</strong> — If a guest in your house has an <strong>Action (A:)</strong> ability, activate it.</p>
                     <p>• <strong>Close Door</strong> — Stop admitting guests. Your round totals are locked in.</p>
                     <p><strong>Heat &amp; Busting:</strong> Each guest adds Heat. If your Heat exceeds your venue's bust threshold, you <strong>bust</strong> and lose all earnings for the round.</p>
                     <p><strong>Buy Phase:</strong> Spend earned Money to buy new guests for your deck, or purchase upgrades (+1 Slot, +1 Heat Cap).</p>
-                    <p><strong>House Grid:</strong> Admitted guests sit in a lane. The <strong>Newest</strong> guest is closest to the entry (index 0), the <strong>Oldest</strong> is closest to the exit. Lane abilities like Boot, Bounce, Nudge, and Lock target guests by position.</p>
+                    <p><strong>Ability Triggers:</strong> Guests can have abilities that trigger in different ways:</p>
+                    <p>• <strong>Action (A:)</strong> — You manually activate this ability during the Guest Phase.</p>
+                    <p>• <strong>Arrival</strong> — Triggers automatically when the guest enters your house.</p>
+                    <p>• <strong>Departure</strong> — Triggers automatically when the guest leaves your house (Boot, Bounce, Clear).</p>
+                    <p>• <strong>Scoring</strong> — Evaluated at the end of the round when points are tallied.</p>
+                    <p><strong>House Grid:</strong> Admitted guests sit in a lane. The <strong>Newest</strong> guest is closest to the entry, the <strong>Oldest</strong> is closest to the exit.</p>
                 `;
                 break;
             case 'abilities': {
@@ -3489,33 +3494,35 @@
                     <h4>Ability Verbs</h4>
                     <table class="glossary-table">
                         <tr><th>Verb</th><th>Effect</th></tr>
+                        <tr><td>BOOT</td><td>Remove a guest from your house (triggers their Departure abilities)</td></tr>
+                        <tr><td>BOUNCE</td><td>Return a guest from your house to the top of your queue (triggers their Departure abilities)</td></tr>
+                        <tr><td>CLEAR HOUSE</td><td>Remove all guests from your house</td></tr>
                         <tr><td>COOL X</td><td>Reduce your Heat by X (min 0)</td></tr>
-                        <tr><td>SPIKE X</td><td>Add X Heat to opponent</td></tr>
                         <tr><td>PEEK X</td><td>Reveal the next X guests in your queue</td></tr>
+                        <tr><td>PLANT</td><td>Queue a Gatecrasher in opponent's queue</td></tr>
+                        <tr><td>PLUS ONE</td><td>Admit the next guest in queue immediately</td></tr>
+                        <tr><td>REFRESH</td><td>Make another guest's used Action ability available again</td></tr>
+                        <tr><td>SCORE X</td><td>Immediately gain X Points (outside of normal scoring)</td></tr>
+                        <tr><td>SCORE GUEST</td><td>Remove a guest from your house and gain their Points now</td></tr>
+                        <tr><td>SPIKE X</td><td>Add X Heat to your opponent</td></tr>
                         <tr><td>STACK</td><td>Reveal next 2 guests and choose their order</td></tr>
-                        <tr><td>GRAB X</td><td>Gain X Money</td></tr>
-                        <tr><td>LIFT X</td><td>Steal up to X Money from opponent</td></tr>
-                        <tr><td>TRASH</td><td>Discard the next queued guest</td></tr>
-                        <tr><td>PLANT</td><td>Queue a Gatecrasher for opponent</td></tr>
-                        <tr><td>LOCK</td><td>Lock a guest until door close</td></tr>
-                        <tr><td>BOOT</td><td>Remove a guest from the house (they leave). Your Heat drops by that guest's Heat value.</td></tr>
-                        <tr><td>BOUNCE</td><td>Remove a guest and put them back on top of your queue. Your Heat drops by that guest's Heat value.</td></tr>
-                        <tr><td>NUDGE</td><td>Move a guest 1 step toward Newest (toward entry)</td></tr>
+                        <tr><td>NAME DROP</td><td>Reveal next 3 guests, admit 1 now, reorder the rest</td></tr>
                     </table>
                 `;
                 break;
             case 'targeting':
                 el.innerHTML = `
-                    <h4>Targeting</h4>
-                    <p>Lane abilities (Boot, Bounce, Nudge, Lock) target a specific guest by position in your house. Booting or Bouncing a guest also reduces your Heat by that guest's Heat value.</p>
+                    <h4>Triggers & Targeting</h4>
+                    <p>Each ability has a <strong>trigger</strong> that determines when it activates:</p>
                     <table class="glossary-table">
-                        <tr><th>Target</th><th>Meaning</th></tr>
-                        <tr><td>Oldest</td><td>Guest closest to the exit (last in house)</td></tr>
-                        <tr><td>Newest</td><td>Guest closest to the entry (first in house)</td></tr>
-                        <tr><td>Left of Self</td><td>Guest immediately older than this guest (one step toward exit)</td></tr>
-                        <tr><td>Right of Self</td><td>Guest immediately newer than this guest (one step toward entry)</td></tr>
+                        <tr><th>Trigger</th><th>When it fires</th></tr>
+                        <tr><td>Action (A:)</td><td>You choose to activate it during the Guest Phase. Each Action can only be used once per round unless refreshed.</td></tr>
+                        <tr><td>Arrival</td><td>Fires automatically when the guest enters your house.</td></tr>
+                        <tr><td>Departure</td><td>Fires automatically when the guest leaves your house (via Boot, Bounce, Clear House, or Score Guest).</td></tr>
+                        <tr><td>Scoring</td><td>Evaluated at the end of the round during point tallying. Typically grants conditional bonus Points.</td></tr>
                     </table>
-                    <p><strong>Lock rules:</strong> Locked guests cannot be Booted or Bounced. Nudge cannot move a locked guest or swap with a locked neighbor.</p>
+                    <p><strong>Targeting:</strong> Abilities like Boot and Bounce let you <strong>choose</strong> which guest in your house to target.</p>
+                    <p><strong>Positions:</strong> <strong>Newest</strong> = closest to entry. <strong>Oldest</strong> = closest to exit. Some Scoring abilities care about position (e.g. "if this guest is Newest").</p>
                 `;
                 break;
             case 'terms':
@@ -3523,17 +3530,23 @@
                     <h4>Term Glossary</h4>
                     <table class="glossary-table">
                         <tr><th>Term</th><th>Definition</th></tr>
-                        <tr><td>Heat</td><td>Pressure from guests. If it exceeds your bust threshold, you bust.</td></tr>
-                        <tr><td>Bust</td><td>Losing all round earnings because Heat went over the limit.</td></tr>
-                        <tr><td>House</td><td>Your venue's guest lane. Admitted guests sit here left to right.</td></tr>
-                        <tr><td>Queue</td><td>Your draw pile. Guests arrive from the top of the queue.</td></tr>
+                        <tr><td>Action (A:)</td><td>An ability you manually activate during the Guest Phase. Used once per round unless refreshed.</td></tr>
                         <tr><td>Arriving Guest</td><td>The guest currently at your door, waiting to be admitted.</td></tr>
+                        <tr><td>Bust</td><td>Losing all round earnings because Heat went over the limit.</td></tr>
                         <tr><td>Deck</td><td>The full set of guests you bring into a match.</td></tr>
-                        <tr><td>Flash</td><td>The trigger type for abilities — used at the moment a guest appears.</td></tr>
-                        <tr><td>Slot</td><td>A position in the house grid. Capacity can be increased.</td></tr>
+                        <tr><td>Departure</td><td>An ability trigger that fires when a guest leaves the house (via Boot, Bounce, Clear, or Score Guest).</td></tr>
                         <tr><td>Gatecrasher</td><td>A trouble guest with 1 Heat, 0 Money, 0 Points. Planted by opponents.</td></tr>
+                        <tr><td>Heat</td><td>Pressure from guests. If it exceeds your bust threshold, you bust.</td></tr>
+                        <tr><td>House</td><td>Your venue's guest lane. Admitted guests sit here left to right.</td></tr>
+                        <tr><td>Newest</td><td>The guest closest to the entry (first admitted most recently).</td></tr>
+                        <tr><td>Oldest</td><td>The guest closest to the exit (admitted earliest).</td></tr>
+                        <tr><td>Queue</td><td>Your draw pile. Guests arrive from the top of the queue.</td></tr>
+                        <tr><td>Refresh</td><td>Makes a used Action ability available again this round.</td></tr>
                         <tr><td>Round Money</td><td>Money earned during the current round from abilities and guests.</td></tr>
                         <tr><td>Round Points</td><td>Points earned during the current round.</td></tr>
+                        <tr><td>Scoring Ability</td><td>An ability evaluated at round end that grants conditional bonus Points.</td></tr>
+                        <tr><td>Slot</td><td>A position in the house grid. Capacity can be increased.</td></tr>
+                        <tr><td>Tags</td><td>Categories on guests (VIP, Broker, Performer, Scout, Outlaw). Some abilities interact with tags.</td></tr>
                     </table>
                 `;
                 break;
