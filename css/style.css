@@ -3429,6 +3429,10 @@ body {
     flex: 1;
 }
 
+.rival-venue .phone-heat-row .phone-phase-progress {
+    transform: scaleX(-1);
+}
+
 .phone-heat-text {
     min-width: 58px;
     text-align: right;
