@@ -976,7 +976,7 @@ body {
 .venue-area-stats {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: flex-end;
     gap: 10px;
     padding: 6px 10px;
     border-radius: 10px;
@@ -993,9 +993,9 @@ body {
 .venue-area-values {
     display: inline-flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: flex-end;
     gap: 10px;
-    margin-left: 0;
+    margin-left: auto;
 }
 
 .venue-area-label {
