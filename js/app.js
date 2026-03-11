@@ -1337,6 +1337,49 @@
 
 
     // === Guest Slot Rendering ===
+
+    function captureSlotPositions(slotsEl) {
+        if (!slotsEl) return new Map();
+        const positions = new Map();
+        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
+            const key = slotEl.dataset.renderKey;
+            if (!key) return;
+            positions.set(key, slotEl.getBoundingClientRect());
+        });
+        return positions;
+    }
+
+    function animateSlotReflow(slotsEl, previousPositions) {
+        if (!slotsEl || !previousPositions || previousPositions.size === 0) return;
+        const animatedSlots = [];
+        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
+            const key = slotEl.dataset.renderKey;
+            if (!key) return;
+            const prev = previousPositions.get(key);
+            if (!prev) return;
+            const next = slotEl.getBoundingClientRect();
+            const dx = prev.left - next.left;
+            const dy = prev.top - next.top;
+            if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+            slotEl.style.transition = 'none';
+            slotEl.style.transform = `translate(${dx}px, ${dy}px)`;
+            animatedSlots.push(slotEl);
+        });
+
+        if (!animatedSlots.length) return;
+        requestAnimationFrame(() => {
+            animatedSlots.forEach((slotEl) => {
+                slotEl.style.transition = 'transform 220ms ease';
+                slotEl.style.transform = '';
+            });
+            window.setTimeout(() => {
+                animatedSlots.forEach((slotEl) => {
+                    slotEl.style.transition = '';
+                });
+            }, 240);
+        });
+    }
+
     function createGuestSlot(guestId, animate, options = {}) {
         const guest = Game.GUESTS[guestId];
         if (!guest) {
@@ -1376,6 +1419,7 @@
     function renderHouseGrid(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const slotsEl = document.getElementById(`${who}-slots`);
+        const previousPositions = captureSlotPositions(slotsEl);
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
 
@@ -1405,13 +1449,14 @@
         if (guests.length > houseCapacity) {
             guests = guests.slice(guests.length - houseCapacity);
         }
-        guests.forEach((entry) => {
+        guests.forEach((entry, guestIndex) => {
             const guestId = entry.guestId || entry;
+            const instanceId = typeof entry === 'string' ? null : entry.instanceId;
             const abilityUsed = typeof entry !== 'string' && !!entry.abilityUsed;
             const slot = createGuestSlot(guestId, false, { interactive: false });
+            slot.dataset.renderKey = instanceId != null ? `inst:${instanceId}` : `house:${guestId}:${guestIndex}`;
             if (abilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
-                const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
                 if (instanceId != null) slot.dataset.instanceId = String(instanceId);
                 if (who === 'player' && instanceId != null && instanceId === playerFlashWindowInstanceId) slot.classList.add('just-entered');
@@ -1457,6 +1502,7 @@
             const arrivingGuestId = player.arrivingGuest;
             const slot = createGuestSlot(arrivingGuestId, false, { interactive: false });
             slot.classList.add('arriving-in-grid');
+            slot.dataset.renderKey = `arriving:${arrivingGuestId}`;
             if (who === 'player' && player.arrivingAbilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
@@ -1517,6 +1563,7 @@
             if (arrivingSlot) slotsEl.appendChild(arrivingSlot);
         }
 
+        animateSlotReflow(slotsEl, previousPositions);
         syncVenueActors(who);
     }
 
