@@ -1523,6 +1523,37 @@ body {
     z-index: 5;
 }
 
+.arrival-choice-overlay {
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    padding: 6px 8px;
+    background: rgba(15, 14, 23, 0.92);
+    border: 1px solid rgba(255, 209, 102, 0.4);
+    border-radius: 10px;
+    z-index: 10;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    animation: arrival-choice-pop 0.25s ease-out;
+}
+
+.arrival-choice-overlay .arrival-choice-card {
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.arrival-choice-overlay .arrival-choice-card:hover {
+    transform: scale(1.12);
+    box-shadow: 0 0 14px rgba(255, 209, 102, 0.5);
+}
+
+@keyframes arrival-choice-pop {
+    from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 .reveal-door-overlay .reveal-door-card {
     box-shadow: 0 0 10px rgba(255, 209, 102, 0.45);
 }
@@ -1571,6 +1602,29 @@ body {
     position: relative;
 }
 
+.guest-slots.has-stacked-slots {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    flex: initial;
+    align-items: flex-start;
+    justify-content: flex-end;
+    overflow-x: visible;
+    gap: 4px;
+}
+
+.slots-main-row,
+.slots-overflow-row {
+    display: flex;
+    flex-direction: row;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.venue-scene #player-slots.has-stacked-slots,
+.venue-scene #rival-slots.has-stacked-slots {
+    width: fit-content;
+    justify-content: flex-end;
+}
 
 .guest-slots::after {
     content: '';
@@ -1656,6 +1710,11 @@ body {
     pointer-events: none;
 }
 
+.ability-used .ability-icon-badge {
+    opacity: 0.3;
+    filter: grayscale(1);
+}
+
 .guest-slot .slot-emoji {
     position: absolute;
     left: 2px;
@@ -1698,6 +1757,26 @@ body {
     box-shadow: 0 0 10px rgba(255, 209, 102, 0.3);
     animation: guestArrive 0.3s ease;
 }
+
+/* === Targeting Mode === */
+.guest-slot.valid-target {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.8), 0 0 16px rgba(255, 107, 107, 0.5);
+    animation: targetPulse 1s ease-in-out infinite;
+    cursor: pointer;
+}
+
+.guest-slot.dimmed-target {
+    opacity: 0.35;
+    pointer-events: none;
+    filter: grayscale(0.6);
+}
+
+@keyframes targetPulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.8), 0 0 16px rgba(255, 107, 107, 0.5); }
+    50% { box-shadow: 0 0 0 3px rgba(255, 107, 107, 1), 0 0 24px rgba(255, 107, 107, 0.7); }
+}
+
 
 /* === Arriving Guest Slot === */
 .arriving-slot {
@@ -2419,6 +2498,24 @@ body {
     margin-top: 4px;
     font-size: 0.68rem;
     color: var(--accent-gold);
+}
+
+.guest-tooltip.tooltip-pulse {
+    animation: tooltipPulse 0.6s ease;
+}
+
+@keyframes tooltipPulse {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.08); }
+    60%  { transform: scale(0.97); }
+    100% { transform: scale(1); }
+}
+
+.guest-tooltip .tt-ability-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #666;
+    box-shadow: none;
 }
 
 /* === Game Over === */

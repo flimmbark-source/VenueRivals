@@ -20,6 +20,9 @@
     let guestAbilityPopupBackdropEl = null;
     let loadoutState = null;
     let selectedGridGuest = null;
+    // Targeting mode: when an ability needs the player to pick a target guest
+    // { source, abilitySource (the selectedGuest that activated the ability), validTargets [{index, guestId}], abilityName }
+    let targetingMode = null;
     // cache the last rendered guest detail to avoid unnecessary refreshes
     let _lastGuestDetailKey = null;
     let multiplayerSession = null;
@@ -97,40 +100,56 @@
     //        'scarf','bag','backpack','camera','clipboard','headphones',
     //        'cape','vest','apron','holster','cane','crown','gloves','bandolier'
     const GUEST_SPRITES = {
-        regular:       { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#7788aa', pants:'#445566', shoes:'#333344', items:[] },
-        chiller:       { skin:'light',  hair:'slick',    hairColor:'blue',   shirt:'#44aadd', pants:'#335577', shoes:'#224466', items:['shades','scarf'] },
-        tipper:        { skin:'medium', hair:'short',    hairColor:'black',  shirt:'#2cb67d', pants:'#445544', shoes:'#333333', items:['bowtie','chain'] },
-        tipOffArtist:  { skin:'tan',    hair:'slick',    hairColor:'black',  shirt:'#333344', pants:'#222233', shoes:'#111122', items:['shades','holster'] },
-        hypeFriend:    { skin:'medium', hair:'spiky',    hairColor:'orange', shirt:'#ffaa33', pants:'#886622', shoes:'#664411', items:['headphones'] },
-        hypester:      { skin:'tan',    hair:'spiky',    hairColor:'red',    shirt:'#ee4422', pants:'#882211', shoes:'#661100', items:['earring','chain','vest'] },
-        standIn:       { skin:'light',  hair:'long',     hairColor:'purple', shirt:'#7755bb', pants:'#554488', shoes:'#332266', items:['mask','cape'] },
-        usher:         { skin:'medium', hair:'slick',    hairColor:'black',  shirt:'#222233', pants:'#111122', shoes:'#0a0a18', items:['gloves','badge'] },
-        floorRunner:   { skin:'tan',    hair:'bandana',  hairColor:'brown',  shirt:'#55cc77', pants:'#336644', shoes:'#224422', items:['badge','backpack'] },
-        bookkeeper:    { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#bbaa77', pants:'#665544', shoes:'#443322', items:['glasses','clipboard'] },
-        rovingCritic:  { skin:'light',  hair:'tophat',   hairColor:'white',  shirt:'#886644', pants:'#443322', shoes:'#221100', items:['monocle','cane'] },
-        partyPromoter: { skin:'medium', hair:'afro',     hairColor:'blonde', shirt:'#ee6633', pants:'#aa4422', shoes:'#882211', items:['headphones','chain'] },
-        bigSpender:    { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#ffd166', pants:'#aa8833', shoes:'#886622', items:['bowtie','bag','crown'] },
-        celebrity:     { skin:'tan',    hair:'long',     hairColor:'blonde', shirt:'#dd33aa', pants:'#882266', shoes:'#661155', items:['shades','scarf','earring'] },
-        headliner:     { skin:'medium', hair:'ponytail', hairColor:'pink',   shirt:'#ffcc00', pants:'#aa8800', shoes:'#886600', items:['earring','cape','crown'] },
-        champagneHost: { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#111122', pants:'#0a0a18', shoes:'#050510', items:['bowtie','vest'] },
-        velvetBouncer: { skin:'dark',   hair:'bald',     hairColor:'black',  shirt:'#222233', pants:'#111122', shoes:'#0a0a18', items:['badge','earring'] },
-        spotlightPhotographer: { skin:'medium', hair:'beanie', hairColor:'brown', shirt:'#666688', pants:'#444466', shoes:'#333355', items:['camera','bag'] },
-        galleryScout:  { skin:'tan',    hair:'cap',      hairColor:'brown',  shirt:'#558844', pants:'#445533', shoes:'#334422', items:['backpack'] },
-        trendBroker:   { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#334466', pants:'#222244', shoes:'#111133', items:['glasses','tie','clipboard'] },
-        curioDealer:   { skin:'medium', hair:'cap',      hairColor:'red',    shirt:'#885533', pants:'#664422', shoes:'#553311', items:['earring','bag','apron'] },
-        stylist:       { skin:'light',  hair:'pigtails', hairColor:'pink',   shirt:'#cc44cc', pants:'#883388', shoes:'#662266', items:['scarf','bag'] },
-        gateRunner:    { skin:'tan',    hair:'hood',     hairColor:'black',  shirt:'#cc2222', pants:'#661111', shoes:'#440000', items:['scar','bandolier'] },
-        wheelman:      { skin:'medium', hair:'cap',      hairColor:'brown',  shirt:'#555555', pants:'#333333', shoes:'#222222', items:['shades','gloves'] },
-        fence:         { skin:'dark',   hair:'hood',     hairColor:'black',  shirt:'#444433', pants:'#332222', shoes:'#221111', items:['bag','holster'] },
-        provocateur:   { skin:'tan',    hair:'mohawk',   hairColor:'red',    shirt:'#881133', pants:'#440022', shoes:'#330011', items:['scar','chain','earring'] },
-        gatecrasher:   { skin:'dark',   hair:'mohawk',   hairColor:'red',    shirt:'#aa1111', pants:'#551111', shoes:'#330000', items:['scar','bandolier'] },
+        // === NEUTRAL / MAIN FLOOR ===
+        familiarFace:    { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#7788aa', pants:'#445566', shoes:'#333344', items:[] },
+        bottleBringer:   { skin:'medium', hair:'short',    hairColor:'black',  shirt:'#2cb67d', pants:'#445544', shoes:'#333333', items:['bag'] },
+        loudFriend:      { skin:'medium', hair:'spiky',    hairColor:'orange', shirt:'#ffaa33', pants:'#886622', shoes:'#664411', items:['headphones'] },
+        doorWatcher:     { skin:'tan',    hair:'slick',    hairColor:'black',  shirt:'#333344', pants:'#222233', shoes:'#111122', items:['shades'] },
+        groupChatHost:   { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#5577cc', pants:'#334466', shoes:'#223355', items:['clipboard','badge'] },
+        plusOnePrince:   { skin:'light',  hair:'slick',    hairColor:'blonde', shirt:'#ffd166', pants:'#aa8833', shoes:'#886622', items:['crown','bowtie'] },
+        nameDropper:     { skin:'tan',    hair:'long',     hairColor:'blonde', shirt:'#dd33aa', pants:'#882266', shoes:'#661155', items:['shades','scarf','earring'] },
+        porchBuddy:      { skin:'medium', hair:'cap',      hairColor:'brown',  shirt:'#66aa88', pants:'#447755', shoes:'#335544', items:[] },
+        fedUpRoommate:   { skin:'tan',    hair:'spiky',    hairColor:'red',    shirt:'#ee4422', pants:'#882211', shoes:'#661100', items:['earring'] },
+        resetHost:       { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#bbaa77', pants:'#665544', shoes:'#443322', items:['clipboard'] },
+        // === VELVET ROOM ===
+        mainCharacter:   { skin:'tan',    hair:'long',     hairColor:'purple', shirt:'#cc44cc', pants:'#882288', shoes:'#661166', items:['cape','crown'] },
+        storyPoster:     { skin:'medium', hair:'beanie',   hairColor:'brown',  shirt:'#666688', pants:'#444466', shoes:'#333355', items:['camera'] },
+        danceCaptain:    { skin:'light',  hair:'ponytail', hairColor:'pink',   shirt:'#ff6699', pants:'#aa4466', shoes:'#882244', items:['earring','headphones'] },
+        afterpartyHost:  { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#111122', pants:'#0a0a18', shoes:'#050510', items:['bowtie','vest'] },
+        wallflower:      { skin:'light',  hair:'long',     hairColor:'brown',  shirt:'#99aa88', pants:'#667755', shoes:'#445533', items:['scarf'] },
+        linkUpFriend:    { skin:'medium', hair:'short',    hairColor:'black',  shirt:'#5577cc', pants:'#334477', shoes:'#223366', items:['chain','badge'] },
+        headliner:       { skin:'medium', hair:'ponytail', hairColor:'pink',   shirt:'#ffcc00', pants:'#aa8800', shoes:'#886600', items:['earring','cape','crown'] },
+        socialClimber:   { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#334466', pants:'#222244', shoes:'#111133', items:['glasses','tie'] },
+        hypeSquad:       { skin:'medium', hair:'afro',     hairColor:'blonde', shirt:'#ee6633', pants:'#aa4422', shoes:'#882211', items:['headphones','chain'] },
+        partyPhotographer: { skin:'medium', hair:'beanie', hairColor:'brown',  shirt:'#666688', pants:'#444466', shoes:'#333355', items:['camera','bag'] },
+        // === NIGHT MARKET ===
+        windowWatcher:   { skin:'tan',    hair:'cap',      hairColor:'brown',  shirt:'#558844', pants:'#445533', shoes:'#334422', items:['backpack'] },
+        vipWrangler:     { skin:'light',  hair:'tophat',   hairColor:'white',  shirt:'#886644', pants:'#443322', shoes:'#221100', items:['monocle','cane'] },
+        tabRunner:       { skin:'medium', hair:'short',    hairColor:'black',  shirt:'#2cb67d', pants:'#445544', shoes:'#333333', items:['bowtie','chain'] },
+        coolOffSmoker:   { skin:'tan',    hair:'slick',    hairColor:'black',  shirt:'#44aadd', pants:'#335577', shoes:'#224466', items:['shades'] },
+        bottlePopper:    { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#ffd166', pants:'#aa8833', shoes:'#886622', items:['bowtie','bag'] },
+        bigPlanner:      { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#bbaa77', pants:'#665544', shoes:'#443322', items:['glasses','clipboard'] },
+        highRoller:      { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#ffd166', pants:'#aa8833', shoes:'#886622', items:['crown','chain'] },
+        socialButterfly: { skin:'light',  hair:'pigtails', hairColor:'pink',   shirt:'#cc44cc', pants:'#883388', shoes:'#662266', items:['scarf','bag'] },
+        magnetGuest:     { skin:'dark',   hair:'short',    hairColor:'black',  shirt:'#7755bb', pants:'#554488', shoes:'#332266', items:['chain','earring'] },
+        // === BACK ALLEY ===
+        addressLeaker:   { skin:'tan',    hair:'hood',     hairColor:'black',  shirt:'#cc2222', pants:'#661111', shoes:'#440000', items:['scar','bandolier'] },
+        messyDrunk:      { skin:'medium', hair:'spiky',    hairColor:'red',    shirt:'#aa4422', pants:'#663311', shoes:'#442200', items:['scar'] },
+        dramaStarter:    { skin:'tan',    hair:'mohawk',   hairColor:'red',    shirt:'#881133', pants:'#440022', shoes:'#330011', items:['scar','chain','earring'] },
+        chaosChaser:     { skin:'medium', hair:'bandana',  hairColor:'brown',  shirt:'#55cc77', pants:'#336644', shoes:'#224422', items:['bandolier'] },
+        lateLegend:      { skin:'light',  hair:'long',     hairColor:'purple', shirt:'#7755bb', pants:'#554488', shoes:'#332266', items:['mask','cape'] },
+        rumorQueen:      { skin:'light',  hair:'pigtails', hairColor:'blonde', shirt:'#aa5588', pants:'#773366', shoes:'#552244', items:['earring','bag'] },
+        counselor:       { skin:'dark',   hair:'bald',     hairColor:'black',  shirt:'#556677', pants:'#334455', shoes:'#223344', items:['glasses'] },
+        cupid:           { skin:'light',  hair:'long',     hairColor:'pink',   shirt:'#ff6699', pants:'#cc4477', shoes:'#aa2255', items:['cape','earring'] },
+        // === TROUBLE ===
+        gatecrasher:     { skin:'dark',   hair:'mohawk',   hairColor:'red',    shirt:'#aa1111', pants:'#551111', shoes:'#330000', items:['scar','bandolier'] },
     };
 
     // ---- Sprite drawing engine ----
     function generateSpriteSheet(guestId) {
         if (_spriteCache[guestId]) return _spriteCache[guestId];
 
-        const bp = GUEST_SPRITES[guestId] || GUEST_SPRITES.regular;
+        const bp = GUEST_SPRITES[guestId] || GUEST_SPRITES.familiarFace;
         const skin = SKIN[bp.skin] || SKIN.light;
         const skinDark = skinShade(skin, 30);
         const hairC = HAIR_COLORS[bp.hairColor] || bp.hairColor;
@@ -495,6 +514,19 @@
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
     const ABLY_API_KEY = '_tDhUg.HYf2eA:VPJbNYIBgqUrolL5QzcLSyj4XRCheq3cizKtHVAtGCA';
+
+    const TAG_ICONS = {
+        VIP: '⭐',
+        Performer: '🎤',
+        Scout: '🔭',
+        Broker: '💰',
+        Outlaw: '💀',
+    };
+
+    function getTagIconsHtml(guest) {
+        if (!guest.tags || !guest.tags.length) return '';
+        return guest.tags.map(t => TAG_ICONS[t] || '').join('');
+    }
 
     const VENUE_POOL_DESC = {
         velvetRoom: 'Lock stars in place and close at the right moment',
@@ -1372,73 +1404,140 @@
         const venue = Game.VENUES[player.venueId];
 
         const houseCapacity = Game.getHouseCapacity(venue, player);
+        const stacked = houseCapacity > 5;
+        if (stacked) {
+            slotsEl.classList.add('has-stacked-slots');
+        } else {
+            slotsEl.classList.remove('has-stacked-slots');
+        }
+
+        // Collect all house slot elements (empty + guests) into an array
+        const houseSlots = [];
+
         // Count occupied slots: house + arriving guest (cap to capacity for empties)
         const occupiedCount = Math.min(player.house.length, houseCapacity) + (player.arrivingGuest ? 1 : 0);
-        
-        // Render empty slots for remaining capacity
+
+        // Empty slots
         for (let i = 0; i < houseCapacity - occupiedCount; i++) {
             const empty = document.createElement('div');
             empty.className = 'guest-slot empty-slot';
-            slotsEl.appendChild(empty);
+            houseSlots.push(empty);
         }
 
-        // Render oldest-to-newest but only up to capacity
+        // House guests oldest-to-newest but only up to capacity
         let guests = [...player.house].reverse();
         if (guests.length > houseCapacity) {
             guests = guests.slice(guests.length - houseCapacity);
         }
         guests.forEach((entry) => {
             const guestId = entry.guestId || entry;
+            const abilityUsed = typeof entry !== 'string' && !!entry.abilityUsed;
             const slot = createGuestSlot(guestId, false, { interactive: false });
+            if (abilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
                 const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
                 if (instanceId != null) slot.dataset.instanceId = String(instanceId);
                 if (who === 'player' && instanceId != null && instanceId === playerFlashWindowInstanceId) slot.classList.add('just-entered');
-                if (selectedGridGuest?.source === 'house' &&
+
+                // Targeting mode: highlight valid targets, dim others
+                if (targetingMode && instanceId != null) {
+                    if (isValidTarget(instanceId)) {
+                        slot.classList.add('valid-target');
+                    } else {
+                        slot.classList.add('dimmed-target');
+                    }
+                }
+
+                if (!targetingMode && selectedGridGuest?.source === 'house' &&
                     selectedGridGuest.guestId === guestId &&
                     (selectedGridGuest.instanceId == null || selectedGridGuest.instanceId === instanceId)) {
                     slot.classList.add('selected');
                 }
                 slot.addEventListener('click', () => {
+                    if (targetingMode) {
+                        if (instanceId != null && isValidTarget(instanceId)) {
+                            handleTargetClick(guestId, instanceId);
+                        }
+                        return;
+                    }
                     selectedGridGuest = { guestId, source: 'house', instanceId };
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
-                    showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', guestId, instanceId });
+                    showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', guestId, instanceId, abilityUsed });
                 });
             } else {
                 slot.addEventListener('click', () => {
-                    showTooltipForTarget(slot, guestId, { who: 'rival', source: 'house' });
+                    showTooltipForTarget(slot, guestId, { who: 'rival', source: 'house', abilityUsed });
                 });
             }
-            slotsEl.appendChild(slot);
+            houseSlots.push(slot);
         });
 
-        // Render arriving guest as the rightmost/newest slot
+        // Build arriving slot element (always anchored to main row)
+        let arrivingSlot = null;
         if (player.arrivingGuest) {
             const arrivingGuestId = player.arrivingGuest;
             const slot = createGuestSlot(arrivingGuestId, false, { interactive: false });
             slot.classList.add('arriving-in-grid');
+            if (who === 'player' && player.arrivingAbilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
                 slot.dataset.guestId = arrivingGuestId;
-                if (selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === arrivingGuestId) {
+                if (targetingMode) {
+                    if (targetingMode.canTargetArriving) {
+                        slot.classList.add('valid-target');
+                    } else {
+                        slot.classList.add('dimmed-target');
+                    }
+                }
+                if (!targetingMode && selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === arrivingGuestId) {
                     slot.classList.add('selected');
                 }
                 slot.addEventListener('click', () => {
+                    if (targetingMode) {
+                        if (targetingMode.canTargetArriving) {
+                            handleArrivingTargetClick();
+                        }
+                        return;
+                    }
                     selectedGridGuest = { guestId: arrivingGuestId, source: 'arriving' };
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
-                    showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving', guestId: arrivingGuestId });
+                    const arrivingAbilityUsed = !!gameState.player.arrivingAbilityUsed;
+                    showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving', guestId: arrivingGuestId, abilityUsed: arrivingAbilityUsed });
                 });
             } else {
                 slot.addEventListener('click', () => {
                     showTooltipForTarget(slot, arrivingGuestId, { who: 'rival', source: 'arriving', guestId: arrivingGuestId });
                 });
             }
-            slotsEl.appendChild(slot);
+            arrivingSlot = slot;
+        }
+
+        if (stacked) {
+            // Combine house slots and arriving slot into a unified list so the
+            // layout stays consistent before and after the door is closed.
+            const allSlots = [...houseSlots];
+            if (arrivingSlot) allSlots.push(arrivingSlot);
+
+            // Main row (top): first 5 slots
+            const mainRow = document.createElement('div');
+            mainRow.className = 'slots-main-row';
+            allSlots.slice(0, 5).forEach(s => mainRow.appendChild(s));
+
+            // Overflow row (below main): slots 6+
+            const overflowRow = document.createElement('div');
+            overflowRow.className = 'slots-overflow-row';
+            allSlots.slice(5).forEach(s => overflowRow.appendChild(s));
+
+            slotsEl.appendChild(mainRow);
+            slotsEl.appendChild(overflowRow);
+        } else {
+            houseSlots.forEach(s => slotsEl.appendChild(s));
+            if (arrivingSlot) slotsEl.appendChild(arrivingSlot);
         }
 
         syncVenueActors(who);
@@ -1450,8 +1549,8 @@
             if (!entry) return '';
             if (typeof entry === 'string') return entry;
             const guestId = entry.guestId || '';
-            const instanceId = entry.instanceId != null ? entry.instanceId : '';
-            return `${guestId}:${instanceId}`;
+            if (entry.instanceId == null) return guestId;
+            return `${guestId}:${entry.instanceId}`;
         }).join('|');
         return `${houseKey}::arriving:${playerState.arrivingGuest || ''}`;
     }
@@ -1547,11 +1646,18 @@
         return gameState.player.house.find((entry) => typeof entry !== 'string' && entry.instanceId === playerFlashWindowInstanceId) || null;
     }
 
+    function getEntryActivatableAbility(entry) {
+        if (!entry || typeof entry === 'string') return null;
+        if (entry.copiedAbility) return entry.copiedAbility;
+        const guest = Game.GUESTS[entry.guestId];
+        if (!guest?.ability || guest.ability.trigger !== 'flash') return null;
+        return guest.ability;
+    }
+
     function isPlayerFlashAvailable() {
         const entry = getPlayerFlashWindowEntry();
         if (!entry) return false;
-        const guest = Game.GUESTS[entry.guestId];
-        return !!(guest?.ability && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
+        return !!(getEntryActivatableAbility(entry) && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
     }
 
     function isPlayerDoorAbilityAvailable() {
@@ -1576,8 +1682,7 @@
     function isSelectedPlayerHouseAbilityAvailable() {
         const entry = getSelectedPlayerHouseEntry();
         if (!entry) return false;
-        const guest = Game.GUESTS[entry.guestId];
-        return !!(guest?.ability && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
+        return !!(getEntryActivatableAbility(entry) && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
     }
 
     function getSelectedPlayerAbilityTarget() {
@@ -1615,7 +1720,7 @@
                 }
                 return houseEntry.guestId === options.guestId;
             });
-            if (!entry) return null;
+            if (!entry || !getEntryActivatableAbility(entry) || entry.abilityUsed) return null;
             return { source: 'house', guestId: entry.guestId, instanceId: entry.instanceId };
         }
 
@@ -1624,6 +1729,62 @@
         }
 
         return null;
+    }
+
+    // ── Targeting Mode ──────────────────────────────────────────────
+    let _targetingDismissListener = null;
+
+    function enterTargetingMode(abilitySource, validTargets, abilityName, canTargetArriving) {
+        targetingMode = { abilitySource, validTargets, abilityName, canTargetArriving: !!canTargetArriving };
+        removeTooltip();
+        renderHouseGrid('player');
+        // Dismiss targeting on click outside guest slots
+        setTimeout(() => {
+            _targetingDismissListener = (e) => {
+                if (!targetingMode) {
+                    document.removeEventListener('click', _targetingDismissListener);
+                    _targetingDismissListener = null;
+                    return;
+                }
+                const slot = e.target.closest('.guest-slot');
+                if (!slot) {
+                    exitTargetingMode();
+                }
+            };
+            document.addEventListener('click', _targetingDismissListener);
+        }, 0);
+    }
+
+    function exitTargetingMode() {
+        targetingMode = null;
+        if (_targetingDismissListener) {
+            document.removeEventListener('click', _targetingDismissListener);
+            _targetingDismissListener = null;
+        }
+        renderHouseGrid('player');
+    }
+
+    function isValidTarget(instanceId) {
+        if (!targetingMode) return false;
+        const entry = gameState.player.house.find(
+            (e) => typeof e !== 'string' && e.instanceId === instanceId
+        );
+        if (!entry) return false;
+        return targetingMode.validTargets.some((t) => t.guestId === entry.guestId || t.index === gameState.player.house.indexOf(entry));
+    }
+
+    function handleTargetClick(guestId, instanceId) {
+        if (!targetingMode) return;
+        const abilitySource = { ...targetingMode.abilitySource, targetInstanceId: instanceId };
+        exitTargetingMode();
+        runAbility('player', abilitySource);
+    }
+
+    function handleArrivingTargetClick() {
+        if (!targetingMode) return;
+        const abilitySource = { ...targetingMode.abilitySource, targetArriving: true };
+        exitTargetingMode();
+        runAbility('player', abilitySource);
     }
 
     function setGuestPhaseControls({ canAdmit = false, canClose = false, canFlash = false } = {}) {
@@ -1638,8 +1799,10 @@
             exitDoor.setAttribute('aria-disabled', canClose ? 'false' : 'true');
         });
 
-        const flashButton = tooltipEl?.querySelector('#btn-tooltip-ability');
-        if (flashButton) flashButton.disabled = !canFlash;
+        // Tooltip ability button state is decided when the tooltip opens based on
+        // the hovered/selected guest context. Avoid overriding it here with
+        // panel-level selection state, which can incorrectly disable arriving
+        // guest abilities.
     }
 
     // === Guest Detail Panel ===
@@ -1676,19 +1839,37 @@
 
         const tooltipWho = options.who || 'rival';
         const tooltipAbilityTarget = tooltipWho === 'player' ? buildAbilityTargetFromOptions(options) : null;
-        const canTriggerAbility = !!tooltipAbilityTarget;
+        const houseEntry = tooltipWho === 'player' && options.source === 'house'
+            ? gameState?.player?.house?.find((entry) => typeof entry !== 'string' && (
+                options.instanceId != null ? entry.instanceId === options.instanceId : entry.guestId === options.guestId
+            ))
+            : null;
+        const activatableAbility = houseEntry ? getEntryActivatableAbility(houseEntry) : null;
+        const displayAbility = activatableAbility || guest.ability;
+        const isAbilityUsed = !!options.abilityUsed;
+        const canTriggerAbility = !!tooltipAbilityTarget && !isAbilityUsed;
 
         let abilityHTML = '';
-        if (guest.ability) {
-            abilityHTML = `<div class="tt-ability">${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
+        if (displayAbility) {
+            const abilityStyle = isAbilityUsed ? ' style="opacity:0.5"' : '';
+            abilityHTML = `<div class="tt-ability"${abilityStyle}>${displayAbility.icon} ${displayAbility.desc}</div>`;
         }
 
-        const abilityBtnHTML = tooltipWho === 'player'
-            ? `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>Ability</button>`
-            : '';
+        // Only show ability button if the guest has an activatable (flash) ability
+        const hasActivatableAbility = houseEntry
+            ? !!activatableAbility
+            : (options.source === 'arriving' && !!guest.ability && guest.ability.trigger === 'flash');
+        let abilityBtnHTML = '';
+        if (tooltipWho === 'player' && hasActivatableAbility) {
+            if (isAbilityUsed) {
+                abilityBtnHTML = `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" disabled>Used</button>`;
+            } else {
+                abilityBtnHTML = `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>Ability</button>`;
+            }
+        }
 
         el.innerHTML = `
-            <div class="tt-name">${guest.emoji} ${guest.name}</div>
+            <div class="tt-name">${getTagIconsHtml(guest)} ${guest.name}</div>
             <div class="tt-stats-row">
                 <div class="tt-stats">
                     <span class="stat-money">💵${guest.money}</span>
@@ -1872,6 +2053,7 @@
                     deactivateShopInspectMode();
                 } else {
                     activateShopInspectMode();
+                    showTooltipForTarget(el, guestId, { who: 'shop', source: 'shop' });
                 }
             }, holdMs);
         };
@@ -2236,12 +2418,100 @@
     }
 
     // === Guest Phase Actions ===
+    // --- Arrival choice resolution (stackChoice / nameDrop) ---
+    // These are shown when an arrival ability reveals guests and needs the
+    // player to choose before the next guest is drawn from the deck.
+
+    function enterArrivalStackChoice(who, revealedGuests, venue, opponent, opponentVenue) {
+        // Show a choice overlay: player picks which guest should come next
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        showFeedback('Choose which guest comes next', 'disruption', 3000, who);
+        showArrivalChoiceOverlay(who, revealedGuests, (chosenId) => {
+            Game.resolveStackChoice(player, chosenId);
+            clearRevealDoorIntel(who);
+            completeDeferredDraw(who);
+        });
+    }
+
+    function enterArrivalNameDropChoice(who, revealedGuests, venue, opponent, opponentVenue) {
+        // Show a choice overlay: player picks which guest to admit now
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        showFeedback('Choose a guest to admit now', 'disruption', 3000, who);
+        showArrivalChoiceOverlay(who, revealedGuests, (chosenId) => {
+            Game.resolveNameDropChoice(player, venue, opponent, opponentVenue, chosenId);
+            clearRevealDoorIntel(who);
+            // Name drop sets the chosen guest as arrivingGuest; draw is complete
+            renderArrivingGuest(who);
+            updateGuestDetail();
+            updateHUD();
+            checkGuestPhaseDone();
+            publishState();
+        });
+    }
+
+    function showArrivalChoiceOverlay(who, guestIds, onChoose) {
+        // Remove any existing choice overlay
+        const existingOverlay = document.querySelector('.arrival-choice-overlay');
+        if (existingOverlay) existingOverlay.remove();
+
+        const doorEl = document.getElementById(who === 'player' ? 'player-door-card' : `${who}-door`);
+        if (!doorEl) { onChoose(guestIds[0]); return; }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'arrival-choice-overlay';
+
+        guestIds.forEach((guestId) => {
+            const guest = Game.GUESTS[guestId];
+            if (!guest) return;
+            const card = createGuestSlot(guestId, false, { interactive: false });
+            card.classList.add('arrival-choice-card');
+            card.title = `Pick ${guest.name}`;
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                overlay.remove();
+                onChoose(guestId);
+            });
+            overlay.appendChild(card);
+        });
+
+        doorEl.appendChild(overlay);
+    }
+
+    // Complete a deferred draw after an arrival stack/nameDrop choice is resolved
+    function completeDeferredDraw(who) {
+        if (!gameState || gameState.phase !== 'guest') return;
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        const opponent = who === 'player' ? gameState.rival : gameState.player;
+        const venue = Game.VENUES[player.venueId];
+        const drawRes = Game.drawNextGuest(player, venue);
+        if (drawRes.pendingOut) {
+            const exitId = drawRes.pendingOut;
+            animateExitGuest(who, typeof exitId === 'string' ? exitId : exitId);
+        }
+        renderHouseGrid(who);
+        renderArrivingGuest(who);
+        updateGuestDetail();
+        updateVenueStatus(who);
+        updateHUD();
+        if (player.busted) {
+            document.getElementById(`${who}-area`).classList.add('bust-flash');
+            showFeedback(`${player.name} BUSTED!`, 'bust', 3000, who);
+            setTimeout(() => {
+                document.getElementById(`${who}-area`).classList.remove('bust-flash');
+            }, 500);
+        }
+        checkGuestPhaseDone();
+        publishState();
+    }
+
     function runAdmit(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
+        if (targetingMode && actor === 'player') exitTargetingMode();
         const { self, opponent, selfKey } = getActorState(actor);
         if (!self.arrivingGuest || self.doorClosed || self.busted) return;
 
         const venue = Game.VENUES[self.venueId];
+        const opponentVenue = Game.VENUES[opponent.venueId];
         // Snapshot player's visible state so we can avoid unnecessary re-renders
         const playerSnapshot = {
             arrivingGuest: gameState.player.arrivingGuest,
@@ -2251,7 +2521,7 @@
             roundMoney: gameState.player.roundMoney,
             roundPoints: gameState.player.roundPoints,
         };
-        const result = Game.admitGuest(self, venue, opponent, Game.VENUES[opponent.venueId]);
+        const result = Game.admitGuest(self, venue, opponent, opponentVenue);
         if (!result) return;
         if (selfKey === 'player') {
             playerFlashWindowInstanceId = typeof self.house[0] === 'object' ? self.house[0].instanceId : null;
@@ -2259,6 +2529,17 @@
 
         // Animate entry door opening
         animateDoorOpen(selfKey);
+
+        // Show arrival effect feedback before rendering the new arriving guest
+        if (result.effects && result.effects.length > 0) {
+            const guest = Game.GUESTS[result.admitted];
+            const arrivalEffects = result.effects.filter(e =>
+                !e.startsWith('departure:') && e !== 'plus one triggered'
+            );
+            if (arrivalEffects.length && guest) {
+                showFeedback(`${guest.name}: ${arrivalEffects.join(', ')}`, 'disruption', 2500, selfKey);
+            }
+        }
 
         if (result.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
@@ -2271,6 +2552,25 @@
         // Re-render reveal overlay — admitted/drawn guests are no longer in
         // the deck so the ID-based filter will drop them automatically.
         if (revealDoorIntel[selfKey]) renderRevealDoorIntel(selfKey);
+
+        // Handle arrival abilities that reveal guests (stackChoice / nameDrop)
+        if (result.revealedGuests) {
+            setRevealDoorIntel(selfKey, result.revealedGuests);
+        }
+
+        // Handle deferred draw: arrival stackChoice or nameDrop needs resolution
+        // before the next guest is drawn from the deck.
+        if (result.deferredDraw && selfKey === 'player') {
+            if (result.needsStackChoice && result.revealedGuests?.length >= 2) {
+                enterArrivalStackChoice(selfKey, result.revealedGuests, venue, opponent, opponentVenue);
+            } else if (result.needsNameDropChoice && result.revealedGuests?.length) {
+                enterArrivalNameDropChoice(selfKey, result.revealedGuests, venue, opponent, opponentVenue);
+            } else {
+                // Fallback: complete the draw immediately
+                completeDeferredDraw(selfKey);
+            }
+        }
+
         // Only refresh player detail if the action was by the player, or
         // if the opponent's action changed the player's visible state.
         if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
@@ -2294,7 +2594,9 @@
             }, 500);
         }
 
-        checkGuestPhaseDone();
+        if (!result.deferredDraw) {
+            checkGuestPhaseDone();
+        }
         publishState();
     }
 
@@ -2330,6 +2632,12 @@
             : null;
         const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue, selectedForAbility);
         if (!result) return;
+
+        // If the ability needs the player to pick a target, enter targeting mode
+        if (result.needsTargetChoice && selfKey === 'player') {
+            enterTargetingMode(selectedForAbility, result.validTargets, result.ability.name, result.canTargetArriving);
+            return;
+        }
 
         showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500, selfKey);
         if (result.revealedGuests) setRevealDoorIntel(selfKey, result.revealedGuests);
@@ -2367,7 +2675,27 @@
         updateVenueStatus(selfKey);
         updateVenueStatus(opponentKey);
         updateHUD();
-        removeTooltip();
+
+        // Keep tooltip open for player ability use — pulse it and disable button
+        if (selfKey === 'player' && tooltipEl) {
+            tooltipEl.classList.add('tooltip-pulse');
+            const abilityBtn = tooltipEl.querySelector('#btn-tooltip-ability');
+            if (abilityBtn) {
+                abilityBtn.disabled = true;
+                abilityBtn.textContent = 'Used';
+            }
+            // Show the ability description as used
+            const abilityDesc = tooltipEl.querySelector('.tt-ability');
+            if (abilityDesc) {
+                abilityDesc.style.opacity = '0.5';
+            }
+            setTimeout(() => {
+                if (tooltipEl) tooltipEl.classList.remove('tooltip-pulse');
+                removeTooltip();
+            }, 600);
+        } else {
+            removeTooltip();
+        }
         removeIconTooltip();
 
         if (opponent.busted) {
@@ -2383,8 +2711,8 @@
     }
 
     function handleAbility(explicitTarget = null) {
-        dismissInfoPanelPopup();
         if (isMultiplayer() && multiplayerRole === 'join') {
+            dismissInfoPanelPopup();
             multiplayerSession?.publish('request-action', { action: 'ability', actor: 'rival' });
             return;
         }
@@ -2393,6 +2721,7 @@
 
     function runCloseDoor(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
+        if (targetingMode && actor === 'player') exitTargetingMode();
         const { self, opponent, selfKey } = getActorState(actor);
         if (self.doorClosed || self.busted) return;
 
@@ -2499,6 +2828,33 @@
             const result = Game.admitGuest(r, rVenue, gameState.player, Game.VENUES[gameState.player.venueId]);
             if (!result) return;
 
+            // AI auto-resolve deferred draw from arrival stackChoice / nameDrop
+            if (result.deferredDraw) {
+                if (result.needsStackChoice && result.revealedGuests?.length >= 2) {
+                    const a = Game.GUESTS[result.revealedGuests[0]];
+                    const b = Game.GUESTS[result.revealedGuests[1]];
+                    const aVal = (a?.money || 0) + (a?.points || 0);
+                    const bVal = (b?.money || 0) + (b?.points || 0);
+                    const firstId = aVal >= bVal ? result.revealedGuests[0] : result.revealedGuests[1];
+                    Game.resolveStackChoice(r, firstId);
+                    // Stack choice just reorders; still need to draw
+                    Game.drawNextGuest(r, rVenue);
+                } else if (result.needsNameDropChoice && result.revealedGuests?.length) {
+                    let bestId = result.revealedGuests[0];
+                    let bestVal = -Infinity;
+                    for (const id of result.revealedGuests) {
+                        const g = Game.GUESTS[id];
+                        const val = (g?.money || 0) + (g?.points || 0);
+                        if (val > bestVal) { bestVal = val; bestId = id; }
+                    }
+                    // resolveNameDropChoice sets arrivingGuest; no draw needed
+                    Game.resolveNameDropChoice(r, rVenue, p, pVenue, bestId);
+                } else {
+                    // Fallback: just draw
+                    Game.drawNextGuest(r, rVenue);
+                }
+            }
+
             if (result.pushedOut && result.pushedOut.length) {
                 result.pushedOut.forEach(id => animateExitGuest('rival', id));
             }
@@ -2519,9 +2875,101 @@
                     document.getElementById('rival-area').classList.remove('bust-flash');
                 }, 500);
             }
-        } else if (action === 'ability') {
-            const result = Game.activateAbility(r, p, rVenue, pVenue);
+        } else if (action === 'ability' || (typeof action === 'object' && action.action === 'houseAbility')) {
+            let selectedGuest = null;
+            if (typeof action === 'object' && action.action === 'houseAbility') {
+                // House ability with targeting: build the selectedGuest param
+                const entry = r.house.find(e => typeof e !== 'string' && e.instanceId === action.instanceId);
+                if (!entry) return;
+                selectedGuest = {
+                    source: 'house',
+                    guestId: entry.guestId,
+                    instanceId: action.instanceId,
+                    targetInstanceId: action.targetInstanceId,
+                };
+            }
+            let result = Game.activateAbility(r, p, rVenue, pVenue, selectedGuest);
             if (!result) return;
+
+            // AI auto-resolve: if the ability needs a target choice, pick one automatically
+            if (result.needsTargetChoice && result.validTargets?.length) {
+                const abilityType = result.ability?.type;
+                let picked = null;
+                if (abilityType === 'scoreGuest') {
+                    // Pick highest-value guest
+                    let bestVal = -Infinity;
+                    for (const t of result.validTargets) {
+                        const g = Game.GUESTS[t.guestId];
+                        if (g && (g.money + g.points) > bestVal) {
+                            bestVal = g.money + g.points;
+                            picked = t;
+                        }
+                    }
+                } else if (abilityType === 'refreshAction') {
+                    // Pick a guest whose ability has been used
+                    for (const t of result.validTargets) {
+                        const entry = r.house[t.index];
+                        if (entry && typeof entry !== 'string' && entry.abilityUsed) {
+                            picked = t;
+                            break;
+                        }
+                    }
+                } else {
+                    // boot/bounce: pick lowest-value non-locked guest
+                    let bestVal = Infinity;
+                    for (const t of result.validTargets) {
+                        const entry = r.house[t.index];
+                        if (entry && typeof entry !== 'string' && entry.lockUntilClose) continue;
+                        const g = Game.GUESTS[t.guestId];
+                        if (g && (g.money + g.points) < bestVal) {
+                            bestVal = g.money + g.points;
+                            picked = t;
+                        }
+                    }
+                }
+                if (picked) {
+                    const targetEntry = r.house[picked.index];
+                    const retryTarget = {
+                        ...(selectedGuest || { source: 'arriving', guestId: r.arrivingGuest }),
+                        targetInstanceId: targetEntry?.instanceId ?? null,
+                    };
+                    result = Game.activateAbility(r, p, rVenue, pVenue, retryTarget);
+                    if (!result) return;
+                } else {
+                    // No valid target found; mark the ability as used so we don't loop
+                    if (selectedGuest?.source === 'house') {
+                        const entry = r.house.find(e => typeof e !== 'string' && e.instanceId === selectedGuest.instanceId);
+                        if (entry) entry.abilityUsed = true;
+                    } else {
+                        r.arrivingAbilityUsed = true;
+                    }
+                    return;
+                }
+            }
+
+            // AI auto-resolve: if the ability needs a stack choice, pick the higher-value guest on top
+            if (result.needsStackChoice && result.revealedGuests?.length >= 2) {
+                const a = Game.GUESTS[result.revealedGuests[0]];
+                const b = Game.GUESTS[result.revealedGuests[1]];
+                const aVal = (a?.money || 0) + (a?.points || 0);
+                const bVal = (b?.money || 0) + (b?.points || 0);
+                // Put higher-value guest on top (drawn next)
+                const firstId = aVal >= bVal ? result.revealedGuests[0] : result.revealedGuests[1];
+                Game.resolveStackChoice(r, firstId);
+            }
+
+            // AI auto-resolve: if the ability needs a name-drop choice, pick the highest-value guest
+            if (result.needsNameDropChoice && result.revealedGuests?.length) {
+                let bestId = result.revealedGuests[0];
+                let bestVal = -Infinity;
+                for (const id of result.revealedGuests) {
+                    const g = Game.GUESTS[id];
+                    const val = (g?.money || 0) + (g?.points || 0);
+                    if (val > bestVal) { bestVal = val; bestId = id; }
+                }
+                Game.resolveNameDropChoice(r, rVenue, p, pVenue, bestId);
+            }
+
             showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500, 'rival');
             if (result.revealedGuests) setRevealDoorIntel('rival', result.revealedGuests);
             // Refresh reveal overlays in case ability removed guests from queues.
@@ -3253,13 +3701,13 @@
         guestAbilityPopupEl.className = 'guest-ability-popup';
 
         const abilityHtml = guest.ability
-            ? `<div class="guest-ability-popup-title">${guest.ability.icon} ${guest.ability.name}</div>
+            ? `<div class="guest-ability-popup-title">${guest.ability.icon}</div>
                <div class="guest-ability-popup-desc">${guest.ability.desc}</div>`
             : '<div class="guest-ability-popup-desc">No special ability.</div>';
 
         guestAbilityPopupEl.innerHTML = `
             <button type="button" class="guest-ability-popup-close" aria-label="Close">✕</button>
-            <div class="guest-ability-popup-name">${guest.emoji} ${guest.name}</div>
+            <div class="guest-ability-popup-name">${getTagIconsHtml(guest)} ${guest.name}</div>
             ${abilityHtml}
         `;
 
@@ -3340,8 +3788,9 @@
         {
             heading: 'Definitions',
             items: [
+                { id: 'tags', label: 'Guest Tags' },
                 { id: 'verbs', label: 'Ability Verbs' },
-                { id: 'targeting', label: 'Targeting' },
+                { id: 'targeting', label: 'Triggers & Targeting' },
                 { id: 'terms', label: 'Term Glossary' },
                 { id: 'phases', label: 'Game Phases' },
             ],
@@ -3381,11 +3830,16 @@
                     <p>Each round has two phases: <strong>Guest Phase</strong> and <strong>Buy Phase</strong>.</p>
                     <p><strong>Guest Phase:</strong> Guests arrive at your venue one at a time. For each guest you decide:</p>
                     <p>• <strong>Admit</strong> — Let them into your house. They add their Money, Points, and Heat to your round totals.</p>
-                    <p>• <strong>Use Ability</strong> — If the guest (or a guest already in your house) has a special ability, activate it.</p>
+                    <p>• <strong>Use Ability</strong> — If a guest in your house has an <strong>Action (A:)</strong> ability, activate it.</p>
                     <p>• <strong>Close Door</strong> — Stop admitting guests. Your round totals are locked in.</p>
                     <p><strong>Heat &amp; Busting:</strong> Each guest adds Heat. If your Heat exceeds your venue's bust threshold, you <strong>bust</strong> and lose all earnings for the round.</p>
                     <p><strong>Buy Phase:</strong> Spend earned Money to buy new guests for your deck, or purchase upgrades (+1 Slot, +1 Heat Cap).</p>
-                    <p><strong>House Grid:</strong> Admitted guests sit in a lane. The <strong>Newest</strong> guest is closest to the entry (index 0), the <strong>Oldest</strong> is closest to the exit. Lane abilities like Boot, Bounce, Nudge, and Lock target guests by position.</p>
+                    <p><strong>Ability Triggers:</strong> Guests can have abilities that trigger in different ways:</p>
+                    <p>• <strong>Action (A:)</strong> — You manually activate this ability during the Guest Phase.</p>
+                    <p>• <strong>Arrival</strong> — Triggers automatically when the guest enters your house.</p>
+                    <p>• <strong>Departure</strong> — Triggers automatically when the guest leaves your house (Boot, Bounce, Clear).</p>
+                    <p>• <strong>Scoring</strong> — Evaluated at the end of the round when points are tallied.</p>
+                    <p><strong>House Grid:</strong> Admitted guests sit in a lane. The <strong>Newest</strong> guest is closest to the entry, the <strong>Oldest</strong> is closest to the exit.</p>
                 `;
                 break;
             case 'abilities': {
@@ -3396,45 +3850,60 @@
                     if (!g.ability || g.isShopItem) return;
                     rows += `<div class="glossary-ability-row">
                         <span class="glossary-ability-icon">${escapeHtml(g.ability.icon)}</span>
-                        <span class="glossary-ability-name">${escapeHtml(g.ability.name)}</span>
                         <span class="glossary-ability-desc">${escapeHtml(g.name)} — ${escapeHtml(g.ability.desc)}</span>
                     </div>`;
                 });
                 el.innerHTML = `<h4>All Guest Abilities</h4>${rows}`;
                 break;
             }
+            case 'tags':
+                el.innerHTML = `
+                    <h4>Guest Tags</h4>
+                    <p>Each guest has one or more tags. Some abilities interact with tags (e.g. Clique scores adjacent guests sharing a tag).</p>
+                    <table class="glossary-table">
+                        <tr><th>Icon</th><th>Tag</th><th>Flavour</th></tr>
+                        <tr><td>${TAG_ICONS.VIP}</td><td>VIP</td><td>High-profile guests that bring points and prestige.</td></tr>
+                        <tr><td>${TAG_ICONS.Performer}</td><td>Performer</td><td>Showy guests with flashy abilities and scoring tricks.</td></tr>
+                        <tr><td>${TAG_ICONS.Scout}</td><td>Scout</td><td>Intel-gatherers who peek, stack, and control the queue.</td></tr>
+                        <tr><td>${TAG_ICONS.Broker}</td><td>Broker</td><td>Money-movers who generate cash and fund your buy phase.</td></tr>
+                        <tr><td>${TAG_ICONS.Outlaw}</td><td>Outlaw</td><td>Troublemakers who sabotage opponents and thrive in chaos.</td></tr>
+                    </table>
+                `;
+                break;
             case 'verbs':
                 el.innerHTML = `
                     <h4>Ability Verbs</h4>
                     <table class="glossary-table">
                         <tr><th>Verb</th><th>Effect</th></tr>
+                        <tr><td>BOOT</td><td>Remove a guest from your house (triggers their Departure abilities)</td></tr>
+                        <tr><td>BOUNCE</td><td>Return a guest from your house to the top of your queue (triggers their Departure abilities)</td></tr>
+                        <tr><td>CLEAR HOUSE</td><td>Remove all guests from your house</td></tr>
                         <tr><td>COOL X</td><td>Reduce your Heat by X (min 0)</td></tr>
-                        <tr><td>SPIKE X</td><td>Add X Heat to opponent</td></tr>
                         <tr><td>PEEK X</td><td>Reveal the next X guests in your queue</td></tr>
+                        <tr><td>PLANT</td><td>Queue a Gatecrasher in opponent's queue</td></tr>
+                        <tr><td>PLUS ONE</td><td>Admit the next guest in queue immediately</td></tr>
+                        <tr><td>REFRESH</td><td>Make another guest's used Action ability available again</td></tr>
+                        <tr><td>SCORE X</td><td>Immediately gain X Points (outside of normal scoring)</td></tr>
+                        <tr><td>SCORE GUEST</td><td>Remove a guest from your house and gain their Points now</td></tr>
+                        <tr><td>SPIKE X</td><td>Add X Heat to your opponent</td></tr>
                         <tr><td>STACK</td><td>Reveal next 2 guests and choose their order</td></tr>
-                        <tr><td>GRAB X</td><td>Gain X Money</td></tr>
-                        <tr><td>LIFT X</td><td>Steal up to X Money from opponent</td></tr>
-                        <tr><td>TRASH</td><td>Discard the next queued guest</td></tr>
-                        <tr><td>PLANT</td><td>Queue a Gatecrasher for opponent</td></tr>
-                        <tr><td>LOCK</td><td>Lock a guest until door close</td></tr>
-                        <tr><td>BOOT</td><td>Remove a guest from the house (they leave)</td></tr>
-                        <tr><td>BOUNCE</td><td>Remove a guest and put them back on top of your queue</td></tr>
-                        <tr><td>NUDGE</td><td>Move a guest 1 step toward Newest (toward entry)</td></tr>
+                        <tr><td>NAME DROP</td><td>Reveal next 3 guests, admit 1 now, reorder the rest</td></tr>
                     </table>
                 `;
                 break;
             case 'targeting':
                 el.innerHTML = `
-                    <h4>Targeting</h4>
-                    <p>Lane abilities (Boot, Bounce, Nudge, Lock) target a specific guest by position in your house.</p>
+                    <h4>Triggers & Targeting</h4>
+                    <p>Each ability has a <strong>trigger</strong> that determines when it activates:</p>
                     <table class="glossary-table">
-                        <tr><th>Target</th><th>Meaning</th></tr>
-                        <tr><td>Oldest</td><td>Guest closest to the exit (last in house)</td></tr>
-                        <tr><td>Newest</td><td>Guest closest to the entry (first in house)</td></tr>
-                        <tr><td>Left of Self</td><td>Guest immediately older than this guest (one step toward exit)</td></tr>
-                        <tr><td>Right of Self</td><td>Guest immediately newer than this guest (one step toward entry)</td></tr>
+                        <tr><th>Trigger</th><th>When it fires</th></tr>
+                        <tr><td>Action (A:)</td><td>You choose to activate it during the Guest Phase. Each Action can only be used once per round unless refreshed.</td></tr>
+                        <tr><td>Arrival</td><td>Fires automatically when the guest enters your house.</td></tr>
+                        <tr><td>Departure</td><td>Fires automatically when the guest leaves your house (via Boot, Bounce, Clear House, or Score Guest).</td></tr>
+                        <tr><td>Scoring</td><td>Evaluated at the end of the round during point tallying. Typically grants conditional bonus Points.</td></tr>
                     </table>
-                    <p><strong>Lock rules:</strong> Locked guests cannot be Booted or Bounced. Nudge cannot move a locked guest or swap with a locked neighbor.</p>
+                    <p><strong>Targeting:</strong> Abilities like Boot and Bounce let you <strong>choose</strong> which guest in your house to target.</p>
+                    <p><strong>Positions:</strong> <strong>Newest</strong> = closest to entry. <strong>Oldest</strong> = closest to exit. Some Scoring abilities care about position (e.g. "if this guest is Newest").</p>
                 `;
                 break;
             case 'terms':
@@ -3442,17 +3911,23 @@
                     <h4>Term Glossary</h4>
                     <table class="glossary-table">
                         <tr><th>Term</th><th>Definition</th></tr>
-                        <tr><td>Heat</td><td>Pressure from guests. If it exceeds your bust threshold, you bust.</td></tr>
-                        <tr><td>Bust</td><td>Losing all round earnings because Heat went over the limit.</td></tr>
-                        <tr><td>House</td><td>Your venue's guest lane. Admitted guests sit here left to right.</td></tr>
-                        <tr><td>Queue</td><td>Your draw pile. Guests arrive from the top of the queue.</td></tr>
+                        <tr><td>Action (A:)</td><td>An ability you manually activate during the Guest Phase. Used once per round unless refreshed.</td></tr>
                         <tr><td>Arriving Guest</td><td>The guest currently at your door, waiting to be admitted.</td></tr>
+                        <tr><td>Bust</td><td>Losing all round earnings because Heat went over the limit.</td></tr>
                         <tr><td>Deck</td><td>The full set of guests you bring into a match.</td></tr>
-                        <tr><td>Flash</td><td>The trigger type for abilities — used at the moment a guest appears.</td></tr>
-                        <tr><td>Slot</td><td>A position in the house grid. Capacity can be increased.</td></tr>
+                        <tr><td>Departure</td><td>An ability trigger that fires when a guest leaves the house (via Boot, Bounce, Clear, or Score Guest).</td></tr>
                         <tr><td>Gatecrasher</td><td>A trouble guest with 1 Heat, 0 Money, 0 Points. Planted by opponents.</td></tr>
+                        <tr><td>Heat</td><td>Pressure from guests. If it exceeds your bust threshold, you bust.</td></tr>
+                        <tr><td>House</td><td>Your venue's guest lane. Admitted guests sit here left to right.</td></tr>
+                        <tr><td>Newest</td><td>The guest closest to the entry (first admitted most recently).</td></tr>
+                        <tr><td>Oldest</td><td>The guest closest to the exit (admitted earliest).</td></tr>
+                        <tr><td>Queue</td><td>Your draw pile. Guests arrive from the top of the queue.</td></tr>
+                        <tr><td>Refresh</td><td>Makes a used Action ability available again this round.</td></tr>
                         <tr><td>Round Money</td><td>Money earned during the current round from abilities and guests.</td></tr>
                         <tr><td>Round Points</td><td>Points earned during the current round.</td></tr>
+                        <tr><td>Scoring Ability</td><td>An ability evaluated at round end that grants conditional bonus Points.</td></tr>
+                        <tr><td>Slot</td><td>A position in the house grid. Capacity can be increased.</td></tr>
+                        <tr><td>Tags</td><td>Categories on guests (VIP, Broker, Performer, Scout, Outlaw). Some abilities interact with tags.</td></tr>
                     </table>
                 `;
                 break;

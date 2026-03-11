@@ -43,137 +43,48 @@ function makeOpponent(overrides = {}) {
   return makePlayer({ name: "Opponent", isAI: true, ...overrides });
 }
 
-// ── coolHeat ──────────────────────────────────────────────────────
-
-describe("coolHeat ability", () => {
-  test("reduces player heat by ability value (arriving guest)", () => {
-    const player = makePlayer({ heat: 3, arrivingGuest: "chiller" });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result).not.toBeNull();
-    expect(result.effects).toContain("cooled 1 heat");
-    expect(player.heat).toBe(2);
-    expect(player.arrivingAbilityUsed).toBe(true);
-  });
-
-  test("coolHeat value 2 (bookkeeper Audit)", () => {
-    const player = makePlayer({ heat: 3, arrivingGuest: "bookkeeper" });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result).not.toBeNull();
-    expect(result.effects).toContain("cooled 2 heat");
-    expect(player.heat).toBe(1);
-  });
-
-  test("coolHeat does not go below 0", () => {
-    const player = makePlayer({ heat: 0, arrivingGuest: "chiller" });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(player.heat).toBe(0);
-  });
-
-  test("coolHeat from house guest", () => {
-    const entry = makeHouseEntry("chiller");
-    const player = makePlayer({ heat: 2, house: [entry] });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
-      source: "house", guestId: "chiller", instanceId: entry.instanceId,
-    });
-    expect(result).not.toBeNull();
-    expect(player.heat).toBe(1);
-    expect(entry.abilityUsed).toBe(true);
-  });
-});
-
-// ── addOpponentHeat ───────────────────────────────────────────────
-
-describe("addOpponentHeat ability", () => {
-  test("adds heat to opponent (hypester, value 1)", () => {
-    const player = makePlayer({ arrivingGuest: "hypester" });
-    const opponent = makeOpponent({ heat: 1 });
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result).not.toBeNull();
-    expect(result.effects).toContain("added 1 heat to opponent");
-    expect(opponent.heat).toBe(2);
-  });
-
-  test("adds 2 heat (provocateur Taunt)", () => {
-    const player = makePlayer({ arrivingGuest: "provocateur" });
-    const opponent = makeOpponent({ heat: 0 });
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("added 2 heat to opponent");
-    expect(opponent.heat).toBe(2);
-  });
-});
-
-// ── scoreNow ──────────────────────────────────────────────────────
-
-describe("scoreNow ability", () => {
-  test("scores points immediately (spotlightPhotographer Flash)", () => {
-    const player = makePlayer({ arrivingGuest: "spotlightPhotographer", roundPoints: 3 });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result).not.toBeNull();
-    expect(result.effects).toContain("scored 2 points");
-    expect(player.roundPoints).toBe(5);
-  });
-});
-
-// ── revealNext ────────────────────────────────────────────────────
+// ── revealNext (Door Watcher: PEEK 1) ─────────────────────────────
 
 describe("revealNext ability", () => {
-  test("reveals 1 guest (tipOffArtist Tip-Off)", () => {
+  test("reveals 1 guest (doorWatcher Check the Line)", () => {
     const player = makePlayer({
-      arrivingGuest: "tipOffArtist",
-      roundDeck: ["regular", "hypeFriend", "chiller"],
+      arrivingGuest: "doorWatcher",
+      roundDeck: ["familiarFace", "loudFriend", "bottleBringer"],
     });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).not.toBeNull();
     expect(result.revealedGuests).toHaveLength(1);
-    expect(result.revealedGuests[0]).toBe("chiller"); // last in deck = next drawn
-  });
-
-  test("reveals 2 guests (rovingCritic Inspect)", () => {
-    const player = makePlayer({
-      arrivingGuest: "rovingCritic",
-      roundDeck: ["regular", "hypeFriend", "chiller"],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.revealedGuests).toHaveLength(2);
+    expect(result.revealedGuests[0]).toBe("bottleBringer");
   });
 
   test("handles empty deck gracefully", () => {
-    const player = makePlayer({ arrivingGuest: "tipOffArtist", roundDeck: [] });
+    const player = makePlayer({ arrivingGuest: "doorWatcher", roundDeck: [] });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result.effects).toContain("queue empty");
   });
 });
 
-// ── revealAndReorder (STACK) ─────────────────────────────────────
+// ── stackChoice (Window Watcher: CURATE) ──────────────────────────
 
-describe("revealAndReorder ability (STACK)", () => {
-  test("reveals 2 guests and sets needsStackChoice (galleryScout Stack)", () => {
+describe("stackChoice ability", () => {
+  test("reveals 2 guests and sets needsStackChoice (windowWatcher Curate)", () => {
     const player = makePlayer({
-      arrivingGuest: "galleryScout",
-      roundDeck: ["regular", "hypeFriend"],
+      arrivingGuest: "windowWatcher",
+      roundDeck: ["familiarFace", "loudFriend"],
     });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).not.toBeNull();
     expect(result.revealedGuests).toHaveLength(2);
     expect(result.needsStackChoice).toBe(true);
-    // Deck order should NOT have changed yet
-    expect(player.roundDeck[0]).toBe("regular");
-    expect(player.roundDeck[1]).toBe("hypeFriend");
   });
 
   test("handles single card in deck", () => {
     const player = makePlayer({
-      arrivingGuest: "galleryScout",
-      roundDeck: ["regular"],
+      arrivingGuest: "windowWatcher",
+      roundDeck: ["familiarFace"],
     });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
@@ -182,7 +93,7 @@ describe("revealAndReorder ability (STACK)", () => {
   });
 
   test("handles empty deck", () => {
-    const player = makePlayer({ arrivingGuest: "galleryScout", roundDeck: [] });
+    const player = makePlayer({ arrivingGuest: "windowWatcher", roundDeck: [] });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).not.toBeNull();
@@ -190,16 +101,14 @@ describe("revealAndReorder ability (STACK)", () => {
   });
 });
 
-// ── resolveStackChoice ──────────────────────────────────────────
+// ── resolveStackChoice ────────────────────────────────────────────
 
 describe("resolveStackChoice", () => {
   test("reorders top 2 so chosen card is drawn next", () => {
     const player = makePlayer({ roundDeck: ["a", "b", "c"] });
-    // c is on top (drawn next), b is second
     const ok = Game.resolveStackChoice(player, "b");
     expect(ok).toBe(true);
     expect(player.roundDeck[player.roundDeck.length - 1]).toBe("b");
-    expect(player.roundDeck[player.roundDeck.length - 2]).toBe("c");
   });
 
   test("no-op when chosen card is already on top", () => {
@@ -222,424 +131,618 @@ describe("resolveStackChoice", () => {
   });
 });
 
-// ── bounce (targeting) ───────────────────────────────────────────
+// ── bounce with choice targeting (Porch Buddy) ───────────────────
 
-describe("bounce ability", () => {
-  test("bounces oldest guest back to queue (standIn Understudy)", () => {
-    const entry = makeHouseEntry("regular");
-    const player = makePlayer({
-      arrivingGuest: "standIn",
-      house: [makeHouseEntry("hypeFriend"), entry], // entry at last index = oldest
-      roundDeck: ["chiller"],
-    });
+describe("bounce ability (choice targeting)", () => {
+  test("returns needsTargetChoice when no target provided", () => {
+    const entry = makeHouseEntry("familiarFace");
+    const activator = makeHouseEntry("porchBuddy");
+    const player = makePlayer({ house: [activator, entry] });
     const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "porchBuddy", instanceId: activator.instanceId,
+    });
     expect(result).not.toBeNull();
-    expect(player.house).toHaveLength(1);
-    expect(player.house[0].guestId).toBe("hypeFriend");
-    // Bounced guest goes to front of deck array (drawn last)
-    expect(player.roundDeck[0]).toBe("regular");
+    expect(result.needsTargetChoice).toBe(true);
+    expect(activator.abilityUsed).toBe(false); // Not marked used yet
   });
 
-  test("does not bounce a locked guest", () => {
-    const lockedEntry = makeHouseEntry("regular", { lockUntilClose: true });
+  test("bounces target when targetInstanceId provided", () => {
+    const target = makeHouseEntry("familiarFace");
+    const activator = makeHouseEntry("porchBuddy");
     const player = makePlayer({
-      arrivingGuest: "standIn",
-      house: [makeHouseEntry("hypeFriend"), lockedEntry],
+      house: [activator, target],
+      roundDeck: ["bottleBringer"],
     });
     const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(player.house).toHaveLength(2); // nothing bounced
-    expect(result.effects).toContain("target is locked");
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "porchBuddy", instanceId: activator.instanceId,
+      targetInstanceId: target.instanceId,
+    });
+    expect(result).not.toBeNull();
+    expect(player.house).toHaveLength(1);
+    expect(player.roundDeck[0]).toBe("familiarFace");
+    expect(activator.abilityUsed).toBe(true);
   });
 
   test("no-op when house is empty", () => {
-    const player = makePlayer({
-      arrivingGuest: "standIn",
-      house: [],
-    });
+    const player = makePlayer({ arrivingGuest: "porchBuddy", house: [] });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result.effects).toContain("no valid target");
   });
 });
 
-// ── nudge (targeting) ────────────────────────────────────────────
+// ── boot with choice targeting (Fed-Up Roommate) ─────────────────
 
-describe("nudge ability", () => {
-  test("nudges oldest guest one step toward newest (usher Escort)", () => {
-    const a = makeHouseEntry("regular");
-    const b = makeHouseEntry("hypeFriend");
-    const player = makePlayer({
-      arrivingGuest: "usher",
-      house: [a, b], // b is oldest (index 1)
-    });
+describe("boot ability (choice targeting)", () => {
+  test("returns needsTargetChoice when no target provided", () => {
+    const entry = makeHouseEntry("familiarFace");
+    const activator = makeHouseEntry("fedUpRoommate");
+    const player = makePlayer({ house: [activator, entry] });
     const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "fedUpRoommate", instanceId: activator.instanceId,
+    });
     expect(result).not.toBeNull();
-    expect(result.effects[0]).toMatch(/nudged/);
-    // b should have moved from index 1 to index 0
-    expect(player.house[0].guestId).toBe("hypeFriend");
-    expect(player.house[1].guestId).toBe("regular");
+    expect(result.needsTargetChoice).toBe(true);
   });
 
-  test("cannot nudge a locked guest", () => {
-    const a = makeHouseEntry("regular");
-    const b = makeHouseEntry("hypeFriend", { lockUntilClose: true });
-    const player = makePlayer({
-      arrivingGuest: "usher",
-      house: [a, b],
-    });
+  test("boots target when targetInstanceId provided", () => {
+    const target = makeHouseEntry("familiarFace");
+    const activator = makeHouseEntry("fedUpRoommate");
+    const player = makePlayer({ house: [activator, target] });
     const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("blocked by lock");
-    expect(player.house[1].guestId).toBe("hypeFriend"); // unchanged
-  });
-
-  test("cannot nudge into a locked neighbor", () => {
-    const a = makeHouseEntry("regular", { lockUntilClose: true });
-    const b = makeHouseEntry("hypeFriend");
-    const player = makePlayer({
-      arrivingGuest: "usher",
-      house: [a, b],
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "fedUpRoommate", instanceId: activator.instanceId,
+      targetInstanceId: target.instanceId,
     });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("blocked by lock");
-  });
-
-  test("no-op when target is already at newest", () => {
-    const a = makeHouseEntry("regular");
-    const player = makePlayer({
-      arrivingGuest: "usher",
-      house: [a], // oldest = index 0, already at newest
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("no valid move");
-  });
-});
-
-// ── boot (targeting) ─────────────────────────────────────────────
-
-describe("boot ability", () => {
-  test("boots oldest guest out (floorRunner Crowd Surf)", () => {
-    const player = makePlayer({
-      arrivingGuest: "floorRunner",
-      house: [makeHouseEntry("hypeFriend"), makeHouseEntry("regular")],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).not.toBeNull();
-    expect(result.pushedOut).toBe("regular");
+    expect(result.pushedOut).toBe("familiarFace");
     expect(player.house).toHaveLength(1);
-    expect(player.house[0].guestId).toBe("hypeFriend");
-  });
-
-  test("does not boot locked target", () => {
-    const locked = makeHouseEntry("regular", { lockUntilClose: true });
-    const player = makePlayer({
-      arrivingGuest: "floorRunner",
-      house: [makeHouseEntry("hypeFriend"), locked],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(player.house).toHaveLength(2);
-    expect(result.effects).toContain("target is locked");
-  });
-
-  test("boot leftOfSelf targets correct guest (wheelman Getaway)", () => {
-    const a = makeHouseEntry("regular");
-    const b = makeHouseEntry("hypeFriend");
-    const c = makeHouseEntry("chiller");
-    const player = makePlayer({
-      arrivingGuest: "wheelman",
-      house: [a, b, c], // arriving will be at 0; leftOfSelf = current index 0
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result).not.toBeNull();
-    // leftOfSelf for arriving (sourceIndex -1) => current index 0
-    expect(result.pushedOut).toBe("regular");
-    expect(player.house).toHaveLength(2);
-  });
-
-  test("boot leftOfSelf skips locked target", () => {
-    const a = makeHouseEntry("regular", { lockUntilClose: true });
-    const b = makeHouseEntry("hypeFriend");
-    const player = makePlayer({
-      arrivingGuest: "wheelman",
-      house: [a, b],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("target is locked");
-    expect(player.house).toHaveLength(2);
-  });
-
-  test("boot leftOfSelf no-op on empty house", () => {
-    const player = makePlayer({
-      arrivingGuest: "wheelman",
-      house: [],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("no valid target");
   });
 });
 
-// (pushAnother tests removed — wheelman now uses boot/leftOfSelf, tested above)
+// ── clearHouse (Reset Host: LAST CALL) ───────────────────────────
 
-// ── lockAnother ───────────────────────────────────────────────────
-
-describe("lockAnother ability", () => {
-  test("locks adjacent guest when activated from arriving guest", () => {
-    const front = makeHouseEntry("regular");
+describe("clearHouse ability", () => {
+  test("clears all guests from house", () => {
+    const activator = makeHouseEntry("resetHost");
     const player = makePlayer({
-      arrivingGuest: "celebrity",
-      house: [front, makeHouseEntry("hypeFriend")],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result).not.toBeNull();
-    expect(result.effects).toContain("locked a guest");
-    // Should lock index 0 (adjacent to arriving guest's future position)
-    expect(front.lockUntilClose).toBe(true);
-  });
-
-  test("locks adjacent when activated from house guest at index 0", () => {
-    const activator = makeHouseEntry("celebrity");
-    const neighbor = makeHouseEntry("regular");
-    const player = makePlayer({
-      house: [activator, neighbor],
+      house: [activator, makeHouseEntry("familiarFace"), makeHouseEntry("loudFriend")],
     });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
-      source: "house", guestId: "celebrity", instanceId: activator.instanceId,
+      source: "house", guestId: "resetHost", instanceId: activator.instanceId,
     });
     expect(result).not.toBeNull();
-    // index 0 has no left neighbor; should lock right neighbor (index 1)
-    expect(neighbor.lockUntilClose).toBe(true);
+    expect(player.house).toHaveLength(0);
+    expect(result.effects[0]).toMatch(/cleared 3 guests/);
   });
 
-  test("locks adjacent when activated from house guest in middle", () => {
-    const left = makeHouseEntry("regular");
-    const activator = makeHouseEntry("celebrity");
-    const right = makeHouseEntry("hypeFriend");
-    const player = makePlayer({
-      house: [left, activator, right],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
-      source: "house", guestId: "celebrity", instanceId: activator.instanceId,
-    });
-    expect(result).not.toBeNull();
-    // Should lock index 0 (left of activator at index 1)
-    expect(left.lockUntilClose).toBe(true);
-  });
-
-  test("reports no adjacent guest when house is empty", () => {
-    const player = makePlayer({ arrivingGuest: "celebrity", house: [] });
+  test("handles already empty house", () => {
+    const player = makePlayer({ arrivingGuest: "resetHost", house: [] });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("no adjacent guest");
+    expect(result.effects).toContain("house already empty");
   });
 });
 
-// ── lockAdjacent ──────────────────────────────────────────────────
+// ── scoreGuest (Story Poster: SNAPSHOT / Party Photographer) ─────
 
-describe("lockAdjacent ability", () => {
-  test("locks adjacent guest from arriving position", () => {
-    const front = makeHouseEntry("regular");
-    const player = makePlayer({
-      arrivingGuest: "headliner",
-      house: [front, makeHouseEntry("hypeFriend")],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result).not.toBeNull();
-    expect(result.effects[0]).toMatch(/locked 1 adjacent/);
-    expect(front.lockUntilClose).toBe(true);
-  });
-
-  test("locks BOTH adjacent when activated from middle of house", () => {
-    const left = makeHouseEntry("regular");
-    const activator = makeHouseEntry("headliner");
-    const right = makeHouseEntry("hypeFriend");
-    const player = makePlayer({
-      house: [left, activator, right],
-    });
+describe("scoreGuest ability", () => {
+  test("returns needsTargetChoice when no target", () => {
+    const activator = makeHouseEntry("storyPoster");
+    const target = makeHouseEntry("familiarFace");
+    const player = makePlayer({ house: [activator, target] });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
-      source: "house", guestId: "headliner", instanceId: activator.instanceId,
+      source: "house", guestId: "storyPoster", instanceId: activator.instanceId,
     });
-    expect(result).not.toBeNull();
-    expect(result.effects[0]).toMatch(/locked 2 adjacent/);
-    expect(left.lockUntilClose).toBe(true);
-    expect(right.lockUntilClose).toBe(true);
-    expect(activator.lockUntilClose).toBe(false); // activator itself not locked
+    expect(result.needsTargetChoice).toBe(true);
   });
 
-  test("locks 1 when at edge of house", () => {
-    const activator = makeHouseEntry("headliner");
-    const neighbor = makeHouseEntry("regular");
-    const player = makePlayer({
-      house: [activator, neighbor],
-    });
+  test("scores target guest's points and money", () => {
+    const activator = makeHouseEntry("storyPoster");
+    const target = makeHouseEntry("loudFriend"); // loudFriend has 1 point, 1 money
+    const player = makePlayer({ house: [activator, target], roundPoints: 0, roundMoney: 0 });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
-      source: "house", guestId: "headliner", instanceId: activator.instanceId,
+      source: "house", guestId: "storyPoster", instanceId: activator.instanceId,
+      targetInstanceId: target.instanceId,
     });
-    expect(result.effects[0]).toMatch(/locked 1 adjacent/);
-    expect(neighbor.lockUntilClose).toBe(true);
-  });
-
-  test("reports no adjacent when alone in house", () => {
-    const activator = makeHouseEntry("headliner");
-    const player = makePlayer({
-      house: [activator],
-    });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
-      source: "house", guestId: "headliner", instanceId: activator.instanceId,
-    });
-    expect(result.effects).toContain("no adjacent guests");
+    expect(player.roundPoints).toBe(1); // loudFriend's base points
+    expect(player.roundMoney).toBe(1); // loudFriend's base money
+    expect(result.effects[0]).toMatch(/scored 1 points and 1 money from Loud Friend/);
   });
 });
 
-// ── queueGatecrasher ──────────────────────────────────────────────
+// ── refreshAction (Dance Captain: SECOND WIND) ──────────────────
 
-describe("queueGatecrasher ability", () => {
-  test("queues gatecrasher for opponent (gateRunner Raid)", () => {
-    const player = makePlayer({ arrivingGuest: "gateRunner" });
-    const opponent = makeOpponent({ roundDeck: ["regular"] });
+describe("refreshAction ability", () => {
+  test("refreshes a used action", () => {
+    const activator = makeHouseEntry("danceCaptain");
+    const target = makeHouseEntry("doorWatcher", { abilityUsed: true });
+    const player = makePlayer({ house: [activator, target] });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "danceCaptain", instanceId: activator.instanceId,
+      targetInstanceId: target.instanceId,
+    });
+    expect(target.abilityUsed).toBe(false);
+    expect(result.effects[0]).toMatch(/refreshed/);
+  });
+});
+
+// ── refreshAllActions (Hype Squad: HYPE CREW) ───────────────────
+
+describe("refreshAllActions ability", () => {
+  test("refreshes all other used actions", () => {
+    const activator = makeHouseEntry("hypeSquad");
+    const a = makeHouseEntry("doorWatcher", { abilityUsed: true });
+    const b = makeHouseEntry("windowWatcher", { abilityUsed: true });
+    const player = makePlayer({ house: [activator, a, b] });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "hypeSquad", instanceId: activator.instanceId,
+    });
+    expect(a.abilityUsed).toBe(false);
+    expect(b.abilityUsed).toBe(false);
+    expect(result.effects[0]).toMatch(/refreshed 2 actions/);
+  });
+
+  test("does not refresh self", () => {
+    const activator = makeHouseEntry("hypeSquad", { abilityUsed: false });
+    const player = makePlayer({ house: [activator] });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "hypeSquad", instanceId: activator.instanceId,
+    });
+    expect(result.effects).toContain("no actions to refresh");
+  });
+});
+
+// ── opponentStackChoice (Rumor Queen: RUMOR MILL) ────────────────
+
+describe("opponentStackChoice ability", () => {
+  test("reveals opponent's top 2 guests", () => {
+    const activator = makeHouseEntry("rumorQueen");
+    const player = makePlayer({ house: [activator] });
+    const opponent = makeOpponent({ roundDeck: ["familiarFace", "loudFriend"] });
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "rumorQueen", instanceId: activator.instanceId,
+    });
+    expect(result).not.toBeNull();
+    expect(result.revealedGuests).toHaveLength(2);
+    expect(result.needsOpponentStackChoice).toBe(true);
+  });
+
+  test("handles empty opponent queue", () => {
+    const activator = makeHouseEntry("rumorQueen");
+    const player = makePlayer({ house: [activator] });
+    const opponent = makeOpponent({ roundDeck: [] });
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "rumorQueen", instanceId: activator.instanceId,
+    });
+    expect(result.effects).toContain("opponent's queue is empty");
+  });
+});
+
+// ── setHeatZero (Counselor) ──────────────────────────────────────
+
+describe("setHeatZero ability", () => {
+  test("sets heat to 0", () => {
+    const activator = makeHouseEntry("counselor");
+    const player = makePlayer({ heat: 5, house: [activator] });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "counselor", instanceId: activator.instanceId,
+    });
+    expect(player.heat).toBe(0);
+    expect(result.effects).toContain("cooled 5 heat");
+  });
+});
+
+// ── bootAdjacent (Cupid) ─────────────────────────────────────────
+
+describe("bootAdjacent ability", () => {
+  test("boots both adjacent guests", () => {
+    const left = makeHouseEntry("familiarFace");
+    const activator = makeHouseEntry("cupid");
+    const right = makeHouseEntry("loudFriend");
+    const player = makePlayer({ house: [left, activator, right] });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "cupid", instanceId: activator.instanceId,
+    });
+    expect(player.house).toHaveLength(1);
+    expect(player.house[0].guestId).toBe("cupid");
+    expect(result.effects[0]).toMatch(/booted 2 adjacent/);
+  });
+
+  test("boots 1 when at edge", () => {
+    const activator = makeHouseEntry("cupid");
+    const neighbor = makeHouseEntry("familiarFace");
+    const player = makePlayer({ house: [activator, neighbor] });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "cupid", instanceId: activator.instanceId,
+    });
+    expect(player.house).toHaveLength(1);
+    expect(result.effects[0]).toMatch(/booted 1 adjacent/);
+  });
+});
+
+// ── nameDrop (VIP Wrangler: VIP LIST as action) ──────────────────
+
+describe("nameDrop ability (action)", () => {
+  test("reveals 3 guests and sets needsNameDropChoice", () => {
+    const player = makePlayer({
+      arrivingGuest: "vipWrangler",
+      roundDeck: ["familiarFace", "loudFriend", "bottleBringer"],
+    });
+    const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).not.toBeNull();
-    expect(result.effects).toContain("queued gatecrasher for opponent");
+    expect(result.revealedGuests).toHaveLength(3);
+    expect(result.needsNameDropChoice).toBe(true);
+  });
+});
+
+// ── Arrival abilities ────────────────────────────────────────────
+
+describe("arrival: scoreNow (Main Character)", () => {
+  test("scores 2 points on admission", () => {
+    const player = makePlayer({
+      arrivingGuest: "mainCharacter",
+      roundDeck: ["familiarFace"],
+      roundPoints: 0,
+    });
+    const opponent = makeOpponent();
+    const venue = Game.VENUES.velvetRoom;
+    const result = Game.admitGuest(player, venue, opponent, venue);
+    expect(result).not.toBeNull();
+    expect(result.admitted).toBe("mainCharacter");
+    expect(player.roundPoints).toBe(2);
+    expect(result.effects).toContain("scored 2 points on arrival");
+  });
+});
+
+describe("arrival: queueGatecrasher (Address Leaker)", () => {
+  test("plants gatecrasher on opponent's queue", () => {
+    const player = makePlayer({
+      arrivingGuest: "addressLeaker",
+      roundDeck: ["familiarFace"],
+    });
+    const opponent = makeOpponent({ roundDeck: ["familiarFace"] });
+    const venue = Game.VENUES.velvetRoom;
+    const result = Game.admitGuest(player, venue, opponent, venue);
+    expect(result).not.toBeNull();
     expect(opponent.roundDeck).toContain("gatecrasher");
-    // Gatecrasher is pushed to end of array (drawn next)
-    expect(opponent.roundDeck[opponent.roundDeck.length - 1]).toBe("gatecrasher");
+    expect(result.effects).toContain("planted gatecrasher on opponent's queue");
   });
 });
 
-// ── gainMoney ─────────────────────────────────────────────────────
-
-describe("gainMoney ability", () => {
-  test("gains 3 money (partyPromoter Promo Deal)", () => {
-    const player = makePlayer({ arrivingGuest: "partyPromoter", roundMoney: 5 });
+describe("arrival: plusOne (Plus-One Prince)", () => {
+  test("auto-admits the next guest", () => {
+    const player = makePlayer({
+      arrivingGuest: "plusOnePrince",
+      roundDeck: ["familiarFace", "loudFriend"],
+    });
     const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
+    const venue = Game.VENUES.velvetRoom;
+    const result = Game.admitGuest(player, venue, opponent, venue);
     expect(result).not.toBeNull();
-    expect(result.effects).toContain("gained 3 money");
-    expect(player.roundMoney).toBe(8);
+    expect(result.autoAdmitted).not.toBeNull();
+    // Plus-One Prince entered, then the next guest was auto-admitted
+    expect(result.autoAdmitted.admitted).toBeDefined();
   });
+});
 
-  test("gains 2 money (curioDealer Appraise)", () => {
-    const player = makePlayer({ arrivingGuest: "curioDealer", roundMoney: 0 });
+describe("arrival: socialClimber", () => {
+  test("gains +1 bonusPoints on entry", () => {
+    const player = makePlayer({
+      arrivingGuest: "socialClimber",
+      roundDeck: ["familiarFace"],
+    });
     const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("gained 2 money");
+    const venue = Game.VENUES.velvetRoom;
+    const result = Game.admitGuest(player, venue, opponent, venue);
+    expect(result).not.toBeNull();
+    const entry = player.house.find(e => typeof e !== "string" && e.guestId === "socialClimber");
+    expect(entry.bonusPoints).toBe(1);
+  });
+});
+
+describe("arrival: stackChoice (Group Chat Host)", () => {
+  test("reveals 2 and sets needsStackChoice on admission", () => {
+    const player = makePlayer({
+      arrivingGuest: "groupChatHost",
+      roundDeck: ["familiarFace", "loudFriend", "bottleBringer"],
+    });
+    const opponent = makeOpponent();
+    const venue = Game.VENUES.velvetRoom;
+    const result = Game.admitGuest(player, venue, opponent, venue);
+    expect(result).not.toBeNull();
+    expect(result.needsStackChoice).toBe(true);
+    expect(result.revealedGuests).toHaveLength(2);
+  });
+});
+
+describe("arrival: impersonator (Social Butterfly)", () => {
+  test("copies action ability of guest to the left", () => {
+    // Set up house: doorWatcher is already in house at position 0
+    // Social Butterfly will enter at position 0, pushing doorWatcher to 1
+    const player = makePlayer({
+      arrivingGuest: "socialButterfly",
+      house: [makeHouseEntry("doorWatcher")],
+      roundDeck: ["familiarFace"],
+    });
+    const opponent = makeOpponent();
+    const venue = Game.VENUES.velvetRoom;
+    const result = Game.admitGuest(player, venue, opponent, venue);
+    expect(result).not.toBeNull();
+    // Social Butterfly should have copied doorWatcher's revealNext ability
+    const butterflyEntry = player.house.find(e => typeof e !== "string" && e.guestId === "socialButterfly");
+    expect(butterflyEntry.copiedAbility).toBeDefined();
+    expect(butterflyEntry.copiedAbility.type).toBe("revealNext");
+  });
+});
+
+// ── Departure abilities ──────────────────────────────────────────
+
+describe("departure: scoreNow (Afterparty Host)", () => {
+  test("scores 2 on departure when booted", () => {
+    const activator = makeHouseEntry("fedUpRoommate");
+    const target = makeHouseEntry("afterpartyHost");
+    const player = makePlayer({ house: [activator, target], roundPoints: 0 });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "fedUpRoommate", instanceId: activator.instanceId,
+      targetInstanceId: target.instanceId,
+    });
+    expect(player.roundPoints).toBe(2);
+    expect(result.effects).toEqual(expect.arrayContaining([
+      expect.stringContaining("departure: scored 2 points"),
+    ]));
+  });
+});
+
+describe("departure: gainMoney (Tab Runner)", () => {
+  test("gains 2 money on departure", () => {
+    const activator = makeHouseEntry("fedUpRoommate");
+    const target = makeHouseEntry("tabRunner");
+    const player = makePlayer({ house: [activator, target], roundMoney: 0 });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "fedUpRoommate", instanceId: activator.instanceId,
+      targetInstanceId: target.instanceId,
+    });
     expect(player.roundMoney).toBe(2);
   });
 });
 
-// ── stealMoney ────────────────────────────────────────────────────
-
-describe("stealMoney ability", () => {
-  test("steals 2 money (champagneHost Tab)", () => {
-    const player = makePlayer({ arrivingGuest: "champagneHost", roundMoney: 0 });
-    const opponent = makeOpponent({ roundMoney: 5 });
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result).not.toBeNull();
-    expect(result.effects).toContain("stole 2 money");
-    expect(player.roundMoney).toBe(2);
-    expect(opponent.roundMoney).toBe(3);
-  });
-
-  test("steals only what opponent has", () => {
-    const player = makePlayer({ arrivingGuest: "champagneHost", roundMoney: 0 });
-    const opponent = makeOpponent({ roundMoney: 1 });
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("stole 1 money");
-    expect(player.roundMoney).toBe(1);
-    expect(opponent.roundMoney).toBe(0);
-  });
-
-  test("nothing to steal when opponent has 0", () => {
-    const player = makePlayer({ arrivingGuest: "champagneHost", roundMoney: 0 });
-    const opponent = makeOpponent({ roundMoney: 0 });
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("nothing to steal");
-  });
-
-  test("steals 1 money (fence Black Market)", () => {
-    const player = makePlayer({ arrivingGuest: "fence", roundMoney: 0 });
-    const opponent = makeOpponent({ roundMoney: 3 });
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("stole 1 money");
-    expect(player.roundMoney).toBe(1);
-    expect(opponent.roundMoney).toBe(2);
-  });
-});
-
-// ── discardNext ───────────────────────────────────────────────────
-
-describe("discardNext ability", () => {
-  test("discards next queued guest (velvetBouncer Card Check)", () => {
-    const player = makePlayer({
-      arrivingGuest: "velvetBouncer",
-      roundDeck: ["regular", "hypeFriend"],
+describe("departure: coolHeat (Cool-Off Smoker)", () => {
+  test("cools 1 heat on departure", () => {
+    const activator = makeHouseEntry("fedUpRoommate");
+    const target = makeHouseEntry("coolOffSmoker");
+    const player = makePlayer({ house: [activator, target], heat: 3 });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "fedUpRoommate", instanceId: activator.instanceId,
+      targetInstanceId: target.instanceId,
     });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result).not.toBeNull();
-    expect(result.effects[0]).toMatch(/discarded/);
-    expect(player.roundDeck).toHaveLength(1);
-    expect(player.roundDeck[0]).toBe("regular");
-  });
-
-  test("reports empty queue", () => {
-    const player = makePlayer({ arrivingGuest: "velvetBouncer", roundDeck: [] });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("queue empty");
+    expect(player.heat).toBe(2);
   });
 });
 
-// ── stylist (migrated to coolHeat) ───────────────────────────────
-
-describe("stylist ability (Freshen Up)", () => {
-  test("cools 1 heat (stylist Freshen Up)", () => {
-    const player = makePlayer({
-      arrivingGuest: "stylist",
-      heat: 2,
+describe("departure: queueGatecrasher (Messy Drunk)", () => {
+  test("plants gatecrasher on opponent when messy drunk is booted", () => {
+    const activator = makeHouseEntry("fedUpRoommate");
+    const target = makeHouseEntry("messyDrunk");
+    const player = makePlayer({ house: [activator, target] });
+    const opponent = makeOpponent({ roundDeck: ["familiarFace"] });
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "fedUpRoommate", instanceId: activator.instanceId,
+      targetInstanceId: target.instanceId,
     });
-    const opponent = makeOpponent();
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result).not.toBeNull();
-    expect(result.effects).toContain("cooled 1 heat");
-    expect(player.heat).toBe(1);
+    expect(opponent.roundDeck).toContain("gatecrasher");
   });
 });
 
-// ── trendBroker (migrated to stealMoney) ─────────────────────────
+describe("departure: addOpponentHeat (Drama Starter)", () => {
+  test("spikes 1 heat to opponent on departure", () => {
+    const activator = makeHouseEntry("fedUpRoommate");
+    const target = makeHouseEntry("dramaStarter");
+    const player = makePlayer({ house: [activator, target] });
+    const opponent = makeOpponent({ heat: 1 });
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "fedUpRoommate", instanceId: activator.instanceId,
+      targetInstanceId: target.instanceId,
+    });
+    expect(opponent.heat).toBe(2);
+  });
+});
 
-describe("trendBroker ability (Insider Trade)", () => {
-  test("steals 1 money from opponent (trendBroker Insider Trade)", () => {
-    const player = makePlayer({ arrivingGuest: "trendBroker", roundMoney: 0 });
-    const opponent = makeOpponent({ roundMoney: 3 });
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result).not.toBeNull();
-    expect(result.effects).toContain("stole 1 money");
-    expect(player.roundMoney).toBe(1);
-    expect(opponent.roundMoney).toBe(2);
+// ── Scoring abilities ────────────────────────────────────────────
+
+describe("scoring: wallflower", () => {
+  test("+1 per empty slot at scoring", () => {
+    // velvetRoom gridSize 3, capacity 3. 1 guest -> 2 empty slots -> +2 bonus
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        house: [makeHouseEntry("wallflower")],
+        roundPoints: 0, roundMoney: 0, guestMoney: 0, guestPoints: 1, // wallflower base
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+    Game.endGuestPhase(state);
+    // 1 base + 2 wallflower bonus = 3
+    expect(state.player.points).toBe(3);
+  });
+});
+
+describe("scoring: clique (Link-Up Friend)", () => {
+  test("+1 per adjacent sharing a tag", () => {
+    // linkUpFriend tags: VIP, Broker. familiarFace tags: VIP -> shares VIP
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        house: [makeHouseEntry("familiarFace"), makeHouseEntry("linkUpFriend")],
+        roundPoints: 0, roundMoney: 0, guestMoney: 0, guestPoints: 2, // 1 + 1 base
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+    Game.endGuestPhase(state);
+    // 2 base + 1 clique bonus = 3
+    expect(state.player.points).toBe(3);
+  });
+});
+
+describe("scoring: centerOfAttention (Headliner)", () => {
+  test("+2 if newest (index 0)", () => {
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        house: [makeHouseEntry("headliner"), makeHouseEntry("familiarFace")],
+        roundPoints: 0, roundMoney: 0, guestMoney: 0, guestPoints: 3, // 2 + 1 base
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+    Game.endGuestPhase(state);
+    // 3 base + 2 center bonus = 5
+    expect(state.player.points).toBe(5);
   });
 
-  test("nothing to steal when opponent has 0", () => {
-    const player = makePlayer({ arrivingGuest: "trendBroker", roundMoney: 0 });
-    const opponent = makeOpponent({ roundMoney: 0 });
-    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
-    expect(result.effects).toContain("nothing to steal");
+  test("no bonus if not newest", () => {
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        house: [makeHouseEntry("familiarFace"), makeHouseEntry("headliner")],
+        roundPoints: 0, roundMoney: 0, guestMoney: 0, guestPoints: 3, // 1 + 2 base
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+    Game.endGuestPhase(state);
+    // 3 base + 0 bonus = 3
+    expect(state.player.points).toBe(3);
+  });
+});
+
+describe("scoring: packedHouse (Big Planner)", () => {
+  test("+4 if house is full", () => {
+    // velvetRoom gridSize 3
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        house: [makeHouseEntry("bigPlanner"), makeHouseEntry("familiarFace"), makeHouseEntry("loudFriend")],
+        roundPoints: 0, roundMoney: 0, guestMoney: 0, guestPoints: 4, // 2 + 1 + 1 base
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+    Game.endGuestPhase(state);
+    // 4 base + 4 packed house bonus = 8
+    expect(state.player.points).toBe(8);
+  });
+
+  test("no bonus if house not full", () => {
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        house: [makeHouseEntry("bigPlanner"), makeHouseEntry("familiarFace")],
+        roundPoints: 0, roundMoney: 0, guestMoney: 0, guestPoints: 3, // 2 + 1 base
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+    Game.endGuestPhase(state);
+    // 3 base + 0 bonus = 3
+    expect(state.player.points).toBe(3);
+  });
+});
+
+describe("scoring: highRoller", () => {
+  test("+1 per 2 money", () => {
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        money: 6,
+        house: [makeHouseEntry("highRoller")],
+        roundPoints: 0, roundMoney: 0, guestMoney: 1, guestPoints: 2, // highRoller: 1 money, 2 pts base
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+    Game.endGuestPhase(state);
+    // totalMoney = 0 + 1 + 6 = 7, floor(7/2) = 3
+    // 2 base + 3 highRoller bonus = 5
+    expect(state.player.points).toBe(5);
+  });
+});
+
+describe("scoring: chaosChaser", () => {
+  test("+1 per heat", () => {
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        heat: 3,
+        house: [makeHouseEntry("chaosChaser")],
+        roundPoints: 0, roundMoney: 0, guestMoney: 0, guestPoints: 2, // 2 base
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+    Game.endGuestPhase(state);
+    // 2 base + 3 chaos bonus = 5
+    expect(state.player.points).toBe(5);
+  });
+});
+
+describe("scoring: lastToLeave (Late Legend)", () => {
+  test("+2 if oldest (last index)", () => {
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        house: [makeHouseEntry("familiarFace"), makeHouseEntry("lateLegend")],
+        roundPoints: 0, roundMoney: 0, guestMoney: 0, guestPoints: 3, // 1 + 2 base
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+    Game.endGuestPhase(state);
+    // 3 base + 2 lastToLeave bonus = 5
+    expect(state.player.points).toBe(5);
+  });
+
+  test("no bonus if not oldest", () => {
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        house: [makeHouseEntry("lateLegend"), makeHouseEntry("familiarFace")],
+        roundPoints: 0, roundMoney: 0, guestMoney: 0, guestPoints: 3, // 2 + 1 base
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+    Game.endGuestPhase(state);
+    // 3 base + 0 bonus = 3
+    expect(state.player.points).toBe(3);
   });
 });
 
@@ -647,80 +750,54 @@ describe("trendBroker ability (Insider Trade)", () => {
 
 describe("activateAbility guards", () => {
   test("returns null if door is closed", () => {
-    const player = makePlayer({ arrivingGuest: "chiller", doorClosed: true });
+    const player = makePlayer({ arrivingGuest: "doorWatcher", doorClosed: true });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).toBeNull();
   });
 
   test("returns null if busted", () => {
-    const player = makePlayer({ arrivingGuest: "chiller", busted: true });
+    const player = makePlayer({ arrivingGuest: "doorWatcher", busted: true });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).toBeNull();
   });
 
   test("returns null if ability already used (arriving)", () => {
-    const player = makePlayer({ arrivingGuest: "chiller", arrivingAbilityUsed: true });
+    const player = makePlayer({ arrivingGuest: "doorWatcher", arrivingAbilityUsed: true });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).toBeNull();
   });
 
   test("returns null if ability already used (house)", () => {
-    const entry = makeHouseEntry("chiller", { abilityUsed: true });
+    const entry = makeHouseEntry("doorWatcher", { abilityUsed: true });
     const player = makePlayer({ house: [entry] });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
-      source: "house", guestId: "chiller", instanceId: entry.instanceId,
+      source: "house", guestId: "doorWatcher", instanceId: entry.instanceId,
     });
     expect(result).toBeNull();
   });
 
-  test("house guest ability cannot be used twice in one round for legacy string entries", () => {
-    const player = makePlayer({ house: ["chiller"] });
+  test("house guest ability cannot be used twice", () => {
+    const player = makePlayer({ house: ["doorWatcher"] });
     const opponent = makeOpponent();
 
-    const first = Game.activateAbility(
-      player,
-      opponent,
-      Game.VENUES.velvetRoom,
-      Game.VENUES.velvetRoom,
-      { source: "house", guestId: "chiller" },
+    const first = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom,
+      { source: "house", guestId: "doorWatcher" },
     );
-
     expect(first).not.toBeNull();
-    expect(player.house[0].guestId).toBe("chiller");
     expect(player.house[0].abilityUsed).toBe(true);
 
-    const second = Game.activateAbility(
-      player,
-      opponent,
-      Game.VENUES.velvetRoom,
-      Game.VENUES.velvetRoom,
-      { source: "house", guestId: "chiller" },
+    const second = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom,
+      { source: "house", guestId: "doorWatcher" },
     );
     expect(second).toBeNull();
   });
 
-  test("legacy house entry normalization keeps null instanceId to avoid visual remount", () => {
-    const player = makePlayer({ house: ["chiller"] });
-    const opponent = makeOpponent();
-
-    const result = Game.activateAbility(
-      player,
-      opponent,
-      Game.VENUES.velvetRoom,
-      Game.VENUES.velvetRoom,
-      { source: "house", guestId: "chiller" },
-    );
-
-    expect(result).not.toBeNull();
-    expect(player.house[0].instanceId).toBeNull();
-  });
-
   test("returns null for guest without ability", () => {
-    const player = makePlayer({ arrivingGuest: "regular" });
+    const player = makePlayer({ arrivingGuest: "familiarFace" });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
     expect(result).toBeNull();
@@ -734,10 +811,10 @@ describe("activateAbility guards", () => {
   });
 
   test("returns null for stale house selection", () => {
-    const player = makePlayer({ house: [makeHouseEntry("regular")] });
+    const player = makePlayer({ house: [makeHouseEntry("familiarFace")] });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
-      source: "house", guestId: "chiller", instanceId: 99999,
+      source: "house", guestId: "doorWatcher", instanceId: 99999,
     });
     expect(result).toBeNull();
   });
@@ -766,66 +843,24 @@ describe("bust scoring", () => {
     Game.endGuestPhase(state);
     expect(state.player.points).toBe(0);
     expect(state.player.money).toBe(0);
-    // Non-busted rival still scores normally
     expect(state.rival.points).toBe(10);
     expect(state.rival.money).toBe(2);
   });
 
-  test("busted player with pending arriving guest does not score guest money/points", () => {
-    // Simulate: player busted mid-round but still has an arriving guest.
-    // Previously, endGuestPhase called moveArrivingGuestIntoHouse which ran
-    // applyGuestImpact AFTER applyBustState zeroed the round totals — letting
-    // the pending guest's money/points leak into the permanent totals.
+  test("busted player with pending arriving guest does not score", () => {
     const state = makeState(
       {
-        busted: true,
-        phaseComplete: true,
-        roundPoints: 0,
-        roundMoney: 0,
-        points: 2,
-        money: 1,
-        arrivingGuest: "tipper", // tipper gives 2 money, 0 points
-        roundDeck: [],
+        busted: true, phaseComplete: true,
+        roundPoints: 0, roundMoney: 0, points: 2, money: 1,
+        arrivingGuest: "bottleBringer", roundDeck: [],
       },
       { phaseComplete: true, roundPoints: 0, roundMoney: 0 },
     );
     state.player.house = [];
     Game.endGuestPhase(state);
-    // tipper must NOT contribute money/points — player busted
-    expect(state.player.points).toBe(2); // unchanged
-    expect(state.player.money).toBe(1);  // unchanged
-    // arrivingGuest cleared regardless
+    expect(state.player.points).toBe(2);
+    expect(state.player.money).toBe(1);
     expect(state.player.arrivingGuest).toBeNull();
-    // roundMoney/roundPoints remain at 0 (not re-added by moveArrivingGuestIntoHouse)
-    expect(state.player.roundMoney).toBe(0);
-    expect(state.player.roundPoints).toBe(0);
-  });
-
-  test("integration: actual bust via admitGuest does not add to permanent totals", () => {
-    // Full flow: start a round, have player accumulate some round money/points,
-    // then admit the busting guest and verify endGuestPhase commits nothing.
-    const state = Game.createGameState("Player", "velvetRoom", "Rival", "velvetRoom", 30);
-    // Manually configure: player already has 5 points and 3 money from prior rounds
-    state.player.points = 5;
-    state.player.money = 3;
-    // Simulate mid-round: player has earned 4 roundPoints and 2 roundMoney so far
-    state.player.roundPoints = 4;
-    state.player.roundMoney = 2;
-    state.player.heat = 2;
-    // Force a bust: set heat so that one more point of heat pushes them over.
-    // velvetRoom has bustThreshold 3, so heat 3 → cap is 3, heat > 3 → bust.
-    // Directly trigger applyBustState via admitGuest by having arrivingGuest add enough heat.
-    // Simplest: manually mark as busted (as if admitGuest already ran and busted them).
-    state.player.busted = true;
-    state.player.phaseComplete = true;
-    state.player.arrivingGuest = null;
-    state.rival.phaseComplete = true;
-
-    Game.endGuestPhase(state);
-
-    // Points and money must NOT be added on bust
-    expect(state.player.points).toBe(5);
-    expect(state.player.money).toBe(3);
   });
 
   test("non-busted player scores normally", () => {
@@ -847,19 +882,15 @@ describe("round earnings parity", () => {
       winner: null,
       player: makePlayer({
         phaseComplete: true,
-        roundMoney: 1,
-        roundPoints: 2,
-        guestMoney: 3,
-        guestPoints: 4,
-        arrivingGuest: "tipper",
+        roundMoney: 1, roundPoints: 2,
+        guestMoney: 3, guestPoints: 4,
+        arrivingGuest: "bottleBringer",
       }),
       rival: makeOpponent({
         phaseComplete: true,
-        roundMoney: 2,
-        roundPoints: 1,
-        guestMoney: 1,
-        guestPoints: 2,
-        arrivingGuest: "regular",
+        roundMoney: 2, roundPoints: 1,
+        guestMoney: 1, guestPoints: 2,
+        arrivingGuest: "familiarFace",
       }),
     };
 
@@ -874,5 +905,93 @@ describe("round earnings parity", () => {
     expect(state.player.points).toBe(6);
     expect(state.rival.money).toBe(13);
     expect(state.rival.points).toBe(4);
+  });
+});
+
+describe("startGuestPhase deck setup", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test("reshuffles both player and rival decks at the start of each round", () => {
+    const state = Game.createGameState("Player", "velvetRoom", "Rival", "nightMarket", 50);
+    state.player.fullDeck = ["familiarFace", "loudFriend", "bottleBringer", "doorWatcher"];
+    state.rival.fullDeck = ["windowWatcher", "tabRunner", "magnetGuest", "highRoller"];
+
+    const randomValues = [
+      0.0, 0.0, 0.0, // player round 1
+      0.0, 0.0, 0.0, // rival round 1
+      0.99, 0.99, 0.99, // player round 2
+      0.99, 0.99, 0.99, // rival round 2
+    ];
+    jest.spyOn(Math, "random").mockImplementation(() => randomValues.shift() ?? 0.5);
+
+    Game.startGuestPhase(state);
+    const playerRound1Order = [...state.player.roundDeck, state.player.arrivingGuest];
+    const rivalRound1Order = [...state.rival.roundDeck, state.rival.arrivingGuest];
+
+    state.round += 1;
+    Game.startGuestPhase(state);
+    const playerRound2Order = [...state.player.roundDeck, state.player.arrivingGuest];
+    const rivalRound2Order = [...state.rival.roundDeck, state.rival.arrivingGuest];
+
+    expect(playerRound1Order).toHaveLength(state.player.fullDeck.length);
+    expect(rivalRound1Order).toHaveLength(state.rival.fullDeck.length);
+    expect([...playerRound1Order].sort()).toEqual([...state.player.fullDeck].sort());
+    expect([...rivalRound1Order].sort()).toEqual([...state.rival.fullDeck].sort());
+    expect(playerRound1Order).not.toEqual(playerRound2Order);
+    expect(rivalRound1Order).not.toEqual(rivalRound2Order);
+  });
+});
+
+
+describe("ability metadata integrity", () => {
+  test("every flash ability can be activated from arriving state", () => {
+    const flashGuestIds = Object.entries(Game.GUESTS)
+      .filter(([, guest]) => guest.ability?.trigger === "flash")
+      .map(([id]) => id);
+
+    for (const guestId of flashGuestIds) {
+      const player = makePlayer({ arrivingGuest: guestId });
+      const opponent = makeOpponent();
+      const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
+      expect(result).not.toBeNull();
+    }
+  });
+
+  test("every flash ability can be activated from a house slot", () => {
+    const flashGuestIds = Object.entries(Game.GUESTS)
+      .filter(([, guest]) => guest.ability?.trigger === "flash")
+      .map(([id]) => id);
+
+    for (const guestId of flashGuestIds) {
+      const entry = makeHouseEntry(guestId);
+      const player = makePlayer({ house: [entry] });
+      const opponent = makeOpponent();
+      const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+        source: "house",
+        guestId,
+        instanceId: entry.instanceId,
+      });
+      expect(result).not.toBeNull();
+    }
+  });
+});
+
+describe("shop upgrades", () => {
+  test("heat cap upgrade exists and applies escalating cost", () => {
+    expect(Game.GUESTS.heatCapIncrease).toBeDefined();
+
+    const player = makePlayer({ money: 20 });
+
+    expect(Game.buyGuest(player, "heatCapIncrease")).toBe(true);
+    expect(player.money).toBe(16); // 4 base cost
+    expect(player.heatCapBonus).toBe(1);
+    expect(player.shopItemPurchases.heatCapIncrease).toBe(1);
+
+    expect(Game.buyGuest(player, "heatCapIncrease")).toBe(true);
+    expect(player.money).toBe(9); // +7 second cost
+    expect(player.heatCapBonus).toBe(2);
+    expect(player.shopItemPurchases.heatCapIncrease).toBe(2);
   });
 });

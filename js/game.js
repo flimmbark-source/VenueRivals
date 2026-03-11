@@ -10,236 +10,26 @@ const Game = (() => {
   let nextInstanceId = 1;
 
 const GUESTS = {
-  // === NEUTRAL ===
-  regular: {
-    name: "Regular",
-    emoji: "🙂",
-    heat: 0,
-    money: 0,
-    points: 1,
-    cost: 2,
-    venue: "Neutral",
-    tags: ["VIP"],
-    desc: "No special move.",
-    tier: "common",
+  // === NEUTRAL / MAIN FLOOR ===
+  familiarFace: {
+    name: "Familiar Face", emoji: "🙂",
+    heat: 0, money: 0, points: 1, cost: 2,
+    venue: "Neutral", tags: ["VIP"],
+    desc: "No ability.", tier: "common",
   },
-
-  chiller: {
-    name: "Chiller",
-    emoji: "❄️",
-    heat: 0,
-    money: 0,
-    points: 1,
-    cost: 2,
-    venue: "Neutral",
-    tags: ["VIP"],
-    tier: "common",
-    ability: {
-      name: "Cool",
-      icon: "❄️",
-      desc: "Cool 1 Heat.",
-      trigger: "flash",
-      type: "coolHeat",
-      value: 1,
-    },
-    desc: "Cool 1 Heat.",
+  bottleBringer: {
+    name: "Bottle Bringer", emoji: "🍾",
+    heat: 0, money: 2, points: 0, cost: 3,
+    venue: "Neutral", tags: ["Broker"],
+    desc: "No ability.", tier: "common",
   },
-
-  tipper: {
-    name: "Tipper",
-    emoji: "💵",
-    heat: 0,
-    money: 2,
-    points: 0,
-    cost: 2,
-    venue: "Neutral",
-    tags: ["Broker"],
-    desc: "No special move.",
-    tier: "common",
+  loudFriend: {
+    name: "Loud Friend", emoji: "📢",
+    heat: 1, money: 1, points: 1, cost: 3,
+    venue: "Neutral", tags: ["Performer"],
+    desc: "No ability.", tier: "common",
   },
-
-  tipOffArtist: {
-    name: "Tip-Off Artist",
-    emoji: "👀",
-    heat: 0,
-    money: 3,
-    points: 0,
-    cost: 4,
-    venue: "Neutral",
-    tags: ["Broker"],
-    tier: "common",
-    ability: {
-      name: "Peek",
-      icon: "👀",
-      desc: "Peek at the next guest in Queue.",
-      trigger: "flash",
-      type: "revealNext",
-      value: 1,
-    },
-    desc: "Peek at the next guest in Queue.",
-  },
-
-  hypeFriend: {
-    name: "Hype Friend",
-    emoji: "🙌",
-    heat: 1,
-    money: 1,
-    points: 2,
-    cost: 3,
-    venue: "Neutral",
-    tags: ["Performer"],
-    desc: "No special move.",
-    tier: "common",
-  },
-
-  hypester: {
-    name: "Hypester",
-    emoji: "🔥",
-    heat: 1,
-    money: 2,
-    points: 2,
-    cost: 6,
-    venue: "Neutral",
-    tags: ["Performer"],
-    tier: "common",
-    ability: {
-      name: "Spike",
-      icon: "🔥",
-      desc: "Add 1 Heat to your opponent.",
-      trigger: "flash",
-      type: "addOpponentHeat",
-      value: 1,
-    },
-    desc: "Add 1 Heat to your opponent.",
-  },
-
-  standIn: {
-    name: "Stand-In",
-    emoji: "🎭",
-    heat: 1,
-    money: 1,
-    points: 2,
-    cost: 5,
-    venue: "Neutral",
-    tags: ["Performer"],
-    tier: "common",
-    ability: {
-      name: "Bounce",
-      icon: "🔄",
-      desc: "Bounce Oldest guest to top of Queue.",
-      trigger: "flash",
-      type: "bounce",
-      targeting: "oldest",
-    },
-    desc: "Bounce Oldest guest to top of Queue.",
-  },
-
-  usher: {
-    name: "Usher",
-    emoji: "🧤",
-    heat: 0,
-    money: 0,
-    points: 2,
-    cost: 5,
-    venue: "Neutral",
-    tags: ["VIP"],
-    tier: "common",
-    ability: {
-      name: "Nudge",
-      icon: "👋",
-      desc: "Nudge Oldest guest right 1 slot.",
-      trigger: "flash",
-      type: "nudge",
-      targeting: "oldest",
-    },
-    desc: "Nudge Oldest guest right 1 slot.",
-  },
-
-  floorRunner: {
-    name: "Floor Runner",
-    emoji: "🏃",
-    heat: 1,
-    money: 2,
-    points: 2,
-    cost: 7,
-    venue: "Neutral",
-    tags: ["Scout"],
-    tier: "common",
-    ability: {
-      name: "Boot",
-      icon: "🥾",
-      desc: "Boot the Oldest guest out.",
-      trigger: "flash",
-      type: "boot",
-      targeting: "oldest",
-    },
-    desc: "Boot the Oldest guest out.",
-  },
-
-  bookkeeper: {
-    name: "Bookkeeper",
-    emoji: "📒",
-    heat: 1,
-    money: 3,
-    points: 1,
-    cost: 6,
-    venue: "Neutral",
-    tags: ["Broker"],
-    tier: "common",
-    ability: {
-      name: "Audit",
-      icon: "📊",
-      desc: "Cool 2 Heat.",
-      trigger: "flash",
-      type: "coolHeat",
-      value: 2,
-    },
-    desc: "Cool 2 Heat.",
-  },
-
-  rovingCritic: {
-    name: "Roving Critic",
-    emoji: "🧐",
-    heat: 1,
-    money: 0,
-    points: 3,
-    cost: 5,
-    venue: "Neutral",
-    tags: ["VIP"],
-    tier: "uncommon",
-    ability: {
-      name: "Inspect",
-      icon: "🔍",
-      desc: "Peek at the next 2 guests in Queue.",
-      trigger: "flash",
-      type: "revealNext",
-      value: 2,
-    },
-    desc: "Peek at the next 2 guests in Queue.",
-  },
-
-  partyPromoter: {
-    name: "Party Promoter",
-    emoji: "📣",
-    heat: 2,
-    money: 2,
-    points: 2,
-    cost: 8,
-    venue: "Neutral",
-    tags: ["Broker"],
-    tier: "uncommon",
-    ability: {
-      name: "Sponsorship",
-      icon: "💵",
-      desc: "Gain 3 Money.",
-      trigger: "flash",
-      type: "gainMoney",
-      value: 3,
-    },
-    desc: "Gain 3 Money.",
-  },
-
-  bigSpender: {
+    bigSpender: {
     name: "Big Spender",
     emoji: "🛍️",
     heat: 2,
@@ -251,322 +41,293 @@ const GUESTS = {
     desc: "No special move.",
     tier: "uncommon",
   },
-
-  celebrity: {
-    name: "Celebrity",
-    emoji: "🎬",
-    heat: 1,
-    money: 0,
-    points: 4,
-    cost: 7,
-    venue: "Neutral",
-    tags: ["VIP", "Performer"],
-    tier: "rare",
-    ability: {
-      name: "VIP Rope",
-      icon: "⭐",
-      desc: "Lock the guest Right of this one.",
-      trigger: "flash",
-      type: "lock",
-      targeting: "rightOfSelf",
-    },
-    desc: "Lock the guest Right of this one.",
+  doorWatcher: {
+    name: "Door Watcher", emoji: "👀",
+    heat: 0, money: 1, points: 1, cost: 3,
+    venue: "Neutral", tags: ["Scout"], tier: "common",
+    ability: { name: "Check the Line", icon: "👀", desc: "Peek at the next guest.", trigger: "flash", type: "revealNext", value: 1 },
+    desc: "CHECK THE LINE — A: PEEK 1.",
+  },
+  groupChatHost: {
+    name: "Group Chat Host", emoji: "💬",
+    heat: 1, money: 1, points: 1, cost: 5,
+    venue: "Neutral", tags: ["Broker"], tier: "uncommon",
+    ability: { name: "Guest List", icon: "📋", desc: "On arrival, Reveal the next 2 guests and choose their order.", trigger: "arrival", type: "stackChoice", value: 2 },
+    desc: "GUEST LIST — When this guest enters, reveal the next 2 guests and choose their order.",
+  },
+  plusOnePrince: {
+    name: "Plus-One Prince", emoji: "👑",
+    heat: 1, money: 1, points: 2, cost: 5,
+    venue: "Neutral", tags: ["VIP"], tier: "uncommon",
+    ability: { name: "Plus One", icon: "➕", desc: "On arrival, Admit the next guest immediately.", trigger: "arrival", type: "plusOne" },
+    desc: "PLUS ONE — When this guest enters, admit the next guest immediately.",
+  },
+  nameDropper: {
+    name: "Name Dropper", emoji: "🗣️",
+    heat: 1, money: 2, points: 2, cost: 7,
+    venue: "Neutral", tags: ["VIP", "Broker"], tier: "rare",
+    ability: { name: "Name Drop", icon: "📇", desc: "On arrival, Reveal the next 3 guests, then Admit 1. Put the rest back in any order.", trigger: "arrival", type: "nameDrop", value: 3 },
+    desc: "NAME DROP — When this guest enters, reveal the next 3 guests. Admit 1 now. Put the rest back in any order.",
+  },
+  porchBuddy: {
+    name: "Porch Buddy", emoji: "🪑",
+    heat: 0, money: 0, points: 2, cost: 4,
+    venue: "Neutral", tags: ["VIP"], tier: "common",
+    ability: { name: "Bounce", icon: "🔄", desc: "Return a guest in your house to the top of your queue.", trigger: "flash", type: "bounce", targeting: "choice" },
+    desc: "BOUNCE — A: Return a guest in your house to the top of your queue.",
+  },
+  fedUpRoommate: {
+    name: "Fed-Up Roommate", emoji: "😤",
+    heat: 1, money: 0, points: 2, cost: 5,
+    venue: "Neutral", tags: ["Outlaw"], tier: "uncommon",
+    ability: { name: "Boot", icon: "🥾", desc: "Remove a guest from your house.", trigger: "flash", type: "boot", targeting: "choice" },
+    desc: "BOOT — A: Remove a guest from your house.",
+  },
+  resetHost: {
+    name: "Reset Host", emoji: "🧹",
+    heat: 1, money: 1, points: 1, cost: 6,
+    venue: "Neutral", tags: ["Broker"], tier: "uncommon",
+    ability: { name: "Last Call", icon: "🧹", desc: "Clear your house.", trigger: "flash", type: "clearHouse" },
+    desc: "LAST CALL — A: Clear your house.",
+  },
+    wingMan: {
+    name: "Wingman", emoji: "🤛",
+    heat: 0, money: 2, points: 3, cost: 5,
+    venue: "Neutral", tags: ["VIP"], tier: "common",
+    ability: { name: "Distract", icon: "🔄", desc: "Nudge the guest on the Left.", trigger: "flash", type: "nudge", targeting: "leftOfSelf" },
+    desc: "DISTRACT — A: Nudge the guest on the Left.",
+  },
+    stagehand: {
+    name: "Stagehand", emoji: "👏",
+    heat: 0, money: 2, points: 2, cost: 6,
+    venue: "Neutral", tags: ["Performer"], tier: "uncommon",
+    ability: { name: "Bump Into", icon: "🔄", desc: "Nudge a guest.", trigger: "flash", type: "nudge", targeting: "choice" },
+    desc: "BUMP INTO — A: Nudge a guest.",
+  },
+    dealer: {
+    name: "Dealer", emoji: "🤛",
+    heat: 0, money: 2, points: 4, cost: 8,
+    venue: "Neutral", tags: ["Outlaw"], tier: "Rare",
+    ability: { name: "Annoy", icon: "🔄", desc: "Nudge the oldest guest.", trigger: "flash", type: "nudge", targeting: "oldest" },
+    desc: "ANNOY — A: Nudge the oldest guest.",
   },
 
   // === VELVET ROOM ===
+  mainCharacter: {
+    name: "Main Character", emoji: "⭐",
+    heat: 2, money: 3, points: 3, cost: 6,
+    venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "uncommon",
+    ability: { name: "Make an Entrance", icon: "✨", desc: "On arrival, Score 2.", trigger: "arrival", type: "scoreNow", value: 2 },
+    desc: "MAKE AN ENTRANCE — On arrival, score 2.",
+  },
+  storyPoster: {
+    name: "Story Poster", emoji: "📱",
+    heat: 1, money: 0, points: 1, cost: 5,
+    venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
+    ability: { name: "Snapshot", icon: "📸", desc: "Score a guest now.", trigger: "flash", type: "scoreGuest" },
+    desc: "SNAPSHOT — A: Score a guest now.",
+  },
+  danceCaptain: {
+    name: "Dance Captain", emoji: "💃",
+    heat: 1, money: 1, points: 2, cost: 6,
+    venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
+    ability: { name: "Second Wind", icon: "🔄", desc: "Refresh another guest’s action.", trigger: "flash", type: "refreshAction" },
+    desc: "SECOND WIND — A: Refresh another guest’s action.",
+  },
+  afterpartyHost: {
+    name: "Afterparty Host", emoji: "🌙",
+    heat: 1, money: 0, points: 3, cost: 5,
+    venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
+    ability: { name: "Afterglow", icon: "🌅", desc: "Upon leaving, Score 2.", trigger: "departure", type: "scoreNow", value: 2 },
+    desc: "AFTERGLOW — When this guest leaves, score 2.",
+  },
+  wallflower: {
+    name: "Wallflower", emoji: "🌸",
+    heat: 0, money: 3, points: 0, cost: 4,
+    venue: "Velvet Room", tags: ["VIP"], tier: "common",
+    ability: { name: "Wallflower", icon: "🌸", desc: "+1 Point for each empty slot.", trigger: "scoring", type: "wallflower" },
+    desc: "WALLFLOWER — At scoring, +1 Point for each empty slot.",
+  },
+  linkUpFriend: {
+    name: "Link-Up Friend", emoji: "🔗",
+    heat: 0, money: 1, points: 1, cost: 5,
+    venue: "Velvet Room", tags: ["VIP", "Broker"], tier: "uncommon",
+    ability: { name: "Clique", icon: "🔗", desc: "+1 Point for each adjacent guest sharing a tag.", trigger: "scoring", type: "clique" },
+    desc: "CLIQUE — At scoring, +1 Point for each adjacent guest sharing a tag with this guest.",
+  },
   headliner: {
-    name: "Headliner",
-    emoji: "🌟",
-    heat: 2,
-    money: 0,
-    points: 4,
-    cost: 6,
-    venue: "Velvet Room",
-    tags: ["VIP", "Performer"],
-    tier: "rare",
-    ability: {
-      name: "Spotlight",
-      icon: "🔦",
-      desc: "Lock the guest Left of this one.",
-      trigger: "flash",
-      type: "lock",
-      targeting: "leftOfSelf",
-    },
-    desc: "Lock the guest Left of this one.",
+    name: "Headliner", emoji: "🌟",
+    heat: 0, money: 4, points: 2, cost: 7,
+    venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "rare",
+    ability: { name: "Center of Attention", icon: "🔦", desc: "+2 Points if this guest is Newest.", trigger: "scoring", type: "centerOfAttention", value: 2 },
+    desc: "CENTER OF ATTENTION — At scoring, +2 Points if this guest is Newest.",
   },
-
-  champagneHost: {
-    name: "Champagne Host",
-    emoji: "🥂",
-    heat: 2,
-    money: 2,
-    points: 4,
-    cost: 5,
-    venue: "Velvet Room",
-    tags: ["VIP"],
-    tier: "uncommon",
-    ability: {
-      name: "Tab",
-      icon: "🥂",
-      desc: "Steal 2 Money from your opponent.",
-      trigger: "flash",
-      type: "stealMoney",
-      value: 2,
-    },
-    desc: "Steal 2 Money from your opponent.",
+  socialClimber: {
+    name: "Social Climber", emoji: "📈",
+    heat: 1, money: 0, points: 2, cost: 7,
+    venue: "Velvet Room", tags: ["VIP"], tier: "rare",
+    ability: { name: "Social Climber", icon: "📈", desc: "On arrival, Permanently gains +1 Point each time it enters, up to +9.", trigger: "arrival", type: "socialClimber", maxBonus: 9 },
+    desc: "SOCIAL CLIMBER — Each time this guest enters for the first time in a round, it permanently gains +1 Point, up to +9.",
   },
-
-  velvetBouncer: {
-    name: "Velvet Bouncer",
-    emoji: "🛡️",
-    heat: 1,
-    money: 2,
-    points: 2,
-    cost: 4,
-    venue: "Velvet Room",
-    tags: ["VIP"],
-    tier: "uncommon",
-    ability: {
-      name: "No Entry",
-      icon: "🪪",
-      desc: "Trash the top of your Queue.",
-      trigger: "flash",
-      type: "discardNext",
-    },
-    desc: "Trash the top of your Queue.",
+  hypeSquad: {
+    name: "Hype Squad", emoji: "🎉",
+    heat: 1, money: 1, points: 2, cost: 8,
+    venue: "Velvet Room", tags: ["Performer"], tier: "rare",
+    ability: { name: "Hype Crew", icon: "🎊", desc: "Refresh all other actions.", trigger: "flash", type: "refreshAllActions" },
+    desc: "HYPE CREW — A: Refresh all other actions.",
   },
-
-  spotlightPhotographer: {
-    name: "Spotlight Photographer",
-    emoji: "📸",
-    heat: 1,
-    money: 1,
-    points: 4,
-    cost: 5,
-    venue: "Velvet Room",
-    tags: ["Performer"],
-    tier: "uncommon",
-    ability: {
-      name: "Flash",
-      icon: "📷",
-      desc: "Score 2 Points.",
-      trigger: "flash",
-      type: "scoreNow",
-      value: 2,
-    },
-    desc: "Score 2 Points.",
+  partyPhotographer: {
+    name: "Party Photographer", emoji: "📸",
+    heat: 1, money: 0, points: 1, cost: 6,
+    venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
+    ability: { name: "Photographer", icon: "📷", desc: "Score a guest now.", trigger: "flash", type: "scoreGuest" },
+    desc: "PHOTOGRAPHER — A: Score a guest now.",
   },
 
   // === NIGHT MARKET ===
-  galleryScout: {
-    name: "Gallery Scout",
-    emoji: "🔭",
-    heat: 1,
-    money: 0,
-    points: 1,
-    cost: 4,
-    venue: "Night Market",
-    tags: ["Scout"],
-    tier: "common",
-    ability: {
-      name: "Stack",
-      icon: "🧭",
-      desc: "Peek 2, choose their order.",
-      trigger: "flash",
-      type: "stackChoice", // or keep revealAndReorder but refactor to choice
-      value: 2,
-    },
-    desc: "Peek 2, choose their order.",
+  windowWatcher: {
+    name: "Window Watcher", emoji: "🔭",
+    heat: 0, money: 1, points: 1, cost: 4,
+    venue: "Night Market", tags: ["Scout"], tier: "common",
+    ability: { name: "Curate", icon: "🧭", desc: "Reveal the next 2 guests and choose their order.", trigger: "flash", type: "stackChoice", value: 2 },
+    desc: "CURATE — A: Reveal the next 2 guests and choose their order.",
   },
-
-  trendBroker: {
-    name: "Trend Broker",
-    emoji: "📈",
-    heat: 1,
-    money: 3,
-    points: 0,
-    cost: 5,
-    venue: "Night Market",
-    tags: ["Broker"],
-    tier: "uncommon",
-    ability: {
-      name: "Insider Trade",
-      icon: "💸",
-      desc: "Steal 1 Money from your opponent.",
-      trigger: "flash",
-      type: "stealMoney",
-      value: 1,
-    },
-    desc: "Steal 1 Money from your opponent.",
+  vipWrangler: {
+    name: "VIP Wrangler", emoji: "🎪",
+    heat: 1, money: 1, points: 2, cost: 7,
+    venue: "Night Market", tags: ["VIP", "Broker"], tier: "rare",
+    ability: { name: "VIP List", icon: "📇", desc: "Reveal the next 3 guests. Admit 1 now. Put the rest back in any order.", trigger: "flash", type: "nameDrop", value: 3 },
+    desc: "VIP LIST — A: Reveal the next 3 guests. Admit 1 now. Put the rest back in any order.",
   },
-
-  curioDealer: {
-    name: "Curio Dealer",
-    emoji: "🗃️",
-    heat: 1,
-    money: 0,
-    points: 2,
-    cost: 4,
-    venue: "Night Market",
-    tags: ["Broker"],
-    tier: "common",
-    ability: {
-      name: "Appraise",
-      icon: "🔍",
-      desc: "Gain 2 Money.",
-      trigger: "flash",
-      type: "gainMoney",
-      value: 2,
-    },
-    desc: "Gain 2 Money.",
+  tabRunner: {
+    name: "Tab Runner", emoji: "💸",
+    heat: 0, money: 2, points: 1, cost: 4,
+    venue: "Night Market", tags: ["Broker"], tier: "common",
+    ability: { name: "Parting Gift", icon: "💸", desc: "Upon leaving, Gain 2 Money.", trigger: "departure", type: "gainMoney", value: 2 },
+    desc: "PARTING GIFT — When this guest leaves, gain 2 Money.",
   },
-
-  stylist: {
-    name: "Stylist",
-    emoji: "🧵",
-    heat: 0,
-    money: 1,
-    points: 3,
-    cost: 6,
-    venue: "Night Market",
-    tags: ["Scout", "Broker"],
-    tier: "uncommon",
-    ability: {
-      name: "Freshen Up",
-      icon: "✨",
-      desc: "Cool 1 Heat.",
-      trigger: "flash",
-      type: "coolHeat",
-      value: 1,
-    },
-    desc: "Cool 1 Heat.",
+  coolOffSmoker: {
+    name: "Cool-Off Smoker", emoji: "🚬",
+    heat: 0, money: 1, points: 1, cost: 4,
+    venue: "Night Market", tags: ["VIP"], tier: "common",
+    ability: { name: "Cools Off", icon: "❄️", desc: "Upon leaving, Cool 1.", trigger: "departure", type: "coolHeat", value: 1 },
+    desc: "COOLS OFF — When this guest leaves, cool 1.",
+  },
+  bottlePopper: {
+    name: "Bottle Popper", emoji: "🥂",
+    heat: 2, money: 3, points: 0, cost: 6,
+    venue: "Night Market", tags: ["VIP"],
+    desc: "No ability.", tier: "uncommon",
+  },
+  bigPlanner: {
+    name: "Big Planner", emoji: "📋",
+    heat: 1, money: 1, points: 2, cost: 6,
+    venue: "Night Market", tags: ["Scout", "Broker"], tier: "uncommon",
+    ability: { name: "Packed House", icon: "🏠", desc: "+4 Points if your house is full.", trigger: "scoring", type: "packedHouse", value: 4 },
+    desc: "PACKED HOUSE — At scoring, +4 Points if your house is full.",
+  },
+  highRoller: {
+    name: "High Roller", emoji: "🎰",
+    heat: 0, money: 1, points: 2, cost: 5,
+    venue: "Night Market", tags: ["Broker"], tier: "uncommon",
+    ability: { name: "High Roller", icon: "💰", desc: "+1 Point for each 2 Money you have.", trigger: "scoring", type: "highRoller" },
+    desc: "HIGH ROLLER — At scoring, +1 Point for each 2 Money you have.",
+  },
+  socialButterfly: {
+    name: "Social Butterfly", emoji: "🦋",
+    heat: 1, money: 1, points: 2, cost: 6,
+    venue: "Night Market", tags: ["Performer"], tier: "uncommon",
+    ability: { name: "Impersonator", icon: "🎭", desc: "On arrival, Copy the action ability of the guest to the left.", trigger: "arrival", type: "impersonator" },
+    desc: "IMPERSONATOR — When this guest enters, copy the action ability of the guest to the left this round.",
+  },
+  magnetGuest: {
+    name: "Magnet Guest", emoji: "🧲",
+    heat: 1, money: 1, points: 2, cost: 8,
+    venue: "Night Market", tags: ["VIP"], tier: "rare",
+    ability: { name: "Magnet", icon: "🧲", desc: "On arrival, Admit the next guest immediately. If that guest has an arrival ability, trigger it too.", trigger: "arrival", type: "magnet" },
+    desc: "MAGNET — When this guest enters, admit the next guest immediately. If that guest has an arrival ability, trigger it too.",
   },
 
   // === BACK ALLEY ===
-  gateRunner: {
-    name: "Gate Runner",
-    emoji: "🚨",
-    heat: 1,
-    money: 1,
-    points: 3,
-    cost: 6,
-    venue: "Back Alley",
-    tags: ["Outlaw"],
-    tier: "common",
-    ability: {
-      name: "Plant",
-      icon: "💣",
-      desc: "Plant a Gatecrasher on opponent’s Queue.",
-      trigger: "flash",
-      type: "queueGatecrasher",
-    },
-    desc: "Plant a Gatecrasher on opponent’s Queue.",
+  addressLeaker: {
+    name: "Address Leaker", emoji: "📍",
+    heat: 1, money: 0, points: 2, cost: 5,
+    venue: "Back Alley", tags: ["Outlaw"], tier: "common",
+    ability: { name: "Crash the Party", icon: "💣", desc: "On arrival, Plant a Gatecrasher in your opponent’s queue.", trigger: "arrival", type: "queueGatecrasher" },
+    desc: "CRASH THE PARTY — When this guest enters, plant a Gatecrasher in your opponent’s queue.",
   },
-
-  wheelman: {
-    name: "Wheelman",
-    emoji: "🚗",
-    heat: 1,
-    money: 4,
-    points: 1,
-    cost: 8,
-    venue: "Back Alley",
-    tags: ["Outlaw"],
-    tier: "common",
-    ability: {
-      name: "Getaway",
-      icon: "↪️",
-      desc: "Boot out guest Left of this one.",
-      trigger: "flash",
-      type: "boot",
-      targeting: "leftOfSelf",
-    },
-    desc: "Boot out guest Left of this one.",
+  messyDrunk: {
+    name: "Messy Drunk", emoji: "🍺",
+    heat: 2, money: 0, points: 2, cost: 5,
+    venue: "Back Alley", tags: ["Outlaw"], tier: "common",
+    ability: { name: "Leaves a Mess", icon: "💥", desc: "Upon leaving, Plant a Gatecrasher in your opponent’s queue.", trigger: "departure", type: "queueGatecrasher" },
+    desc: "LEAVES A MESS — When this guest leaves, plant a Gatecrasher in your opponent’s queue.",
   },
-
-  fence: {
-    name: "Fence",
-    emoji: "🧰",
-    heat: 1,
-    money: 3,
-    points: 0,
-    cost: 5,
-    venue: "Back Alley",
-    tags: ["Outlaw", "Broker"],
-    tier: "common",
-    ability: {
-      name: "Black Market",
-      icon: "💸",
-      desc: "Steal 1 Money from your opponent.",
-      trigger: "flash",
-      type: "stealMoney",
-      value: 1,
-    },
-    desc: "Steal 1 Money from your opponent.",
+  dramaStarter: {
+    name: "Drama Starter", emoji: "🎭",
+    heat: 2, money: 0, points: 3, cost: 5,
+    venue: "Back Alley", tags: ["Outlaw"], tier: "common",
+    ability: { name: "Drama Exit", icon: "🔥", desc: "Upon leaving, Spike 1.", trigger: "departure", type: "addOpponentHeat", value: 1 },
+    desc: "DRAMA EXIT — When this guest leaves, spike 1.",
   },
-
-  provocateur: {
-    name: "Provocateur",
-    emoji: "😈",
-    heat: 2,
-    money: 1,
-    points: 3,
-    cost: 5,
-    venue: "Back Alley",
-    tags: ["Outlaw"],
-    tier: "uncommon",
-    ability: {
-      name: "Taunt",
-      icon: "😤",
-      desc: "Add 2 Heat to your opponent.",
-      trigger: "flash",
-      type: "addOpponentHeat",
-      value: 2,
-    },
-    desc: "Add 2 Heat to your opponent.",
+  chaosChaser: {
+    name: "Chaos Chaser", emoji: "🌀",
+    heat: 2, money: 0, points: 2, cost: 6,
+    venue: "Back Alley", tags: ["Performer", "Outlaw"], tier: "uncommon",
+    ability: { name: "Chaos Chaser", icon: "🔥", desc: "+1 Point for each Heat in your house.", trigger: "scoring", type: "chaosChaser" },
+    desc: "CHAOS CHASER — At scoring, +1 Point for each Heat in your house.",
+  },
+  lateLegend: {
+    name: "Late Legend", emoji: "🕐",
+    heat: 1, money: 0, points: 2, cost: 6,
+    venue: "Back Alley", tags: ["VIP", "Outlaw"], tier: "uncommon",
+    ability: { name: "Last to Leave", icon: "🕐", desc: "+2 Points if this guest is Oldest.", trigger: "scoring", type: "lastToLeave", value: 2 },
+    desc: "LAST TO LEAVE — At scoring, +2 Points if this guest is Oldest.",
+  },
+  rumorQueen: {
+    name: "Rumor Queen", emoji: "👄",
+    heat: 1, money: 1, points: 1, cost: 7,
+    venue: "Back Alley", tags: ["Outlaw", "Broker"], tier: "rare",
+    ability: { name: "Rumor Mill", icon: "👄", desc: "Reveal the next 2 guests in your opponent’s queue and choose their order.", trigger: "flash", type: "opponentStackChoice", value: 2 },
+    desc: "RUMOR MILL — A: Reveal the next 2 guests in your opponent’s queue and choose their order.",
+  },
+  counselor: {
+    name: "Counselor", emoji: "🧘",
+    heat: 0, money: 0, points: 2, cost: 7,
+    venue: "Back Alley", tags: ["Scout"], tier: "rare",
+    ability: { name: "Counselor", icon: "🧘", desc: "Set your Heat to 0.", trigger: "flash", type: "setHeatZero" },
+    desc: "COUNSELOR — A: Set your Heat to 0.",
+  },
+  cupid: {
+    name: "Cupid", emoji: "💘",
+    heat: 1, money: 0, points: 2, cost: 8,
+    venue: "Back Alley", tags: ["Performer"], tier: "rare",
+    ability: { name: "Cupid", icon: "💘", desc: "Boot 2 adjacent guests.", trigger: "flash", type: "bootAdjacent", value: 2 },
+    desc: "CUPID — A: Boot 2 adjacent guests.",
   },
 
   // === TROUBLE ===
   gatecrasher: {
-    name: "Gatecrasher",
-    emoji: "💥",
-    heat: 1,
-    money: 0,
-    points: 0,
-    cost: 99,
-    venue: "Trouble",
-    tags: ["Outlaw"],
-    desc: "Trouble. No special move.",
-    tier: "common",
+    name: "Gatecrasher", emoji: "💥",
+    heat: 1, money: 0, points: 0, cost: 99,
+    venue: "Trouble", tags: ["Outlaw"],
+    desc: "No ability.", tier: "common",
   },
 
   // === SHOP ITEMS ===
   slotIncrease: {
-    name: "+1 Slot",
-    emoji: "📦",
-    money: 0,
-    heat: 0,
-    points: 0,
-    cost: 3,
-    venue: "Shop",
-    tags: [],
+    name: "+1 Slot", emoji: "📦",
+    money: 0, heat: 0, points: 0, cost: 3,
+    venue: "Shop", tags: [],
     desc: "Increase your house capacity by 1.",
-    tier: "shop",
-    isShopItem: true,
+    tier: "shop", isShopItem: true,
   },
-
   heatCapIncrease: {
-    name: "+1 Heat",
-    emoji: "🌡️",
-    money: 0,
-    heat: 0,
-    points: 0,
-    cost: 4,
-    venue: "Shop",
-    tags: [],
+    name: "+1 Heat Cap", emoji: "🔥",
+    money: 0, heat: 0, points: 0, cost: 4,
+    venue: "Shop", tags: [],
     desc: "Increase your heat capacity by 1.",
-    tier: "shop",
-    isShopItem: true,
+    tier: "shop", isShopItem: true,
   },
 };
 
@@ -576,27 +337,27 @@ const GUESTS = {
       emoji: "🥂",
       gridSize: 3,
       bustThreshold: 3,
-      desc: "An elegant spotlight gala where VIPs are locked into position until the grand close.",
+      desc: "A spotlight gala where showy guests score big and refresh each other's moves.",
       style: "points",
       color: "#c9884c",
       startingDeck: [
-        "rovingCritic",
         "headliner",
-        "usher",
-        "velvetBouncer",
-        "champagneHost",
-        "spotlightPhotographer",
-        "standIn",
-        "partyPromoter",
+        "mainCharacter",
+        "storyPoster",
+        "wallflower",
+        "linkUpFriend",
+        "afterpartyHost",
+        "familiarFace",
+        "doorWatcher",
       ],
       market: [
         "headliner",
-        "champagneHost",
-        "velvetBouncer",
-        "spotlightPhotographer",
-        "usher",
-        "rovingCritic",
-        "partyPromoter",
+        "mainCharacter",
+        "storyPoster",
+        "danceCaptain",
+        "afterpartyHost",
+        "wallflower",
+        "linkUpFriend",
       ],
     },
     champagneCountdown: {
@@ -608,23 +369,23 @@ const GUESTS = {
       style: "points",
       color: "#c9884c",
       startingDeck: [
-        "champagneHost",
+        "afterpartyHost",
         "headliner",
-        "standIn",
-        "usher",
-        "spotlightPhotographer",
-        "velvetBouncer",
-        "rovingCritic",
-        "bookkeeper",
+        "danceCaptain",
+        "wallflower",
+        "storyPoster",
+        "socialClimber",
+        "familiarFace",
+        "bottleBringer",
       ],
       market: [
         "headliner",
-        "champagneHost",
-        "velvetBouncer",
-        "spotlightPhotographer",
-        "usher",
-        "rovingCritic",
-        "partyPromoter",
+        "mainCharacter",
+        "storyPoster",
+        "danceCaptain",
+        "afterpartyHost",
+        "wallflower",
+        "linkUpFriend",
       ],
     },
     headlinerAfterparty: {
@@ -632,27 +393,27 @@ const GUESTS = {
       emoji: "🎤",
       gridSize: 3,
       bustThreshold: 3,
-      desc: "Keep the star locked while the crew pushes and pulls through the lane.",
+      desc: "Keep the star scoring while the crew refreshes and snaps their way through the lane.",
       style: "points",
       color: "#c9884c",
       startingDeck: [
         "headliner",
-        "velvetBouncer",
-        "floorRunner",
-        "usher",
-        "spotlightPhotographer",
-        "champagneHost",
-        "rovingCritic",
-        "standIn",
+        "partyPhotographer",
+        "danceCaptain",
+        "afterpartyHost",
+        "storyPoster",
+        "wallflower",
+        "linkUpFriend",
+        "familiarFace",
       ],
       market: [
         "headliner",
-        "champagneHost",
-        "velvetBouncer",
-        "spotlightPhotographer",
-        "usher",
-        "rovingCritic",
-        "partyPromoter",
+        "mainCharacter",
+        "storyPoster",
+        "danceCaptain",
+        "afterpartyHost",
+        "wallflower",
+        "linkUpFriend",
       ],
     },
     nightMarket: {
@@ -660,27 +421,27 @@ const GUESTS = {
       emoji: "🏮",
       gridSize: 3,
       bustThreshold: 3,
-      desc: "A curated market soirée where peeking and bouncing keeps your lineup sharp.",
+      desc: "A curated market soirée where queue control and money angles keep your lineup sharp.",
       style: "money",
       color: "#7f5af0",
       startingDeck: [
-        "curioDealer",
-        "galleryScout",
-        "bookkeeper",
-        "partyPromoter",
-        "trendBroker",
-        "stylist",
-        "standIn",
-        "floorRunner",
+        "windowWatcher",
+        "tabRunner",
+        "highRoller",
+        "bigPlanner",
+        "socialButterfly",
+        "coolOffSmoker",
+        "bottleBringer",
+        "doorWatcher",
       ],
       market: [
-        "galleryScout",
-        "trendBroker",
-        "curioDealer",
-        "stylist",
-        "standIn",
-        "bookkeeper",
-        "partyPromoter",
+        "windowWatcher",
+        "vipWrangler",
+        "tabRunner",
+        "coolOffSmoker",
+        "bottlePopper",
+        "bigPlanner",
+        "highRoller",
       ],
     },
     trendsetterMixer: {
@@ -688,27 +449,27 @@ const GUESTS = {
       emoji: "🛍️",
       gridSize: 3,
       bustThreshold: 3,
-      desc: "A market mixer where scoring at the right moment is everything.",
+      desc: "A market mixer where money and timing are everything.",
       style: "money",
       color: "#7f5af0",
       startingDeck: [
-        "trendBroker",
-        "stylist",
-        "standIn",
-        "partyPromoter",
-        "bookkeeper",
-        "galleryScout",
-        "curioDealer",
-        "usher",
+        "vipWrangler",
+        "highRoller",
+        "socialButterfly",
+        "tabRunner",
+        "bigPlanner",
+        "windowWatcher",
+        "bottleBringer",
+        "coolOffSmoker",
       ],
       market: [
-        "galleryScout",
-        "trendBroker",
-        "curioDealer",
-        "stylist",
-        "standIn",
-        "bookkeeper",
-        "partyPromoter",
+        "windowWatcher",
+        "vipWrangler",
+        "tabRunner",
+        "coolOffSmoker",
+        "bottlePopper",
+        "bigPlanner",
+        "highRoller",
       ],
     },
     backAlley: {
@@ -716,27 +477,27 @@ const GUESTS = {
       emoji: "🕳️",
       gridSize: 3,
       bustThreshold: 3,
-      desc: "A high-velocity outlaw party—push guests out, taunt rivals, and stay cool.",
+      desc: "A high-velocity outlaw party—sabotage rivals, chase chaos, and stay cool.",
       style: "control",
       color: "#2cb67d",
       startingDeck: [
-        "gateRunner",
-        "wheelman",
-        "floorRunner",
-        "fence",
-        "provocateur",
-        "bookkeeper",
-        "usher",
-        "partyPromoter",
+        "addressLeaker",
+        "chaosChaser",
+        "counselor",
+        "rumorQueen",
+        "lateLegend",
+        "messyDrunk",
+        "fedUpRoommate",
+        "loudFriend",
       ],
       market: [
-        "gateRunner",
-        "wheelman",
-        "fence",
-        "provocateur",
-        "floorRunner",
-        "bookkeeper",
-        "standIn",
+        "addressLeaker",
+        "messyDrunk",
+        "dramaStarter",
+        "chaosChaser",
+        "lateLegend",
+        "rumorQueen",
+        "counselor",
       ],
     },
     blackMarketBash: {
@@ -744,27 +505,27 @@ const GUESTS = {
       emoji: "💼",
       gridSize: 3,
       bustThreshold: 3,
-      desc: "A gritty underground bash where outlaws lay low and cash out before the heat catches up.",
+      desc: "A gritty underground bash where outlaws disrupt and cash out before the heat catches up.",
       style: "control",
       color: "#2cb67d",
       startingDeck: [
-        "fence",
-        "gateRunner",
-        "wheelman",
-        "floorRunner",
-        "provocateur",
-        "bookkeeper",
-        "standIn",
-        "usher",
+        "dramaStarter",
+        "addressLeaker",
+        "counselor",
+        "chaosChaser",
+        "rumorQueen",
+        "lateLegend",
+        "fedUpRoommate",
+        "loudFriend",
       ],
       market: [
-        "gateRunner",
-        "wheelman",
-        "fence",
-        "provocateur",
-        "floorRunner",
-        "bookkeeper",
-        "standIn",
+        "addressLeaker",
+        "messyDrunk",
+        "dramaStarter",
+        "chaosChaser",
+        "lateLegend",
+        "rumorQueen",
+        "counselor",
       ],
     },
     riotNight: {
@@ -772,27 +533,27 @@ const GUESTS = {
       emoji: "🚨",
       gridSize: 3,
       bustThreshold: 3,
-      desc: "A volatile street party built to taunt opponents with heat and force panic closes.",
+      desc: "A volatile street party built to sabotage opponents with heat and force panic closes.",
       style: "control",
       color: "#2cb67d",
       startingDeck: [
-        "gateRunner",
-        "provocateur",
-        "wheelman",
-        "fence",
-        "floorRunner",
-        "partyPromoter",
-        "standIn",
-        "bookkeeper",
+        "messyDrunk",
+        "dramaStarter",
+        "cupid",
+        "addressLeaker",
+        "chaosChaser",
+        "counselor",
+        "lateLegend",
+        "fedUpRoommate",
       ],
       market: [
-        "gateRunner",
-        "wheelman",
-        "fence",
-        "provocateur",
-        "floorRunner",
-        "bookkeeper",
-        "standIn",
+        "addressLeaker",
+        "messyDrunk",
+        "dramaStarter",
+        "chaosChaser",
+        "lateLegend",
+        "rumorQueen",
+        "counselor",
       ],
     },
   };
@@ -801,130 +562,50 @@ const GUESTS = {
     rescueMarkedStar: {
       name: "Red Carpet Gala",
       venueId: "velvetRoom",
-      description:
-        "An elegant spotlight gala where VIPs are locked into position until the grand close.",
-      guests: [
-        "rovingCritic",
-        "usher",
-        "headliner",
-        "velvetBouncer",
-        "champagneHost",
-        "spotlightPhotographer",
-        "standIn",
-        "partyPromoter",
-      ],
+      description: "A spotlight gala where showy guests score big and refresh each other's moves.",
+      guests: [...VENUES.velvetRoom.startingDeck],
     },
     exactFullVelvetSnap: {
       name: "Champagne Countdown",
       venueId: "champagneCountdown",
-      description:
-        "A packed-house party that peaks at the perfect moment—fill every seat and close strong.",
-      guests: [
-        "champagneHost",
-        "headliner",
-        "standIn",
-        "usher",
-        "spotlightPhotographer",
-        "velvetBouncer",
-        "rovingCritic",
-        "bookkeeper",
-      ],
+      description: "A packed-house party that peaks at the perfect moment—fill every seat and close strong.",
+      guests: [...VENUES.champagneCountdown.startingDeck],
     },
     protectStarSpendBouncer: {
       name: "Headliner Afterparty",
       venueId: "headlinerAfterparty",
-      description:
-        "Keep the star locked while the crew pushes and pulls through the lane.",
-      guests: [
-        "headliner",
-        "velvetBouncer",
-        "floorRunner",
-        "usher",
-        "spotlightPhotographer",
-        "champagneHost",
-        "rovingCritic",
-        "standIn",
-      ],
+      description: "Keep the star scoring while the crew refreshes and snaps their way through the lane.",
+      guests: [...VENUES.headlinerAfterparty.startingDeck],
     },
     leftEdgeEconomy: {
       name: "Bazaar Night",
       venueId: "nightMarket",
-      description:
-        "A curated market soirée where peeking and bouncing keeps your lineup sharp.",
-      guests: [
-        "curioDealer",
-        "galleryScout",
-        "bookkeeper",
-        "partyPromoter",
-        "trendBroker",
-        "stylist",
-        "standIn",
-        "floorRunner",
-      ],
+      description: "A curated market soirée where queue control and money angles keep your lineup sharp.",
+      guests: [...VENUES.nightMarket.startingDeck],
     },
     brokerStack: {
       name: "Trendsetter Mixer",
       venueId: "trendsetterMixer",
-      description:
-        "A market mixer where scoring at the right moment is everything.",
-      guests: [
-        "trendBroker",
-        "stylist",
-        "standIn",
-        "partyPromoter",
-        "bookkeeper",
-        "galleryScout",
-        "curioDealer",
-        "usher",
-      ],
+      description: "A market mixer where money and timing are everything.",
+      guests: [...VENUES.trendsetterMixer.startingDeck],
     },
     cashOutHitAndRun: {
       name: "Smuggler's Run",
       venueId: "backAlley",
-      description:
-        "A high-velocity outlaw party—push guests out, taunt rivals, and stay cool.",
-      guests: [
-        "gateRunner",
-        "wheelman",
-        "floorRunner",
-        "fence",
-        "provocateur",
-        "bookkeeper",
-        "usher",
-        "partyPromoter",
-      ],
+      description: "A high-velocity outlaw party—sabotage rivals, chase chaos, and stay cool.",
+      guests: [...VENUES.backAlley.startingDeck],
     },
     fenceRegister: {
       name: "Black Market Bash",
       venueId: "blackMarketBash",
-      description:
-        "A gritty underground bash where outlaws lay low and cash out before the heat catches up.",
-      guests: [
-        "fence",
-        "gateRunner",
-        "wheelman",
-        "floorRunner",
-        "provocateur",
-        "bookkeeper",
-        "standIn",
-        "usher",
-      ],
+      description: "A gritty underground bash where outlaws disrupt and cash out before the heat catches up.",
+      guests: [...VENUES.blackMarketBash.startingDeck],
     },
     complaintTrap: {
       name: "Riot Night",
       venueId: "riotNight",
-      description:
-        "A volatile street party built to taunt opponents with heat and force panic closes.",
-      guests: [
-        "gateRunner",
-        "provocateur",
-        "wheelman",
-        "fence",
-        "floorRunner",
-        "partyPromoter",
-        "standIn",
-        "bookkeeper",
-      ],
+      description: "A volatile street party built to sabotage opponents with heat and force panic closes.",
+      guests: [...VENUES.riotNight.startingDeck],
     },
   };
 
@@ -932,35 +613,34 @@ const GUESTS = {
     standardPlayerStatOnly: {
       name: "The Regulars",
       venueId: "velvetRoom",
-      description:
-        "A starter deck built around strong baseline stats with no basic-guest abilities.",
+      description: "A starter deck built around strong baseline stats with no special abilities.",
       guests: [
-        "regular",
-        "regular",
-        "regular",
-        "tipper",
-        "tipper",
-        "hypeFriend",
-        "hypeFriend",
+        "familiarFace",
+        "familiarFace",
+        "bottleBringer",
+        "bottleBringer",
+        "loudFriend",
+        "loudFriend",
+        "bigSpender",
         "bigSpender",
       ],
     },
     velvetClassic: {
       name: "VIP Lineup",
       venueId: "velvetRoom",
-      description: "VIP lineup with locks, pulls, and scoring.",
+      description: "Spotlight scoring with refreshes and showy entrances.",
       guests: [...VENUES.velvetRoom.startingDeck],
     },
     marketCore: {
-      name: "Thrifty Buisness",
+      name: "Thrifty Business",
       venueId: "nightMarket",
-      description: "Peek, bounce, pull, and score at the right time.",
+      description: "Curate your queue, cash out, and time your exits.",
       guests: [...VENUES.nightMarket.startingDeck],
     },
     alleyPressure: {
       name: "Rowdy Crew",
       venueId: "backAlley",
-      description: "Push, taunt, raid, and stay cool under pressure.",
+      description: "Sabotage, chaos, and competitive disruption.",
       guests: [...VENUES.backAlley.startingDeck],
     },
   };
@@ -1231,7 +911,7 @@ const GUESTS = {
     return true;
   }
 
-  function admitGuest(player, venue, opponent = null, opponentVenue = null) {
+  function admitGuest(player, venue, opponent = null, opponentVenue = null, _depth = 0) {
     if (!player.arrivingGuest || player.doorClosed || player.busted)
       return null;
     const guestId = player.arrivingGuest;
@@ -1243,48 +923,89 @@ const GUESTS = {
       effects: [],
     };
     const pushed = moveArrivingGuestIntoHouse(player, venue);
-    if (pushed.length) result.pushedOut = pushed.map(getGuestId);
+    // Handle departure effects for pushed-out guests
+    pushed.forEach(exit => {
+      const exitId = getGuestId(exit);
+      result.pushedOut.push(exitId);
+      handleDepartureEffects(player, opponent, exitId, result);
+    });
     if (player.heat > getHeatCapacity(venue, player)) {
       result.busted = true;
       applyBustState(player);
     }
     player.arrivingGuest = null;
     player.arrivingAbilityUsed = false;
+
+    // Handle arrival effects for the admitted guest
     if (!result.busted) {
+      handleArrivalEffects(player, opponent, guestId, venue, result);
+    }
+
+    // Defer drawing the next guest when the arrival ability needs the
+    // player to make a choice (stackChoice / nameDrop) so the deck stays
+    // intact until the choice is resolved.
+    if (!result.busted && !result.needsStackChoice && !result.needsNameDropChoice) {
       const drawRes = drawNextGuest(player, venue);
       if (drawRes.pendingOut) {
         result.pendingOut = drawRes.pendingOut;
+        handleDepartureEffects(player, opponent, drawRes.pendingOut, result);
       }
       if (player.busted) result.busted = true;
+    } else if (!result.busted && (result.needsStackChoice || result.needsNameDropChoice)) {
+      result.deferredDraw = true;
     }
+
+    // Handle plusOne / magnet: auto-admit the next drawn guest
+    if (!result.busted && !result.deferredDraw && (result.plusOneTriggered || result.magnetTriggered) && _depth < 3) {
+      if (player.arrivingGuest && !player.doorClosed && !player.busted) {
+        const autoResult = admitGuest(player, venue, opponent, opponentVenue, _depth + 1);
+        if (autoResult) {
+          result.autoAdmitted = autoResult;
+        }
+      }
+    }
+
     return result;
   }
 
-  function applyAbilityEffects(player, opponent, guest, result, sourceIndex) {
-    switch (guest.ability.type) {
+  // --- Resolve target index for "choice" targeting via selectedGuest param ---
+  // Returns house index, or -2 if targeting the arriving guest, or -1 if none.
+  function resolveChoiceTarget(player, selectedGuest) {
+    if (selectedGuest?.targetArriving && player.arrivingGuest) return -2;
+    if (!selectedGuest?.targetInstanceId) return -1;
+    return player.house.findIndex(
+      (e) => typeof e !== "string" && e.instanceId === selectedGuest.targetInstanceId,
+    );
+  }
+
+  function applyAbilityEffects(player, opponent, guest, result, sourceIndex, selectedGuest) {
+    const abilityDef = (typeof sourceIndex === "number" && sourceIndex >= 0 &&
+      player.house[sourceIndex] && typeof player.house[sourceIndex] !== "string" &&
+      player.house[sourceIndex].copiedAbility)
+      ? { ...guest, ability: player.house[sourceIndex].copiedAbility }
+      : guest;
+    const ability = abilityDef.ability;
+
+    switch (ability.type) {
       case "coolHeat": {
-        player.heat = Math.max(0, player.heat - guest.ability.value);
-        result.effects.push(`cooled ${guest.ability.value} heat`);
+        player.heat = Math.max(0, player.heat - ability.value);
+        result.effects.push(`cooled ${ability.value} heat`);
         break;
       }
       case "addOpponentHeat": {
-        opponent.heat += guest.ability.value;
-        result.effects.push(`added ${guest.ability.value} heat to opponent`);
+        opponent.heat += ability.value;
+        result.effects.push(`added ${ability.value} heat to opponent`);
         break;
       }
       case "scoreNow": {
-        player.roundPoints += guest.ability.value;
-        result.effects.push(`scored ${guest.ability.value} points`);
+        player.roundPoints += ability.value;
+        result.effects.push(`scored ${ability.value} points`);
         break;
       }
       case "revealNext": {
-        const count = Math.min(guest.ability.value, player.roundDeck.length);
+        const count = Math.min(ability.value, player.roundDeck.length);
         const revealed = [];
-        for (
-          let i = player.roundDeck.length - 1;
-          i >= player.roundDeck.length - count;
-          i--
-        ) {
+        for (let i = player.roundDeck.length - 1; i >= player.roundDeck.length - count; i--) {
           const revealId = player.roundDeck[i];
           revealed.push({ id: revealId, name: GUESTS[revealId].name });
         }
@@ -1296,25 +1017,63 @@ const GUESTS = {
         );
         break;
       }
-      case "revealAndReorder": {
-        const revealed = [];
-        if (player.roundDeck.length >= 2) {
-          const topIdx = player.roundDeck.length - 1;
-          const secondIdx = player.roundDeck.length - 2;
-          revealed.push(player.roundDeck[topIdx], player.roundDeck[secondIdx]);
-          result.revealedGuests = revealed;
+      case "stackChoice": {
+        const deck = player.roundDeck;
+        if (deck.length >= 2) {
+          const topIdx = deck.length - 1;
+          const secondIdx = deck.length - 2;
+          result.revealedGuests = [deck[topIdx], deck[secondIdx]];
           result.needsStackChoice = true;
-          result.effects.push(`peeked: ${GUESTS[revealed[0]].name}, ${GUESTS[revealed[1]].name} — choose order`);
-        } else if (player.roundDeck.length === 1) {
-          revealed.push(player.roundDeck[0]);
+          result.effects.push(`peeked: ${GUESTS[deck[topIdx]].name}, ${GUESTS[deck[secondIdx]].name} — choose order`);
+        } else if (deck.length === 1) {
+          result.revealedGuests = [deck[0]];
+          result.effects.push(`peeked: ${GUESTS[deck[0]].name}`);
+        }
+        break;
+      }
+      case "nameDrop": {
+        const count = Math.min(ability.value || 3, player.roundDeck.length);
+        if (count > 0) {
+          const revealed = [];
+          for (let i = player.roundDeck.length - 1; i >= player.roundDeck.length - count; i--) {
+            revealed.push(player.roundDeck[i]);
+          }
           result.revealedGuests = revealed;
-          result.effects.push(`peeked: ${GUESTS[player.roundDeck[0]].name}`);
+          result.needsNameDropChoice = true;
+          result.effects.push(`revealed: ${revealed.map(id => GUESTS[id].name).join(", ")} — choose one to admit`);
         }
         break;
       }
       case "boot": {
-        const targeting = guest.ability.targeting || "oldest";
-        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        const targeting = ability.targeting || "oldest";
+        // The arriving guest can be targeted only if the ability source is a house guest
+        const bootCanTargetArriving = sourceIndex >= 0 && !!player.arrivingGuest;
+        let targetIdx;
+        if (targeting === "choice") {
+          targetIdx = resolveChoiceTarget(player, selectedGuest);
+          if (targetIdx === -2 && bootCanTargetArriving) {
+            const arrivingId = player.arrivingGuest;
+            player.arrivingGuest = null;
+            player.arrivingAbilityUsed = false;
+            player.heat = Math.max(0, player.heat - GUESTS[arrivingId].heat);
+            result.effects.push(`booted ${GUESTS[arrivingId].name}`);
+            result.pushedOut = arrivingId;
+            handleDepartureEffects(player, opponent, arrivingId, result);
+            break;
+          }
+          if (targetIdx < 0 || targetIdx === -2) {
+            if (player.house.length === 0 && !bootCanTargetArriving) {
+              result.effects.push("no valid target");
+            } else {
+              result.needsTargetChoice = true;
+              result.validTargets = player.house.map((e, i) => ({ index: i, guestId: getGuestId(e) }));
+              result.canTargetArriving = bootCanTargetArriving;
+            }
+            break;
+          }
+        } else {
+          targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        }
         if (targetIdx < 0 || targetIdx >= player.house.length) {
           result.effects.push("no valid target");
           break;
@@ -1325,13 +1084,40 @@ const GUESTS = {
           break;
         }
         const exiting = player.house.splice(targetIdx, 1)[0];
-        result.effects.push(`booted ${GUESTS[getGuestId(exiting)].name}`);
-        result.pushedOut = getGuestId(exiting);
+        const exitGuestId = getGuestId(exiting);
+        result.effects.push(`booted ${GUESTS[exitGuestId].name}`);
+        result.pushedOut = exitGuestId;
+        handleDepartureEffects(player, opponent, exitGuestId, result);
         break;
       }
       case "bounce": {
-        const targeting = guest.ability.targeting || "oldest";
-        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        const targeting = ability.targeting || "oldest";
+        const bounceCanTargetArriving = sourceIndex >= 0 && !!player.arrivingGuest;
+        let targetIdx;
+        if (targeting === "choice") {
+          targetIdx = resolveChoiceTarget(player, selectedGuest);
+          if (targetIdx === -2 && bounceCanTargetArriving) {
+            const arrivingId = player.arrivingGuest;
+            player.arrivingGuest = null;
+            player.arrivingAbilityUsed = false;
+            player.heat = Math.max(0, player.heat - GUESTS[arrivingId].heat);
+            player.roundDeck.unshift(arrivingId);
+            result.effects.push(`bounced ${GUESTS[arrivingId].name}`);
+            break;
+          }
+          if (targetIdx < 0 || targetIdx === -2) {
+            if (player.house.length === 0 && !bounceCanTargetArriving) {
+              result.effects.push("no valid target");
+            } else {
+              result.needsTargetChoice = true;
+              result.validTargets = player.house.map((e, i) => ({ index: i, guestId: getGuestId(e) }));
+              result.canTargetArriving = bounceCanTargetArriving;
+            }
+            break;
+          }
+        } else {
+          targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        }
         if (targetIdx < 0 || targetIdx >= player.house.length) {
           result.effects.push("no valid target");
           break;
@@ -1346,113 +1132,129 @@ const GUESTS = {
         result.effects.push(`bounced ${GUESTS[getGuestId(bounced)].name}`);
         break;
       }
-      case "nudge": {
-        const targeting = guest.ability.targeting || "oldest";
-        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
-        if (targetIdx < 0 || targetIdx >= player.house.length) {
-          result.effects.push("no valid target");
-          break;
+      case "clearHouse": {
+        const cleared = [];
+        while (player.house.length > 0) {
+          const removed = player.house.pop();
+          const removedId = getGuestId(removed);
+          cleared.push(removedId);
+          handleDepartureEffects(player, opponent, removedId, result);
         }
-        const locked = getLockedIndexes(player);
-        if (locked.has(targetIdx)) {
-          result.effects.push("blocked by lock");
-          break;
-        }
-        // Nudge moves 1 step toward newest (toward index 0)
-        const newIdx = targetIdx - 1;
-        if (newIdx < 0) {
-          result.effects.push("no valid move");
-          break;
-        }
-        if (locked.has(newIdx)) {
-          result.effects.push("blocked by lock");
-          break;
-        }
-        const [entry] = player.house.splice(targetIdx, 1);
-        player.house.splice(newIdx, 0, entry);
-        result.effects.push(`nudged ${GUESTS[getGuestId(entry)].name} forward`);
+        result.effects.push(cleared.length ? `cleared ${cleared.length} guests` : "house already empty");
         break;
       }
-      case "bounceLeftmost": {
-        const idx = player.house.length - 1;
-        const locked = getLockedIndexes(player);
-        if (idx >= 0 && !locked.has(idx)) {
-          const bounced = player.house.splice(idx, 1)[0];
-          player.roundDeck.unshift(getGuestId(bounced));
-          result.effects.push(`bounced ${GUESTS[getGuestId(bounced)].name}`);
-        }
-        break;
-      }
-      case "pullForward": {
-        const idx = pullGuestOneStep(player);
-        if (idx !== null) result.effects.push("pulled a guest forward");
-        break;
-      }
-      case "pushLeftmost": {
-        const exiting = pushLeftmost(player);
-        if (exiting) {
-          result.effects.push(`pushed ${GUESTS[getGuestId(exiting)].name}`);
-          result.pushedOut = getGuestId(exiting);
-        }
-        break;
-      }
-      case "pushAnother": {
-        const locked = getLockedIndexes(player);
-        let pushed = false;
-        for (let i = player.house.length - 1; i >= 1; i--) {
-          if (locked.has(i)) continue;
-          const exiting = player.house.splice(i, 1)[0];
-          result.effects.push(`pushed ${GUESTS[getGuestId(exiting)].name}`);
-          result.pushedOut = getGuestId(exiting);
-          pushed = true;
-          break;
-        }
-        if (!pushed) result.effects.push("no guest to push");
-        break;
-      }
-      case "lockAnother": {
-        let lockedOne = false;
-        if (sourceIndex === -1) {
-          // Arriving guest: adjacent to future position 0 is current index 0
-          if (player.house.length > 0 && typeof player.house[0] !== "string") {
-            player.house[0].lockUntilClose = true;
-            lockedOne = true;
+      case "scoreGuest": {
+        const scoreCanTargetArriving = sourceIndex >= 0 && !!player.arrivingGuest;
+        const targetIdx = resolveChoiceTarget(player, selectedGuest);
+        if (targetIdx === -2 && scoreCanTargetArriving) {
+          const arrivingGuest = GUESTS[player.arrivingGuest];
+          if (arrivingGuest) {
+            player.roundPoints += arrivingGuest.points;
+            player.roundMoney += arrivingGuest.money;
+            result.effects.push(`scored ${arrivingGuest.points} points and ${arrivingGuest.money} money from ${arrivingGuest.name}`);
           }
+          break;
+        }
+        if (targetIdx < 0 || targetIdx === -2) {
+          if (player.house.length === 0 && !scoreCanTargetArriving) {
+            result.effects.push("no valid target");
+          } else {
+            result.needsTargetChoice = true;
+            result.validTargets = player.house.map((e, i) => ({ index: i, guestId: getGuestId(e) }));
+            result.canTargetArriving = scoreCanTargetArriving;
+          }
+          break;
+        }
+        const targetEntry = player.house[targetIdx];
+        const targetGuestId = getGuestId(targetEntry);
+        const targetGuest = GUESTS[targetGuestId];
+        if (targetGuest) {
+          const bonus = targetGuest.points + ((typeof targetEntry !== "string" && targetEntry.bonusPoints) || 0);
+          player.roundPoints += bonus;
+          player.roundMoney += targetGuest.money;
+          result.effects.push(`scored ${bonus} points and ${targetGuest.money} money from ${targetGuest.name}`);
+        }
+        break;
+      }
+      case "refreshAction": {
+        const targetIdx = resolveChoiceTarget(player, selectedGuest);
+        if (targetIdx < 0) {
+          const refreshable = player.house.filter((e, i) => {
+            if (typeof e === "string" || !e.abilityUsed) return false;
+            const g = GUESTS[getGuestId(e)];
+            return g?.ability?.trigger === "flash";
+          });
+          if (refreshable.length === 0) {
+            result.effects.push("no guest to refresh");
+          } else {
+            result.needsTargetChoice = true;
+            result.validTargets = player.house.map((e, i) => ({ index: i, guestId: getGuestId(e) }));
+          }
+          break;
+        }
+        const targetEntry = player.house[targetIdx];
+        if (targetEntry && typeof targetEntry !== "string") {
+          targetEntry.abilityUsed = false;
+          result.effects.push(`refreshed ${GUESTS[getGuestId(targetEntry)].name}`);
+        }
+        break;
+      }
+      case "refreshAllActions": {
+        let refreshed = 0;
+        for (let i = 0; i < player.house.length; i++) {
+          const entry = player.house[i];
+          if (!entry || typeof entry === "string") continue;
+          // Don't refresh self
+          if (i === sourceIndex) continue;
+          if (entry.abilityUsed) {
+            entry.abilityUsed = false;
+            refreshed++;
+          }
+        }
+        result.effects.push(refreshed ? `refreshed ${refreshed} actions` : "no actions to refresh");
+        break;
+      }
+      case "opponentStackChoice": {
+        const deck = opponent.roundDeck;
+        if (deck.length >= 2) {
+          const topIdx = deck.length - 1;
+          const secondIdx = deck.length - 2;
+          result.revealedGuests = [deck[topIdx], deck[secondIdx]];
+          result.needsOpponentStackChoice = true;
+          result.effects.push(`opponent's queue: ${GUESTS[deck[topIdx]].name}, ${GUESTS[deck[secondIdx]].name} — choose order`);
+        } else if (deck.length === 1) {
+          result.revealedGuests = [deck[0]];
+          result.effects.push(`opponent's queue: ${GUESTS[deck[0]].name}`);
         } else {
-          // House guest: lock one adjacent (prefer toward front)
-          if (sourceIndex > 0 && player.house[sourceIndex - 1] && typeof player.house[sourceIndex - 1] !== "string") {
-            player.house[sourceIndex - 1].lockUntilClose = true;
-            lockedOne = true;
-          } else if (sourceIndex < player.house.length - 1 && player.house[sourceIndex + 1] && typeof player.house[sourceIndex + 1] !== "string") {
-            player.house[sourceIndex + 1].lockUntilClose = true;
-            lockedOne = true;
-          }
+          result.effects.push("opponent's queue is empty");
         }
-        result.effects.push(lockedOne ? "locked a guest" : "no adjacent guest");
         break;
       }
-      case "lockAdjacent": {
-        let locked = 0;
-        if (sourceIndex === -1) {
-          // Arriving guest: adjacent to future position 0 is current index 0
-          if (player.house.length > 0 && typeof player.house[0] !== "string") {
-            player.house[0].lockUntilClose = true;
-            locked++;
-          }
-        } else {
-          // House guest: lock both adjacent
-          if (sourceIndex > 0 && player.house[sourceIndex - 1] && typeof player.house[sourceIndex - 1] !== "string") {
-            player.house[sourceIndex - 1].lockUntilClose = true;
-            locked++;
-          }
-          if (sourceIndex < player.house.length - 1 && player.house[sourceIndex + 1] && typeof player.house[sourceIndex + 1] !== "string") {
-            player.house[sourceIndex + 1].lockUntilClose = true;
-            locked++;
+      case "setHeatZero": {
+        const oldHeat = player.heat;
+        player.heat = 0;
+        result.effects.push(`cooled ${oldHeat} heat`);
+        break;
+      }
+      case "bootAdjacent": {
+        const booted = [];
+        if (sourceIndex >= 0) {
+          const locked = getLockedIndexes(player);
+          // Boot right neighbor first (lower index), then left (higher index)
+          const neighbors = [];
+          if (sourceIndex > 0) neighbors.push(sourceIndex - 1);
+          if (sourceIndex < player.house.length - 1) neighbors.push(sourceIndex + 1);
+          // Sort descending so splice doesn't shift indexes
+          neighbors.sort((a, b) => b - a);
+          for (const idx of neighbors) {
+            if (locked.has(idx)) continue;
+            const exiting = player.house.splice(idx, 1)[0];
+            const exitId = getGuestId(exiting);
+            booted.push(exitId);
+            handleDepartureEffects(player, opponent, exitId, result);
           }
         }
-        result.effects.push(
-          locked ? `locked ${locked} adjacent` : "no adjacent guests",
-        );
+        result.effects.push(booted.length ? `booted ${booted.length} adjacent guests` : "no adjacent guests");
         break;
       }
       case "queueGatecrasher": {
@@ -1461,56 +1263,215 @@ const GUESTS = {
         break;
       }
       case "gainMoney": {
+        player.roundMoney += ability.value;
+        result.effects.push(`gained ${ability.value} money`);
+        break;
+      }
+    }
+  }
+
+  // --- Departure effects: triggered when a guest leaves the house ---
+  function handleDepartureEffects(player, opponent, departingGuestId, result) {
+    const guest = GUESTS[departingGuestId];
+    if (!guest?.ability || guest.ability.trigger !== "departure") return;
+    switch (guest.ability.type) {
+      case "scoreNow":
+        player.roundPoints += guest.ability.value;
+        result.effects.push(`${guest.name} departure: scored ${guest.ability.value} points`);
+        break;
+      case "gainMoney":
         player.roundMoney += guest.ability.value;
-        result.effects.push(`gained ${guest.ability.value} money`);
+        result.effects.push(`${guest.name} departure: gained ${guest.ability.value} money`);
+        break;
+      case "coolHeat":
+        player.heat = Math.max(0, player.heat - guest.ability.value);
+        result.effects.push(`${guest.name} departure: cooled ${guest.ability.value} heat`);
+        break;
+      case "queueGatecrasher":
+        if (opponent) {
+          opponent.roundDeck.push("gatecrasher");
+          result.effects.push(`${guest.name} departure: queued gatecrasher for opponent`);
+        }
+        break;
+      case "addOpponentHeat":
+        if (opponent) {
+          opponent.heat += guest.ability.value;
+          result.effects.push(`${guest.name} departure: added ${guest.ability.value} heat to opponent`);
+        }
+        break;
+    }
+  }
+
+  // --- Arrival effects: triggered when a guest enters the house ---
+  function handleArrivalEffects(player, opponent, guestId, venue, result) {
+    const guest = GUESTS[guestId];
+    if (!guest?.ability || guest.ability.trigger !== "arrival") return;
+    switch (guest.ability.type) {
+      case "scoreNow":
+        player.roundPoints += guest.ability.value;
+        result.effects.push(`scored ${guest.ability.value} points on arrival`);
+        break;
+      case "queueGatecrasher":
+        if (opponent) {
+          opponent.roundDeck.push("gatecrasher");
+          result.effects.push("planted gatecrasher on opponent's queue");
+        }
+        break;
+      case "plusOne":
+        result.plusOneTriggered = true;
+        result.effects.push("plus one triggered");
+        break;
+      case "magnet":
+        result.magnetTriggered = true;
+        result.effects.push("magnet triggered — plus one with arrival");
+        break;
+      case "stackChoice": {
+        const deck = player.roundDeck;
+        if (deck.length >= 2) {
+          const topIdx = deck.length - 1;
+          const secondIdx = deck.length - 2;
+          result.revealedGuests = [deck[topIdx], deck[secondIdx]];
+          result.needsStackChoice = true;
+          result.effects.push(`peeked: ${GUESTS[deck[topIdx]].name}, ${GUESTS[deck[secondIdx]].name} — choose order`);
+        } else if (deck.length === 1) {
+          result.revealedGuests = [deck[0]];
+          result.effects.push(`peeked: ${GUESTS[deck[0]].name}`);
+        }
         break;
       }
-      case "stealMoney": {
-        const opponentTotal = opponent.roundMoney + opponent.guestMoney;
-        const stolen = Math.min(guest.ability.value, opponentTotal);
-        // Steal from guestMoney first, then roundMoney
-        const fromGuest = Math.min(stolen, opponent.guestMoney);
-        opponent.guestMoney -= fromGuest;
-        opponent.roundMoney -= (stolen - fromGuest);
-        player.roundMoney += stolen;
-        result.effects.push(
-          stolen ? `stole ${stolen} money` : "nothing to steal",
-        );
+      case "nameDrop": {
+        const count = Math.min(guest.ability.value || 3, player.roundDeck.length);
+        if (count > 0) {
+          const revealed = [];
+          for (let i = player.roundDeck.length - 1; i >= player.roundDeck.length - count; i--) {
+            revealed.push(player.roundDeck[i]);
+          }
+          result.revealedGuests = revealed;
+          result.needsNameDropChoice = true;
+          result.effects.push(`revealed: ${revealed.map(id => GUESTS[id].name).join(", ")} — choose one to admit`);
+        }
         break;
       }
-      case "discardNext": {
-        if (player.roundDeck.length > 0) {
-          const discarded = player.roundDeck.pop();
-          result.effects.push(`discarded ${GUESTS[discarded].name}`);
+      case "socialClimber": {
+        const entry = player.house.find(e => getGuestId(e) === guestId);
+        if (entry && typeof entry !== "string") {
+          entry.bonusPoints = (entry.bonusPoints || 0) + 1;
+          const max = guest.ability.maxBonus || 9;
+          if (entry.bonusPoints > max) entry.bonusPoints = max;
+          result.effects.push(`social climber: +${entry.bonusPoints} permanent points`);
+        }
+        break;
+      }
+      case "impersonator": {
+        // Copy action ability of guest to the left (index 1, since this guest just entered at 0)
+        if (player.house.length > 1) {
+          const leftGuest = GUESTS[getGuestId(player.house[1])];
+          if (leftGuest?.ability && leftGuest.ability.trigger === "flash") {
+            const entry = player.house[0];
+            if (entry && typeof entry !== "string") {
+              entry.copiedAbility = { ...leftGuest.ability };
+              result.effects.push(`copied ${leftGuest.ability.name} from ${leftGuest.name}`);
+            }
+          } else {
+            result.effects.push("no action ability to copy");
+          }
+        } else {
+          result.effects.push("no guest to copy from");
+        }
+        break;
+      }
+      case "lock": {
+        const targeting = guest.ability.targeting || "rightOfSelf";
+        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        if (targetIdx < 0 || targetIdx >= player.house.length) {
+          result.effects.push("no valid target");
+          break;
+        }
+        const entry = normalizeHouseEntry(player, targetIdx);
+        entry.lockUntilClose = true;
+        result.effects.push(`locked ${GUESTS[getGuestId(entry)].name}`);
+        break;
+      }
+      case "stackChoice": {
+        const revealed = [];
+        if (player.roundDeck.length >= 2) {
+          const topIdx = player.roundDeck.length - 1;
+          const secondIdx = player.roundDeck.length - 2;
+          revealed.push(player.roundDeck[topIdx], player.roundDeck[secondIdx]);
+          result.revealedGuests = revealed;
+          result.needsStackChoice = true;
+          result.effects.push(`peeked: ${GUESTS[revealed[0]].name}, ${GUESTS[revealed[1]].name} — choose order`);
+        } else if (player.roundDeck.length === 1) {
+          revealed.push(player.roundDeck[0]);
+          result.revealedGuests = revealed;
+          result.effects.push(`peeked: ${GUESTS[player.roundDeck[0]].name}`);
         } else {
           result.effects.push("queue empty");
         }
         break;
       }
-      case "scorePerGuest": {
-        const bonus = player.house.length * guest.ability.value;
-        player.roundPoints += bonus;
-        result.effects.push(`scored ${bonus} points (${player.house.length} guests)`);
-        break;
+    }
+  }
+
+  // --- Scoring bonuses: evaluated at end of round ---
+  function applyScoringBonuses(player, venue) {
+    for (let i = 0; i < player.house.length; i++) {
+      const entry = player.house[i];
+      if (!entry) continue;
+      const guestId = getGuestId(entry);
+      const guest = GUESTS[guestId];
+
+      // Add bonusPoints from socialClimber
+      if (typeof entry !== "string" && entry.bonusPoints) {
+        player.guestPoints += entry.bonusPoints;
       }
-      case "boostAdjacent": {
-        let adjacent = 0;
-        if (sourceIndex === -1) {
-          // Arriving guest: adjacent to future position 0 is current index 0
-          if (player.house.length > 0) adjacent++;
-        } else {
-          // House guest: count both sides
-          if (sourceIndex > 0) adjacent++;
-          if (sourceIndex < player.house.length - 1) adjacent++;
+
+      if (!guest?.ability || guest.ability.trigger !== "scoring") continue;
+      switch (guest.ability.type) {
+        case "wallflower": {
+          const capacity = getHouseCapacity(venue, player);
+          const emptySlots = Math.max(0, capacity - player.house.length);
+          player.roundPoints += emptySlots;
+          break;
         }
-        const bonus = adjacent * guest.ability.value;
-        player.roundPoints += bonus;
-        result.effects.push(
-          bonus
-            ? `scored ${bonus} from ${adjacent} adjacent`
-            : "no adjacent guests",
-        );
-        break;
+        case "clique": {
+          const myTags = guest.tags || [];
+          let bonus = 0;
+          if (i > 0) {
+            const neighbor = GUESTS[getGuestId(player.house[i - 1])];
+            if (neighbor && myTags.some(t => (neighbor.tags || []).includes(t))) bonus++;
+          }
+          if (i < player.house.length - 1) {
+            const neighbor = GUESTS[getGuestId(player.house[i + 1])];
+            if (neighbor && myTags.some(t => (neighbor.tags || []).includes(t))) bonus++;
+          }
+          player.roundPoints += bonus;
+          break;
+        }
+        case "centerOfAttention": {
+          if (i === 0) player.roundPoints += (guest.ability.value || 2);
+          break;
+        }
+        case "packedHouse": {
+          const capacity = getHouseCapacity(venue, player);
+          if (player.house.length >= capacity && capacity > 0) {
+            player.roundPoints += (guest.ability.value || 4);
+          }
+          break;
+        }
+        case "highRoller": {
+          const totalMoney = player.roundMoney + player.guestMoney + player.money;
+          player.roundPoints += Math.floor(totalMoney / 2);
+          break;
+        }
+        case "chaosChaser": {
+          player.roundPoints += player.heat;
+          break;
+        }
+        case "lastToLeave": {
+          if (i === player.house.length - 1) player.roundPoints += (guest.ability.value || 2);
+          break;
+        }
       }
     }
   }
@@ -1533,14 +1494,14 @@ const GUESTS = {
           (entry) => getGuestId(entry) === selectedGuest.guestId,
         );
       }
-      // If selection is stale (e.g. guest already left the grid), fail instead
-      // of activating a different guest unexpectedly.
       if (selectedIndex < 0) return null;
 
       const entry = normalizeHouseEntry(player, selectedIndex);
       const guestId = getGuestId(entry);
       const guest = GUESTS[guestId];
-      if (!guest?.ability || guest.ability.trigger !== "flash") {
+      // Allow flash trigger OR copiedAbility
+      const hasCopied = entry.copiedAbility;
+      if (!hasCopied && (!guest?.ability || guest.ability.trigger !== "flash")) {
         return null;
       }
       if (entry.abilityUsed) {
@@ -1549,14 +1510,17 @@ const GUESTS = {
 
       const result = {
         activated: guest.name,
-        ability: guest.ability,
+        ability: hasCopied || guest.ability,
         effects: [],
         pushedOut: [],
         pendingOut: null,
         busted: false,
       };
-      applyAbilityEffects(player, opponent, guest, result, selectedIndex);
-      entry.abilityUsed = true;
+      applyAbilityEffects(player, opponent, guest, result, selectedIndex, selectedGuest);
+      // Don't mark used if the ability needs a target choice
+      if (!result.needsTargetChoice) {
+        entry.abilityUsed = true;
+      }
       return result;
     }
 
@@ -1574,8 +1538,10 @@ const GUESTS = {
       pendingOut: null,
       busted: false,
     };
-    applyAbilityEffects(player, opponent, guest, result, -1);
-    player.arrivingAbilityUsed = true;
+    applyAbilityEffects(player, opponent, guest, result, -1, selectedGuest);
+    if (!result.needsTargetChoice) {
+      player.arrivingAbilityUsed = true;
+    }
 
     return result;
   }
@@ -1625,9 +1591,6 @@ const GUESTS = {
     [state.player, state.rival].forEach((p) => {
       // If there's an arriving guest still waiting and the player hasn't
       // busted, move them into the house so they persist to the next round.
-      // Busted players don't benefit from persistence and skipping this
-      // prevents applyGuestImpact from adding the guest's money/points to
-      // roundMoney/roundPoints after applyBustState already zeroed them.
       if (p.arrivingGuest && !p.busted) {
         const venue = VENUES[p.venueId];
         moveArrivingGuestIntoHouse(p, venue);
@@ -1635,6 +1598,9 @@ const GUESTS = {
       p.arrivingGuest = null;
       p.arrivingAbilityUsed = false;
       if (!p.busted) {
+        // Apply scoring bonuses before tallying
+        const venue = VENUES[p.venueId];
+        applyScoringBonuses(p, venue);
         const earned = getRoundEarnings(p);
         p.money += earned.money;
         p.points += earned.points;
@@ -1711,6 +1677,23 @@ const GUESTS = {
     }
   }
 
+  // Resolve a name-drop choice: player picks one guest to admit, rest go back
+  function resolveNameDropChoice(player, venue, opponent, opponentVenue, chosenId) {
+    const deck = player.roundDeck;
+    const idx = deck.lastIndexOf(chosenId);
+    if (idx < 0) return false;
+    // Remove chosen from deck and set as arriving guest
+    deck.splice(idx, 1);
+    player.arrivingGuest = chosenId;
+    player.arrivingAbilityUsed = false;
+    return true;
+  }
+
+  // Resolve opponent stack choice (for Rumor Queen)
+  function resolveOpponentStackChoice(opponent, firstId) {
+    return resolveStackChoice(opponent, firstId);
+  }
+
   return {
     GUESTS,
     VENUES,
@@ -1735,6 +1718,8 @@ const GUESTS = {
     getHouseCapacity,
     getHeatCapacity,
     resolveStackChoice,
+    resolveNameDropChoice,
+    resolveOpponentStackChoice,
   };
 })();
 
