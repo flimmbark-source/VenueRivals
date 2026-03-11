@@ -512,6 +512,19 @@
     const MAX_DECK_SIZE = 15;
     const ABLY_API_KEY = '_tDhUg.HYf2eA:VPJbNYIBgqUrolL5QzcLSyj4XRCheq3cizKtHVAtGCA';
 
+    const TAG_ICONS = {
+        VIP: '⭐',
+        Performer: '🎤',
+        Scout: '🔭',
+        Broker: '💰',
+        Outlaw: '💀',
+    };
+
+    function getTagIconsHtml(guest) {
+        if (!guest.tags || !guest.tags.length) return '';
+        return guest.tags.map(t => TAG_ICONS[t] || '').join('');
+    }
+
     const VENUE_POOL_DESC = {
         velvetRoom: 'Lock stars in place and close at the right moment',
         nightMarket: 'Peek at the queue, bounce and score smart',
@@ -1010,8 +1023,7 @@
 
     function renderAbilityBadge(guest) {
         if (!guest.ability) return '';
-        const icon = escapeHtml(guest.ability.icon || '');
-        return `<span class="ability-icon-badge" aria-label="${escapeHtml(guest.ability.name || 'Ability')}" title="${escapeHtml(guest.ability.name || 'Ability')}">${icon}</span>`;
+        return `<span class="ability-icon-badge" aria-label="${escapeHtml(guest.ability.name || 'Ability')}" title="${escapeHtml(guest.ability.name || 'Ability')}">⚡</span>`;
     }
 
 
@@ -1736,7 +1748,7 @@
         let abilityHTML = '';
         if (guest.ability) {
             const abilityStyle = isAbilityUsed ? ' style="opacity:0.5"' : '';
-            abilityHTML = `<div class="tt-ability"${abilityStyle}>${guest.ability.icon} ${guest.ability.name}: ${guest.ability.desc}</div>`;
+            abilityHTML = `<div class="tt-ability"${abilityStyle}>⚡ ${guest.ability.desc}</div>`;
         }
 
         let abilityBtnHTML = '';
@@ -1749,7 +1761,7 @@
         }
 
         el.innerHTML = `
-            <div class="tt-name">${guest.emoji} ${guest.name}</div>
+            <div class="tt-name">${getTagIconsHtml(guest)} ${guest.name}</div>
             <div class="tt-stats-row">
                 <div class="tt-stats">
                     <span class="stat-money">💵${guest.money}</span>
@@ -3334,13 +3346,13 @@
         guestAbilityPopupEl.className = 'guest-ability-popup';
 
         const abilityHtml = guest.ability
-            ? `<div class="guest-ability-popup-title">${guest.ability.icon} ${guest.ability.name}</div>
+            ? `<div class="guest-ability-popup-title">⚡</div>
                <div class="guest-ability-popup-desc">${guest.ability.desc}</div>`
             : '<div class="guest-ability-popup-desc">No special ability.</div>';
 
         guestAbilityPopupEl.innerHTML = `
             <button type="button" class="guest-ability-popup-close" aria-label="Close">✕</button>
-            <div class="guest-ability-popup-name">${guest.emoji} ${guest.name}</div>
+            <div class="guest-ability-popup-name">${getTagIconsHtml(guest)} ${guest.name}</div>
             ${abilityHtml}
         `;
 
@@ -3481,8 +3493,7 @@
                     const g = guests[gid];
                     if (!g.ability || g.isShopItem) return;
                     rows += `<div class="glossary-ability-row">
-                        <span class="glossary-ability-icon">${escapeHtml(g.ability.icon)}</span>
-                        <span class="glossary-ability-name">${escapeHtml(g.ability.name)}</span>
+                        <span class="glossary-ability-icon">⚡</span>
                         <span class="glossary-ability-desc">${escapeHtml(g.name)} — ${escapeHtml(g.ability.desc)}</span>
                     </div>`;
                 });
