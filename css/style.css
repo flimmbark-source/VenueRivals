@@ -976,14 +976,17 @@ body {
 .venue-area-stats {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 10px;
-    padding: 4px 8px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: transparent;
+    border: 0;
     font-family: 'Poppins', sans-serif;
     font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.5px;
-    z-index: 5;
+    z-index: 6;
     position: relative;
 }
 
@@ -1022,19 +1025,24 @@ body {
 
 /* === Venue Area === */
 .venue-area {
-    padding: 4px 6px;
+    padding: 8px;
     min-height: 0;
     position: relative;
     display: flex;
     flex-direction: column;
+    gap: 6px;
     overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(24, 29, 50, 0.95), rgba(10, 12, 25, 0.94));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .rival-venue {
-    border-left: 2px solid rgba(255, 110, 110, 0.12);
+    border-color: rgba(255, 110, 110, 0.38);
     order: -1;
 }
-.player-venue { border-left: 2px solid rgba(76, 201, 240, 0.12); }
+.player-venue { border-color: rgba(76, 201, 240, 0.38); }
 
 .player-venue {
     display: flex;
@@ -1137,7 +1145,15 @@ body {
         url('./public/Venue1.png') center / cover no-repeat;
     overflow: hidden;
     margin-bottom: 6px;
+    padding-top: 42px;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.venue-scene .venue-area-stats {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
 }
 
 .venue-scene #player-slots,
@@ -1627,9 +1643,16 @@ body {
 .slots-main-row,
 .slots-overflow-row {
     display: flex;
-    flex-direction: row;
     gap: 3px;
     flex-shrink: 0;
+}
+
+.slots-main-row {
+    flex-direction: row;
+}
+
+.slots-overflow-row {
+    flex-direction: row-reverse;
 }
 
 .venue-scene #player-slots.has-stacked-slots,
@@ -1907,8 +1930,19 @@ body {
     margin-bottom: 0;
 }
 
+.venue-info-panel .phone-heat-row {
+    justify-content: center;
+    width: 100%;
+}
+
+.venue-info-panel .phone-phase-progress {
+    flex: 0 1 min(62vw, 280px);
+    width: min(62vw, 280px);
+}
+
 .venue-info-panel .phone-heat-text {
-    min-width: 64px;
+    min-width: 72px;
+    text-align: center;
 }
 
 
@@ -1928,6 +1962,14 @@ body {
     pointer-events: auto;
     cursor: pointer;
     overflow: hidden;
+}
+
+.global-feedback-bar {
+    margin: 4px 8px 0;
+    padding: 0 6px;
+    border-radius: 8px;
+    background: rgba(7, 10, 20, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .feedback-msg {
@@ -2285,7 +2327,8 @@ body {
 .shop-layout {
     display: flex;
     gap: 10px;
-    margin-bottom: 10px;
+    margin-top: 12px;
+    margin-bottom: -10px;
     justify-content: center;
     align-items: flex-start;
 }
