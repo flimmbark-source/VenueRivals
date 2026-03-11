@@ -768,9 +768,9 @@ body {
 }
 
 .venue-type-card {
-    background: var(--bg-medium);
-    border: 2px solid transparent;
-    border-radius: var(--radius-lg);
+    background: rgba(36, 19, 83, 0.6);
+    border: 2px solid rgba(155, 93, 234, 0.3);
+    border-radius: 12px;
     padding: 16px;
     cursor: pointer;
     transition: var(--transition);
@@ -780,12 +780,12 @@ body {
     text-align: left;
 }
 
-.venue-type-card:hover { border-color: var(--accent-secondary); }
+.venue-type-card:hover { border-color: rgba(155, 93, 234, 0.65); }
 
 .venue-type-card.selected {
-    border-color: var(--accent-secondary);
-    background: var(--bg-light);
-    box-shadow: 0 0 25px rgba(127, 90, 240, 0.3);
+    border-color: #9b5dea;
+    background: rgba(93, 38, 148, 0.35);
+    box-shadow: 0 0 25px rgba(155, 93, 234, 0.3);
 }
 
 .venue-type-emoji { font-size: 2.4rem; flex-shrink: 0; }
@@ -793,13 +793,13 @@ body {
 .venue-type-card h3 {
     font-family: 'Poppins', sans-serif;
     font-size: 1.05rem;
-    color: var(--text-primary);
+    color: #e7e1ed;
     margin-bottom: 2px;
 }
 
 .venue-type-card p {
     font-size: 0.8rem;
-    color: var(--text-secondary);
+    color: rgba(231, 225, 237, 0.65);
     line-height: 1.3;
     margin-bottom: 6px;
 }
@@ -813,10 +813,11 @@ body {
 .stat-tag {
     font-size: 0.7rem;
     padding: 2px 8px;
-    border-radius: 12px;
-    background: var(--bg-card);
-    color: var(--accent-gold);
+    border-radius: 999px;
+    background: rgba(36, 19, 83, 0.6);
+    color: #fbe05b;
     font-weight: 600;
+    border: 1px solid rgba(155, 93, 234, 0.35);
 }
 
 .setup-name-section { margin-bottom: 20px; }
@@ -828,7 +829,7 @@ body {
 /* --- Setup Screen Root --- */
 #setup-screen {
     overflow: hidden;
-    background: #0a0918;
+    background: #150822;
     border: none;
 }
 
@@ -888,6 +889,12 @@ body {
     grid-template-columns: 5.5% 1fr 5.5%;
     padding: 0;
     overflow: hidden;
+    border-radius: 20px;
+    border: 4px solid rgba(155, 93, 234, 0.55);
+    box-shadow:
+        0 0 0 2px rgba(21, 8, 34, 0.95),
+        0 0 18px rgba(155, 93, 234, 0.28),
+        inset 0 0 0 1px rgba(231, 225, 237, 0.06);
 }
 
 /* Place every child in column 2 (between the side gutters) */
@@ -910,7 +917,8 @@ body {
     grid-row: 3;
     align-self: stretch;
     overflow: hidden;
-    padding: 6px 8px;
+    padding: 10px;
+    border-color: rgba(237, 161, 41, 0.5);
 }
 
 /* --- Row 4: Venue Name Input (thin bar) --- */
@@ -949,10 +957,15 @@ body {
     grid-column: 2;
     align-self: center;
     justify-self: center;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    padding: 0;
+    background: linear-gradient(180deg, rgba(251, 224, 91, 0.12), rgba(237, 161, 41, 0.18));
+    border: 3px solid rgba(237, 161, 41, 0.8);
+    border-radius: 10px;
+    box-shadow:
+        0 0 12px rgba(237, 161, 41, 0.22),
+        0 0 18px rgba(155, 93, 234, 0.22),
+        inset 0 1px 0 rgba(248, 231, 153, 0.24),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.35);
+    padding: 8px 16px;
     width: 70%;
 }
 
@@ -960,80 +973,176 @@ body {
     display: none;
 }
 
+#setup-screen .arcade-start-btn:hover:not(:disabled) {
+    background: linear-gradient(180deg, rgba(251, 224, 91, 0.2), rgba(237, 161, 41, 0.28));
+    border-color: #fbe05b;
+    box-shadow:
+        0 0 18px rgba(251, 224, 91, 0.35),
+        0 0 28px rgba(155, 93, 234, 0.3);
+}
+
 #setup-screen .arcade-start-text {
-    color: var(--accent-gold);
+    color: #fbe05b;
     text-shadow:
-        0 0 10px rgba(255, 209, 102, 0.8),
-        0 0 30px rgba(255, 209, 102, 0.4);
+        0 0 10px rgba(251, 224, 91, 0.8),
+        0 0 30px rgba(217, 98, 230, 0.4);
+}
+
+#setup-screen .arcade-start-btn:disabled {
+    border-color: rgba(155, 93, 234, 0.25);
+    background: rgba(36, 19, 83, 0.3);
+    box-shadow: none;
 }
 
 #setup-screen .arcade-start-btn:disabled .arcade-start-text {
-    color: rgba(255, 209, 102, 0.3);
+    color: rgba(231, 225, 237, 0.2);
     text-shadow: none;
 }
 
-/* --- All panels: transparent to show background frame --- */
+/* --- All panels: NeonPixelArcade style --- */
 #setup-screen .arcade-panel {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    border-radius: 0;
+    background: rgba(36, 19, 83, 0.75);
+    border: 3px solid rgba(230, 164, 88, 0.45);
+    box-shadow:
+        0 0 0 1px rgba(231, 225, 237, 0.04),
+        0 0 14px rgba(98, 97, 222, 0.18),
+        inset 0 1px 0 rgba(248, 231, 153, 0.08),
+        inset 0 -2px 8px rgba(0, 0, 0, 0.35);
+    border-radius: 12px;
 }
 
 #setup-screen .arcade-panel::before {
-    display: none;
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 13px;
+    border: 2px solid rgba(100, 154, 226, 0.35);
+    pointer-events: none;
 }
 
 #setup-screen .arcade-panel-header {
     margin-bottom: 2px;
     padding-bottom: 2px;
-    border-bottom: 1px dotted rgba(255, 209, 102, 0.25);
+    border-bottom: 1px dotted rgba(251, 224, 91, 0.3);
 }
 
 /* --- Venue Name: hide label, center input --- */
 #setup-screen .arcade-sign-panel {
     justify-content: center;
+    border-color: rgba(251, 224, 91, 0.35);
 }
 
 #setup-screen .arcade-sign-input {
     text-align: center;
     font-size: 0.5rem;
+    background: rgba(21, 8, 34, 0.9);
+    border: 2px solid rgba(251, 224, 91, 0.35);
+    border-radius: 8px;
+    color: #fbe05b;
+    text-shadow: 0 0 6px rgba(251, 224, 91, 0.3);
+}
+
+#setup-screen .arcade-sign-input::placeholder {
+    color: rgba(251, 224, 91, 0.3);
+}
+
+#setup-screen .arcade-sign-input:focus {
+    border-color: #fbe05b;
+    box-shadow: 0 0 12px rgba(251, 224, 91, 0.25);
 }
 
 /* --- Cards & associated elements scaled for setup screen --- */
 #setup-screen .guest-slot {
     width: 40px;
     height: 47px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 16px;
+    border: 2px solid rgba(155, 93, 234, 0.75);
+    box-shadow:
+        0 0 8px rgba(155, 93, 234, 0.16),
+        inset 0 1px 0 rgba(231, 225, 237, 0.06);
 }
 
 #setup-screen .guest-slot .slot-stat {
     font-size: 0.71rem;
+    color: #e7e1ed;
 }
 
 #setup-screen .arcade-card-scroll {
-    gap: 4px;
+    gap: 6px;
     padding: 2px 2px 4px;
 }
 
 #setup-screen .arcade-panel-title {
     font-size: 0.44rem;
+    color: #fbe05b;
+    text-shadow:
+        0 0 12px rgba(251, 224, 91, 0.25),
+        0 0 24px rgba(217, 98, 230, 0.18);
 }
 
 #setup-screen .arcade-panel-subtitle {
     font-size: 0.35rem;
+    color: #e7e1ed;
 }
 
 #setup-screen .arcade-btn-edit {
     font-size: 0.37rem;
     padding: 4px 8px;
+    border: 3px solid rgba(237, 161, 41, 0.8);
+    border-radius: 10px;
+    background: rgba(88, 27, 40, 0.6);
+    color: #fbe05b;
+    box-shadow:
+        0 0 12px rgba(237, 161, 41, 0.22),
+        0 0 18px rgba(155, 93, 234, 0.22),
+        inset 0 1px 0 rgba(248, 231, 153, 0.24),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.35);
+    text-shadow: 0 0 6px rgba(251, 224, 91, 0.4);
+}
+
+#setup-screen .arcade-btn-edit:hover {
+    background: rgba(88, 27, 40, 0.85);
+    border-color: #eda129;
+    box-shadow:
+        0 0 18px rgba(237, 161, 41, 0.35),
+        0 0 24px rgba(155, 93, 234, 0.3);
 }
 
 #setup-screen .arcade-btn-change {
     font-size: 0.37rem;
     padding: 4px 8px;
+    border: 3px solid rgba(237, 161, 41, 0.8);
+    border-radius: 10px;
+    background: rgba(88, 27, 40, 0.6);
+    color: #fbe05b;
+    box-shadow:
+        0 0 12px rgba(237, 161, 41, 0.22),
+        0 0 18px rgba(155, 93, 234, 0.22),
+        inset 0 1px 0 rgba(248, 231, 153, 0.24),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.35);
+    text-shadow: 0 0 6px rgba(251, 224, 91, 0.4);
 }
+
+#setup-screen .arcade-btn-change:hover {
+    background: rgba(88, 27, 40, 0.85);
+    border-color: #eda129;
+    box-shadow:
+        0 0 18px rgba(237, 161, 41, 0.35),
+        0 0 24px rgba(155, 93, 234, 0.3);
+}
+
+/* Venue stat chips */
+#setup-screen .arcade-stat-chip {
+    border-radius: 999px;
+    background: rgba(36, 19, 83, 0.6);
+    border-color: rgba(155, 93, 234, 0.4);
+    color: #fbe05b;
+}
+
+#setup-screen .arcade-stat-chip.stat-slots { border-color: rgba(100, 154, 226, 0.5); color: #649ae2; }
+#setup-screen .arcade-stat-chip.stat-bust  { border-color: rgba(217, 98, 230, 0.5); color: #d962e6; }
+#setup-screen .arcade-stat-chip.stat-style { border-color: rgba(251, 224, 91, 0.5); color: #fbe05b; }
 
 /* Arcade deck/roster card previews in horizontal scroll */
 #setup-screen .loadout-deck-preview-grid {
@@ -1049,15 +1158,90 @@ body {
     font-family: 'Press Start 2P', monospace;
     font-size: 0.35rem;
     padding: 2px 6px;
-    border-radius: 2px;
+    border-radius: 999px;
+    border: 1px solid rgba(155, 93, 234, 0.4);
+    background: rgba(36, 19, 83, 0.6);
+    color: #e7e1ed;
 }
 
+/* --- Selector buttons (rounds / mode) --- */
+#setup-screen .arcade-sel-btn {
+    border: 2px solid rgba(155, 93, 234, 0.45);
+    background: rgba(36, 19, 83, 0.7);
+    color: #e7e1ed;
+    border-radius: 8px;
+}
+
+#setup-screen .arcade-sel-btn:hover {
+    border-color: rgba(155, 93, 234, 0.7);
+    color: #fbe05b;
+    background: rgba(93, 38, 148, 0.4);
+}
+
+#setup-screen .arcade-sel-btn.active {
+    border-color: #649ae2;
+    background: rgba(45, 35, 147, 0.5);
+    color: #649ae2;
+    box-shadow: 0 0 12px rgba(98, 97, 222, 0.35);
+    text-shadow: 0 0 6px rgba(100, 154, 226, 0.6);
+}
+
+#setup-screen .arcade-settings-label {
+    color: #fbe05b;
+    text-shadow: 0 0 6px rgba(251, 224, 91, 0.3);
+}
+
+/* --- Header elements --- */
+#setup-screen .arcade-back-btn {
+    border: 2px solid rgba(155, 93, 234, 0.5);
+    background: rgba(36, 19, 83, 0.6);
+    color: #9b5dea;
+    border-radius: 8px;
+}
+
+#setup-screen .arcade-back-btn:hover {
+    background: rgba(93, 38, 148, 0.35);
+    border-color: #9b5dea;
+    box-shadow: 0 0 10px rgba(155, 93, 234, 0.3);
+}
+
+#setup-screen .arcade-hud-stats {
+    color: #e7e1ed;
+}
+
+#setup-screen .arcade-hud-money {
+    color: #fbe05b;
+    text-shadow: 0 0 6px rgba(251, 224, 91, 0.3);
+}
+
+#setup-screen .arcade-hud-points {
+    color: #eda129;
+    text-shadow: 0 0 6px rgba(237, 161, 41, 0.3);
+}
+
+/* --- Venue name label --- */
+#setup-screen .arcade-venue-name-label {
+    color: #e7e1ed;
+    text-shadow:
+        0 0 12px rgba(251, 224, 91, 0.25),
+        0 0 24px rgba(217, 98, 230, 0.18);
+}
+
+/* --- Multiplayer status --- */
+#setup-screen .arcade-mp-status {
+    color: #649ae2;
+}
+
+#setup-screen .arcade-sign-label {
+    color: #fbe05b;
+    text-shadow: 0 0 6px rgba(251, 224, 91, 0.4);
+}
 
 
 .multiplayer-popup-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(10, 12, 28, 0.62);
+    background: rgba(21, 8, 34, 0.65);
     z-index: 2500;
 }
 
@@ -1068,15 +1252,20 @@ body {
     transform: translate(-50%, -50%);
     min-width: 190px;
     padding: 18px 24px;
-    border-radius: 14px;
-    border: 1px solid rgba(77, 184, 255, 0.75);
-    background: rgba(15, 18, 38, 0.95);
-    color: #bce8ff;
+    border-radius: 12px;
+    border: 3px solid rgba(230, 164, 88, 0.45);
+    background:
+        radial-gradient(ellipse at top, rgba(93, 38, 148, 0.12), transparent 65%),
+        linear-gradient(180deg, rgba(36, 19, 83, 0.96), rgba(21, 8, 34, 0.98));
+    color: #649ae2;
     font-size: 1.15rem;
     font-weight: 700;
     letter-spacing: 0.02em;
     text-align: center;
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+    box-shadow:
+        0 0 0 1px rgba(231, 225, 237, 0.04),
+        0 0 14px rgba(98, 97, 222, 0.18),
+        0 14px 34px rgba(0, 0, 0, 0.45);
     z-index: 2600;
 }
 
@@ -3061,7 +3250,7 @@ body {
 .loadout-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(6, 7, 16, 0.92);
+    background: rgba(21, 8, 34, 0.92);
     backdrop-filter: blur(3px);
     z-index: 50;
     display: flex;
@@ -3072,26 +3261,28 @@ body {
 }
 
 #guest-list-manage-overlay {
-    background: rgba(6, 7, 16, 0.95);
+    background: rgba(21, 8, 34, 0.95);
 }
 
 #guest-list-manage-overlay .loadout-overlay-panel {
-    border-color: rgba(76, 201, 240, 0.28);
+    border-color: rgba(100, 154, 226, 0.4);
 }
 
 .loadout-overlay-panel {
     background:
-        radial-gradient(ellipse at top, rgba(127, 90, 240, 0.12), transparent 65%),
-        linear-gradient(180deg, rgba(15, 14, 23, 0.96), rgba(10, 9, 20, 0.98));
-    border-radius: 6px;
+        radial-gradient(ellipse at top, rgba(93, 38, 148, 0.15), transparent 65%),
+        linear-gradient(180deg, rgba(36, 19, 83, 0.96), rgba(21, 8, 34, 0.98));
+    border-radius: 12px;
     padding: 14px;
     width: min(95%, 470px);
     max-height: 85vh;
     overflow-y: auto;
     box-shadow:
-        0 0 14px rgba(127, 90, 240, 0.2),
-        inset 0 0 20px rgba(0, 0, 0, 0.45);
-    border: 2px solid rgba(127, 90, 240, 0.4);
+        0 0 0 1px rgba(231, 225, 237, 0.04),
+        0 0 14px rgba(98, 97, 222, 0.18),
+        inset 0 1px 0 rgba(248, 231, 153, 0.08),
+        inset 0 -2px 8px rgba(0, 0, 0, 0.35);
+    border: 3px solid rgba(230, 164, 88, 0.45);
     position: relative;
 }
 
@@ -3099,13 +3290,13 @@ body {
     content: '';
     position: absolute;
     inset: -1px;
-    border-radius: 7px;
-    border: 1px solid rgba(127, 90, 240, 0.15);
+    border-radius: 13px;
+    border: 2px solid rgba(100, 154, 226, 0.35);
     pointer-events: none;
 }
 
 .loadout-overlay-panel::-webkit-scrollbar { width: 4px; }
-.loadout-overlay-panel::-webkit-scrollbar-thumb { background: var(--bg-card); border-radius: 4px; }
+.loadout-overlay-panel::-webkit-scrollbar-thumb { background: rgba(155, 93, 234, 0.35); border-radius: 4px; }
 
 .loadout-overlay-top {
     display: flex;
@@ -3114,25 +3305,27 @@ body {
     margin-bottom: 10px;
     gap: 8px;
     padding-bottom: 7px;
-    border-bottom: 1px dotted rgba(127, 90, 240, 0.25);
+    border-bottom: 1px dotted rgba(251, 224, 91, 0.3);
 }
 
 .loadout-overlay-top h3 {
     font-family: 'Press Start 2P', monospace;
     font-size: 0.56rem;
-    color: var(--accent-gold);
+    color: #fbe05b;
     letter-spacing: 0.6px;
     text-transform: uppercase;
-    text-shadow: 0 0 8px rgba(255, 209, 102, 0.45);
+    text-shadow:
+        0 0 12px rgba(251, 224, 91, 0.25),
+        0 0 24px rgba(217, 98, 230, 0.18);
 }
 
 .loadout-overlay-close {
     width: 24px;
     height: 24px;
-    border: 2px solid rgba(255, 92, 92, 0.45);
-    background: rgba(255, 92, 92, 0.12);
-    color: var(--accent-primary);
-    border-radius: 2px;
+    border: 2px solid rgba(217, 98, 230, 0.55);
+    background: rgba(88, 27, 40, 0.5);
+    color: #d962e6;
+    border-radius: 8px;
     font-size: 0.8rem;
     cursor: pointer;
     transition: var(--transition);
@@ -3145,9 +3338,9 @@ body {
 }
 
 .loadout-overlay-close:hover {
-    background: rgba(255, 92, 92, 0.2);
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 10px rgba(255, 92, 92, 0.3);
+    background: rgba(88, 27, 40, 0.75);
+    border-color: #d962e6;
+    box-shadow: 0 0 10px rgba(217, 98, 230, 0.35);
 }
 
 
@@ -3175,7 +3368,7 @@ body {
 
 #venue-select-overlay .deck-manage-section:first-child::-webkit-scrollbar { width: 4px; }
 #venue-select-overlay .deck-manage-section:first-child::-webkit-scrollbar-thumb {
-    background: rgba(127, 90, 240, 0.3);
+    background: rgba(155, 93, 234, 0.35);
     border-radius: 4px;
 }
 
@@ -3183,13 +3376,13 @@ body {
     margin-top: auto;
     flex-shrink: 0;
     padding-top: 10px;
-    border-top: 1px dotted rgba(127, 90, 240, 0.25);
-    background: linear-gradient(180deg, rgba(15, 14, 23, 0), rgba(15, 14, 23, 0.88) 22%, rgba(15, 14, 23, 0.98));
+    border-top: 1px dotted rgba(251, 224, 91, 0.25);
+    background: linear-gradient(180deg, rgba(36, 19, 83, 0), rgba(36, 19, 83, 0.88) 22%, rgba(21, 8, 34, 0.98));
 }
 /* Venue selection overlay */
 .venue-select-pool {
     font-size: 0.62rem;
-    color: var(--text-muted);
+    color: rgba(231, 225, 237, 0.4);
     margin-top: 4px;
     font-style: italic;
 }
@@ -3204,20 +3397,21 @@ body {
 
 .guest-list-card-emojis {
     font-size: 0.75rem;
-    color: var(--text-muted);
+    color: rgba(231, 225, 237, 0.45);
     letter-spacing: 1px;
 }
 
 .equipped-badge {
     font-size: 0.55rem;
-    background: var(--accent-secondary);
-    color: white;
+    background: rgba(155, 93, 234, 0.6);
+    color: #e7e1ed;
     padding: 2px 6px;
-    border-radius: 8px;
+    border-radius: 999px;
     font-weight: 700;
     letter-spacing: 0.5px;
     vertical-align: middle;
     margin-left: 6px;
+    border: 1px solid rgba(155, 93, 234, 0.5);
 }
 
 .guest-list-card-leading .equipped-badge {
@@ -3229,39 +3423,42 @@ body {
     font-family: 'Press Start 2P', monospace;
     font-weight: 700;
     font-size: 0.44rem;
-    color: var(--accent-tertiary);
-    background: rgba(44, 182, 125, 0.15);
+    color: #649ae2;
+    background: rgba(45, 35, 147, 0.35);
     padding: 4px 10px;
-    border-radius: 10px;
+    border-radius: 999px;
     white-space: nowrap;
+    border: 1px solid rgba(100, 154, 226, 0.3);
 }
 
 .deck-size-badge.invalid {
-    color: var(--accent-primary);
-    background: rgba(255, 110, 110, 0.15);
+    color: #d962e6;
+    background: rgba(88, 27, 40, 0.35);
+    border-color: rgba(217, 98, 230, 0.3);
 }
 
 .deck-size-badge.full {
-    color: var(--accent-gold);
-    background: rgba(255, 209, 102, 0.15);
+    color: #fbe05b;
+    background: rgba(237, 161, 41, 0.15);
+    border-color: rgba(251, 224, 91, 0.3);
 }
 
 .deck-validity-msg {
     font-size: 0.75rem;
     text-align: center;
     padding: 6px 10px;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 12px;
     font-weight: 600;
-    color: var(--accent-primary);
-    background: rgba(255, 110, 110, 0.1);
-    border: 1px solid rgba(255, 110, 110, 0.2);
+    color: #d962e6;
+    background: rgba(88, 27, 40, 0.25);
+    border: 1px solid rgba(217, 98, 230, 0.3);
 }
 
 .deck-validity-msg.info {
-    color: var(--accent-gold);
-    background: rgba(255, 209, 102, 0.1);
-    border-color: rgba(255, 209, 102, 0.2);
+    color: #fbe05b;
+    background: rgba(237, 161, 41, 0.12);
+    border-color: rgba(251, 224, 91, 0.25);
 }
 
 .deck-manage-body {
@@ -3288,13 +3485,14 @@ body {
 .deck-manage-section-header h4 {
     font-family: 'Press Start 2P', monospace;
     font-size: 0.48rem;
-    color: var(--text-primary);
+    color: #fbe05b;
+    text-shadow: 0 0 6px rgba(251, 224, 91, 0.25);
 }
 
 .deck-manage-hint {
     font-family: 'Press Start 2P', monospace;
     font-size: 0.36rem;
-    color: var(--text-muted);
+    color: rgba(231, 225, 237, 0.45);
 }
 
 .deck-manage-grid {
@@ -3310,7 +3508,7 @@ body {
 
 .deck-manage-grid::-webkit-scrollbar { height: 4px; }
 .deck-manage-grid::-webkit-scrollbar-thumb {
-    background: rgba(127, 90, 240, 0.3);
+    background: rgba(155, 93, 234, 0.35);
     border-radius: 4px;
 }
 
@@ -3332,7 +3530,7 @@ body {
     position: fixed;
     inset: 0;
     border: 0;
-    background: rgba(0, 0, 0, 0.58);
+    background: rgba(21, 8, 34, 0.65);
     z-index: 240;
 }
 
@@ -3342,11 +3540,16 @@ body {
     top: 50%;
     transform: translate(-50%, -50%);
     width: min(340px, calc(100vw - 36px));
-    background: rgba(16, 16, 26, 0.97);
-    border: 2px solid rgba(127, 90, 240, 0.8);
-    border-radius: var(--radius-lg);
+    background:
+        radial-gradient(ellipse at top, rgba(93, 38, 148, 0.12), transparent 65%),
+        linear-gradient(180deg, rgba(36, 19, 83, 0.97), rgba(21, 8, 34, 0.98));
+    border: 3px solid rgba(230, 164, 88, 0.45);
+    border-radius: 12px;
     padding: 16px 16px 14px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+    box-shadow:
+        0 0 0 1px rgba(231, 225, 237, 0.04),
+        0 0 14px rgba(98, 97, 222, 0.18),
+        0 16px 40px rgba(0, 0, 0, 0.55);
     z-index: 250;
 }
 
@@ -3356,10 +3559,10 @@ body {
     right: 8px;
     width: 24px;
     height: 24px;
-    border: 0;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-secondary);
+    border: 2px solid rgba(217, 98, 230, 0.45);
+    border-radius: 8px;
+    background: rgba(88, 27, 40, 0.5);
+    color: #d962e6;
     cursor: pointer;
     font-size: 0.85rem;
 }
@@ -3368,7 +3571,7 @@ body {
     font-family: 'Poppins', sans-serif;
     font-size: 1rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: #e7e1ed;
     margin-bottom: 8px;
     padding-right: 20px;
 }
@@ -3376,13 +3579,14 @@ body {
 .guest-ability-popup-title {
     font-size: 0.78rem;
     font-weight: 700;
-    color: var(--accent-gold);
+    color: #fbe05b;
+    text-shadow: 0 0 6px rgba(251, 224, 91, 0.3);
     margin-bottom: 4px;
 }
 
 .guest-ability-popup-desc {
     font-size: 0.74rem;
-    color: var(--text-secondary);
+    color: rgba(231, 225, 237, 0.7);
     line-height: 1.4;
 }
 
@@ -3390,7 +3594,7 @@ body {
     font-family: 'Poppins', sans-serif;
     font-size: 0.5rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #e7e1ed;
     margin-bottom: 3px;
     width: 46px;
     white-space: nowrap;
@@ -3400,12 +3604,12 @@ body {
 }
 
 .deck-card-name.has-ability {
-    color: #A020F0;
+    color: #9b5dea;
 }
 
 .deck-card-ability {
     font-size: 0.5rem;
-    color: var(--accent-gold);
+    color: #fbe05b;
     margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
@@ -3435,13 +3639,13 @@ body {
 }
 
 .deck-manage-empty {
-    color: var(--text-muted);
+    color: rgba(231, 225, 237, 0.4);
     font-size: 0.8rem;
     text-align: center;
     padding: 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: var(--radius-sm);
-    border: 1px dashed rgba(148, 161, 178, 0.25);
+    background: rgba(36, 19, 83, 0.3);
+    border-radius: 12px;
+    border: 1px dashed rgba(155, 93, 234, 0.25);
 }
 
 /* Small phones */
