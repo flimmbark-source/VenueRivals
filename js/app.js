@@ -1646,11 +1646,18 @@
         return gameState.player.house.find((entry) => typeof entry !== 'string' && entry.instanceId === playerFlashWindowInstanceId) || null;
     }
 
+    function getEntryActivatableAbility(entry) {
+        if (!entry || typeof entry === 'string') return null;
+        if (entry.copiedAbility) return entry.copiedAbility;
+        const guest = Game.GUESTS[entry.guestId];
+        if (!guest?.ability || guest.ability.trigger !== 'flash') return null;
+        return guest.ability;
+    }
+
     function isPlayerFlashAvailable() {
         const entry = getPlayerFlashWindowEntry();
         if (!entry) return false;
-        const guest = Game.GUESTS[entry.guestId];
-        return !!(guest?.ability && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
+        return !!(getEntryActivatableAbility(entry) && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
     }
 
     function isPlayerDoorAbilityAvailable() {
@@ -1675,8 +1682,7 @@
     function isSelectedPlayerHouseAbilityAvailable() {
         const entry = getSelectedPlayerHouseEntry();
         if (!entry) return false;
-        const guest = Game.GUESTS[entry.guestId];
-        return !!(guest?.ability && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
+        return !!(getEntryActivatableAbility(entry) && !entry.abilityUsed && !gameState.player.doorClosed && !gameState.player.busted);
     }
 
     function getSelectedPlayerAbilityTarget() {
@@ -1714,7 +1720,7 @@
                 }
                 return houseEntry.guestId === options.guestId;
             });
-            if (!entry) return null;
+            if (!entry || !getEntryActivatableAbility(entry) || entry.abilityUsed) return null;
             return { source: 'house', guestId: entry.guestId, instanceId: entry.instanceId };
         }
 
@@ -1831,13 +1837,19 @@
 
         const tooltipWho = options.who || 'rival';
         const tooltipAbilityTarget = tooltipWho === 'player' ? buildAbilityTargetFromOptions(options) : null;
+        const houseEntry = tooltipWho === 'player' && options.source === 'house'
+            ? gameState?.player?.house?.find((entry) => typeof entry !== 'string' && (
+                options.instanceId != null ? entry.instanceId === options.instanceId : entry.guestId === options.guestId
+            ))
+            : null;
+        const displayAbility = houseEntry ? getEntryActivatableAbility(houseEntry) : guest.ability;
         const isAbilityUsed = !!options.abilityUsed;
         const canTriggerAbility = !!tooltipAbilityTarget && !isAbilityUsed;
 
         let abilityHTML = '';
-        if (guest.ability) {
+        if (displayAbility) {
             const abilityStyle = isAbilityUsed ? ' style="opacity:0.5"' : '';
-            abilityHTML = `<div class="tt-ability"${abilityStyle}>${guest.ability.icon} ${guest.ability.desc}</div>`;
+            abilityHTML = `<div class="tt-ability"${abilityStyle}>${displayAbility.icon} ${displayAbility.desc}</div>`;
         }
 
         let abilityBtnHTML = '';
