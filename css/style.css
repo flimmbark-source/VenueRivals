@@ -1727,6 +1727,26 @@ body {
     animation: guestArrive 0.3s ease;
 }
 
+/* === Targeting Mode === */
+.guest-slot.valid-target {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.8), 0 0 16px rgba(255, 107, 107, 0.5);
+    animation: targetPulse 1s ease-in-out infinite;
+    cursor: pointer;
+}
+
+.guest-slot.dimmed-target {
+    opacity: 0.35;
+    pointer-events: none;
+    filter: grayscale(0.6);
+}
+
+@keyframes targetPulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.8), 0 0 16px rgba(255, 107, 107, 0.5); }
+    50% { box-shadow: 0 0 0 3px rgba(255, 107, 107, 1), 0 0 24px rgba(255, 107, 107, 0.7); }
+}
+
+
 /* === Arriving Guest Slot === */
 .arriving-slot {
     display: none !important;

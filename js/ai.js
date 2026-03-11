@@ -265,16 +265,172 @@ const AI = (() => {
         return 'close';
     }
 
+    /**
+     * Evaluate using a house guest's targeted flash ability.
+     * Returns { action: 'houseAbility', instanceId, targetInstanceId, value } or null.
+     */
+    function evaluateHouseAbilities(rival, player, venue, playerVenue) {
+        const houseCapacity = Game.getHouseCapacity(venue, rival);
+        let best = null;
+
+        for (let i = 0; i < rival.house.length; i++) {
+            const entry = rival.house[i];
+            if (typeof entry === 'string' || !entry || entry.abilityUsed) continue;
+            const guestId = entry.guestId || entry;
+            const guest = Game.GUESTS[guestId];
+            if (!guest?.ability || guest.ability.trigger !== 'flash') continue;
+
+            const ability = entry.copiedAbility || guest.ability;
+            const targeting = ability.targeting || '';
+
+            // For each ability type that targets a house guest, pick the best target
+            if (ability.type === 'boot' && targeting === 'choice') {
+                // Boot: remove a guest to free capacity or shed heat
+                // Pick the lowest-value guest (lowest money+points) that isn't locked
+                let bestTarget = null;
+                let bestTargetValue = Infinity;
+                for (let j = 0; j < rival.house.length; j++) {
+                    if (j === i) continue; // don't boot self
+                    const te = rival.house[j];
+                    if (typeof te === 'string') continue;
+                    if (te.lockUntilClose) continue;
+                    const tg = Game.GUESTS[te.guestId];
+                    if (!tg) continue;
+                    const tv = tg.money + tg.points;
+                    if (tv < bestTargetValue) {
+                        bestTargetValue = tv;
+                        bestTarget = te;
+                    }
+                }
+                if (!bestTarget) continue;
+                // Boot is valuable when near capacity or high heat
+                const heatCap = getHeatCapacity(venue, rival);
+                const heatPressure = rival.heat / heatCap;
+                const capacityPressure = rival.house.length >= houseCapacity ? 3 : 0;
+                const value = heatPressure * 3 + capacityPressure - bestTargetValue * 0.5;
+                if (value > 0 && (!best || value > best.value)) {
+                    best = { action: 'houseAbility', instanceId: entry.instanceId, targetInstanceId: bestTarget.instanceId, value };
+                }
+            } else if (ability.type === 'bounce' && targeting === 'choice') {
+                // Bounce: return a low-value guest to queue to free capacity
+                let bestTarget = null;
+                let bestTargetValue = Infinity;
+                for (let j = 0; j < rival.house.length; j++) {
+                    if (j === i) continue;
+                    const te = rival.house[j];
+                    if (typeof te === 'string') continue;
+                    if (te.lockUntilClose) continue;
+                    const tg = Game.GUESTS[te.guestId];
+                    if (!tg) continue;
+                    const tv = tg.money + tg.points;
+                    if (tv < bestTargetValue) {
+                        bestTargetValue = tv;
+                        bestTarget = te;
+                    }
+                }
+                if (!bestTarget) continue;
+                const capacityPressure = rival.house.length >= houseCapacity ? 2.5 : 0;
+                const value = capacityPressure + 0.5 - bestTargetValue * 0.3;
+                if (value > 0 && (!best || value > best.value)) {
+                    best = { action: 'houseAbility', instanceId: entry.instanceId, targetInstanceId: bestTarget.instanceId, value };
+                }
+            } else if (ability.type === 'scoreGuest') {
+                // Score a guest: pick the highest-value guest
+                let bestTarget = null;
+                let bestTargetValue = -Infinity;
+                for (let j = 0; j < rival.house.length; j++) {
+                    if (j === i) continue;
+                    const te = rival.house[j];
+                    if (typeof te === 'string') continue;
+                    const tg = Game.GUESTS[te.guestId];
+                    if (!tg) continue;
+                    const tv = tg.points + tg.money + ((te.bonusPoints) || 0);
+                    if (tv > bestTargetValue) {
+                        bestTargetValue = tv;
+                        bestTarget = te;
+                    }
+                }
+                if (!bestTarget || bestTargetValue <= 0) continue;
+                const value = bestTargetValue * 1.5;
+                if (!best || value > best.value) {
+                    best = { action: 'houseAbility', instanceId: entry.instanceId, targetInstanceId: bestTarget.instanceId, value };
+                }
+            } else if (ability.type === 'refreshAction') {
+                // Refresh: find a used flash ability guest worth re-using
+                let bestTarget = null;
+                let bestTargetValue = -Infinity;
+                for (let j = 0; j < rival.house.length; j++) {
+                    if (j === i) continue;
+                    const te = rival.house[j];
+                    if (typeof te === 'string' || !te.abilityUsed) continue;
+                    const tg = Game.GUESTS[te.guestId];
+                    if (!tg?.ability || tg.ability.trigger !== 'flash') continue;
+                    const tv = 2; // flat value for refreshing any ability
+                    if (tv > bestTargetValue) {
+                        bestTargetValue = tv;
+                        bestTarget = te;
+                    }
+                }
+                if (!bestTarget) continue;
+                const value = bestTargetValue;
+                if (!best || value > best.value) {
+                    best = { action: 'houseAbility', instanceId: entry.instanceId, targetInstanceId: bestTarget.instanceId, value };
+                }
+            } else if (!targeting) {
+                // Non-targeted house flash abilities (e.g. clearHouse, revealNext from house)
+                // Use simple heuristic
+                let value = 0;
+                if (ability.type === 'coolHeat') {
+                    const heatCap = getHeatCapacity(venue, rival);
+                    const headroom = heatCap - rival.heat;
+                    value = headroom <= 1 ? ability.value * 4 : ability.value * 0.5;
+                } else if (ability.type === 'revealNext') {
+                    value = 1.5;
+                } else if (ability.type === 'gainMoney') {
+                    value = (ability.value || 1) * 1.2;
+                } else {
+                    value = 1;
+                }
+                if (value > 0 && (!best || value > best.value)) {
+                    best = { action: 'houseAbility', instanceId: entry.instanceId, targetInstanceId: null, value };
+                }
+            }
+        }
+
+        return best;
+    }
+
     function decideGuestAction(state) {
         const rival = state.rival;
         const player = state.player;
         const venue = Game.VENUES[rival.venueId];
         const playerVenue = Game.VENUES[player.venueId];
 
-        if (!rival.arrivingGuest || rival.doorClosed || rival.busted) return null;
+        if (rival.doorClosed || rival.busted) return null;
+
+        // Evaluate house abilities (targeted and non-targeted)
+        const houseAbility = evaluateHouseAbilities(rival, player, venue, playerVenue);
+
+        if (!rival.arrivingGuest) {
+            // No arriving guest but house abilities might still be available
+            if (houseAbility && houseAbility.value > 1) return houseAbility;
+            return null;
+        }
 
         const guest = Game.GUESTS[rival.arrivingGuest];
-        return estimateDoorSafeAction(rival, guest, venue, player, playerVenue);
+        const doorAction = estimateDoorSafeAction(rival, guest, venue, player, playerVenue);
+
+        // Compare house ability value against door action
+        if (houseAbility && houseAbility.value > 2) {
+            // Only use house ability if it's clearly better than admitting/closing
+            const values = estimateAdmitVsCloseValue(rival, venue);
+            const bestDoorValue = Math.max(values.admitValue, values.closeValue);
+            if (houseAbility.value + bestDoorValue * 0.9 > bestDoorValue) {
+                return houseAbility;
+            }
+        }
+
+        return doorAction;
     }
 
     /**
@@ -290,11 +446,41 @@ const AI = (() => {
         const ranked = rankMarketByMonteCarlo(rival, market, venue);
 
         let budget = rival.money;
+
+        // Consider upgrades alongside guest purchases
+        const slotCost = 3 + (rival.shopItemPurchases.slotIncrease * 2);
+        const heatCost = 4 + (rival.shopItemPurchases.heatCapIncrease * 3);
+        const houseCapacity = Game.getHouseCapacity(venue, rival);
+        const heatCapacity = Game.getHeatCapacity(venue, rival);
+
+        // Evaluate upgrade value heuristically
+        // +1 Slot is valuable when deck is larger than current capacity
+        const slotValue = rival.fullDeck.length > houseCapacity ? 6 : 2;
+        // +1 Heat Cap is valuable when average heat per guest is high
+        const avgHeat = rival.fullDeck.reduce((sum, id) => sum + (Game.GUESTS[id]?.heat || 0), 0) / Math.max(1, rival.fullDeck.length);
+        const heatValue = avgHeat >= 1.5 ? 7 : (avgHeat >= 1 ? 4 : 2);
+
+        // Build a unified list of all purchasable items with value/cost scores
+        const candidates = [];
         for (const guestId of ranked) {
             const guest = Game.GUESTS[guestId];
-            if (guest.cost <= budget && purchases.length < 3) {
-                purchases.push(guestId);
-                budget -= guest.cost;
+            const guestValue = estimateRoundValueForGuest(rival, venue, guestId);
+            candidates.push({ id: guestId, cost: guest.cost, value: guestValue / Math.max(1, guest.cost) });
+        }
+        if (slotCost <= budget) {
+            candidates.push({ id: 'slotIncrease', cost: slotCost, value: slotValue / Math.max(1, slotCost) });
+        }
+        if (heatCost <= budget) {
+            candidates.push({ id: 'heatCapIncrease', cost: heatCost, value: heatValue / Math.max(1, heatCost) });
+        }
+
+        // Sort by value/cost ratio descending
+        candidates.sort((a, b) => b.value - a.value);
+
+        for (const item of candidates) {
+            if (item.cost <= budget && purchases.length < 4) {
+                purchases.push(item.id);
+                budget -= item.cost;
             }
         }
 
