@@ -1124,7 +1124,8 @@ const GUESTS = {
           const arrivingGuest = GUESTS[player.arrivingGuest];
           if (arrivingGuest) {
             player.roundPoints += arrivingGuest.points;
-            result.effects.push(`scored ${arrivingGuest.points} points from ${arrivingGuest.name}`);
+            player.roundMoney += arrivingGuest.money;
+            result.effects.push(`scored ${arrivingGuest.points} points and ${arrivingGuest.money} money from ${arrivingGuest.name}`);
           }
           break;
         }
@@ -1144,7 +1145,8 @@ const GUESTS = {
         if (targetGuest) {
           const bonus = targetGuest.points + ((typeof targetEntry !== "string" && targetEntry.bonusPoints) || 0);
           player.roundPoints += bonus;
-          result.effects.push(`scored ${bonus} points from ${targetGuest.name}`);
+          player.roundMoney += targetGuest.money;
+          result.effects.push(`scored ${bonus} points and ${targetGuest.money} money from ${targetGuest.name}`);
         }
         break;
       }
