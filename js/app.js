@@ -2702,8 +2702,20 @@
                     document.getElementById('rival-area').classList.remove('bust-flash');
                 }, 500);
             }
-        } else if (action === 'ability') {
-            const result = Game.activateAbility(r, p, rVenue, pVenue);
+        } else if (action === 'ability' || (typeof action === 'object' && action.action === 'houseAbility')) {
+            let selectedGuest = null;
+            if (typeof action === 'object' && action.action === 'houseAbility') {
+                // House ability with targeting: build the selectedGuest param
+                const entry = r.house.find(e => typeof e !== 'string' && e.instanceId === action.instanceId);
+                if (!entry) return;
+                selectedGuest = {
+                    source: 'house',
+                    guestId: entry.guestId,
+                    instanceId: action.instanceId,
+                    targetInstanceId: action.targetInstanceId,
+                };
+            }
+            const result = Game.activateAbility(r, p, rVenue, pVenue, selectedGuest);
             if (!result) return;
             showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500, 'rival');
             if (result.revealedGuests) setRevealDoorIntel('rival', result.revealedGuests);
