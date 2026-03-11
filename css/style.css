@@ -827,9 +827,7 @@ body {
 
 /* --- Setup Screen Root --- */
 #setup-screen {
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;
     background: #0a0918;
     border: none;
 }
@@ -837,7 +835,7 @@ body {
 #setup-screen.active {
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: stretch;
     padding: 0;
 }
 
@@ -847,21 +845,22 @@ body {
 }
 
 /*
- * Setup container: background image is the arcade cabinet frame.
- * Image is 256×512 (1:2). We lock the container to that aspect ratio
- * and position every child with percentage-based padding so they land
- * inside the frame's pre-drawn panel slots.
+ * Setup container uses CSS grid to place children inside the
+ * background image's pre-drawn frame slots.
  *
- * Frame slot map (% of total height):
- *   0-5%    top chrome / header bar
- *   5-11%   "TONIGHT'S SETUP" title banner
- *  11-50%   large venue panel
- *  50-57%   thin venue-name input bar
- *  57-72%   tonight's deck panel
- *  72-86%   guest roster panel
- *  86-91%   settings row (rounds / mode)
- *  91-97%   golden "OPEN DOORS" button
- *  97-100%  bottom chrome
+ * The container fills the full viewport. background-size: 100% 100%
+ * stretches the image to match, so grid row %s map 1:1 to the frame.
+ *
+ * Pixel measurements from 256×512 source image:
+ *   0-22px   (4.3%)  top chrome (red lights)
+ *  22-55px   (6.4%)  title banner "TONIGHT'S SETUP"
+ *  55-250px  (38.1%) venue panel interior
+ * 250-290px  (7.8%)  venue name bar
+ * 290-370px  (15.6%) tonight's deck
+ * 370-440px  (13.7%) guest roster
+ * 440-467px  (5.3%)  settings row
+ * 467-498px  (6.1%)  golden button
+ * 498-512px  (2.7%)  bottom chrome
  *
  * Side gutters: ~5% each side
  */
@@ -870,15 +869,21 @@ body {
     margin: 0 auto;
     max-width: 500px;
     width: 100%;
-    /* Lock to background aspect ratio (1:2) */
-    aspect-ratio: 1 / 2;
-    max-height: 100%;
+    height: 100%;
     background:
         url('../public/SetupPageBackground.png') center top / 100% 100% no-repeat;
-    /* No flex gap — children are absolutely positioned */
     display: grid;
-    grid-template-rows: 5% 6% 39% 7% 15% 14% 5% 6% 3%;
-    grid-template-columns: 5% 1fr 5%;
+    grid-template-rows:
+        4.3%    /* 1: top chrome */
+        6.4%    /* 2: title banner (empty — in bg) */
+        38.1%   /* 3: venue panel */
+        7.8%    /* 4: venue name */
+        15.6%   /* 5: deck */
+        13.7%   /* 6: roster */
+        5.3%    /* 7: settings */
+        6.1%    /* 8: button */
+        2.7%;   /* 9: bottom chrome */
+    grid-template-columns: 5.5% 1fr 5.5%;
     padding: 0;
     overflow: hidden;
 }
@@ -886,6 +891,8 @@ body {
 /* Place every child in column 2 (between the side gutters) */
 #setup-screen .setup-container > * {
     grid-column: 2;
+    min-width: 0;
+    min-height: 0;
 }
 
 /* --- Row 1: Header (top chrome area) --- */
@@ -896,14 +903,12 @@ body {
     z-index: 2;
 }
 
-/* --- Row 2: Title banner — hidden, provided by background --- */
-/* arcade-title has display:none so it collapses entirely */
-
 /* --- Row 3: Venue Panel (big slot) --- */
 #setup-screen .arcade-venue-panel {
     grid-row: 3;
     align-self: stretch;
     overflow: hidden;
+    padding: 6px 8px;
 }
 
 /* --- Row 4: Venue Name Input (thin bar) --- */
@@ -917,7 +922,7 @@ body {
 #setup-screen .arcade-deck-panel {
     grid-row: 5;
     align-self: stretch;
-    padding: 6px 8px;
+    padding: 4px 8px;
     overflow: hidden;
 }
 
@@ -925,7 +930,7 @@ body {
 #setup-screen .arcade-roster-panel {
     grid-row: 6;
     align-self: stretch;
-    padding: 6px 8px;
+    padding: 4px 8px;
     overflow: hidden;
 }
 
@@ -933,7 +938,7 @@ body {
 #setup-screen .arcade-settings-panel {
     grid-row: 7;
     align-self: center;
-    padding: 2px 6px;
+    padding: 0 6px;
 }
 
 /* --- Row 8: Start button (golden button slot) --- */
@@ -941,10 +946,12 @@ body {
     grid-row: 8;
     grid-column: 2;
     align-self: center;
+    justify-self: center;
     background: transparent;
     border: none;
     box-shadow: none;
     padding: 0;
+    width: 70%;
 }
 
 #setup-screen .arcade-start-btn::before {
