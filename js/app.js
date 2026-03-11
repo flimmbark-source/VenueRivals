@@ -1844,7 +1844,8 @@
                 options.instanceId != null ? entry.instanceId === options.instanceId : entry.guestId === options.guestId
             ))
             : null;
-        const displayAbility = houseEntry ? getEntryActivatableAbility(houseEntry) : guest.ability;
+        const activatableAbility = houseEntry ? getEntryActivatableAbility(houseEntry) : null;
+        const displayAbility = activatableAbility || guest.ability;
         const isAbilityUsed = !!options.abilityUsed;
         const canTriggerAbility = !!tooltipAbilityTarget && !isAbilityUsed;
 
@@ -1854,9 +1855,13 @@
             abilityHTML = `<div class="tt-ability"${abilityStyle}>${displayAbility.icon} ${displayAbility.desc}</div>`;
         }
 
+        // Only show ability button if the guest has an activatable (flash) ability
+        const hasActivatableAbility = houseEntry
+            ? !!activatableAbility
+            : (options.source === 'arriving' && !!guest.ability && guest.ability.trigger === 'flash');
         let abilityBtnHTML = '';
-        if (tooltipWho === 'player') {
-            if (isAbilityUsed && guest.ability) {
+        if (tooltipWho === 'player' && hasActivatableAbility) {
+            if (isAbilityUsed) {
                 abilityBtnHTML = `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" disabled>Used</button>`;
             } else {
                 abilityBtnHTML = `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>Ability</button>`;
@@ -2736,8 +2741,88 @@
                     targetInstanceId: action.targetInstanceId,
                 };
             }
-            const result = Game.activateAbility(r, p, rVenue, pVenue, selectedGuest);
+            let result = Game.activateAbility(r, p, rVenue, pVenue, selectedGuest);
             if (!result) return;
+
+            // AI auto-resolve: if the ability needs a target choice, pick one automatically
+            if (result.needsTargetChoice && result.validTargets?.length) {
+                const abilityType = result.ability?.type;
+                let picked = null;
+                if (abilityType === 'scoreGuest') {
+                    // Pick highest-value guest
+                    let bestVal = -Infinity;
+                    for (const t of result.validTargets) {
+                        const g = Game.GUESTS[t.guestId];
+                        if (g && (g.money + g.points) > bestVal) {
+                            bestVal = g.money + g.points;
+                            picked = t;
+                        }
+                    }
+                } else if (abilityType === 'refreshAction') {
+                    // Pick a guest whose ability has been used
+                    for (const t of result.validTargets) {
+                        const entry = r.house[t.index];
+                        if (entry && typeof entry !== 'string' && entry.abilityUsed) {
+                            picked = t;
+                            break;
+                        }
+                    }
+                } else {
+                    // boot/bounce: pick lowest-value non-locked guest
+                    let bestVal = Infinity;
+                    for (const t of result.validTargets) {
+                        const entry = r.house[t.index];
+                        if (entry && typeof entry !== 'string' && entry.lockUntilClose) continue;
+                        const g = Game.GUESTS[t.guestId];
+                        if (g && (g.money + g.points) < bestVal) {
+                            bestVal = g.money + g.points;
+                            picked = t;
+                        }
+                    }
+                }
+                if (picked) {
+                    const targetEntry = r.house[picked.index];
+                    const retryTarget = {
+                        ...(selectedGuest || { source: 'arriving', guestId: r.arrivingGuest }),
+                        targetInstanceId: targetEntry?.instanceId ?? null,
+                    };
+                    result = Game.activateAbility(r, p, rVenue, pVenue, retryTarget);
+                    if (!result) return;
+                } else {
+                    // No valid target found; mark the ability as used so we don't loop
+                    if (selectedGuest?.source === 'house') {
+                        const entry = r.house.find(e => typeof e !== 'string' && e.instanceId === selectedGuest.instanceId);
+                        if (entry) entry.abilityUsed = true;
+                    } else {
+                        r.arrivingAbilityUsed = true;
+                    }
+                    return;
+                }
+            }
+
+            // AI auto-resolve: if the ability needs a stack choice, pick the higher-value guest on top
+            if (result.needsStackChoice && result.revealedGuests?.length >= 2) {
+                const a = Game.GUESTS[result.revealedGuests[0]];
+                const b = Game.GUESTS[result.revealedGuests[1]];
+                const aVal = (a?.money || 0) + (a?.points || 0);
+                const bVal = (b?.money || 0) + (b?.points || 0);
+                // Put higher-value guest on top (drawn next)
+                const firstId = aVal >= bVal ? result.revealedGuests[0] : result.revealedGuests[1];
+                Game.resolveStackChoice(r, firstId);
+            }
+
+            // AI auto-resolve: if the ability needs a name-drop choice, pick the highest-value guest
+            if (result.needsNameDropChoice && result.revealedGuests?.length) {
+                let bestId = result.revealedGuests[0];
+                let bestVal = -Infinity;
+                for (const id of result.revealedGuests) {
+                    const g = Game.GUESTS[id];
+                    const val = (g?.money || 0) + (g?.points || 0);
+                    if (val > bestVal) { bestVal = val; bestId = id; }
+                }
+                Game.resolveNameDropChoice(r, rVenue, p, pVenue, bestId);
+            }
+
             showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500, 'rival');
             if (result.revealedGuests) setRevealDoorIntel('rival', result.revealedGuests);
             // Refresh reveal overlays in case ability removed guests from queues.
