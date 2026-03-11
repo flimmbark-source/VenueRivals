@@ -943,7 +943,9 @@ const GUESTS = {
   }
 
   // --- Resolve target index for "choice" targeting via selectedGuest param ---
+  // Returns house index, or -2 if targeting the arriving guest, or -1 if none.
   function resolveChoiceTarget(player, selectedGuest) {
+    if (selectedGuest?.targetArriving && player.arrivingGuest) return -2;
     if (!selectedGuest?.targetInstanceId) return -1;
     return player.house.findIndex(
       (e) => typeof e !== "string" && e.instanceId === selectedGuest.targetInstanceId,
@@ -1018,15 +1020,28 @@ const GUESTS = {
       }
       case "boot": {
         const targeting = ability.targeting || "oldest";
+        // The arriving guest can be targeted only if the ability source is a house guest
+        const bootCanTargetArriving = sourceIndex >= 0 && !!player.arrivingGuest;
         let targetIdx;
         if (targeting === "choice") {
           targetIdx = resolveChoiceTarget(player, selectedGuest);
-          if (targetIdx < 0) {
-            if (player.house.length === 0) {
+          if (targetIdx === -2 && bootCanTargetArriving) {
+            const arrivingId = player.arrivingGuest;
+            player.arrivingGuest = null;
+            player.arrivingAbilityUsed = false;
+            player.heat = Math.max(0, player.heat - GUESTS[arrivingId].heat);
+            result.effects.push(`booted ${GUESTS[arrivingId].name}`);
+            result.pushedOut = arrivingId;
+            handleDepartureEffects(player, opponent, arrivingId, result);
+            break;
+          }
+          if (targetIdx < 0 || targetIdx === -2) {
+            if (player.house.length === 0 && !bootCanTargetArriving) {
               result.effects.push("no valid target");
             } else {
               result.needsTargetChoice = true;
               result.validTargets = player.house.map((e, i) => ({ index: i, guestId: getGuestId(e) }));
+              result.canTargetArriving = bootCanTargetArriving;
             }
             break;
           }
@@ -1051,15 +1066,26 @@ const GUESTS = {
       }
       case "bounce": {
         const targeting = ability.targeting || "oldest";
+        const bounceCanTargetArriving = sourceIndex >= 0 && !!player.arrivingGuest;
         let targetIdx;
         if (targeting === "choice") {
           targetIdx = resolveChoiceTarget(player, selectedGuest);
-          if (targetIdx < 0) {
-            if (player.house.length === 0) {
+          if (targetIdx === -2 && bounceCanTargetArriving) {
+            const arrivingId = player.arrivingGuest;
+            player.arrivingGuest = null;
+            player.arrivingAbilityUsed = false;
+            player.heat = Math.max(0, player.heat - GUESTS[arrivingId].heat);
+            player.roundDeck.unshift(arrivingId);
+            result.effects.push(`bounced ${GUESTS[arrivingId].name}`);
+            break;
+          }
+          if (targetIdx < 0 || targetIdx === -2) {
+            if (player.house.length === 0 && !bounceCanTargetArriving) {
               result.effects.push("no valid target");
             } else {
               result.needsTargetChoice = true;
               result.validTargets = player.house.map((e, i) => ({ index: i, guestId: getGuestId(e) }));
+              result.canTargetArriving = bounceCanTargetArriving;
             }
             break;
           }
@@ -1092,13 +1118,23 @@ const GUESTS = {
         break;
       }
       case "scoreGuest": {
+        const scoreCanTargetArriving = sourceIndex >= 0 && !!player.arrivingGuest;
         const targetIdx = resolveChoiceTarget(player, selectedGuest);
-        if (targetIdx < 0) {
-          if (player.house.length === 0) {
+        if (targetIdx === -2 && scoreCanTargetArriving) {
+          const arrivingGuest = GUESTS[player.arrivingGuest];
+          if (arrivingGuest) {
+            player.roundPoints += arrivingGuest.points;
+            result.effects.push(`scored ${arrivingGuest.points} points from ${arrivingGuest.name}`);
+          }
+          break;
+        }
+        if (targetIdx < 0 || targetIdx === -2) {
+          if (player.house.length === 0 && !scoreCanTargetArriving) {
             result.effects.push("no valid target");
           } else {
             result.needsTargetChoice = true;
             result.validTargets = player.house.map((e, i) => ({ index: i, guestId: getGuestId(e) }));
+            result.canTargetArriving = scoreCanTargetArriving;
           }
           break;
         }

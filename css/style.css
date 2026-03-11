@@ -1746,44 +1746,6 @@ body {
     50% { box-shadow: 0 0 0 3px rgba(255, 107, 107, 1), 0 0 24px rgba(255, 107, 107, 0.7); }
 }
 
-.targeting-banner {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 8px 16px;
-    background: linear-gradient(90deg, rgba(255, 107, 107, 0.15), rgba(255, 107, 107, 0.25), rgba(255, 107, 107, 0.15));
-    border: 1px solid rgba(255, 107, 107, 0.4);
-    border-radius: 8px;
-    margin-bottom: 8px;
-    animation: bannerSlideIn 0.25s ease;
-}
-
-.targeting-banner-text {
-    color: #ff9999;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.targeting-cancel-btn {
-    padding: 4px 12px;
-    font-size: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ccc;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.targeting-cancel-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-}
-
-@keyframes bannerSlideIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
 
 /* === Arriving Guest Slot === */
 .arriving-slot {

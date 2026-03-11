@@ -1486,13 +1486,22 @@
                 slot.dataset.slotSource = 'arriving';
                 slot.dataset.guestId = arrivingGuestId;
                 if (targetingMode) {
-                    slot.classList.add('dimmed-target');
+                    if (targetingMode.canTargetArriving) {
+                        slot.classList.add('valid-target');
+                    } else {
+                        slot.classList.add('dimmed-target');
+                    }
                 }
                 if (!targetingMode && selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === arrivingGuestId) {
                     slot.classList.add('selected');
                 }
                 slot.addEventListener('click', () => {
-                    if (targetingMode) return;
+                    if (targetingMode) {
+                        if (targetingMode.canTargetArriving) {
+                            handleArrivingTargetClick();
+                        }
+                        return;
+                    }
                     selectedGridGuest = { guestId: arrivingGuestId, source: 'arriving' };
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
@@ -1717,42 +1726,36 @@
     }
 
     // ── Targeting Mode ──────────────────────────────────────────────
-    function enterTargetingMode(abilitySource, validTargets, abilityName) {
-        targetingMode = { abilitySource, validTargets, abilityName };
+    let _targetingDismissListener = null;
+
+    function enterTargetingMode(abilitySource, validTargets, abilityName, canTargetArriving) {
+        targetingMode = { abilitySource, validTargets, abilityName, canTargetArriving: !!canTargetArriving };
         removeTooltip();
-        renderTargetingBanner();
         renderHouseGrid('player');
+        // Dismiss targeting on click outside guest slots
+        setTimeout(() => {
+            _targetingDismissListener = (e) => {
+                if (!targetingMode) {
+                    document.removeEventListener('click', _targetingDismissListener);
+                    _targetingDismissListener = null;
+                    return;
+                }
+                const slot = e.target.closest('.guest-slot');
+                if (!slot) {
+                    exitTargetingMode();
+                }
+            };
+            document.addEventListener('click', _targetingDismissListener);
+        }, 0);
     }
 
     function exitTargetingMode() {
         targetingMode = null;
-        removeTargetingBanner();
-        renderHouseGrid('player');
-    }
-
-    function cancelTargetingMode() {
-        exitTargetingMode();
-    }
-
-    function renderTargetingBanner() {
-        removeTargetingBanner();
-        const banner = document.createElement('div');
-        banner.id = 'targeting-banner';
-        banner.className = 'targeting-banner';
-        banner.innerHTML = `
-            <span class="targeting-banner-text">🎯 ${escapeHtml(targetingMode.abilityName)}: Select a target</span>
-            <button class="btn targeting-cancel-btn" id="targeting-cancel-btn">Cancel</button>
-        `;
-        const playerArea = document.getElementById('player-area');
-        if (playerArea) {
-            playerArea.insertBefore(banner, playerArea.firstChild);
+        if (_targetingDismissListener) {
+            document.removeEventListener('click', _targetingDismissListener);
+            _targetingDismissListener = null;
         }
-        document.getElementById('targeting-cancel-btn')?.addEventListener('click', cancelTargetingMode);
-    }
-
-    function removeTargetingBanner() {
-        const banner = document.getElementById('targeting-banner');
-        if (banner) banner.remove();
+        renderHouseGrid('player');
     }
 
     function isValidTarget(instanceId) {
@@ -1766,11 +1769,15 @@
 
     function handleTargetClick(guestId, instanceId) {
         if (!targetingMode) return;
-        // Build the ability target with the chosen target's instanceId
         const abilitySource = { ...targetingMode.abilitySource, targetInstanceId: instanceId };
-        const savedAbilityName = targetingMode.abilityName;
         exitTargetingMode();
-        // Re-fire the ability with the target selected
+        runAbility('player', abilitySource);
+    }
+
+    function handleArrivingTargetClick() {
+        if (!targetingMode) return;
+        const abilitySource = { ...targetingMode.abilitySource, targetArriving: true };
+        exitTargetingMode();
         runAbility('player', abilitySource);
     }
 
@@ -2489,7 +2496,7 @@
 
         // If the ability needs the player to pick a target, enter targeting mode
         if (result.needsTargetChoice && selfKey === 'player') {
-            enterTargetingMode(selectedForAbility, result.validTargets, result.ability.name);
+            enterTargetingMode(selectedForAbility, result.validTargets, result.ability.name, result.canTargetArriving);
             return;
         }
 
