@@ -2311,7 +2311,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 2;
-    padding-top: 14px;
+    padding-top: 4px;
     margin-bottom: 3px;
     background: rgba(11, 13, 24, 0.92);
 }
@@ -2333,8 +2333,8 @@ body {
 .shop-layout {
     display: flex;
     gap: 10px;
-    margin-top: 12px;
-    margin-bottom: -20px;
+    margin-top: 2px;
+    margin-bottom: -25px;
     justify-content: center;
     align-items: flex-start;
 }
