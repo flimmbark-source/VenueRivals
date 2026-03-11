@@ -22,6 +22,7 @@ const GUESTS = {
     heat: 0, money: 2, points: 0, cost: 3,
     venue: "Neutral", tags: ["Broker"],
     desc: "No ability.", tier: "common",
+    },
 
   chiller: {
     name: "Chill Bro",
@@ -62,6 +63,7 @@ const GUESTS = {
     venue: "Neutral", tags: ["Broker"], tier: "uncommon",
     ability: { name: "Guest List", icon: "📋", desc: "Reveal the next 2 guests and choose their order.", trigger: "arrival", type: "stackChoice", value: 2 },
     desc: "GUEST LIST — When this guest enters, reveal the next 2 guests and choose their order.",
+  },
 
   hypeFriend: {
     name: "Hype Friend",
@@ -95,7 +97,7 @@ const GUESTS = {
     venue: "Neutral", tags: ["VIP"], tier: "common",
     ability: { name: "Bounce", icon: "🔄", desc: "Return a guest in your house to the top of your queue.", trigger: "flash", type: "bounce", targeting: "choice" },
     desc: "BOUNCE — A: Return a guest in your house to the top of your queue.",
-
+  },
   standIn: {
     name: "Stand-In",
     emoji: "🎭",
@@ -194,7 +196,7 @@ const GUESTS = {
     venue: "Velvet Room", tags: ["VIP", "Broker"], tier: "uncommon",
     ability: { name: "Clique", icon: "🔗", desc: "+1 Point for each adjacent guest sharing a tag.", trigger: "scoring", type: "clique" },
     desc: "CLIQUE — At scoring, +1 Point for each adjacent guest sharing a tag with this guest.",
-
+  },
   celebrity: {
     name: "Celebrity",
     emoji: "🎬",
@@ -215,31 +217,7 @@ const GUESTS = {
     },
     desc: "Bounce the guest on the Left",
   },
-  headliner: {
-    name: "Headliner", emoji: "🌟",
-    heat: 2, money: 0, points: 2, cost: 7,
-    venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "rare",
-    ability: { name: "Center of Attention", icon: "🔦", desc: "+2 Points if this guest is Newest.", trigger: "scoring", type: "centerOfAttention", value: 2 },
-    desc: "CENTER OF ATTENTION — At scoring, +2 Points if this guest is Newest.",
-    name: "Headliner",
-    emoji: "🌟",
-    heat: 2,
-    money: 0,
-    points: 4,
-    cost: 6,
-    venue: "Velvet Room",
-    tags: ["VIP", "Performer"],
-    tier: "rare",
-    ability: {
-      name: "Spotlight",
-      icon: "🔦",
-      desc: "Nudge the guest on the Left.",
-      trigger: "flash",
-      type: "nudge",
-      targeting: "leftOfSelf",
-    },
-    desc: "Nudge the guest on the Left.",
-  },
+
   socialClimber: {
     name: "Social Climber", emoji: "📈",
     heat: 1, money: 0, points: 2, cost: 7,
@@ -276,7 +254,7 @@ const GUESTS = {
     venue: "Night Market", tags: ["VIP", "Broker"], tier: "rare",
     ability: { name: "VIP List", icon: "📇", desc: "Reveal the next 3 guests. Admit 1 now. Put the rest back in any order.", trigger: "flash", type: "nameDrop", value: 3 },
     desc: "VIP LIST — A: Reveal the next 3 guests. Admit 1 now. Put the rest back in any order.",
-
+  },
   trendBroker: {
     name: "Trend Broker",
     emoji: "📈",
@@ -360,7 +338,7 @@ const GUESTS = {
     venue: "Back Alley", tags: ["Outlaw"], tier: "common",
     ability: { name: "Leaves a Mess", icon: "💥", desc: "Plant a Gatecrasher in your opponent’s queue.", trigger: "departure", type: "queueGatecrasher" },
     desc: "LEAVES A MESS — When this guest leaves, PLANT a Gatecrasher in your opponent’s queue.",
-
+  },
   wheelman: {
     name: "Wheelman",
     emoji: "🚗",
