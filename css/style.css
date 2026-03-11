@@ -1964,6 +1964,14 @@ body {
     overflow: hidden;
 }
 
+.global-feedback-bar {
+    margin: 4px 8px 0;
+    padding: 0 6px;
+    border-radius: 8px;
+    background: rgba(7, 10, 20, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .feedback-msg {
     width: 100%;
     max-width: 100%;
