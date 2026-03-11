@@ -2327,8 +2327,8 @@ body {
 .shop-layout {
     display: flex;
     gap: 10px;
-    margin-top: 6px;
-    margin-bottom: 10px;
+    margin-top: 12px;
+    margin-bottom: -10px;
     justify-content: center;
     align-items: flex-start;
 }
