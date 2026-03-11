@@ -52,21 +52,21 @@ const GUESTS = {
     name: "Group Chat Host", emoji: "💬",
     heat: 1, money: 1, points: 1, cost: 5,
     venue: "Neutral", tags: ["Broker"], tier: "uncommon",
-    ability: { name: "Guest List", icon: "📋", desc: "Reveal the next 2 guests and choose their order.", trigger: "arrival", type: "stackChoice", value: 2 },
+    ability: { name: "Guest List", icon: "📋", desc: "On arrival, Reveal the next 2 guests and choose their order.", trigger: "arrival", type: "stackChoice", value: 2 },
     desc: "GUEST LIST — When this guest enters, reveal the next 2 guests and choose their order.",
   },
   plusOnePrince: {
     name: "Plus-One Prince", emoji: "👑",
     heat: 1, money: 1, points: 2, cost: 5,
     venue: "Neutral", tags: ["VIP"], tier: "uncommon",
-    ability: { name: "Plus One", icon: "➕", desc: "Admit the next guest immediately.", trigger: "arrival", type: "plusOne" },
+    ability: { name: "Plus One", icon: "➕", desc: "On arrival, Admit the next guest immediately.", trigger: "arrival", type: "plusOne" },
     desc: "PLUS ONE — When this guest enters, admit the next guest immediately.",
   },
   nameDropper: {
     name: "Name Dropper", emoji: "🗣️",
     heat: 1, money: 2, points: 2, cost: 7,
     venue: "Neutral", tags: ["VIP", "Broker"], tier: "rare",
-    ability: { name: "Name Drop", icon: "📇", desc: "Reveal the next 3 guests. Admit 1 now. Put the rest back in any order.", trigger: "arrival", type: "nameDrop", value: 3 },
+    ability: { name: "Name Drop", icon: "📇", desc: "On arrival, Reveal the next 3 guests, then Admit 1. Put the rest back in any order.", trigger: "arrival", type: "nameDrop", value: 3 },
     desc: "NAME DROP — When this guest enters, reveal the next 3 guests. Admit 1 now. Put the rest back in any order.",
   },
   porchBuddy: {
@@ -90,14 +90,35 @@ const GUESTS = {
     ability: { name: "Last Call", icon: "🧹", desc: "Clear your house.", trigger: "flash", type: "clearHouse" },
     desc: "LAST CALL — A: Clear your house.",
   },
+    wingMan: {
+    name: "Wingman", emoji: "🤛",
+    heat: 0, money: 2, points: 3, cost: 5,
+    venue: "Neutral", tags: ["VIP"], tier: "common",
+    ability: { name: "Distract", icon: "🔄", desc: "Nudge the guest on the Left.", trigger: "flash", type: "nudge", targeting: "leftOfSelf" },
+    desc: "DISTRACT — A: Nudge the guest on the Left.",
+  },
+    stagehand: {
+    name: "Stagehand", emoji: "👏",
+    heat: 0, money: 2, points: 2, cost: 6,
+    venue: "Neutral", tags: ["Performer"], tier: "uncommon",
+    ability: { name: "Bump Into", icon: "🔄", desc: "Nudge a guest.", trigger: "flash", type: "nudge", targeting: "choice" },
+    desc: "BUMP INTO — A: Nudge a guest.",
+  },
+    dealer: {
+    name: "Dealer", emoji: "🤛",
+    heat: 0, money: 2, points: 4, cost: 8,
+    venue: "Neutral", tags: ["Outlaw"], tier: "Rare",
+    ability: { name: "Annoy", icon: "🔄", desc: "Nudge the oldest guest.", trigger: "flash", type: "nudge", targeting: "oldest" },
+    desc: "ANNOY — A: Nudge the oldest guest.",
+  },
 
   // === VELVET ROOM ===
   mainCharacter: {
     name: "Main Character", emoji: "⭐",
-    heat: 1, money: 0, points: 3, cost: 6,
+    heat: 2, money: 3, points: 3, cost: 6,
     venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "uncommon",
-    ability: { name: "Make an Entrance", icon: "✨", desc: "Score 2 now.", trigger: "arrival", type: "scoreNow", value: 2 },
-    desc: "MAKE AN ENTRANCE — When this guest enters, score 2 now.",
+    ability: { name: "Make an Entrance", icon: "✨", desc: "On arrival, Score 2.", trigger: "arrival", type: "scoreNow", value: 2 },
+    desc: "MAKE AN ENTRANCE — On arrival, score 2.",
   },
   storyPoster: {
     name: "Story Poster", emoji: "📱",
@@ -117,12 +138,12 @@ const GUESTS = {
     name: "Afterparty Host", emoji: "🌙",
     heat: 1, money: 0, points: 3, cost: 5,
     venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
-    ability: { name: "Afterglow", icon: "🌅", desc: "Score 2 now.", trigger: "departure", type: "scoreNow", value: 2 },
-    desc: "AFTERGLOW — When this guest leaves, score 2 now.",
+    ability: { name: "Afterglow", icon: "🌅", desc: "Upon leaving, Score 2.", trigger: "departure", type: "scoreNow", value: 2 },
+    desc: "AFTERGLOW — When this guest leaves, score 2.",
   },
   wallflower: {
     name: "Wallflower", emoji: "🌸",
-    heat: 0, money: 0, points: 1, cost: 4,
+    heat: 0, money: 3, points: 0, cost: 4,
     venue: "Velvet Room", tags: ["VIP"], tier: "common",
     ability: { name: "Wallflower", icon: "🌸", desc: "+1 Point for each empty slot.", trigger: "scoring", type: "wallflower" },
     desc: "WALLFLOWER — At scoring, +1 Point for each empty slot.",
@@ -136,7 +157,7 @@ const GUESTS = {
   },
   headliner: {
     name: "Headliner", emoji: "🌟",
-    heat: 2, money: 0, points: 2, cost: 7,
+    heat: 0, money: 4, points: 2, cost: 7,
     venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "rare",
     ability: { name: "Center of Attention", icon: "🔦", desc: "+2 Points if this guest is Newest.", trigger: "scoring", type: "centerOfAttention", value: 2 },
     desc: "CENTER OF ATTENTION — At scoring, +2 Points if this guest is Newest.",
@@ -145,7 +166,7 @@ const GUESTS = {
     name: "Social Climber", emoji: "📈",
     heat: 1, money: 0, points: 2, cost: 7,
     venue: "Velvet Room", tags: ["VIP"], tier: "rare",
-    ability: { name: "Social Climber", icon: "📈", desc: "Permanently gains +1 Point each time it enters, up to +9.", trigger: "arrival", type: "socialClimber", maxBonus: 9 },
+    ability: { name: "Social Climber", icon: "📈", desc: "On arrival, Permanently gains +1 Point each time it enters, up to +9.", trigger: "arrival", type: "socialClimber", maxBonus: 9 },
     desc: "SOCIAL CLIMBER — Each time this guest enters for the first time in a round, it permanently gains +1 Point, up to +9.",
   },
   hypeSquad: {
@@ -182,14 +203,14 @@ const GUESTS = {
     name: "Tab Runner", emoji: "💸",
     heat: 0, money: 2, points: 1, cost: 4,
     venue: "Night Market", tags: ["Broker"], tier: "common",
-    ability: { name: "Parting Gift", icon: "💸", desc: "Gain 2 Money.", trigger: "departure", type: "gainMoney", value: 2 },
+    ability: { name: "Parting Gift", icon: "💸", desc: "Upon leaving, Gain 2 Money.", trigger: "departure", type: "gainMoney", value: 2 },
     desc: "PARTING GIFT — When this guest leaves, gain 2 Money.",
   },
   coolOffSmoker: {
     name: "Cool-Off Smoker", emoji: "🚬",
     heat: 0, money: 1, points: 1, cost: 4,
     venue: "Night Market", tags: ["VIP"], tier: "common",
-    ability: { name: "Cools Off", icon: "❄️", desc: "Cool 1.", trigger: "departure", type: "coolHeat", value: 1 },
+    ability: { name: "Cools Off", icon: "❄️", desc: "Upon leaving, Cool 1.", trigger: "departure", type: "coolHeat", value: 1 },
     desc: "COOLS OFF — When this guest leaves, cool 1.",
   },
   bottlePopper: {
@@ -216,14 +237,14 @@ const GUESTS = {
     name: "Social Butterfly", emoji: "🦋",
     heat: 1, money: 1, points: 2, cost: 6,
     venue: "Night Market", tags: ["Performer"], tier: "uncommon",
-    ability: { name: "Impersonator", icon: "🎭", desc: "Copy the action ability of the guest to the left this round.", trigger: "arrival", type: "impersonator" },
+    ability: { name: "Impersonator", icon: "🎭", desc: "On arrival, Copy the action ability of the guest to the left.", trigger: "arrival", type: "impersonator" },
     desc: "IMPERSONATOR — When this guest enters, copy the action ability of the guest to the left this round.",
   },
   magnetGuest: {
     name: "Magnet Guest", emoji: "🧲",
     heat: 1, money: 1, points: 2, cost: 8,
     venue: "Night Market", tags: ["VIP"], tier: "rare",
-    ability: { name: "Magnet", icon: "🧲", desc: "Admit the next guest immediately. If that guest has an arrival ability, trigger it too.", trigger: "arrival", type: "magnet" },
+    ability: { name: "Magnet", icon: "🧲", desc: "On arrival, Admit the next guest immediately. If that guest has an arrival ability, trigger it too.", trigger: "arrival", type: "magnet" },
     desc: "MAGNET — When this guest enters, admit the next guest immediately. If that guest has an arrival ability, trigger it too.",
   },
 
@@ -232,21 +253,21 @@ const GUESTS = {
     name: "Address Leaker", emoji: "📍",
     heat: 1, money: 0, points: 2, cost: 5,
     venue: "Back Alley", tags: ["Outlaw"], tier: "common",
-    ability: { name: "Crash the Party", icon: "💣", desc: "Plant a Gatecrasher in your opponent’s queue.", trigger: "arrival", type: "queueGatecrasher" },
+    ability: { name: "Crash the Party", icon: "💣", desc: "On arrival, Plant a Gatecrasher in your opponent’s queue.", trigger: "arrival", type: "queueGatecrasher" },
     desc: "CRASH THE PARTY — When this guest enters, plant a Gatecrasher in your opponent’s queue.",
   },
   messyDrunk: {
     name: "Messy Drunk", emoji: "🍺",
     heat: 2, money: 0, points: 2, cost: 5,
     venue: "Back Alley", tags: ["Outlaw"], tier: "common",
-    ability: { name: "Leaves a Mess", icon: "💥", desc: "Plant a Gatecrasher in your opponent’s queue.", trigger: "departure", type: "queueGatecrasher" },
+    ability: { name: "Leaves a Mess", icon: "💥", desc: "Upon leaving, Plant a Gatecrasher in your opponent’s queue.", trigger: "departure", type: "queueGatecrasher" },
     desc: "LEAVES A MESS — When this guest leaves, plant a Gatecrasher in your opponent’s queue.",
   },
   dramaStarter: {
     name: "Drama Starter", emoji: "🎭",
     heat: 2, money: 0, points: 3, cost: 5,
     venue: "Back Alley", tags: ["Outlaw"], tier: "common",
-    ability: { name: "Drama Exit", icon: "🔥", desc: "Spike 1.", trigger: "departure", type: "addOpponentHeat", value: 1 },
+    ability: { name: "Drama Exit", icon: "🔥", desc: "Upon leaving, Spike 1.", trigger: "departure", type: "addOpponentHeat", value: 1 },
     desc: "DRAMA EXIT — When this guest leaves, spike 1.",
   },
   chaosChaser: {
@@ -300,9 +321,6 @@ const GUESTS = {
     venue: "Shop", tags: [],
     desc: "Increase your house capacity by 1.",
     tier: "shop", isShopItem: true,
-  },
-  heatCapIncrease: {
-    name: "+1 Heat", emoji: "🌡️",
     money: 0, heat: 0, points: 0, cost: 4,
     venue: "Shop", tags: [],
     desc: "Increase your heat capacity by 1.",
@@ -920,17 +938,22 @@ const GUESTS = {
       handleArrivalEffects(player, opponent, guestId, venue, result);
     }
 
-    if (!result.busted) {
+    // Defer drawing the next guest when the arrival ability needs the
+    // player to make a choice (stackChoice / nameDrop) so the deck stays
+    // intact until the choice is resolved.
+    if (!result.busted && !result.needsStackChoice && !result.needsNameDropChoice) {
       const drawRes = drawNextGuest(player, venue);
       if (drawRes.pendingOut) {
         result.pendingOut = drawRes.pendingOut;
         handleDepartureEffects(player, opponent, drawRes.pendingOut, result);
       }
       if (player.busted) result.busted = true;
+    } else if (!result.busted && (result.needsStackChoice || result.needsNameDropChoice)) {
+      result.deferredDraw = true;
     }
 
     // Handle plusOne / magnet: auto-admit the next drawn guest
-    if (!result.busted && (result.plusOneTriggered || result.magnetTriggered) && _depth < 3) {
+    if (!result.busted && !result.deferredDraw && (result.plusOneTriggered || result.magnetTriggered) && _depth < 3) {
       if (player.arrivingGuest && !player.doorClosed && !player.busted) {
         const autoResult = admitGuest(player, venue, opponent, opponentVenue, _depth + 1);
         if (autoResult) {

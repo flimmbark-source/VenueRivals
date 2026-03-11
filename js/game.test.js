@@ -908,6 +908,42 @@ describe("round earnings parity", () => {
   });
 });
 
+describe("startGuestPhase deck setup", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test("reshuffles both player and rival decks at the start of each round", () => {
+    const state = Game.createGameState("Player", "velvetRoom", "Rival", "nightMarket", 50);
+    state.player.fullDeck = ["familiarFace", "loudFriend", "bottleBringer", "doorWatcher"];
+    state.rival.fullDeck = ["windowWatcher", "tabRunner", "magnetGuest", "highRoller"];
+
+    const randomValues = [
+      0.0, 0.0, 0.0, // player round 1
+      0.0, 0.0, 0.0, // rival round 1
+      0.99, 0.99, 0.99, // player round 2
+      0.99, 0.99, 0.99, // rival round 2
+    ];
+    jest.spyOn(Math, "random").mockImplementation(() => randomValues.shift() ?? 0.5);
+
+    Game.startGuestPhase(state);
+    const playerRound1Order = [...state.player.roundDeck, state.player.arrivingGuest];
+    const rivalRound1Order = [...state.rival.roundDeck, state.rival.arrivingGuest];
+
+    state.round += 1;
+    Game.startGuestPhase(state);
+    const playerRound2Order = [...state.player.roundDeck, state.player.arrivingGuest];
+    const rivalRound2Order = [...state.rival.roundDeck, state.rival.arrivingGuest];
+
+    expect(playerRound1Order).toHaveLength(state.player.fullDeck.length);
+    expect(rivalRound1Order).toHaveLength(state.rival.fullDeck.length);
+    expect([...playerRound1Order].sort()).toEqual([...state.player.fullDeck].sort());
+    expect([...rivalRound1Order].sort()).toEqual([...state.rival.fullDeck].sort());
+    expect(playerRound1Order).not.toEqual(playerRound2Order);
+    expect(rivalRound1Order).not.toEqual(rivalRound2Order);
+  });
+});
+
 
 describe("ability metadata integrity", () => {
   test("every flash ability can be activated from arriving state", () => {

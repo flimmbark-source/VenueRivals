@@ -1844,7 +1844,8 @@
                 options.instanceId != null ? entry.instanceId === options.instanceId : entry.guestId === options.guestId
             ))
             : null;
-        const displayAbility = houseEntry ? getEntryActivatableAbility(houseEntry) : guest.ability;
+        const activatableAbility = houseEntry ? getEntryActivatableAbility(houseEntry) : null;
+        const displayAbility = activatableAbility || guest.ability;
         const isAbilityUsed = !!options.abilityUsed;
         const canTriggerAbility = !!tooltipAbilityTarget && !isAbilityUsed;
 
@@ -1854,9 +1855,13 @@
             abilityHTML = `<div class="tt-ability"${abilityStyle}>${displayAbility.icon} ${displayAbility.desc}</div>`;
         }
 
+        // Only show ability button if the guest has an activatable (flash) ability
+        const hasActivatableAbility = houseEntry
+            ? !!activatableAbility
+            : (options.source === 'arriving' && !!guest.ability && guest.ability.trigger === 'flash');
         let abilityBtnHTML = '';
-        if (tooltipWho === 'player') {
-            if (isAbilityUsed && guest.ability) {
+        if (tooltipWho === 'player' && hasActivatableAbility) {
+            if (isAbilityUsed) {
                 abilityBtnHTML = `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" disabled>Used</button>`;
             } else {
                 abilityBtnHTML = `<button class="btn btn-ability tt-ability-btn" id="btn-tooltip-ability" ${canTriggerAbility ? '' : 'disabled'}>Ability</button>`;
@@ -2412,6 +2417,92 @@
     }
 
     // === Guest Phase Actions ===
+    // --- Arrival choice resolution (stackChoice / nameDrop) ---
+    // These are shown when an arrival ability reveals guests and needs the
+    // player to choose before the next guest is drawn from the deck.
+
+    function enterArrivalStackChoice(who, revealedGuests, venue, opponent, opponentVenue) {
+        // Show a choice overlay: player picks which guest should come next
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        showFeedback('Choose which guest comes next', 'disruption', 3000, who);
+        showArrivalChoiceOverlay(who, revealedGuests, (chosenId) => {
+            Game.resolveStackChoice(player, chosenId);
+            clearRevealDoorIntel(who);
+            completeDeferredDraw(who);
+        });
+    }
+
+    function enterArrivalNameDropChoice(who, revealedGuests, venue, opponent, opponentVenue) {
+        // Show a choice overlay: player picks which guest to admit now
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        showFeedback('Choose a guest to admit now', 'disruption', 3000, who);
+        showArrivalChoiceOverlay(who, revealedGuests, (chosenId) => {
+            Game.resolveNameDropChoice(player, venue, opponent, opponentVenue, chosenId);
+            clearRevealDoorIntel(who);
+            // Name drop sets the chosen guest as arrivingGuest; draw is complete
+            renderArrivingGuest(who);
+            updateGuestDetail();
+            updateHUD();
+            checkGuestPhaseDone();
+            publishState();
+        });
+    }
+
+    function showArrivalChoiceOverlay(who, guestIds, onChoose) {
+        // Remove any existing choice overlay
+        const existingOverlay = document.querySelector('.arrival-choice-overlay');
+        if (existingOverlay) existingOverlay.remove();
+
+        const doorEl = document.getElementById(who === 'player' ? 'player-door-card' : `${who}-door`);
+        if (!doorEl) { onChoose(guestIds[0]); return; }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'arrival-choice-overlay';
+
+        guestIds.forEach((guestId) => {
+            const guest = Game.GUESTS[guestId];
+            if (!guest) return;
+            const card = createGuestSlot(guestId, false, { interactive: false });
+            card.classList.add('arrival-choice-card');
+            card.title = `Pick ${guest.name}`;
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                overlay.remove();
+                onChoose(guestId);
+            });
+            overlay.appendChild(card);
+        });
+
+        doorEl.appendChild(overlay);
+    }
+
+    // Complete a deferred draw after an arrival stack/nameDrop choice is resolved
+    function completeDeferredDraw(who) {
+        if (!gameState || gameState.phase !== 'guest') return;
+        const player = who === 'player' ? gameState.player : gameState.rival;
+        const opponent = who === 'player' ? gameState.rival : gameState.player;
+        const venue = Game.VENUES[player.venueId];
+        const drawRes = Game.drawNextGuest(player, venue);
+        if (drawRes.pendingOut) {
+            const exitId = drawRes.pendingOut;
+            animateExitGuest(who, typeof exitId === 'string' ? exitId : exitId);
+        }
+        renderHouseGrid(who);
+        renderArrivingGuest(who);
+        updateGuestDetail();
+        updateVenueStatus(who);
+        updateHUD();
+        if (player.busted) {
+            document.getElementById(`${who}-area`).classList.add('bust-flash');
+            showFeedback(`${player.name} BUSTED!`, 'bust', 3000, who);
+            setTimeout(() => {
+                document.getElementById(`${who}-area`).classList.remove('bust-flash');
+            }, 500);
+        }
+        checkGuestPhaseDone();
+        publishState();
+    }
+
     function runAdmit(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
         if (targetingMode && actor === 'player') exitTargetingMode();
@@ -2419,6 +2510,7 @@
         if (!self.arrivingGuest || self.doorClosed || self.busted) return;
 
         const venue = Game.VENUES[self.venueId];
+        const opponentVenue = Game.VENUES[opponent.venueId];
         // Snapshot player's visible state so we can avoid unnecessary re-renders
         const playerSnapshot = {
             arrivingGuest: gameState.player.arrivingGuest,
@@ -2428,7 +2520,7 @@
             roundMoney: gameState.player.roundMoney,
             roundPoints: gameState.player.roundPoints,
         };
-        const result = Game.admitGuest(self, venue, opponent, Game.VENUES[opponent.venueId]);
+        const result = Game.admitGuest(self, venue, opponent, opponentVenue);
         if (!result) return;
         if (selfKey === 'player') {
             playerFlashWindowInstanceId = typeof self.house[0] === 'object' ? self.house[0].instanceId : null;
@@ -2436,6 +2528,17 @@
 
         // Animate entry door opening
         animateDoorOpen(selfKey);
+
+        // Show arrival effect feedback before rendering the new arriving guest
+        if (result.effects && result.effects.length > 0) {
+            const guest = Game.GUESTS[result.admitted];
+            const arrivalEffects = result.effects.filter(e =>
+                !e.startsWith('departure:') && e !== 'plus one triggered'
+            );
+            if (arrivalEffects.length && guest) {
+                showFeedback(`${guest.name}: ${arrivalEffects.join(', ')}`, 'disruption', 2500, selfKey);
+            }
+        }
 
         if (result.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
@@ -2448,6 +2551,25 @@
         // Re-render reveal overlay — admitted/drawn guests are no longer in
         // the deck so the ID-based filter will drop them automatically.
         if (revealDoorIntel[selfKey]) renderRevealDoorIntel(selfKey);
+
+        // Handle arrival abilities that reveal guests (stackChoice / nameDrop)
+        if (result.revealedGuests) {
+            setRevealDoorIntel(selfKey, result.revealedGuests);
+        }
+
+        // Handle deferred draw: arrival stackChoice or nameDrop needs resolution
+        // before the next guest is drawn from the deck.
+        if (result.deferredDraw && selfKey === 'player') {
+            if (result.needsStackChoice && result.revealedGuests?.length >= 2) {
+                enterArrivalStackChoice(selfKey, result.revealedGuests, venue, opponent, opponentVenue);
+            } else if (result.needsNameDropChoice && result.revealedGuests?.length) {
+                enterArrivalNameDropChoice(selfKey, result.revealedGuests, venue, opponent, opponentVenue);
+            } else {
+                // Fallback: complete the draw immediately
+                completeDeferredDraw(selfKey);
+            }
+        }
+
         // Only refresh player detail if the action was by the player, or
         // if the opponent's action changed the player's visible state.
         if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
@@ -2471,7 +2593,9 @@
             }, 500);
         }
 
-        checkGuestPhaseDone();
+        if (!result.deferredDraw) {
+            checkGuestPhaseDone();
+        }
         publishState();
     }
 
@@ -2703,6 +2827,33 @@
             const result = Game.admitGuest(r, rVenue, gameState.player, Game.VENUES[gameState.player.venueId]);
             if (!result) return;
 
+            // AI auto-resolve deferred draw from arrival stackChoice / nameDrop
+            if (result.deferredDraw) {
+                if (result.needsStackChoice && result.revealedGuests?.length >= 2) {
+                    const a = Game.GUESTS[result.revealedGuests[0]];
+                    const b = Game.GUESTS[result.revealedGuests[1]];
+                    const aVal = (a?.money || 0) + (a?.points || 0);
+                    const bVal = (b?.money || 0) + (b?.points || 0);
+                    const firstId = aVal >= bVal ? result.revealedGuests[0] : result.revealedGuests[1];
+                    Game.resolveStackChoice(r, firstId);
+                    // Stack choice just reorders; still need to draw
+                    Game.drawNextGuest(r, rVenue);
+                } else if (result.needsNameDropChoice && result.revealedGuests?.length) {
+                    let bestId = result.revealedGuests[0];
+                    let bestVal = -Infinity;
+                    for (const id of result.revealedGuests) {
+                        const g = Game.GUESTS[id];
+                        const val = (g?.money || 0) + (g?.points || 0);
+                        if (val > bestVal) { bestVal = val; bestId = id; }
+                    }
+                    // resolveNameDropChoice sets arrivingGuest; no draw needed
+                    Game.resolveNameDropChoice(r, rVenue, p, pVenue, bestId);
+                } else {
+                    // Fallback: just draw
+                    Game.drawNextGuest(r, rVenue);
+                }
+            }
+
             if (result.pushedOut && result.pushedOut.length) {
                 result.pushedOut.forEach(id => animateExitGuest('rival', id));
             }
@@ -2736,8 +2887,88 @@
                     targetInstanceId: action.targetInstanceId,
                 };
             }
-            const result = Game.activateAbility(r, p, rVenue, pVenue, selectedGuest);
+            let result = Game.activateAbility(r, p, rVenue, pVenue, selectedGuest);
             if (!result) return;
+
+            // AI auto-resolve: if the ability needs a target choice, pick one automatically
+            if (result.needsTargetChoice && result.validTargets?.length) {
+                const abilityType = result.ability?.type;
+                let picked = null;
+                if (abilityType === 'scoreGuest') {
+                    // Pick highest-value guest
+                    let bestVal = -Infinity;
+                    for (const t of result.validTargets) {
+                        const g = Game.GUESTS[t.guestId];
+                        if (g && (g.money + g.points) > bestVal) {
+                            bestVal = g.money + g.points;
+                            picked = t;
+                        }
+                    }
+                } else if (abilityType === 'refreshAction') {
+                    // Pick a guest whose ability has been used
+                    for (const t of result.validTargets) {
+                        const entry = r.house[t.index];
+                        if (entry && typeof entry !== 'string' && entry.abilityUsed) {
+                            picked = t;
+                            break;
+                        }
+                    }
+                } else {
+                    // boot/bounce: pick lowest-value non-locked guest
+                    let bestVal = Infinity;
+                    for (const t of result.validTargets) {
+                        const entry = r.house[t.index];
+                        if (entry && typeof entry !== 'string' && entry.lockUntilClose) continue;
+                        const g = Game.GUESTS[t.guestId];
+                        if (g && (g.money + g.points) < bestVal) {
+                            bestVal = g.money + g.points;
+                            picked = t;
+                        }
+                    }
+                }
+                if (picked) {
+                    const targetEntry = r.house[picked.index];
+                    const retryTarget = {
+                        ...(selectedGuest || { source: 'arriving', guestId: r.arrivingGuest }),
+                        targetInstanceId: targetEntry?.instanceId ?? null,
+                    };
+                    result = Game.activateAbility(r, p, rVenue, pVenue, retryTarget);
+                    if (!result) return;
+                } else {
+                    // No valid target found; mark the ability as used so we don't loop
+                    if (selectedGuest?.source === 'house') {
+                        const entry = r.house.find(e => typeof e !== 'string' && e.instanceId === selectedGuest.instanceId);
+                        if (entry) entry.abilityUsed = true;
+                    } else {
+                        r.arrivingAbilityUsed = true;
+                    }
+                    return;
+                }
+            }
+
+            // AI auto-resolve: if the ability needs a stack choice, pick the higher-value guest on top
+            if (result.needsStackChoice && result.revealedGuests?.length >= 2) {
+                const a = Game.GUESTS[result.revealedGuests[0]];
+                const b = Game.GUESTS[result.revealedGuests[1]];
+                const aVal = (a?.money || 0) + (a?.points || 0);
+                const bVal = (b?.money || 0) + (b?.points || 0);
+                // Put higher-value guest on top (drawn next)
+                const firstId = aVal >= bVal ? result.revealedGuests[0] : result.revealedGuests[1];
+                Game.resolveStackChoice(r, firstId);
+            }
+
+            // AI auto-resolve: if the ability needs a name-drop choice, pick the highest-value guest
+            if (result.needsNameDropChoice && result.revealedGuests?.length) {
+                let bestId = result.revealedGuests[0];
+                let bestVal = -Infinity;
+                for (const id of result.revealedGuests) {
+                    const g = Game.GUESTS[id];
+                    const val = (g?.money || 0) + (g?.points || 0);
+                    if (val > bestVal) { bestVal = val; bestId = id; }
+                }
+                Game.resolveNameDropChoice(r, rVenue, p, pVenue, bestId);
+            }
+
             showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500, 'rival');
             if (result.revealedGuests) setRevealDoorIntel('rival', result.revealedGuests);
             // Refresh reveal overlays in case ability removed guests from queues.

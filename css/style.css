@@ -1523,6 +1523,37 @@ body {
     z-index: 5;
 }
 
+.arrival-choice-overlay {
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    padding: 6px 8px;
+    background: rgba(15, 14, 23, 0.92);
+    border: 1px solid rgba(255, 209, 102, 0.4);
+    border-radius: 10px;
+    z-index: 10;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    animation: arrival-choice-pop 0.25s ease-out;
+}
+
+.arrival-choice-overlay .arrival-choice-card {
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.arrival-choice-overlay .arrival-choice-card:hover {
+    transform: scale(1.12);
+    box-shadow: 0 0 14px rgba(255, 209, 102, 0.5);
+}
+
+@keyframes arrival-choice-pop {
+    from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 .reveal-door-overlay .reveal-door-card {
     box-shadow: 0 0 10px rgba(255, 209, 102, 0.45);
 }
