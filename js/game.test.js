@@ -907,3 +907,37 @@ describe("round earnings parity", () => {
     expect(state.rival.points).toBe(4);
   });
 });
+
+
+describe("ability metadata integrity", () => {
+  test("every flash ability can be activated from arriving state", () => {
+    const flashGuestIds = Object.entries(Game.GUESTS)
+      .filter(([, guest]) => guest.ability?.trigger === "flash")
+      .map(([id]) => id);
+
+    for (const guestId of flashGuestIds) {
+      const player = makePlayer({ arrivingGuest: guestId });
+      const opponent = makeOpponent();
+      const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom);
+      expect(result).not.toBeNull();
+    }
+  });
+
+  test("every flash ability can be activated from a house slot", () => {
+    const flashGuestIds = Object.entries(Game.GUESTS)
+      .filter(([, guest]) => guest.ability?.trigger === "flash")
+      .map(([id]) => id);
+
+    for (const guestId of flashGuestIds) {
+      const entry = makeHouseEntry(guestId);
+      const player = makePlayer({ house: [entry] });
+      const opponent = makeOpponent();
+      const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+        source: "house",
+        guestId,
+        instanceId: entry.instanceId,
+      });
+      expect(result).not.toBeNull();
+    }
+  });
+});
