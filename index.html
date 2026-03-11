@@ -247,14 +247,18 @@
                         <span class="phone-round">Round <span id="hud-round-num">1</span></span>
                         <span class="phone-phase" id="hud-phase">GUEST PHASE</span>
                         <span class="phone-connection">
-                            <span id="player-money">💵 $0</span>
-                            <span id="hud-player-pts">⭐ 0</span>/<span id="hud-round-total">50</span>
+                            Target: <span id="hud-round-total">50</span> ⭐
                         </span>
                     </div>
                 </div>
                 <div class="party-track" id="party-track">
                     <!-- Player Venue Area -->
                     <div class="venue-area player-venue party-slide" id="player-area">
+                        <div class="venue-area-stats player-stats">
+                            <span class="venue-area-label">YOU</span>
+                            <span class="venue-area-money" id="player-money">💵 $0</span>
+                            <span class="venue-area-pts" id="hud-player-pts">⭐ 0</span>
+                        </div>
                         <div class="venue-scene" id="player-scene">
                             <div class="actor-layer" id="player-actors"></div>
                             <button class="scene-door slot-door-card exit-side" id="player-exit-card" aria-label="Exit guests">
@@ -330,6 +334,11 @@
 
                     <!-- Opponent Venue Area -->
                     <div class="venue-area rival-venue party-slide" id="rival-area">
+                        <div class="venue-area-stats rival-stats">
+                            <span class="venue-area-label">RIVAL</span>
+                            <span class="venue-area-money" id="rival-money">💵 $0</span>
+                            <span class="venue-area-pts" id="rival-pts">⭐ 0</span>
+                        </div>
                         <div class="venue-scene" id="rival-scene">
                             <div class="actor-layer" id="rival-actors"></div>
                             <button class="scene-door slot-door-card exit-side" id="rival-exit-card" aria-label="Rival exit guests">
@@ -365,8 +374,6 @@
                     </div>
                 </div>
 
-                <button class="party-view-btn active" id="btn-view-player" type="button">You</button>
-                <button class="party-view-btn" id="btn-view-rival" type="button">Rival</button>
             </div>
         </div>
 

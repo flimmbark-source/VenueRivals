@@ -721,15 +721,7 @@
 
 
     function applyPartyView(animate = true) {
-        const track = document.getElementById('party-track');
-        if (!track) return;
-        track.style.transition = animate ? 'transform 0.28s ease' : 'none';
-        track.style.transform = activePartyView === 'player' ? 'translateX(0%)' : 'translateX(-50%)';
-
-        const playerBtn = document.getElementById('btn-view-player');
-        const rivalBtn = document.getElementById('btn-view-rival');
-        playerBtn?.classList.toggle('active', activePartyView === 'player');
-        rivalBtn?.classList.toggle('active', activePartyView === 'rival');
+        // Split-screen: both views visible, no transform needed
     }
 
     function setPartyView(view, animate = true) {
@@ -737,34 +729,12 @@
         activePartyView = view;
         removeTooltip();
         applyPartyView(animate);
-        // Reset snapshot so the view switch doesn't trigger delta pings
-        // (the displayed actor changes, but that's not a real stat change).
-        hudDeltaSnapshot.player = { heat: null, money: null, points: null };
-        hudDeltaSnapshot.rival = { heat: null, money: null, points: null };
         updateHUD();
         updateGuestDetail();
     }
 
     function bindPartyCarouselInteractions() {
-        const carousel = document.getElementById('party-carousel');
-        if (!carousel) return;
-
-        carousel.addEventListener('touchstart', (e) => {
-            if (!e.touches?.length) return;
-            swipeStartX = e.touches[0].clientX;
-        }, { passive: true });
-
-        carousel.addEventListener('touchend', (e) => {
-            if (swipeStartX == null || !e.changedTouches?.length) return;
-            const deltaX = e.changedTouches[0].clientX - swipeStartX;
-            swipeStartX = null;
-            if (Math.abs(deltaX) < 40) return;
-            if (deltaX < 0) setPartyView('rival');
-            else setPartyView('player');
-        }, { passive: true });
-
-        document.getElementById('btn-view-player')?.addEventListener('click', () => setPartyView('player'));
-        document.getElementById('btn-view-rival')?.addEventListener('click', () => setPartyView('rival'));
+        // Split-screen: no carousel interactions needed
     }
 
     function syncSelectedGridGuest() {
@@ -939,29 +909,35 @@
                 gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
         const r = gameState.rival;
-        const hudActor = activePartyView === 'rival' ? r : p;
-        const displayedPlayerPoints = hudActor.points + (hudActor.roundPoints || 0);
-        const displayedPlayerMoney = hudActor.money + (hudActor.roundMoney || 0);
+        const displayedPlayerPoints = p.points + (p.roundPoints || 0);
+        const displayedPlayerMoney = p.money + (p.roundMoney || 0);
         const displayedRivalPoints = r.points + (r.roundPoints || 0);
         const displayedRivalMoney = r.money + (r.roundMoney || 0);
 
+        const rivalMoneyEl = document.getElementById('rival-money');
+        const rivalPtsEl = document.getElementById('rival-pts');
+
         emitHudDeltaPing('points', displayedPlayerPoints, hudDeltaSnapshot.player.points, hudPlayerPtsEl, 'below');
         emitHudDeltaPing('money', displayedPlayerMoney, hudDeltaSnapshot.player.money, playerMoneyEl, 'below');
-        emitHudDeltaPing('heat', hudActor.heat, hudDeltaSnapshot.player.heat, document.getElementById('player-heat-text'), 'above');
+        emitHudDeltaPing('points', displayedRivalPoints, hudDeltaSnapshot.rival.points, rivalPtsEl, 'below');
+        emitHudDeltaPing('money', displayedRivalMoney, hudDeltaSnapshot.rival.money, rivalMoneyEl, 'below');
+        emitHudDeltaPing('heat', p.heat, hudDeltaSnapshot.player.heat, document.getElementById('player-heat-text'), 'above');
         emitHudDeltaPing('heat', r.heat, hudDeltaSnapshot.rival.heat, document.getElementById('rival-heat-text'), 'above');
 
         hudDeltaSnapshot.player.points = displayedPlayerPoints;
         hudDeltaSnapshot.player.money = displayedPlayerMoney;
-        hudDeltaSnapshot.player.heat = hudActor.heat;
+        hudDeltaSnapshot.player.heat = p.heat;
         hudDeltaSnapshot.rival.heat = r.heat;
         hudDeltaSnapshot.rival.points = displayedRivalPoints;
         hudDeltaSnapshot.rival.money = displayedRivalMoney;
 
         hudPlayerPtsEl.textContent = `⭐ ${displayedPlayerPoints}`;
         playerMoneyEl.textContent = `💵 $${displayedPlayerMoney}`;
+        if (rivalPtsEl) rivalPtsEl.textContent = `⭐ ${displayedRivalPoints}`;
+        if (rivalMoneyEl) rivalMoneyEl.textContent = `💵 $${displayedRivalMoney}`;
 
-        const hudVenue = Game.VENUES[hudActor.venueId];
-        updateHeatBar('player', hudActor.heat, Game.getHeatCapacity(hudVenue, hudActor), hudActor.busted);
+        const playerVenue = Game.VENUES[p.venueId];
+        updateHeatBar('player', p.heat, Game.getHeatCapacity(playerVenue, p), p.busted);
         updateHeatBar('rival', r.heat, Game.getHeatCapacity(Game.VENUES[r.venueId], r), r.busted);
     }
 
@@ -2370,10 +2346,8 @@
     function showFeedback(text, type, duration, who = activePartyView) {
         addRoundActionLogEntry(text);
 
-        const feedbackEls = [
-            document.getElementById('player-feedback'),
-            document.getElementById('rival-feedback'),
-        ].filter(Boolean);
+        const targetId = who === 'rival' ? 'rival-feedback' : 'player-feedback';
+        const feedbackEls = [document.getElementById(targetId)].filter(Boolean);
         if (!feedbackEls.length) return;
 
         const popupDuration = Math.max(1700, Math.round((duration || 2200) * 1.2));
