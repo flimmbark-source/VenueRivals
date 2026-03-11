@@ -1022,19 +1022,22 @@ body {
 
 /* === Venue Area === */
 .venue-area {
-    padding: 4px 6px;
+    padding: 6px 8px;
     min-height: 0;
     position: relative;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(19, 22, 38, 0.94), rgba(10, 12, 25, 0.92));
 }
 
 .rival-venue {
-    border-left: 2px solid rgba(255, 110, 110, 0.12);
+    border-left: 2px solid rgba(255, 110, 110, 0.18);
     order: -1;
 }
-.player-venue { border-left: 2px solid rgba(76, 201, 240, 0.12); }
+.player-venue { border-left: 2px solid rgba(76, 201, 240, 0.18); }
 
 .player-venue {
     display: flex;
