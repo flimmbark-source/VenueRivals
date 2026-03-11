@@ -1643,9 +1643,16 @@ body {
 .slots-main-row,
 .slots-overflow-row {
     display: flex;
-    flex-direction: row;
     gap: 3px;
     flex-shrink: 0;
+}
+
+.slots-main-row {
+    flex-direction: row;
+}
+
+.slots-overflow-row {
+    flex-direction: row-reverse;
 }
 
 .venue-scene #player-slots.has-stacked-slots,
