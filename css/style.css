@@ -2172,6 +2172,7 @@ body {
 #buy-phase-panel.context-panel {
     max-height: min(74vh, 680px);
     position: relative;
+    overflow-y: hidden;
 }
 
 /* === Guest Detail === */
@@ -2335,10 +2336,9 @@ body {
     display: flex;
     gap: 10px;
     margin-top: 2px;
-    margin-bottom: -25px;
+    margin-bottom: -10px;
     justify-content: center;
     align-items: flex-start;
-    padding-right: 52px;
 }
 
 .shop-grid {
@@ -2479,11 +2479,10 @@ body {
 .shop-done-btn {
     position: absolute;
     right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+    bottom: 10px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
     padding: 0;
     border-radius: 999px;
     font-size: 1.1rem;
@@ -2497,14 +2496,15 @@ body {
 }
 
 .shop-done-btn:hover {
-    transform: translateY(-50%) scale(1.05);
+    transform: scale(1.05);
 }
 
 .phone-hud .shop-done-btn {
     right: 8px;
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
+    bottom: 8px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
 }
 
 
