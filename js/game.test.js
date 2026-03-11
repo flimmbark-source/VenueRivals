@@ -977,3 +977,21 @@ describe("ability metadata integrity", () => {
     }
   });
 });
+
+describe("shop upgrades", () => {
+  test("heat cap upgrade exists and applies escalating cost", () => {
+    expect(Game.GUESTS.heatCapIncrease).toBeDefined();
+
+    const player = makePlayer({ money: 20 });
+
+    expect(Game.buyGuest(player, "heatCapIncrease")).toBe(true);
+    expect(player.money).toBe(16); // 4 base cost
+    expect(player.heatCapBonus).toBe(1);
+    expect(player.shopItemPurchases.heatCapIncrease).toBe(1);
+
+    expect(Game.buyGuest(player, "heatCapIncrease")).toBe(true);
+    expect(player.money).toBe(9); // +7 second cost
+    expect(player.heatCapBonus).toBe(2);
+    expect(player.shopItemPurchases.heatCapIncrease).toBe(2);
+  });
+});
