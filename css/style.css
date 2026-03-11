@@ -1652,7 +1652,7 @@ body {
 }
 
 .slots-overflow-row {
-    flex-direction: row-reverse;
+    flex-direction: row;
 }
 
 .venue-scene #player-slots.has-stacked-slots,
