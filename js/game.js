@@ -29,6 +29,18 @@ const GUESTS = {
     venue: "Neutral", tags: ["Performer"],
     desc: "No ability.", tier: "common",
   },
+    bigSpender: {
+    name: "Big Spender",
+    emoji: "🛍️",
+    heat: 2,
+    money: 3,
+    points: 0,
+    cost: 6,
+    venue: "Neutral",
+    tags: ["VIP"],
+    desc: "No special move.",
+    tier: "uncommon",
+  },
   doorWatcher: {
     name: "Door Watcher", emoji: "👀",
     heat: 0, money: 1, points: 1, cost: 3,
@@ -584,12 +596,12 @@ const GUESTS = {
       guests: [
         "familiarFace",
         "familiarFace",
-        "familiarFace",
         "bottleBringer",
         "bottleBringer",
         "loudFriend",
         "loudFriend",
-        "porchBuddy",
+        "bigSpender",
+        "bigSpender",
       ],
     },
     velvetClassic: {
