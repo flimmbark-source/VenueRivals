@@ -2346,8 +2346,7 @@
     function showFeedback(text, type, duration, who = activePartyView) {
         addRoundActionLogEntry(text);
 
-        const targetId = who === 'rival' ? 'rival-feedback' : 'player-feedback';
-        const feedbackEls = [document.getElementById(targetId)].filter(Boolean);
+        const feedbackEls = [document.getElementById('player-feedback')].filter(Boolean);
         if (!feedbackEls.length) return;
 
         const popupDuration = Math.max(1700, Math.round((duration || 2200) * 1.2));
