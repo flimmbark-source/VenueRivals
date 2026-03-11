@@ -874,15 +874,15 @@ body {
         url('../public/SetupPageBackground.png') center top / 100% 100% no-repeat;
     display: grid;
     grid-template-rows:
-        4.3%    /* 1: top chrome */
-        6.4%    /* 2: title banner (empty — in bg) */
+        1%      /* 1: top chrome */
+        1%      /* 2: title banner (empty — in bg) */
         38.1%   /* 3: venue panel */
         7.8%    /* 4: venue name */
         15.6%   /* 5: deck */
         13.7%   /* 6: roster */
         5.3%    /* 7: settings */
         6.1%    /* 8: button */
-        2.7%;   /* 9: bottom chrome */
+        11.4%;  /* 9: bottom chrome */
     grid-template-columns: 5.5% 1fr 5.5%;
     padding: 0;
     overflow: hidden;
