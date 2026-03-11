@@ -976,6 +976,7 @@ body {
 .venue-area-stats {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
     padding: 4px 8px;
     font-family: 'Poppins', sans-serif;
@@ -984,6 +985,14 @@ body {
     letter-spacing: 0.5px;
     z-index: 5;
     position: relative;
+}
+
+.venue-area-values {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-left: auto;
 }
 
 .venue-area-label {
