@@ -1023,7 +1023,8 @@
 
     function renderAbilityBadge(guest) {
         if (!guest.ability) return '';
-        return `<span class="ability-icon-badge" aria-label="${escapeHtml(guest.ability.name || 'Ability')}" title="${escapeHtml(guest.ability.name || 'Ability')}">⚡</span>`;
+        const icon = escapeHtml(guest.ability.icon || '');
+        return `<span class="ability-icon-badge" aria-label="${escapeHtml(guest.ability.name || 'Ability')}" title="${escapeHtml(guest.ability.name || 'Ability')}">${icon}</span>`;
     }
 
 
@@ -1748,7 +1749,7 @@
         let abilityHTML = '';
         if (guest.ability) {
             const abilityStyle = isAbilityUsed ? ' style="opacity:0.5"' : '';
-            abilityHTML = `<div class="tt-ability"${abilityStyle}>⚡ ${guest.ability.desc}</div>`;
+            abilityHTML = `<div class="tt-ability"${abilityStyle}>${guest.ability.icon} ${guest.ability.desc}</div>`;
         }
 
         let abilityBtnHTML = '';
@@ -3346,7 +3347,7 @@
         guestAbilityPopupEl.className = 'guest-ability-popup';
 
         const abilityHtml = guest.ability
-            ? `<div class="guest-ability-popup-title">⚡</div>
+            ? `<div class="guest-ability-popup-title">${guest.ability.icon}</div>
                <div class="guest-ability-popup-desc">${guest.ability.desc}</div>`
             : '<div class="guest-ability-popup-desc">No special ability.</div>';
 
@@ -3493,7 +3494,7 @@
                     const g = guests[gid];
                     if (!g.ability || g.isShopItem) return;
                     rows += `<div class="glossary-ability-row">
-                        <span class="glossary-ability-icon">⚡</span>
+                        <span class="glossary-ability-icon">${escapeHtml(g.ability.icon)}</span>
                         <span class="glossary-ability-desc">${escapeHtml(g.name)} — ${escapeHtml(g.ability.desc)}</span>
                     </div>`;
                 });
