@@ -843,82 +843,108 @@ body {
 
 /* Title is baked into the background image */
 #setup-screen .arcade-title {
-    visibility: hidden;
-    height: 0;
-    padding: 0;
-    margin: 0;
-    overflow: hidden;
-}
-
-#setup-screen .setup-container {
-    margin: 0 auto;
-    padding: 6px 14px 10px;
-    max-width: 500px;
-    width: 100%;
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    background:
-        url('../public/SetupPageBackground.png') center top / 100% 100% no-repeat;
-}
-
-/* --- Header sits above the frame title --- */
-#setup-screen .arcade-header-panel {
-    position: relative;
-    z-index: 2;
-    padding: 4px 2px;
-}
-
-/* --- All panels: transparent to show background frame --- */
-#setup-screen .arcade-panel {
-    background: rgba(10, 9, 24, 0.45);
-    border: 1px solid rgba(127, 90, 240, 0.15);
-    box-shadow: none;
-    border-radius: 4px;
-}
-
-#setup-screen .arcade-panel::before {
     display: none;
 }
 
-/* --- Venue Panel (large top area) --- */
+/*
+ * Setup container: background image is the arcade cabinet frame.
+ * Image is 256×512 (1:2). We lock the container to that aspect ratio
+ * and position every child with percentage-based padding so they land
+ * inside the frame's pre-drawn panel slots.
+ *
+ * Frame slot map (% of total height):
+ *   0-5%    top chrome / header bar
+ *   5-11%   "TONIGHT'S SETUP" title banner
+ *  11-50%   large venue panel
+ *  50-57%   thin venue-name input bar
+ *  57-72%   tonight's deck panel
+ *  72-86%   guest roster panel
+ *  86-91%   settings row (rounds / mode)
+ *  91-97%   golden "OPEN DOORS" button
+ *  97-100%  bottom chrome
+ *
+ * Side gutters: ~5% each side
+ */
+#setup-screen .setup-container {
+    position: relative;
+    margin: 0 auto;
+    max-width: 500px;
+    width: 100%;
+    /* Lock to background aspect ratio (1:2) */
+    aspect-ratio: 1 / 2;
+    max-height: 100%;
+    background:
+        url('../public/SetupPageBackground.png') center top / 100% 100% no-repeat;
+    /* No flex gap — children are absolutely positioned */
+    display: grid;
+    grid-template-rows: 5% 6% 39% 7% 15% 14% 5% 6% 3%;
+    grid-template-columns: 5% 1fr 5%;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Place every child in column 2 (between the side gutters) */
+#setup-screen .setup-container > * {
+    grid-column: 2;
+}
+
+/* --- Row 1: Header (top chrome area) --- */
+#setup-screen .arcade-header-panel {
+    grid-row: 1;
+    align-self: center;
+    padding: 0 2px;
+    z-index: 2;
+}
+
+/* --- Row 2: Title banner — hidden, provided by background --- */
+/* arcade-title has display:none so it collapses entirely */
+
+/* --- Row 3: Venue Panel (big slot) --- */
 #setup-screen .arcade-venue-panel {
-    flex: 1 1 auto;
-    min-height: 120px;
-    border-color: rgba(255, 209, 102, 0.2);
+    grid-row: 3;
+    align-self: stretch;
+    overflow: hidden;
 }
 
-/* --- Venue Name Input --- */
+/* --- Row 4: Venue Name Input (thin bar) --- */
 #setup-screen .arcade-sign-panel {
-    padding: 6px 10px;
-    border-color: rgba(255, 209, 102, 0.2);
+    grid-row: 4;
+    align-self: center;
+    padding: 4px 10px;
 }
 
-/* --- Deck & Roster panels --- */
-#setup-screen .arcade-deck-panel,
+/* --- Row 5: Tonight's Deck --- */
+#setup-screen .arcade-deck-panel {
+    grid-row: 5;
+    align-self: stretch;
+    padding: 6px 8px;
+    overflow: hidden;
+}
+
+/* --- Row 6: Guest Roster --- */
 #setup-screen .arcade-roster-panel {
-    padding: 8px 10px;
+    grid-row: 6;
+    align-self: stretch;
+    padding: 6px 8px;
+    overflow: hidden;
 }
 
-#setup-screen .arcade-panel-header {
-    margin-bottom: 6px;
-    padding-bottom: 4px;
-    border-bottom: 1px dotted rgba(255, 209, 102, 0.2);
-}
-
-/* --- Settings row --- */
+/* --- Row 7: Settings (rounds / mode) --- */
 #setup-screen .arcade-settings-panel {
-    padding: 8px 10px;
+    grid-row: 7;
+    align-self: center;
+    padding: 2px 6px;
 }
 
-/* --- Start Button: overlays the golden button in background --- */
+/* --- Row 8: Start button (golden button slot) --- */
 #setup-screen .arcade-start-btn {
+    grid-row: 8;
+    grid-column: 2;
+    align-self: center;
     background: transparent;
     border: none;
     box-shadow: none;
-    padding: 14px 20px;
-    margin-top: auto;
+    padding: 0;
 }
 
 #setup-screen .arcade-start-btn::before {
@@ -936,6 +962,25 @@ body {
     color: rgba(255, 209, 102, 0.3);
     text-shadow: none;
 }
+
+/* --- All panels: transparent to show background frame --- */
+#setup-screen .arcade-panel {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+#setup-screen .arcade-panel::before {
+    display: none;
+}
+
+#setup-screen .arcade-panel-header {
+    margin-bottom: 4px;
+    padding-bottom: 2px;
+    border-bottom: 1px dotted rgba(255, 209, 102, 0.25);
+}
+
 
 /* Arcade deck/roster card previews in horizontal scroll */
 #setup-screen .loadout-deck-preview-grid {
@@ -3348,11 +3393,6 @@ body {
 
 /* Small phones */
 @media (max-width: 360px) {
-    #setup-screen .setup-container {
-        padding: 6px 6px 8px;
-        gap: 5px;
-    }
-
     .arcade-title {
         font-size: 0.75rem;
     }
@@ -3382,15 +3422,6 @@ body {
 
 /* Short phones (landscape-ish or small viewport height) */
 @media (max-height: 640px) {
-    #setup-screen.active {
-        padding-top: 6px;
-        padding-bottom: 6px;
-    }
-
-    #setup-screen .setup-container {
-        gap: 6px;
-    }
-
     #setup-screen .loadout-deck-preview-grid {
         max-height: 40px;
     }

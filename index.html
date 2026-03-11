@@ -138,22 +138,22 @@
                 </div>
             </div>
 
-            <!-- Hidden selects for JS compatibility -->
-            <select id="round-count-input" style="display:none;">
-                <option value="30">30</option>
-                <option value="50" selected>50</option>
-                <option value="80">80</option>
-            </select>
-            <select id="game-mode-input" style="display:none;">
-                <option value="single" selected>Single Player</option>
-                <option value="host">Host Match (Ably)</option>
-                <option value="join">Join Match (Ably)</option>
-            </select>
-
             <!-- Start Button -->
             <button class="arcade-start-btn" id="btn-start-game" disabled>
                 <span class="arcade-start-text">OPEN DOORS!</span>
             </button>
+
+            <!-- Hidden selects for JS compatibility (outside grid flow) -->
+            <select id="round-count-input" style="display:none;position:absolute;">
+                <option value="30">30</option>
+                <option value="50" selected>50</option>
+                <option value="80">80</option>
+            </select>
+            <select id="game-mode-input" style="display:none;position:absolute;">
+                <option value="single" selected>Single Player</option>
+                <option value="host">Host Match (Ably)</option>
+                <option value="join">Join Match (Ably)</option>
+            </select>
         </div>
 
         <!-- Venue Selection Overlay -->
