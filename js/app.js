@@ -3434,6 +3434,7 @@
         {
             heading: 'Definitions',
             items: [
+                { id: 'tags', label: 'Guest Tags' },
                 { id: 'verbs', label: 'Ability Verbs' },
                 { id: 'targeting', label: 'Triggers & Targeting' },
                 { id: 'terms', label: 'Term Glossary' },
@@ -3501,6 +3502,20 @@
                 el.innerHTML = `<h4>All Guest Abilities</h4>${rows}`;
                 break;
             }
+            case 'tags':
+                el.innerHTML = `
+                    <h4>Guest Tags</h4>
+                    <p>Each guest has one or more tags. Some abilities interact with tags (e.g. Clique scores adjacent guests sharing a tag).</p>
+                    <table class="glossary-table">
+                        <tr><th>Icon</th><th>Tag</th><th>Flavour</th></tr>
+                        <tr><td>${TAG_ICONS.VIP}</td><td>VIP</td><td>High-profile guests that bring points and prestige.</td></tr>
+                        <tr><td>${TAG_ICONS.Performer}</td><td>Performer</td><td>Showy guests with flashy abilities and scoring tricks.</td></tr>
+                        <tr><td>${TAG_ICONS.Scout}</td><td>Scout</td><td>Intel-gatherers who peek, stack, and control the queue.</td></tr>
+                        <tr><td>${TAG_ICONS.Broker}</td><td>Broker</td><td>Money-movers who generate cash and fund your buy phase.</td></tr>
+                        <tr><td>${TAG_ICONS.Outlaw}</td><td>Outlaw</td><td>Troublemakers who sabotage opponents and thrive in chaos.</td></tr>
+                    </table>
+                `;
+                break;
             case 'verbs':
                 el.innerHTML = `
                     <h4>Ability Verbs</h4>
