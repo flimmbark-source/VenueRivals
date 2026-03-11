@@ -20,6 +20,9 @@
     let guestAbilityPopupBackdropEl = null;
     let loadoutState = null;
     let selectedGridGuest = null;
+    // Targeting mode: when an ability needs the player to pick a target guest
+    // { source, abilitySource (the selectedGuest that activated the ability), validTargets [{index, guestId}], abilityName }
+    let targetingMode = null;
     // cache the last rendered guest detail to avoid unnecessary refreshes
     let _lastGuestDetailKey = null;
     let multiplayerSession = null;
@@ -1436,12 +1439,28 @@
                 slot.dataset.slotSource = 'house';
                 if (instanceId != null) slot.dataset.instanceId = String(instanceId);
                 if (who === 'player' && instanceId != null && instanceId === playerFlashWindowInstanceId) slot.classList.add('just-entered');
-                if (selectedGridGuest?.source === 'house' &&
+
+                // Targeting mode: highlight valid targets, dim others
+                if (targetingMode && instanceId != null) {
+                    if (isValidTarget(instanceId)) {
+                        slot.classList.add('valid-target');
+                    } else {
+                        slot.classList.add('dimmed-target');
+                    }
+                }
+
+                if (!targetingMode && selectedGridGuest?.source === 'house' &&
                     selectedGridGuest.guestId === guestId &&
                     (selectedGridGuest.instanceId == null || selectedGridGuest.instanceId === instanceId)) {
                     slot.classList.add('selected');
                 }
                 slot.addEventListener('click', () => {
+                    if (targetingMode) {
+                        if (instanceId != null && isValidTarget(instanceId)) {
+                            handleTargetClick(guestId, instanceId);
+                        }
+                        return;
+                    }
                     selectedGridGuest = { guestId, source: 'house', instanceId };
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
@@ -1466,10 +1485,14 @@
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
                 slot.dataset.guestId = arrivingGuestId;
-                if (selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === arrivingGuestId) {
+                if (targetingMode) {
+                    slot.classList.add('dimmed-target');
+                }
+                if (!targetingMode && selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === arrivingGuestId) {
                     slot.classList.add('selected');
                 }
                 slot.addEventListener('click', () => {
+                    if (targetingMode) return;
                     selectedGridGuest = { guestId: arrivingGuestId, source: 'arriving' };
                     _lastGuestDetailKey = null;
                     refreshSelectedGridSlotVisual();
@@ -1691,6 +1714,64 @@
         }
 
         return null;
+    }
+
+    // ── Targeting Mode ──────────────────────────────────────────────
+    function enterTargetingMode(abilitySource, validTargets, abilityName) {
+        targetingMode = { abilitySource, validTargets, abilityName };
+        removeTooltip();
+        renderTargetingBanner();
+        renderHouseGrid('player');
+    }
+
+    function exitTargetingMode() {
+        targetingMode = null;
+        removeTargetingBanner();
+        renderHouseGrid('player');
+    }
+
+    function cancelTargetingMode() {
+        exitTargetingMode();
+    }
+
+    function renderTargetingBanner() {
+        removeTargetingBanner();
+        const banner = document.createElement('div');
+        banner.id = 'targeting-banner';
+        banner.className = 'targeting-banner';
+        banner.innerHTML = `
+            <span class="targeting-banner-text">🎯 ${escapeHtml(targetingMode.abilityName)}: Select a target</span>
+            <button class="btn targeting-cancel-btn" id="targeting-cancel-btn">Cancel</button>
+        `;
+        const playerArea = document.getElementById('player-area');
+        if (playerArea) {
+            playerArea.insertBefore(banner, playerArea.firstChild);
+        }
+        document.getElementById('targeting-cancel-btn')?.addEventListener('click', cancelTargetingMode);
+    }
+
+    function removeTargetingBanner() {
+        const banner = document.getElementById('targeting-banner');
+        if (banner) banner.remove();
+    }
+
+    function isValidTarget(instanceId) {
+        if (!targetingMode) return false;
+        const entry = gameState.player.house.find(
+            (e) => typeof e !== 'string' && e.instanceId === instanceId
+        );
+        if (!entry) return false;
+        return targetingMode.validTargets.some((t) => t.guestId === entry.guestId || t.index === gameState.player.house.indexOf(entry));
+    }
+
+    function handleTargetClick(guestId, instanceId) {
+        if (!targetingMode) return;
+        // Build the ability target with the chosen target's instanceId
+        const abilitySource = { ...targetingMode.abilitySource, targetInstanceId: instanceId };
+        const savedAbilityName = targetingMode.abilityName;
+        exitTargetingMode();
+        // Re-fire the ability with the target selected
+        runAbility('player', abilitySource);
     }
 
     function setGuestPhaseControls({ canAdmit = false, canClose = false, canFlash = false } = {}) {
@@ -2312,6 +2393,7 @@
     // === Guest Phase Actions ===
     function runAdmit(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
+        if (targetingMode && actor === 'player') exitTargetingMode();
         const { self, opponent, selfKey } = getActorState(actor);
         if (!self.arrivingGuest || self.doorClosed || self.busted) return;
 
@@ -2405,6 +2487,12 @@
         const result = Game.activateAbility(self, opponent, selfVenue, opponentVenue, selectedForAbility);
         if (!result) return;
 
+        // If the ability needs the player to pick a target, enter targeting mode
+        if (result.needsTargetChoice && selfKey === 'player') {
+            enterTargetingMode(selectedForAbility, result.validTargets, result.ability.name);
+            return;
+        }
+
         showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500, selfKey);
         if (result.revealedGuests) setRevealDoorIntel(selfKey, result.revealedGuests);
         // Abilities may remove guests from either queue; refresh reveal overlays.
@@ -2487,6 +2575,7 @@
 
     function runCloseDoor(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
+        if (targetingMode && actor === 'player') exitTargetingMode();
         const { self, opponent, selfKey } = getActorState(actor);
         if (self.doorClosed || self.busted) return;
 
