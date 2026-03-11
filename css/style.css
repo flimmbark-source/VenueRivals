@@ -2171,6 +2171,7 @@ body {
 
 #buy-phase-panel.context-panel {
     max-height: min(74vh, 680px);
+    position: relative;
 }
 
 /* === Guest Detail === */
@@ -2337,6 +2338,7 @@ body {
     margin-bottom: -25px;
     justify-content: center;
     align-items: flex-start;
+    padding-right: 52px;
 }
 
 .shop-grid {
@@ -2474,7 +2476,38 @@ body {
     margin-bottom: 2px;
 }
 
-#buy-phase-panel .btn { width: 100%; }
+.shop-done-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 0;
+    border-radius: 999px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.38);
+}
+
+.shop-done-btn:hover {
+    transform: translateY(-50%) scale(1.05);
+}
+
+.phone-hud .shop-done-btn {
+    right: 8px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+}
+
+
 
 @keyframes shopHoldProgress {
     from { transform: scaleX(0); }
