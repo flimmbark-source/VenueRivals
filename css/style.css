@@ -830,9 +830,7 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    background:
-        url('../public/SetupPageBackground.png') center top / 100% 100% no-repeat;
-    background-color: #0a0918;
+    background: #0a0918;
     border: none;
 }
 
@@ -861,6 +859,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    background:
+        url('../public/SetupPageBackground.png') center top / 100% 100% no-repeat;
 }
 
 /* --- Header sits above the frame title --- */
