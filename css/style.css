@@ -1302,12 +1302,19 @@ body {
     position: absolute;
     width: 24px;
     height: 32px;
-    transform: translate(-50%, -50%);
     display: flex;
     align-items: center;
     justify-content: center;
     transition: opacity 0.2s ease;
+    will-change: transform;
     filter: drop-shadow(0 1px 3px rgba(0,0,0,0.65));
+}
+
+.venue-actor .actor-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
 }
 
 .venue-actor.exiting {
@@ -1367,6 +1374,15 @@ body {
 @keyframes whooshTrail {
     0% { opacity: 0.6; width: 12px; }
     100% { opacity: 0; width: 20px; }
+}
+
+.venue-scene.actor-heavy-mode .venue-actor,
+.venue-scene.actor-heavy-mode .venue-actor.exiting {
+    filter: none;
+}
+
+.venue-scene.actor-heavy-mode .venue-actor.exiting::after {
+    display: none;
 }
 
 .scene-door {
