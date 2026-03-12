@@ -60,13 +60,28 @@ const AI = (() => {
         return totalScore / MONTE_CARLO_RUNS;
     }
 
-    function rankMarketByMonteCarlo(rival, market, venue) {
+    function buildGuestScoreMap(rival, market, venue) {
+        const guestScores = new Map();
+        for (const guestId of market) {
+            const guest = Game.GUESTS[guestId];
+            const score = estimateRoundValueForGuest(rival, venue, guestId);
+            guestScores.set(guestId, {
+                score,
+                scorePerCost: score / Math.max(1, guest.cost),
+            });
+        }
+        return guestScores;
+    }
+
+    function rankMarketByMonteCarlo(rival, market, venue, guestScores = buildGuestScoreMap(rival, market, venue)) {
         return [...market].sort((a, b) => {
             const aGuest = Game.GUESTS[a];
             const bGuest = Game.GUESTS[b];
+            const aScore = guestScores.get(a);
+            const bScore = guestScores.get(b);
 
-            const aValue = estimateRoundValueForGuest(rival, venue, a) / Math.max(1, aGuest.cost);
-            const bValue = estimateRoundValueForGuest(rival, venue, b) / Math.max(1, bGuest.cost);
+            const aValue = aScore?.scorePerCost ?? Number.NEGATIVE_INFINITY;
+            const bValue = bScore?.scorePerCost ?? Number.NEGATIVE_INFINITY;
 
             if (bValue === aValue) return aGuest.cost - bGuest.cost;
             return bValue - aValue;
@@ -492,8 +507,9 @@ const AI = (() => {
         const purchases = [];
         const venue = Game.VENUES[rival.venueId];
 
-        // Sort market by Monte Carlo estimate of next-round performance.
-        const ranked = rankMarketByMonteCarlo(rival, market, venue);
+        // Estimate each market guest once and reuse cached value ratios for ranking + buying.
+        const guestScores = buildGuestScoreMap(rival, market, venue);
+        const ranked = rankMarketByMonteCarlo(rival, market, venue, guestScores);
 
         let budget = rival.money;
 
@@ -514,8 +530,8 @@ const AI = (() => {
         const candidates = [];
         for (const guestId of ranked) {
             const guest = Game.GUESTS[guestId];
-            const guestValue = estimateRoundValueForGuest(rival, venue, guestId);
-            candidates.push({ id: guestId, cost: guest.cost, value: guestValue / Math.max(1, guest.cost) });
+            const cachedScore = guestScores.get(guestId);
+            candidates.push({ id: guestId, cost: guest.cost, value: cachedScore?.scorePerCost ?? 0 });
         }
         if (slotCost <= budget) {
             candidates.push({ id: 'slotIncrease', cost: slotCost, value: slotValue / Math.max(1, slotCost) });
