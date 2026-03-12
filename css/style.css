@@ -1653,6 +1653,7 @@ body {
 
 .slots-overflow-row {
     flex-direction: row-reverse;
+    align-self: flex-end;
 }
 
 .venue-scene #player-slots.has-stacked-slots,
@@ -2170,6 +2171,8 @@ body {
 
 #buy-phase-panel.context-panel {
     max-height: min(74vh, 680px);
+    position: relative;
+    overflow-y: hidden;
 }
 
 /* === Guest Detail === */
@@ -2270,8 +2273,16 @@ body {
     text-align: center;
 }
 
+#rival-round-results-panel {
+    text-align: center;
+}
+
 .results-content {
     margin-bottom: 12px;
+}
+
+#rival-round-results-panel .results-content {
+    margin-bottom: 0;
 }
 
 .results-content h3 {
@@ -2307,7 +2318,12 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding-top: 4px;
     margin-bottom: 3px;
+    background: rgba(11, 13, 24, 0.92);
 }
 
 .shop-title {
@@ -2327,8 +2343,8 @@ body {
 .shop-layout {
     display: flex;
     gap: 10px;
-    margin-top: 12px;
-    margin-bottom: -10px;
+    margin-top: 8px;
+    margin-bottom: 8px;
     justify-content: center;
     align-items: flex-start;
 }
@@ -2355,7 +2371,7 @@ body {
     letter-spacing: 1px;
     text-align: center;
     padding-top: 2px;
-    border-top: 1px solid var(--bg-light);
+    margin-top: -12px;
     width: 100%;
 }
 
@@ -2407,10 +2423,16 @@ body {
 }
 
 .shop-inspect-indicator {
+    position: absolute;
+    left: 35px;
+    top: 50%;
+    transform: translate(-50%, -50%);
     text-align: center;
     font-size: 1.4rem;
     line-height: 1;
-    margin-bottom: 4px;
+    margin: 0;
+    z-index: 4;
+    pointer-events: none;
     animation: tooltipIn 0.15s ease;
 }
 
@@ -2468,7 +2490,38 @@ body {
     margin-bottom: 2px;
 }
 
-#buy-phase-panel .btn { width: 100%; }
+.shop-done-btn {
+    position: absolute;
+    right: 10px;
+    bottom: 100px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    border-radius: 999px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.38);
+}
+
+.shop-done-btn:hover {
+    transform: scale(1.05);
+}
+
+.phone-hud .shop-done-btn {
+    right: 8px;
+    bottom: 8px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+}
+
+
 
 @keyframes shopHoldProgress {
     from { transform: scaleX(0); }
@@ -3411,7 +3464,9 @@ body {
 .phone-status-strip {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    width: 100%;
+    position: relative;
     gap: 12px;
     font-size: 0.66rem;
     font-family: 'Poppins', sans-serif;
@@ -3426,16 +3481,21 @@ body {
 }
 
 .phone-phase {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     text-align: center;
     color: var(--text-primary);
     font-weight: 700;
     text-shadow: 0 0 8px var(--hud-led-glow);
     letter-spacing: 1.5px;
+    pointer-events: none;
 }
 
 .phone-connection {
     display: flex;
     justify-content: flex-end;
+    margin-left: auto;
     gap: 8px;
     font-size: 0.72rem;
     font-weight: 700;
@@ -3618,11 +3678,6 @@ body {
     background: rgba(127, 90, 240, 0.18);
     border-color: rgba(127, 90, 240, 0.6);
     box-shadow: 0 0 6px rgba(127, 90, 240, 0.3);
-}
-
-/* Update status strip to accommodate the menu button */
-.phone-status-strip {
-    grid-template-columns: auto 1fr auto 1fr;
 }
 
 /* === Game Menu Overlay === */

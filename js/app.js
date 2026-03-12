@@ -642,12 +642,19 @@
         return Array.isArray(currentMarket) ? currentMarket : [];
     }
 
+    function setResultsPanelsVisible(isVisible) {
+        const display = isVisible ? '' : 'none';
+        document.getElementById('round-results-panel').style.display = display;
+        const rivalResultsPanel = document.getElementById('rival-round-results-panel');
+        if (rivalResultsPanel) rivalResultsPanel.style.display = display;
+    }
+
     function syncPanelsForState() {
         if (!gameState) return;
 
         if (gameState.phase === 'buy') {
             document.getElementById('guest-phase-panel').style.display = 'none';
-            document.getElementById('round-results-panel').style.display = 'none';
+            setResultsPanelsVisible(false);
             document.getElementById('buy-phase-panel').style.display = '';
             document.getElementById('gameover-panel').style.display = 'none';
             renderShop();
@@ -657,7 +664,7 @@
 
         if (gameState.phase === 'gameover') {
             document.getElementById('guest-phase-panel').style.display = 'none';
-            document.getElementById('round-results-panel').style.display = 'none';
+            setResultsPanelsVisible(false);
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = '';
             setPhoneBuyPhaseLayout(false);
@@ -666,7 +673,7 @@
 
         if (Game.bothDone(gameState)) {
             document.getElementById('guest-phase-panel').style.display = 'none';
-            document.getElementById('round-results-panel').style.display = '';
+            setResultsPanelsVisible(true);
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = 'none';
             // If buy phase has already started (results being shown before shop opens), keep compact HUD.
@@ -675,7 +682,7 @@
         }
 
         document.getElementById('guest-phase-panel').style.display = '';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
         setPhoneBuyPhaseLayout(false);
@@ -1337,6 +1344,49 @@
 
 
     // === Guest Slot Rendering ===
+
+    function captureSlotPositions(slotsEl) {
+        if (!slotsEl) return new Map();
+        const positions = new Map();
+        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
+            const key = slotEl.dataset.renderKey;
+            if (!key) return;
+            positions.set(key, slotEl.getBoundingClientRect());
+        });
+        return positions;
+    }
+
+    function animateSlotReflow(slotsEl, previousPositions) {
+        if (!slotsEl || !previousPositions || previousPositions.size === 0) return;
+        const animatedSlots = [];
+        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
+            const key = slotEl.dataset.renderKey;
+            if (!key) return;
+            const prev = previousPositions.get(key);
+            if (!prev) return;
+            const next = slotEl.getBoundingClientRect();
+            const dx = prev.left - next.left;
+            const dy = prev.top - next.top;
+            if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+            slotEl.style.transition = 'none';
+            slotEl.style.transform = `translate(${dx}px, ${dy}px)`;
+            animatedSlots.push(slotEl);
+        });
+
+        if (!animatedSlots.length) return;
+        requestAnimationFrame(() => {
+            animatedSlots.forEach((slotEl) => {
+                slotEl.style.transition = 'transform 220ms ease';
+                slotEl.style.transform = '';
+            });
+            window.setTimeout(() => {
+                animatedSlots.forEach((slotEl) => {
+                    slotEl.style.transition = '';
+                });
+            }, 240);
+        });
+    }
+
     function createGuestSlot(guestId, animate, options = {}) {
         const guest = Game.GUESTS[guestId];
         if (!guest) {
@@ -1376,6 +1426,12 @@
     function renderHouseGrid(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const slotsEl = document.getElementById(`${who}-slots`);
+        const previousPositions = captureSlotPositions(slotsEl);
+        const existingSlotsByKey = new Map();
+        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
+            const key = slotEl.dataset.renderKey;
+            if (key) existingSlotsByKey.set(key, slotEl);
+        });
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
 
@@ -1405,13 +1461,18 @@
         if (guests.length > houseCapacity) {
             guests = guests.slice(guests.length - houseCapacity);
         }
-        guests.forEach((entry) => {
+        guests.forEach((entry, guestIndex) => {
             const guestId = entry.guestId || entry;
+            const instanceId = typeof entry === 'string' ? null : entry.instanceId;
             const abilityUsed = typeof entry !== 'string' && !!entry.abilityUsed;
-            const slot = createGuestSlot(guestId, false, { interactive: false });
+            const renderKey = instanceId != null ? `inst:${instanceId}` : `house:${guestId}:${guestIndex}`;
+            const slot = existingSlotsByKey.get(renderKey) || createGuestSlot(guestId, false, { interactive: false });
+            existingSlotsByKey.delete(renderKey);
+            slot.classList.remove('ability-used', 'valid-target', 'dimmed-target', 'selected', 'just-entered', 'arriving-in-grid');
+            slot.dataset.renderKey = renderKey;
+            slot.onclick = null;
             if (abilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
-                const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
                 if (instanceId != null) slot.dataset.instanceId = String(instanceId);
                 if (who === 'player' && instanceId != null && instanceId === playerFlashWindowInstanceId) slot.classList.add('just-entered');
@@ -1430,7 +1491,7 @@
                     (selectedGridGuest.instanceId == null || selectedGridGuest.instanceId === instanceId)) {
                     slot.classList.add('selected');
                 }
-                slot.addEventListener('click', () => {
+                slot.onclick = () => {
                     if (targetingMode) {
                         if (instanceId != null && isValidTarget(instanceId)) {
                             handleTargetClick(guestId, instanceId);
@@ -1442,11 +1503,11 @@
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
                     showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', guestId, instanceId, abilityUsed });
-                });
+                };
             } else {
-                slot.addEventListener('click', () => {
+                slot.onclick = () => {
                     showTooltipForTarget(slot, guestId, { who: 'rival', source: 'house', abilityUsed });
-                });
+                };
             }
             houseSlots.push(slot);
         });
@@ -1455,8 +1516,13 @@
         let arrivingSlot = null;
         if (player.arrivingGuest) {
             const arrivingGuestId = player.arrivingGuest;
-            const slot = createGuestSlot(arrivingGuestId, false, { interactive: false });
+            const renderKey = `arriving:${arrivingGuestId}`;
+            const slot = existingSlotsByKey.get(renderKey) || createGuestSlot(arrivingGuestId, false, { interactive: false });
+            existingSlotsByKey.delete(renderKey);
+            slot.classList.remove('ability-used', 'valid-target', 'dimmed-target', 'selected');
             slot.classList.add('arriving-in-grid');
+            slot.dataset.renderKey = renderKey;
+            slot.onclick = null;
             if (who === 'player' && player.arrivingAbilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
@@ -1471,7 +1537,7 @@
                 if (!targetingMode && selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === arrivingGuestId) {
                     slot.classList.add('selected');
                 }
-                slot.addEventListener('click', () => {
+                slot.onclick = () => {
                     if (targetingMode) {
                         if (targetingMode.canTargetArriving) {
                             handleArrivingTargetClick();
@@ -1484,11 +1550,11 @@
                     updateGuestDetail();
                     const arrivingAbilityUsed = !!gameState.player.arrivingAbilityUsed;
                     showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving', guestId: arrivingGuestId, abilityUsed: arrivingAbilityUsed });
-                });
+                };
             } else {
-                slot.addEventListener('click', () => {
+                slot.onclick = () => {
                     showTooltipForTarget(slot, arrivingGuestId, { who: 'rival', source: 'arriving', guestId: arrivingGuestId });
-                });
+                };
             }
             arrivingSlot = slot;
         }
@@ -1517,6 +1583,7 @@
             if (arrivingSlot) slotsEl.appendChild(arrivingSlot);
         }
 
+        animateSlotReflow(slotsEl, previousPositions);
         syncVenueActors(who);
     }
 
@@ -1980,7 +2047,7 @@
             const indicator = document.createElement('div');
             indicator.className = 'shop-inspect-indicator';
             indicator.textContent = '🔍';
-            panel.insertBefore(indicator, panel.firstChild);
+            panel.appendChild(indicator);
         }
     }
 
@@ -3042,26 +3109,24 @@
 
         const targetReached = !!gameState.winner;
 
-        let html = `<h3>Round ${gameState.round} Results</h3>`;
+        const playerHtml = `<h3>Round ${gameState.round} Results</h3>
+            <div class="results-row"><span class="label player-color">${p.name}</span></div>
+            <div class="results-row"><span class="label">💵 Money earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+$${pEarned.money}${pEarned.busted ? ' (busted)' : ''}</span></div>
+            <div class="results-row"><span class="label">⭐ Points earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+${pEarned.points}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
 
-        // Player results
-        html += `<div class="results-row"><span class="label player-color">${p.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+$${pEarned.money}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+${pEarned.points}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
+        const rivalHtml = `<h3>Round ${gameState.round} Results</h3>
+            <div class="results-row"><span class="label rival-color">${r.name}</span></div>
+            <div class="results-row"><span class="label">💵 Money earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+$${rEarned.money}${rEarned.busted ? ' (busted)' : ''}</span></div>
+            <div class="results-row"><span class="label">⭐ Points earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+${rEarned.points}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
 
-        html += '<div class="results-divider"></div>';
-
-        // Rival results
-        html += `<div class="results-row"><span class="label rival-color">${r.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+$${rEarned.money}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+${rEarned.points}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
-
-        document.getElementById('results-content').innerHTML = html;
+        document.getElementById('player-results-content').innerHTML = playerHtml;
+        const rivalResultsContent = document.getElementById('rival-results-content');
+        if (rivalResultsContent) rivalResultsContent.innerHTML = rivalHtml;
         document.getElementById('btn-next-phase').textContent = targetReached ? 'Final Results' : 'Continue to Shop';
 
         // Show results panel
         document.getElementById('guest-phase-panel').style.display = 'none';
-        document.getElementById('round-results-panel').style.display = '';
+        setResultsPanelsVisible(true);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
 
@@ -3119,7 +3184,7 @@
 
     function showBuyPanel() {
         document.getElementById('guest-phase-panel').style.display = 'none';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = '';
         document.getElementById('gameover-panel').style.display = 'none';
         setPhoneBuyPhaseLayout(true);
@@ -3281,7 +3346,7 @@
 
         // Reset UI
         document.getElementById('guest-phase-panel').style.display = '';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
 
@@ -3337,7 +3402,7 @@
 
         // Show game over panel
         document.getElementById('guest-phase-panel').style.display = 'none';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = '';
 

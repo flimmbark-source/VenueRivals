@@ -315,7 +315,7 @@
 
                         <div class="context-panel-overlay" id="context-panel-overlay">
                             <div class="context-panel" id="round-results-panel" style="display: none;">
-                                <div class="results-content" id="results-content"></div>
+                                <div class="results-content" id="player-results-content"></div>
                                 <button class="btn btn-primary" id="btn-next-phase">Continue</button>
                             </div>
 
@@ -328,7 +328,7 @@
                                     <div class="shop-grid" id="shop-grid"></div>
                                     <div class="shop-upgrades" id="shop-upgrades"></div>
                                 </div>
-                                <button class="btn btn-primary" id="btn-done-shopping">Done Shopping</button>
+                                <button class="btn btn-primary shop-done-btn" id="btn-done-shopping" aria-label="Done Shopping" title="Done Shopping">✓</button>
                             </div>
                         </div>
                     </div>
@@ -371,6 +371,12 @@
                                 <div class="phone-phase-progress">
                                     <div class="heat-fill" id="rival-heat-fill"></div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="context-panel-overlay" id="rival-context-panel-overlay">
+                            <div class="context-panel" id="rival-round-results-panel" style="display: none;">
+                                <div class="results-content" id="rival-results-content"></div>
                             </div>
                         </div>
                     </div>
