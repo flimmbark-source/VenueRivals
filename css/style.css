@@ -953,81 +953,101 @@ body {
 
 .party-track {
     display: flex;
-    width: 200%;
+    flex-direction: column;
+    width: 100%;
     flex: 1;
     min-height: 0;
-    transition: transform 0.28s ease;
-    will-change: transform;
+    overflow-y: auto;
 }
 
 .party-slide {
-    width: 50%;
-    height: 100%;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
     flex-shrink: 0;
 }
 
-/* --- Club Control Panel Tabs --- */
+/* --- Club Control Panel Tabs (hidden in split-screen mode) --- */
 .party-view-btn {
-    position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 40px);
-    z-index: 10;
-    border: 1px solid rgba(255,255,255,0.12);
-    border-top: 2px solid transparent;
-    background: linear-gradient(180deg, rgba(20, 18, 38, 0.85), rgba(12, 10, 26, 0.9));
-    color: var(--text-dim);
-    border-radius: 2px 2px 8px 8px;
-    padding: 5px 14px;
-    min-width: 58px;
+    display: none;
+}
+
+/* --- Venue Area Inline Stats --- */
+.venue-area-stats {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: transparent;
+    border: 0;
     font-family: 'Poppins', sans-serif;
-    font-size: 0.65rem;
+    font-size: 0.68rem;
     font-weight: 700;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
+    z-index: 6;
+    position: relative;
+}
+
+.venue-area-values {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.venue-area-label {
     text-transform: uppercase;
-    cursor: pointer;
-    transform: scaleY(-1), rotateX(180deg);
-    transform-origin: center top;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    letter-spacing: 1.5px;
+    font-size: 0.58rem;
+    opacity: 0.7;
 }
 
-.party-view-btn-label {
-    display: block;
-    transform: scaleY(-1);
+.player-stats .venue-area-label {
+    color: var(--accent-blue, #4cc9f0);
 }
 
-
-#btn-view-player { left: calc(50% - 64px); }
-#btn-view-rival { left: calc(50% + 6px); }
-
-.party-view-btn.active {
-    color: #fff;
-    border-color: rgba(127, 90, 240, 0.4);
-    border-top-color: var(--accent-secondary);
-    background: linear-gradient(180deg, rgba(30, 26, 58, 0.95), rgba(18, 14, 38, 0.95));
-    box-shadow:
-        0 2px 8px rgba(0,0,0,0.4),
-        0 0 12px rgba(127, 90, 240, 0.15);
+.rival-stats .venue-area-label {
+    color: var(--rival-color, #ff6e6e);
 }
 
-.party-view-btn:not(.active):hover {
-    color: var(--text-secondary);
-    border-color: rgba(255,255,255,0.2);
+.venue-area-money {
+    color: var(--color-money);
+    text-shadow: 0 0 5px rgba(44, 182, 125, 0.35);
+}
+
+.venue-area-pts {
+    color: var(--color-points);
+    text-shadow: 0 0 5px rgba(255, 209, 102, 0.3);
 }
 
 /* === Venue Area === */
 .venue-area {
-    padding: 8px 10px calc(12px + env(safe-area-inset-bottom, 0px));
-    min-height: 100%;
+    padding: 8px;
+    min-height: 0;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(24, 29, 50, 0.95), rgba(10, 12, 25, 0.94));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.rival-venue { border-left: 2px solid rgba(255, 110, 110, 0.12); }
-.player-venue { border-left: 2px solid rgba(76, 201, 240, 0.12); }
+.rival-venue {
+    border-color: rgba(255, 110, 110, 0.38);
+    order: -1;
+}
+.player-venue { border-color: rgba(76, 201, 240, 0.38); }
 
 .player-venue {
     display: flex;
     flex-direction: column;
-    min-height: 100%;
+    min-height: 0;
     gap: 2px;
     padding-bottom: max(1px, env(safe-area-inset-bottom, 0px));
 }
@@ -1117,7 +1137,7 @@ body {
 /* === Top-Down Venue Scene === */
 .venue-scene {
     position: relative;
-    height: clamp(280px, 58vh, 500px);
+    height: auto;
     border-radius: 14px;
     border: 1px solid rgba(127, 90, 240, 0.15);
     background:
@@ -1125,7 +1145,15 @@ body {
         url('./public/Venue1.png') center / cover no-repeat;
     overflow: hidden;
     margin-bottom: 6px;
+    padding-top: 42px;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.venue-scene .venue-area-stats {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
 }
 
 .venue-scene #player-slots,
@@ -1154,7 +1182,7 @@ body {
 
 .player-venue .venue-scene {
     flex: 1;
-    min-height: clamp(330px, 64vh, 570px);
+    min-height: 0;
     margin-bottom: 0;
     overflow: visible;
 }
@@ -1167,14 +1195,14 @@ body {
 .rival-venue {
     display: flex;
     flex-direction: column;
-    min-height: 100%;
+    min-height: 0;
     gap: 2px;
-    padding-bottom: max(1px, env(safe-area-inset-bottom, 0px));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .rival-venue .venue-scene {
     flex: 1;
-    min-height: clamp(330px, 64vh, 570px);
+    min-height: 0;
     margin-bottom: 0;
     overflow: visible;
 }
@@ -1615,9 +1643,17 @@ body {
 .slots-main-row,
 .slots-overflow-row {
     display: flex;
-    flex-direction: row;
     gap: 3px;
     flex-shrink: 0;
+}
+
+.slots-main-row {
+    flex-direction: row;
+}
+
+.slots-overflow-row {
+    flex-direction: row-reverse;
+    align-self: flex-end;
 }
 
 .venue-scene #player-slots.has-stacked-slots,
@@ -1655,6 +1691,27 @@ body {
     cursor: pointer;
     transition: transform 0.2s ease, opacity 0.2s ease;
     overflow: visible;
+    will-change: transform;
+}
+
+/* While FLIP-sliding to a new position the card looks "picked up":
+   raised shadow, slight brightening, and a deliberate 500ms slide. */
+.guest-slot.slot-animating {
+    transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 500ms cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 10;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45),
+                0 0 10px rgba(76, 201, 240, 0.25);
+    filter: brightness(1.15);
+}
+.guest-slot.slot-animating:hover {
+    transform: none;
+}
+
+/* Exit ghosts float above everything and use the same slide timing. */
+.guest-slot.exit-ghost.slot-animating {
+    pointer-events: none;
+    z-index: 90;
 }
 
 .guest-slot:hover {
@@ -1895,8 +1952,19 @@ body {
     margin-bottom: 0;
 }
 
+.venue-info-panel .phone-heat-row {
+    justify-content: center;
+    width: 100%;
+}
+
+.venue-info-panel .phone-phase-progress {
+    flex: 0 1 min(62vw, 280px);
+    width: min(62vw, 280px);
+}
+
 .venue-info-panel .phone-heat-text {
-    min-width: 64px;
+    min-width: 72px;
+    text-align: center;
 }
 
 
@@ -1916,6 +1984,14 @@ body {
     pointer-events: auto;
     cursor: pointer;
     overflow: hidden;
+}
+
+.global-feedback-bar {
+    margin: 4px 8px 0;
+    padding: 0 6px;
+    border-radius: 8px;
+    background: rgba(7, 10, 20, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .feedback-msg {
@@ -2116,6 +2192,8 @@ body {
 
 #buy-phase-panel.context-panel {
     max-height: min(74vh, 680px);
+    position: relative;
+    overflow-y: hidden;
 }
 
 /* === Guest Detail === */
@@ -2216,8 +2294,16 @@ body {
     text-align: center;
 }
 
+#rival-round-results-panel {
+    text-align: center;
+}
+
 .results-content {
     margin-bottom: 12px;
+}
+
+#rival-round-results-panel .results-content {
+    margin-bottom: 0;
 }
 
 .results-content h3 {
@@ -2253,7 +2339,12 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding-top: 4px;
     margin-bottom: 3px;
+    background: rgba(11, 13, 24, 0.92);
 }
 
 .shop-title {
@@ -2273,7 +2364,8 @@ body {
 .shop-layout {
     display: flex;
     gap: 10px;
-    margin-bottom: 10px;
+    margin-top: 8px;
+    margin-bottom: 8px;
     justify-content: center;
     align-items: flex-start;
 }
@@ -2300,7 +2392,7 @@ body {
     letter-spacing: 1px;
     text-align: center;
     padding-top: 2px;
-    border-top: 1px solid var(--bg-light);
+    margin-top: -12px;
     width: 100%;
 }
 
@@ -2352,10 +2444,16 @@ body {
 }
 
 .shop-inspect-indicator {
+    position: absolute;
+    left: 35px;
+    top: 50%;
+    transform: translate(-50%, -50%);
     text-align: center;
     font-size: 1.4rem;
     line-height: 1;
-    margin-bottom: 4px;
+    margin: 0;
+    z-index: 4;
+    pointer-events: none;
     animation: tooltipIn 0.15s ease;
 }
 
@@ -2413,7 +2511,38 @@ body {
     margin-bottom: 2px;
 }
 
-#buy-phase-panel .btn { width: 100%; }
+.shop-done-btn {
+    position: absolute;
+    right: 10px;
+    bottom: 100px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    border-radius: 999px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.38);
+}
+
+.shop-done-btn:hover {
+    transform: scale(1.05);
+}
+
+.phone-hud .shop-done-btn {
+    right: 8px;
+    bottom: 8px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+}
+
+
 
 @keyframes shopHoldProgress {
     from { transform: scaleX(0); }
@@ -3354,14 +3483,16 @@ body {
 
 /* --- DJ Booth LED Status Strip --- */
 .phone-status-strip {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    display: flex;
     align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    position: relative;
+    gap: 12px;
     font-size: 0.66rem;
     font-family: 'Poppins', sans-serif;
     text-transform: uppercase;
     letter-spacing: 1px;
-    gap: 6px;
 }
 
 .phone-round {
@@ -3371,16 +3502,21 @@ body {
 }
 
 .phone-phase {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     text-align: center;
     color: var(--text-primary);
     font-weight: 700;
     text-shadow: 0 0 8px var(--hud-led-glow);
     letter-spacing: 1.5px;
+    pointer-events: none;
 }
 
 .phone-connection {
     display: flex;
     justify-content: flex-end;
+    margin-left: auto;
     gap: 8px;
     font-size: 0.72rem;
     font-weight: 700;
@@ -3563,11 +3699,6 @@ body {
     background: rgba(127, 90, 240, 0.18);
     border-color: rgba(127, 90, 240, 0.6);
     box-shadow: 0 0 6px rgba(127, 90, 240, 0.3);
-}
-
-/* Update status strip to accommodate the menu button */
-.phone-status-strip {
-    grid-template-columns: auto 1fr auto 1fr;
 }
 
 /* === Game Menu Overlay === */

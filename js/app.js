@@ -642,12 +642,19 @@
         return Array.isArray(currentMarket) ? currentMarket : [];
     }
 
+    function setResultsPanelsVisible(isVisible) {
+        const display = isVisible ? '' : 'none';
+        document.getElementById('round-results-panel').style.display = display;
+        const rivalResultsPanel = document.getElementById('rival-round-results-panel');
+        if (rivalResultsPanel) rivalResultsPanel.style.display = display;
+    }
+
     function syncPanelsForState() {
         if (!gameState) return;
 
         if (gameState.phase === 'buy') {
             document.getElementById('guest-phase-panel').style.display = 'none';
-            document.getElementById('round-results-panel').style.display = 'none';
+            setResultsPanelsVisible(false);
             document.getElementById('buy-phase-panel').style.display = '';
             document.getElementById('gameover-panel').style.display = 'none';
             renderShop();
@@ -657,7 +664,7 @@
 
         if (gameState.phase === 'gameover') {
             document.getElementById('guest-phase-panel').style.display = 'none';
-            document.getElementById('round-results-panel').style.display = 'none';
+            setResultsPanelsVisible(false);
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = '';
             setPhoneBuyPhaseLayout(false);
@@ -666,7 +673,7 @@
 
         if (Game.bothDone(gameState)) {
             document.getElementById('guest-phase-panel').style.display = 'none';
-            document.getElementById('round-results-panel').style.display = '';
+            setResultsPanelsVisible(true);
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = 'none';
             // If buy phase has already started (results being shown before shop opens), keep compact HUD.
@@ -675,7 +682,7 @@
         }
 
         document.getElementById('guest-phase-panel').style.display = '';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
         setPhoneBuyPhaseLayout(false);
@@ -721,15 +728,7 @@
 
 
     function applyPartyView(animate = true) {
-        const track = document.getElementById('party-track');
-        if (!track) return;
-        track.style.transition = animate ? 'transform 0.28s ease' : 'none';
-        track.style.transform = activePartyView === 'player' ? 'translateX(0%)' : 'translateX(-50%)';
-
-        const playerBtn = document.getElementById('btn-view-player');
-        const rivalBtn = document.getElementById('btn-view-rival');
-        playerBtn?.classList.toggle('active', activePartyView === 'player');
-        rivalBtn?.classList.toggle('active', activePartyView === 'rival');
+        // Split-screen: both views visible, no transform needed
     }
 
     function setPartyView(view, animate = true) {
@@ -737,34 +736,12 @@
         activePartyView = view;
         removeTooltip();
         applyPartyView(animate);
-        // Reset snapshot so the view switch doesn't trigger delta pings
-        // (the displayed actor changes, but that's not a real stat change).
-        hudDeltaSnapshot.player = { heat: null, money: null, points: null };
-        hudDeltaSnapshot.rival = { heat: null, money: null, points: null };
         updateHUD();
         updateGuestDetail();
     }
 
     function bindPartyCarouselInteractions() {
-        const carousel = document.getElementById('party-carousel');
-        if (!carousel) return;
-
-        carousel.addEventListener('touchstart', (e) => {
-            if (!e.touches?.length) return;
-            swipeStartX = e.touches[0].clientX;
-        }, { passive: true });
-
-        carousel.addEventListener('touchend', (e) => {
-            if (swipeStartX == null || !e.changedTouches?.length) return;
-            const deltaX = e.changedTouches[0].clientX - swipeStartX;
-            swipeStartX = null;
-            if (Math.abs(deltaX) < 40) return;
-            if (deltaX < 0) setPartyView('rival');
-            else setPartyView('player');
-        }, { passive: true });
-
-        document.getElementById('btn-view-player')?.addEventListener('click', () => setPartyView('player'));
-        document.getElementById('btn-view-rival')?.addEventListener('click', () => setPartyView('rival'));
+        // Split-screen: no carousel interactions needed
     }
 
     function syncSelectedGridGuest() {
@@ -939,29 +916,35 @@
                 gameState.phase === 'buy' ? 'BUY PHASE' : 'GAME OVER';
 
         const r = gameState.rival;
-        const hudActor = activePartyView === 'rival' ? r : p;
-        const displayedPlayerPoints = hudActor.points + (hudActor.roundPoints || 0);
-        const displayedPlayerMoney = hudActor.money + (hudActor.roundMoney || 0);
+        const displayedPlayerPoints = p.points + (p.roundPoints || 0);
+        const displayedPlayerMoney = p.money + (p.roundMoney || 0);
         const displayedRivalPoints = r.points + (r.roundPoints || 0);
         const displayedRivalMoney = r.money + (r.roundMoney || 0);
 
+        const rivalMoneyEl = document.getElementById('rival-money');
+        const rivalPtsEl = document.getElementById('rival-pts');
+
         emitHudDeltaPing('points', displayedPlayerPoints, hudDeltaSnapshot.player.points, hudPlayerPtsEl, 'below');
         emitHudDeltaPing('money', displayedPlayerMoney, hudDeltaSnapshot.player.money, playerMoneyEl, 'below');
-        emitHudDeltaPing('heat', hudActor.heat, hudDeltaSnapshot.player.heat, document.getElementById('player-heat-text'), 'above');
+        emitHudDeltaPing('points', displayedRivalPoints, hudDeltaSnapshot.rival.points, rivalPtsEl, 'below');
+        emitHudDeltaPing('money', displayedRivalMoney, hudDeltaSnapshot.rival.money, rivalMoneyEl, 'below');
+        emitHudDeltaPing('heat', p.heat, hudDeltaSnapshot.player.heat, document.getElementById('player-heat-text'), 'above');
         emitHudDeltaPing('heat', r.heat, hudDeltaSnapshot.rival.heat, document.getElementById('rival-heat-text'), 'above');
 
         hudDeltaSnapshot.player.points = displayedPlayerPoints;
         hudDeltaSnapshot.player.money = displayedPlayerMoney;
-        hudDeltaSnapshot.player.heat = hudActor.heat;
+        hudDeltaSnapshot.player.heat = p.heat;
         hudDeltaSnapshot.rival.heat = r.heat;
         hudDeltaSnapshot.rival.points = displayedRivalPoints;
         hudDeltaSnapshot.rival.money = displayedRivalMoney;
 
         hudPlayerPtsEl.textContent = `⭐ ${displayedPlayerPoints}`;
         playerMoneyEl.textContent = `💵 $${displayedPlayerMoney}`;
+        if (rivalPtsEl) rivalPtsEl.textContent = `⭐ ${displayedRivalPoints}`;
+        if (rivalMoneyEl) rivalMoneyEl.textContent = `💵 $${displayedRivalMoney}`;
 
-        const hudVenue = Game.VENUES[hudActor.venueId];
-        updateHeatBar('player', hudActor.heat, Game.getHeatCapacity(hudVenue, hudActor), hudActor.busted);
+        const playerVenue = Game.VENUES[p.venueId];
+        updateHeatBar('player', p.heat, Game.getHeatCapacity(playerVenue, p), p.busted);
         updateHeatBar('rival', r.heat, Game.getHeatCapacity(Game.VENUES[r.venueId], r), r.busted);
     }
 
@@ -1361,6 +1344,135 @@
 
 
     // === Guest Slot Rendering ===
+
+    // Animation hints set before renderHouseGrid so the FLIP system can
+    // coordinate arriving→house and house→exit transitions.
+    let _slotAnimHints = null;
+
+    function captureSlotPositions(slotsEl) {
+        if (!slotsEl) return new Map();
+        const positions = new Map();
+        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
+            const key = slotEl.dataset.renderKey;
+            if (!key) return;
+            positions.set(key, slotEl.getBoundingClientRect());
+        });
+        return positions;
+    }
+
+    function animateSlotReflow(slotsEl, previousPositions) {
+        if (!slotsEl || !previousPositions || previousPositions.size === 0) return;
+        const hints = _slotAnimHints;
+        _slotAnimHints = null;
+
+        // Build a set of new render keys so we can detect removed slots.
+        const newKeys = new Set();
+        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((el) => {
+            if (el.dataset.renderKey) newKeys.add(el.dataset.renderKey);
+        });
+
+        // Find the old arriving key (if any) for arriving→house remapping.
+        let oldArrivingKey = null;
+        let oldArrivingRect = null;
+        for (const [key, rect] of previousPositions) {
+            if (key.startsWith('arriving:')) {
+                oldArrivingKey = key;
+                oldArrivingRect = rect;
+                break;
+            }
+        }
+
+        // Identify exited keys (in old positions but not in new DOM).
+        const exitedKeys = [];
+        for (const [key, rect] of previousPositions) {
+            if (!newKeys.has(key) && !key.startsWith('arriving:')) {
+                exitedKeys.push({ key, rect });
+            }
+        }
+
+        const animatedSlots = [];
+
+        // --- Animate existing & newly-admitted slots ---
+        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
+            const key = slotEl.dataset.renderKey;
+            if (!key) return;
+            let prev = previousPositions.get(key);
+            // If this is an inst: key with no previous position, check if it
+            // was the arriving guest that just got admitted into the house.
+            if (!prev && key.startsWith('inst:') && oldArrivingRect) {
+                prev = oldArrivingRect;
+                oldArrivingRect = null; // consume it so we only remap once
+            }
+            if (!prev) return;
+            const next = slotEl.getBoundingClientRect();
+            const dx = prev.left - next.left;
+            const dy = prev.top - next.top;
+            if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+            slotEl.style.transition = 'none';
+            slotEl.style.transform = `translate(${dx}px, ${dy}px)`;
+            animatedSlots.push(slotEl);
+        });
+
+        // --- Create exit ghosts for pushed-out guests ---
+        const exitGhosts = [];
+        exitedKeys.forEach(({ key, rect }) => {
+            // Try to resolve the guest ID from the render key (inst:N or house:id:idx).
+            let resolvedGuestId = null;
+            if (hints && hints.exitedGuestIds) {
+                resolvedGuestId = hints.exitedGuestIds.shift();
+            }
+            if (!resolvedGuestId) {
+                const m = key.match(/^house:([^:]+):/);
+                if (m) resolvedGuestId = m[1];
+            }
+            if (!resolvedGuestId || !Game.GUESTS[resolvedGuestId]) return;
+
+            const ghost = createGuestSlot(resolvedGuestId, false, { interactive: false });
+            ghost.classList.add('exit-ghost', 'slot-animating');
+            ghost.style.position = 'fixed';
+            ghost.style.left = `${rect.left}px`;
+            ghost.style.top = `${rect.top}px`;
+            ghost.style.width = `${rect.width}px`;
+            ghost.style.height = `${rect.height}px`;
+            ghost.style.margin = '0';
+            ghost.style.transition = 'none';
+            ghost.style.transform = 'translate(0, 0)';
+            document.body.appendChild(ghost);
+
+            // Slide left and fade out.
+            exitGhosts.push(ghost);
+        });
+
+        if (!animatedSlots.length && !exitGhosts.length) return;
+
+        // Force the browser to commit snapped positions.
+        void slotsEl.offsetHeight;
+
+        // Phase 2: Enable transitions and clear transforms → everything slides at once.
+        requestAnimationFrame(() => {
+            animatedSlots.forEach((slotEl) => {
+                slotEl.classList.add('slot-animating');
+                slotEl.style.transition = '';
+                slotEl.style.transform = '';
+            });
+            exitGhosts.forEach((ghost) => {
+                ghost.style.transition = '';
+                ghost.style.transform = 'translate(-60px, 0)';
+                ghost.style.opacity = '0';
+            });
+        });
+
+        const onDone = () => {
+            animatedSlots.forEach((el) => el.classList.remove('slot-animating'));
+            exitGhosts.forEach((el) => el.remove());
+        };
+        const first = animatedSlots[0] || exitGhosts[0];
+        const cleanup = () => { first.removeEventListener('transitionend', handler); onDone(); };
+        const handler = (e) => { if (e.propertyName === 'transform') cleanup(); };
+        first.addEventListener('transitionend', handler);
+        window.setTimeout(cleanup, 620);
+    }
+
     function createGuestSlot(guestId, animate, options = {}) {
         const guest = Game.GUESTS[guestId];
         if (!guest) {
@@ -1400,6 +1512,12 @@
     function renderHouseGrid(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const slotsEl = document.getElementById(`${who}-slots`);
+        const previousPositions = captureSlotPositions(slotsEl);
+        const existingSlotsByKey = new Map();
+        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
+            const key = slotEl.dataset.renderKey;
+            if (key) existingSlotsByKey.set(key, slotEl);
+        });
         slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
 
@@ -1429,13 +1547,18 @@
         if (guests.length > houseCapacity) {
             guests = guests.slice(guests.length - houseCapacity);
         }
-        guests.forEach((entry) => {
+        guests.forEach((entry, guestIndex) => {
             const guestId = entry.guestId || entry;
+            const instanceId = typeof entry === 'string' ? null : entry.instanceId;
             const abilityUsed = typeof entry !== 'string' && !!entry.abilityUsed;
-            const slot = createGuestSlot(guestId, false, { interactive: false });
+            const renderKey = instanceId != null ? `inst:${instanceId}` : `house:${guestId}:${guestIndex}`;
+            const slot = existingSlotsByKey.get(renderKey) || createGuestSlot(guestId, false, { interactive: false });
+            existingSlotsByKey.delete(renderKey);
+            slot.classList.remove('ability-used', 'valid-target', 'dimmed-target', 'selected', 'just-entered', 'arriving-in-grid');
+            slot.dataset.renderKey = renderKey;
+            slot.onclick = null;
             if (abilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
-                const instanceId = typeof entry === 'string' ? null : entry.instanceId;
                 slot.dataset.slotSource = 'house';
                 if (instanceId != null) slot.dataset.instanceId = String(instanceId);
                 if (who === 'player' && instanceId != null && instanceId === playerFlashWindowInstanceId) slot.classList.add('just-entered');
@@ -1454,7 +1577,7 @@
                     (selectedGridGuest.instanceId == null || selectedGridGuest.instanceId === instanceId)) {
                     slot.classList.add('selected');
                 }
-                slot.addEventListener('click', () => {
+                slot.onclick = () => {
                     if (targetingMode) {
                         if (instanceId != null && isValidTarget(instanceId)) {
                             handleTargetClick(guestId, instanceId);
@@ -1466,11 +1589,11 @@
                     refreshSelectedGridSlotVisual();
                     updateGuestDetail();
                     showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', guestId, instanceId, abilityUsed });
-                });
+                };
             } else {
-                slot.addEventListener('click', () => {
+                slot.onclick = () => {
                     showTooltipForTarget(slot, guestId, { who: 'rival', source: 'house', abilityUsed });
-                });
+                };
             }
             houseSlots.push(slot);
         });
@@ -1479,8 +1602,13 @@
         let arrivingSlot = null;
         if (player.arrivingGuest) {
             const arrivingGuestId = player.arrivingGuest;
-            const slot = createGuestSlot(arrivingGuestId, false, { interactive: false });
+            const renderKey = `arriving:${arrivingGuestId}`;
+            const slot = existingSlotsByKey.get(renderKey) || createGuestSlot(arrivingGuestId, false, { interactive: false });
+            existingSlotsByKey.delete(renderKey);
+            slot.classList.remove('ability-used', 'valid-target', 'dimmed-target', 'selected');
             slot.classList.add('arriving-in-grid');
+            slot.dataset.renderKey = renderKey;
+            slot.onclick = null;
             if (who === 'player' && player.arrivingAbilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
                 slot.dataset.slotSource = 'arriving';
@@ -1495,7 +1623,7 @@
                 if (!targetingMode && selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === arrivingGuestId) {
                     slot.classList.add('selected');
                 }
-                slot.addEventListener('click', () => {
+                slot.onclick = () => {
                     if (targetingMode) {
                         if (targetingMode.canTargetArriving) {
                             handleArrivingTargetClick();
@@ -1508,11 +1636,11 @@
                     updateGuestDetail();
                     const arrivingAbilityUsed = !!gameState.player.arrivingAbilityUsed;
                     showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving', guestId: arrivingGuestId, abilityUsed: arrivingAbilityUsed });
-                });
+                };
             } else {
-                slot.addEventListener('click', () => {
+                slot.onclick = () => {
                     showTooltipForTarget(slot, arrivingGuestId, { who: 'rival', source: 'arriving', guestId: arrivingGuestId });
-                });
+                };
             }
             arrivingSlot = slot;
         }
@@ -1523,23 +1651,25 @@
             const allSlots = [...houseSlots];
             if (arrivingSlot) allSlots.push(arrivingSlot);
 
-            // Main row (top): first 5 slots
+            // Base row (bottom): first 5 slots stay fixed in place.
             const mainRow = document.createElement('div');
             mainRow.className = 'slots-main-row';
             allSlots.slice(0, 5).forEach(s => mainRow.appendChild(s));
 
-            // Overflow row (below main): slots 6+
+            // Overflow row (above base): slots 6+ stack upward.
             const overflowRow = document.createElement('div');
             overflowRow.className = 'slots-overflow-row';
             allSlots.slice(5).forEach(s => overflowRow.appendChild(s));
 
-            slotsEl.appendChild(mainRow);
+            // Append overflow first so extra slots appear above the original row.
             slotsEl.appendChild(overflowRow);
+            slotsEl.appendChild(mainRow);
         } else {
             houseSlots.forEach(s => slotsEl.appendChild(s));
             if (arrivingSlot) slotsEl.appendChild(arrivingSlot);
         }
 
+        animateSlotReflow(slotsEl, previousPositions);
         syncVenueActors(who);
     }
 
@@ -1614,31 +1744,15 @@
         showExitStamp(who);
 
         // Move matching venue actor to exit door before it disappears.
-        // (syncVenueActors also enforces exits for removed actors as a fallback.)
         queueVenueActorExit(who, guestId);
 
-        // Animate the grid card itself drifting left and fading out.
-        let sourceSlot = guestId ? document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`) : null;
-        if (!sourceSlot) sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
-        if (!sourceSlot) return;
-
-        const resolvedGuestId = guestId || sourceSlot.dataset.guestId;
-        if (!resolvedGuestId || !Game.GUESTS[resolvedGuestId]) return;
-
-        const ghost = createGuestSlot(resolvedGuestId, false);
-        ghost.classList.add('exit-ghost');
-
-        const sourceRect = sourceSlot.getBoundingClientRect();
-        ghost.style.left = `${sourceRect.left}px`;
-        ghost.style.top = `${sourceRect.top}px`;
-        document.body.appendChild(ghost);
-
-        requestAnimationFrame(() => {
-            ghost.style.transform = 'translate(-56px, 0)';
-            ghost.classList.add('leaving');
-        });
-
-        setTimeout(() => ghost.remove(), 380);
+        // Queue a hint so the FLIP system creates a coordinated exit ghost
+        // when renderHouseGrid runs. The old ghost code is no longer needed
+        // because animateSlotReflow detects removed render keys and creates
+        // sliding exit ghosts automatically.
+        if (!_slotAnimHints) _slotAnimHints = {};
+        if (!_slotAnimHints.exitedGuestIds) _slotAnimHints.exitedGuestIds = [];
+        if (guestId) _slotAnimHints.exitedGuestIds.push(typeof guestId === 'object' ? guestId.guestId || guestId : guestId);
     }
 
     function getPlayerFlashWindowEntry() {
@@ -2003,7 +2117,7 @@
             const indicator = document.createElement('div');
             indicator.className = 'shop-inspect-indicator';
             indicator.textContent = '🔍';
-            panel.insertBefore(indicator, panel.firstChild);
+            panel.appendChild(indicator);
         }
     }
 
@@ -2370,10 +2484,7 @@
     function showFeedback(text, type, duration, who = activePartyView) {
         addRoundActionLogEntry(text);
 
-        const feedbackEls = [
-            document.getElementById('player-feedback'),
-            document.getElementById('rival-feedback'),
-        ].filter(Boolean);
+        const feedbackEls = [document.getElementById('player-feedback')].filter(Boolean);
         if (!feedbackEls.length) return;
 
         const popupDuration = Math.max(1700, Math.round((duration || 2200) * 1.2));
@@ -3068,26 +3179,24 @@
 
         const targetReached = !!gameState.winner;
 
-        let html = `<h3>Round ${gameState.round} Results</h3>`;
+        const playerHtml = `<h3>Round ${gameState.round} Results</h3>
+            <div class="results-row"><span class="label player-color">${p.name}</span></div>
+            <div class="results-row"><span class="label">💵 Money earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+$${pEarned.money}${pEarned.busted ? ' (busted)' : ''}</span></div>
+            <div class="results-row"><span class="label">⭐ Points earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+${pEarned.points}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
 
-        // Player results
-        html += `<div class="results-row"><span class="label player-color">${p.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+$${pEarned.money}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+${pEarned.points}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
+        const rivalHtml = `<h3>Round ${gameState.round} Results</h3>
+            <div class="results-row"><span class="label rival-color">${r.name}</span></div>
+            <div class="results-row"><span class="label">💵 Money earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+$${rEarned.money}${rEarned.busted ? ' (busted)' : ''}</span></div>
+            <div class="results-row"><span class="label">⭐ Points earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+${rEarned.points}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
 
-        html += '<div class="results-divider"></div>';
-
-        // Rival results
-        html += `<div class="results-row"><span class="label rival-color">${r.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+$${rEarned.money}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+${rEarned.points}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
-
-        document.getElementById('results-content').innerHTML = html;
+        document.getElementById('player-results-content').innerHTML = playerHtml;
+        const rivalResultsContent = document.getElementById('rival-results-content');
+        if (rivalResultsContent) rivalResultsContent.innerHTML = rivalHtml;
         document.getElementById('btn-next-phase').textContent = targetReached ? 'Final Results' : 'Continue to Shop';
 
         // Show results panel
         document.getElementById('guest-phase-panel').style.display = 'none';
-        document.getElementById('round-results-panel').style.display = '';
+        setResultsPanelsVisible(true);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
 
@@ -3145,7 +3254,7 @@
 
     function showBuyPanel() {
         document.getElementById('guest-phase-panel').style.display = 'none';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = '';
         document.getElementById('gameover-panel').style.display = 'none';
         setPhoneBuyPhaseLayout(true);
@@ -3307,7 +3416,7 @@
 
         // Reset UI
         document.getElementById('guest-phase-panel').style.display = '';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
 
@@ -3363,7 +3472,7 @@
 
         // Show game over panel
         document.getElementById('guest-phase-panel').style.display = 'none';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = '';
 

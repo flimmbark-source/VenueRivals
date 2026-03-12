@@ -247,8 +247,7 @@
                         <span class="phone-round">Round <span id="hud-round-num">1</span></span>
                         <span class="phone-phase" id="hud-phase">GUEST PHASE</span>
                         <span class="phone-connection">
-                            <span id="player-money">💵 $0</span>
-                            <span id="hud-player-pts">⭐ 0</span>/<span id="hud-round-total">50</span>
+                            Target: <span id="hud-round-total">50</span> ⭐
                         </span>
                     </div>
                 </div>
@@ -256,6 +255,13 @@
                     <!-- Player Venue Area -->
                     <div class="venue-area player-venue party-slide" id="player-area">
                         <div class="venue-scene" id="player-scene">
+                            <div class="venue-area-stats player-stats">
+                                <div class="venue-area-values">
+                                    <span class="venue-area-label">YOU</span>
+                                    <span class="venue-area-money" id="player-money">💵 $0</span>
+                                    <span class="venue-area-pts" id="hud-player-pts">⭐ 0</span>
+                                </div>
+                            </div>
                             <div class="actor-layer" id="player-actors"></div>
                             <button class="scene-door slot-door-card exit-side" id="player-exit-card" aria-label="Exit guests">
                                 <span class="door-icon">🚪</span>
@@ -286,7 +292,6 @@
                                 </div>
                                 
                             </div>
-                            <div class="venue-feedback" id="player-feedback" aria-live="polite" aria-atomic="true"></div>
                         </div>
                         <div class="phone-hud" id="phone-hud">
                             <div class="phone-shell">
@@ -310,7 +315,7 @@
 
                         <div class="context-panel-overlay" id="context-panel-overlay">
                             <div class="context-panel" id="round-results-panel" style="display: none;">
-                                <div class="results-content" id="results-content"></div>
+                                <div class="results-content" id="player-results-content"></div>
                                 <button class="btn btn-primary" id="btn-next-phase">Continue</button>
                             </div>
 
@@ -323,7 +328,7 @@
                                     <div class="shop-grid" id="shop-grid"></div>
                                     <div class="shop-upgrades" id="shop-upgrades"></div>
                                 </div>
-                                <button class="btn btn-primary" id="btn-done-shopping">Done Shopping</button>
+                                <button class="btn btn-primary shop-done-btn" id="btn-done-shopping" aria-label="Done Shopping" title="Done Shopping">✓</button>
                             </div>
                         </div>
                     </div>
@@ -331,6 +336,13 @@
                     <!-- Opponent Venue Area -->
                     <div class="venue-area rival-venue party-slide" id="rival-area">
                         <div class="venue-scene" id="rival-scene">
+                            <div class="venue-area-stats rival-stats">
+                                <div class="venue-area-values">
+                                    <span class="venue-area-label">RIVAL</span>
+                                    <span class="venue-area-money" id="rival-money">💵 $0</span>
+                                    <span class="venue-area-pts" id="rival-pts">⭐ 0</span>
+                                </div>
+                            </div>
                             <div class="actor-layer" id="rival-actors"></div>
                             <button class="scene-door slot-door-card exit-side" id="rival-exit-card" aria-label="Rival exit guests">
                                 <span class="door-icon">🚪</span>
@@ -355,18 +367,22 @@
                         </div>
                         <div class="venue-info-panel">
                             <div class="phone-heat-row venue-heat-row">
+                                <span class="phone-heat-text" id="rival-heat-text">0/3🔥</span>
                                 <div class="phone-phase-progress">
                                     <div class="heat-fill" id="rival-heat-fill"></div>
                                 </div>
-                                <span class="phone-heat-text" id="rival-heat-text">🔥 0/21</span>
                             </div>
-                            <div class="venue-feedback" id="rival-feedback" aria-live="polite" aria-atomic="true"></div>
+                        </div>
+
+                        <div class="context-panel-overlay" id="rival-context-panel-overlay">
+                            <div class="context-panel" id="rival-round-results-panel" style="display: none;">
+                                <div class="results-content" id="rival-results-content"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <div class="venue-feedback global-feedback-bar" id="player-feedback" aria-live="polite" aria-atomic="true"></div>
 
-                <button class="party-view-btn active" id="btn-view-player" type="button">You</button>
-                <button class="party-view-btn" id="btn-view-rival" type="button">Rival</button>
             </div>
         </div>
 
