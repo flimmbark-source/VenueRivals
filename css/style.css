@@ -3065,6 +3065,17 @@ body {
     border-bottom: 1px dotted rgba(127, 90, 240, 0.25);
 }
 
+.deck-manage-back-btn {
+    border: 1px solid rgba(127, 90, 240, 0.5);
+    background: rgba(127, 90, 240, 0.14);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.38rem;
+    cursor: pointer;
+}
+
 .loadout-overlay-top h3 {
     font-family: 'Press Start 2P', monospace;
     font-size: 0.56rem;
@@ -3226,6 +3237,14 @@ body {
     gap: 10px;
 }
 
+#deck-manage-overlay .loadout-overlay-panel.deck-inspect-mode {
+    width: min(96%, 620px);
+}
+
+#deck-manage-overlay .deck-manage-body.deck-inspect-mode-body {
+    gap: 16px;
+}
+
 .deck-manage-section-header {
     display: flex;
     justify-content: space-between;
@@ -3256,6 +3275,32 @@ body {
     -webkit-overflow-scrolling: touch;
     }
 
+#deck-preview-section {
+    transition: transform 1000ms ease;
+}
+
+#deck-preview-section.deck-preview-locked {
+    transform: translateY(-24px);
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: linear-gradient(180deg, rgba(15, 14, 23, 0.98), rgba(15, 14, 23, 0.88));
+    padding-top: 8px;
+}
+
+.deck-inventory-grid {
+    flex-wrap: wrap;
+    max-height: 44vh;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.deck-inventory-grid::-webkit-scrollbar { width: 4px; }
+.deck-inventory-grid::-webkit-scrollbar-thumb {
+    background: rgba(127, 90, 240, 0.3);
+    border-radius: 4px;
+}
+
 .deck-manage-grid::-webkit-scrollbar { height: 4px; }
 .deck-manage-grid::-webkit-scrollbar-thumb {
     background: rgba(127, 90, 240, 0.3);
@@ -3270,6 +3315,23 @@ body {
     width: 46px;
     cursor: pointer;
     transition: var(--transition);
+}
+
+.deck-manage-card.deck-draggable {
+    position: relative;
+}
+
+.deck-card-qty {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: 0.45rem;
+    background: rgba(44, 182, 125, 0.95);
+    color: #fff;
+    border-radius: 8px;
+    padding: 1px 4px;
+    font-weight: 700;
+    z-index: 2;
 }
 
 .deck-manage-card:hover .guest-slot {
