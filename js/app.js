@@ -1393,7 +1393,7 @@
         const cleanup = () => { first.removeEventListener('transitionend', handler); onDone(); };
         const handler = (e) => { if (e.propertyName === 'transform') cleanup(); };
         first.addEventListener('transitionend', handler);
-        window.setTimeout(cleanup, 350);
+        window.setTimeout(cleanup, 620);
     }
 
     function createGuestSlot(guestId, animate, options = {}) {
