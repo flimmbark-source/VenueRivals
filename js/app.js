@@ -2047,7 +2047,7 @@
             const indicator = document.createElement('div');
             indicator.className = 'shop-inspect-indicator';
             indicator.textContent = '🔍';
-            panel.insertBefore(indicator, panel.firstChild);
+            panel.appendChild(indicator);
         }
     }
 

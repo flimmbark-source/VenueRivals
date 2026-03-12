@@ -2423,10 +2423,16 @@ body {
 }
 
 .shop-inspect-indicator {
+    position: absolute;
+    left: 35px;
+    top: 50%;
+    transform: translate(-50%, -50%);
     text-align: center;
     font-size: 1.4rem;
     line-height: 1;
-    margin-bottom: 4px;
+    margin: 0;
+    z-index: 4;
+    pointer-events: none;
     animation: tooltipIn 0.15s ease;
 }
 
