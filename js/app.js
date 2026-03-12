@@ -41,6 +41,7 @@
     let roundActionLog = [];
     let actionLogPopupEl = null;
     let shopInspectMode = false;
+    let pendingAIDecision = null;
     const hudDeltaSnapshot = {
         player: { heat: null, money: null, points: null },
         rival: { heat: null, money: null, points: null },
@@ -76,6 +77,29 @@
     const ACTOR_MIN_SPEED = 0.65;
     const ACTOR_DISTANCE_SPEED_FACTOR = 0.065;
     const ACTOR_MAX_SPEED = 4.2;
+    const PERF_BUDGETS_MS = {
+        'render.title': 4,
+        'render.effects': 5,
+        'actor.step': 4,
+        'job.ai-decision': 5,
+    };
+    const perfProfiler = window.PerfRuntime?.createFrameProfiler?.({ budgetsMs: PERF_BUDGETS_MS }) || null;
+    const perfScheduler = window.PerfRuntime?.createJobScheduler?.({ budgetMs: 3 }) || null;
+    const perfGate = window.PerfRuntime?.createFixedIntervalGate?.() || null;
+    const puffPool = window.PerfRuntime?.createObjectPool?.({
+        create: () => {
+            const el = document.createElement('span');
+            el.className = 'actor-puff';
+            return el;
+        },
+        reset: (el) => {
+            el.remove();
+            el.textContent = '';
+            el.style.color = '';
+        },
+        maxSize: 64,
+    }) || null;
+    const cachedSceneBounds = { player: null, rival: null };
 
     // === Pixel Sprite Generator (Multi-frame) ===
     // Generates 4-frame sprite sheets: idle0, idle1, walk0, walk1.
@@ -595,11 +619,22 @@
     function startAnimLoop() {
         cancelAnimationFrame(animLoopId);
         function loop() {
+            perfProfiler?.startFrame(currentScreen);
             if (currentScreen === 'title') {
-                Renderer.drawTitleScreen(titleCanvas);
+                if (perfProfiler) {
+                    perfProfiler.measure('render.title', () => Renderer.drawTitleScreen(titleCanvas));
+                } else {
+                    Renderer.drawTitleScreen(titleCanvas);
+                }
             } else if (currentScreen === 'game') {
-                Renderer.drawGameEffects?.(gameEffectsCanvas, presentationState, gameState);
+                if (perfProfiler) {
+                    perfProfiler.measure('render.effects', () => Renderer.drawGameEffects?.(gameEffectsCanvas, presentationState, gameState));
+                } else {
+                    Renderer.drawGameEffects?.(gameEffectsCanvas, presentationState, gameState);
+                }
             }
+            perfScheduler?.runDueJobs(perfProfiler);
+            perfProfiler?.endFrame();
             animLoopId = requestAnimationFrame(loop);
         }
         loop();
@@ -1143,12 +1178,17 @@
     }
 
     function getSceneBounds(who) {
+        if (perfGate && cachedSceneBounds[who] && !perfGate.tick(`scene-bounds-${who}`, 4)) {
+            return cachedSceneBounds[who];
+        }
         const scene = document.getElementById(`${who}-scene`);
         if (!scene) return null;
-        return {
+        const bounds = {
             width: scene.clientWidth || 280,
             height: scene.clientHeight || 150,
         };
+        cachedSceneBounds[who] = bounds;
+        return bounds;
     }
 
     function pickBehaviorTarget(who) {
@@ -1381,25 +1421,31 @@
         if (!vfxEnabled || !actor.el || !actor.el.parentNode) return;
         const sym = PUFF_SYMBOLS[actor.behavior];
         if (!sym) return;
-        const puff = document.createElement('span');
+        const puff = puffPool?.acquire() || document.createElement('span');
         puff.className = 'actor-puff';
         puff.textContent = sym;
         actor.el.appendChild(puff);
-        setTimeout(() => puff.remove(), 300);
+        setTimeout(() => {
+            if (puffPool) puffPool.release(puff);
+            else puff.remove();
+        }, 300);
     }
 
     function spawnTroublePuff(actorEl) {
         if (!vfxEnabled || !actorEl || !actorEl.parentNode) return;
-        const puff = document.createElement('span');
+        const puff = puffPool?.acquire() || document.createElement('span');
         puff.className = 'actor-puff';
         puff.textContent = '\u{1F4A2}'; // 💢
         puff.style.color = '#ff5c5c';
         actorEl.appendChild(puff);
-        setTimeout(() => puff.remove(), 300);
+        setTimeout(() => {
+            if (puffPool) puffPool.release(puff);
+            else puff.remove();
+        }, 300);
     }
 
     function stepVenueActors() {
-        ['player', 'rival'].forEach((who) => {
+        const runStep = () => ['player', 'rival'].forEach((who) => {
             const actors = venueActors[who];
             const bounds = getSceneBounds(who);
             if (!bounds) return;
@@ -1417,7 +1463,7 @@
                 } else if (actor.state === 'exiting') {
                     actor.el.classList.add('leaving');
                     removeKeys.push(key);
-                } else if (Math.random() < 0.025) {
+                } else if ((perfGate ? perfGate.tick(`actor-retarget-${who}`, 3) : true) && Math.random() < 0.025) {
                     const target = pickBehaviorTarget(who);
                     actor.targetX = target.x;
                     actor.targetY = target.y;
@@ -1426,7 +1472,7 @@
                 }
 
                 // Spawn micro-VFX puffs occasionally when idle at target
-                if (actor.state !== 'exiting' && dist <= 1 && Math.random() < 0.008) {
+                if ((perfGate ? perfGate.tick(`actor-puff-${who}`, 2) : true) && actor.state !== 'exiting' && dist <= 1 && Math.random() < 0.008) {
                     spawnActorPuff(actor);
                 }
 
@@ -1459,6 +1505,9 @@
                 actors.delete(key);
             });
         });
+
+        if (perfProfiler) perfProfiler.measure('actor.step', runStep);
+        else runStep();
 
         if (!venueActors.player.size && !venueActors.rival.size) stopActorLoop();
     }
@@ -3045,6 +3094,7 @@
     function startAITimer() {
         if (isMultiplayer()) return;
         if (aiTimerId) clearInterval(aiTimerId);
+        pendingAIDecision = null;
         const baseDelay = 1200;
         const variance = 600;
 
@@ -3063,7 +3113,21 @@
                 return;
             }
 
-            const action = AI.decideGuestAction(gameState);
+            if (!pendingAIDecision) {
+                if (perfScheduler) {
+                    pendingAIDecision = { done: false, action: null };
+                    perfScheduler.enqueue('ai-decision', () => {
+                        pendingAIDecision.action = AI.decideGuestAction(gameState);
+                        pendingAIDecision.done = true;
+                    });
+                    return;
+                }
+                pendingAIDecision = { done: true, action: AI.decideGuestAction(gameState) };
+            }
+
+            if (!pendingAIDecision.done) return;
+            const action = pendingAIDecision.action;
+            pendingAIDecision = null;
             if (!action) {
                 // Defensive fallback: if rival still has an active turn, bank safely.
                 if (!r.phaseComplete && !r.doorClosed && !r.busted) {

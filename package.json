@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "npx serve . -l 3000 --no-clipboard",
     "test": "jest",
-    "bench:ai": "node js/ai.bench.js"
+    "bench:ai": "node js/ai.bench.js",
+    "perf:check": "node js/perf.ci.js"
   },
   "devDependencies": {
     "jest": "^30.2.0"
