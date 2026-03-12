@@ -3450,7 +3450,8 @@ body {
 .phone-status-strip {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    width: 100%;
     gap: 12px;
     font-size: 0.66rem;
     font-family: 'Poppins', sans-serif;
@@ -3475,6 +3476,7 @@ body {
 .phone-connection {
     display: flex;
     justify-content: flex-end;
+    margin-left: auto;
     gap: 8px;
     font-size: 0.72rem;
     font-weight: 700;
@@ -3657,11 +3659,6 @@ body {
     background: rgba(127, 90, 240, 0.18);
     border-color: rgba(127, 90, 240, 0.6);
     box-shadow: 0 0 6px rgba(127, 90, 240, 0.3);
-}
-
-/* Update status strip to accommodate the menu button */
-.phone-status-strip {
-    grid-template-columns: auto 1fr auto 1fr;
 }
 
 /* === Game Menu Overlay === */
