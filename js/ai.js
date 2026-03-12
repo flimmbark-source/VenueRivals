@@ -5,6 +5,11 @@
 
 const AI = (() => {
     const MONTE_CARLO_RUNS = 120;
+    const ROLLOUT_CLOSE_HEAT_PRESSURE = 0.93;
+    const ROLLOUT_LOW_UPSIDE_THRESHOLD = 0;
+    const ROLLOUT_MIN_ADMITS_BEFORE_CLOSE = 2;
+    const EARLY_TEMPO_PROTECTED_GUESTS = 3;
+    const ADMIT_ADVANTAGE_MARGIN = 0.75;
 
     function scoreRoundValue(money, points, venue) {
         let total = money + points;
@@ -94,9 +99,9 @@ const AI = (() => {
             // Rollout policy: only close under very high pressure after we've
             // already seen a couple of extra guests and further upside is tiny.
             // This keeps the AI from banking too early every round.
-            const lowUpside = (continueScore - closeScore) <= 1;
-            const deepIntoRun = i >= 1;
-            if (heatPressure > 0.85 && lowUpside && deepIntoRun && !nearEnd) {
+            const lowUpside = (continueScore - closeScore) <= ROLLOUT_LOW_UPSIDE_THRESHOLD;
+            const deepIntoRun = i >= ROLLOUT_MIN_ADMITS_BEFORE_CLOSE;
+            if (heatPressure > ROLLOUT_CLOSE_HEAT_PRESSURE && lowUpside && deepIntoRun && !nearEnd) {
                 return closeScore;
             }
 
@@ -267,7 +272,7 @@ const AI = (() => {
 
         // Early-round tempo: avoid closing immediately unless pressure is already high.
         const remainingHeatBuffer = rivalHeatCap - rival.heat;
-        if (rival.house.length < 2 && remainingHeatBuffer >= 2) {
+        if (rival.house.length < EARLY_TEMPO_PROTECTED_GUESTS && remainingHeatBuffer >= 1) {
             return 'admit';
         }
 
@@ -281,7 +286,7 @@ const AI = (() => {
             return 'ability';
         }
 
-        if (values.admitValue >= values.closeValue) return 'admit';
+        if ((values.admitValue + ADMIT_ADVANTAGE_MARGIN) >= values.closeValue) return 'admit';
         return 'close';
     }
 
