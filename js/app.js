@@ -33,7 +33,9 @@
     let pendingHostMatchConfig = null;
     const revealDoorIntel = { player: null, rival: null };
     const venueActors = { player: new Map(), rival: new Map() };
-    let actorAnimTimer = null;
+    let actorAnimFrameId = null;
+    let actorLoopLastTs = 0;
+    let actorDeltaAccumulatorMs = 0;
     let activePartyView = 'player';
     let swipeStartX = null;
     let playerFlashWindowInstanceId = null;
@@ -76,10 +78,15 @@
     });
 
     const VENUE_BACKGROUND_IMAGE_SRC = 'css/public/Venue1.png';
-    const ACTOR_TICK_MS = 50;
+    const ACTOR_BASE_STEP_MS = 50;
+    const ACTOR_MAX_STEP_FPS = 30;
+    const ACTOR_STEP_MS = 1000 / ACTOR_MAX_STEP_FPS;
     const ACTOR_MIN_SPEED = 0.65;
     const ACTOR_DISTANCE_SPEED_FACTOR = 0.065;
     const ACTOR_MAX_SPEED = 4.2;
+    const ACTOR_IDLE_SKIP_FRAMES = 5;
+    const ACTOR_OFFSCREEN_SKIP_FRAMES = 8;
+    const ACTOR_HEAVY_SCENE_THRESHOLD = 12;
 
     // === Pixel Sprite Generator (Multi-frame) ===
     // Generates 4-frame sprite sheets: idle0, idle1, walk0, walk1.
@@ -532,7 +539,30 @@
         const sheetUrl = generateSpriteSheet(guestId);
         const fw = SPRITE_W * SPRITE_SCALE;
         const fh = SPRITE_H * SPRITE_SCALE;
-        return `<div class="actor-sprite" style="background-image:url(${sheetUrl});width:${fw}px;height:${fh}px;background-position:0 0;background-size:${fw * SPRITE_FRAMES}px ${fh}px"></div>`;
+        return `<div class="actor-body"><div class="actor-sprite" style="background-image:url(${sheetUrl});width:${fw}px;height:${fh}px;background-position:0 0;background-size:${fw * SPRITE_FRAMES}px ${fh}px"></div></div>`;
+    }
+
+    function setActorTransform(actor, x, y) {
+        actor.renderX = x;
+        actor.renderY = y;
+        actor.el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    }
+
+    function setActorTitle(actor) {
+        if (!actor || !actor.el) return;
+        actor.el.title = `${actor.guestName} • ${actor.behavior}`;
+    }
+
+    function setActorBehavior(actor, behavior) {
+        if (!actor || actor.behavior === behavior) return;
+        actor.behavior = behavior;
+        setActorTitle(actor);
+    }
+
+    function setSceneHeavyMode(who, actorCount) {
+        const scene = document.getElementById(`${who}-scene`);
+        if (!scene) return;
+        scene.classList.toggle('actor-heavy-mode', actorCount > ACTOR_HEAVY_SCENE_THRESHOLD);
     }
 
     function getGuestCardSpriteHtml(guestId) {
@@ -1286,14 +1316,35 @@
     }
 
     function ensureActorLoop() {
-        if (actorAnimTimer) return;
-        actorAnimTimer = setInterval(stepVenueActors, ACTOR_TICK_MS);
+        if (actorAnimFrameId) return;
+        actorLoopLastTs = performance.now();
+        actorDeltaAccumulatorMs = 0;
+
+        const animateActors = (ts) => {
+            if (!actorAnimFrameId) return;
+            const frameDelta = Math.min(100, Math.max(0, ts - actorLoopLastTs));
+            actorLoopLastTs = ts;
+            actorDeltaAccumulatorMs += frameDelta;
+
+            while (actorDeltaAccumulatorMs >= ACTOR_STEP_MS) {
+                stepVenueActors(ACTOR_STEP_MS);
+                actorDeltaAccumulatorMs -= ACTOR_STEP_MS;
+            }
+
+            if (actorAnimFrameId) {
+                actorAnimFrameId = requestAnimationFrame(animateActors);
+            }
+        };
+
+        actorAnimFrameId = requestAnimationFrame(animateActors);
     }
 
     function stopActorLoop() {
-        if (!actorAnimTimer) return;
-        clearInterval(actorAnimTimer);
-        actorAnimTimer = null;
+        if (!actorAnimFrameId) return;
+        cancelAnimationFrame(actorAnimFrameId);
+        actorAnimFrameId = null;
+        actorLoopLastTs = 0;
+        actorDeltaAccumulatorMs = 0;
     }
 
     function clearVenueActors() {
@@ -1350,8 +1401,10 @@
                     guestName: guest.name,
                     guestId,
                     frame: 0,
-                    frameTick: 0,
+                    frameMs: 0,
+                    skipTickCounter: 0,
                 };
+                setActorTransform(actor, spawn.x, spawn.y);
                 actors.set(key, actor);
                 setTimeout(() => el.classList.remove('entering'), 320);
             } else if (actor.state === 'exiting') {
@@ -1360,7 +1413,7 @@
                 const target = pickBehaviorTarget(who);
                 actor.targetX = target.x;
                 actor.targetY = target.y;
-                actor.behavior = target.behavior;
+                setActorBehavior(actor, target.behavior);
             }
 
             actor.guestId = guestId;
@@ -1370,9 +1423,9 @@
                 const target = pickBehaviorTarget(who);
                 actor.targetX = target.x;
                 actor.targetY = target.y;
-                actor.behavior = target.behavior;
+                setActorBehavior(actor, target.behavior);
             }
-            actor.el.title = `${actor.guestName} • ${actor.behavior}`;
+            setActorTitle(actor);
         });
 
         // Arriving guest appears in venue grid before admit: show their actor immediately.
@@ -1401,8 +1454,11 @@
                         guestName: guest.name,
                         guestId,
                         frame: 0,
-                        frameTick: 0,
+                        frameMs: 0,
+                        skipTickCounter: 0,
+                        idleTickCounter: 0,
                     };
+                    setActorTransform(arrivingActor, spawn.x, spawn.y);
                     actors.set('arriving-guest', arrivingActor);
                     setTimeout(() => el.classList.remove('entering'), 320);
                 } else {
@@ -1414,7 +1470,7 @@
                         arrivingActor.el.classList.remove('exiting', 'leaving');
                     }
                 }
-                arrivingActor.el.title = `${arrivingActor.guestName} • ${arrivingActor.behavior}`;
+                setActorTitle(arrivingActor);
             }
         }
 
@@ -1422,11 +1478,10 @@
             if (!wanted.has(key) && actor.state !== 'exiting') {
                 const exitTarget = getExitDoorPosition(who);
                 actor.state = 'exiting';
-                actor.behavior = 'leaving';
+                setActorBehavior(actor, 'leaving');
                 actor.targetX = exitTarget.x;
                 actor.targetY = exitTarget.y;
                 actor.el.classList.add('exiting');
-                actor.el.title = `${actor.guestName} • leaving`;
             }
         }
 
@@ -1455,11 +1510,10 @@
         const [, actor] = candidates[0];
         const exitTarget = getExitDoorPosition(who);
         actor.state = 'exiting';
-        actor.behavior = 'leaving';
+        setActorBehavior(actor, 'leaving');
         actor.targetX = exitTarget.x;
         actor.targetY = exitTarget.y;
         actor.el.classList.add('exiting');
-        actor.el.title = `${actor.guestName} • leaving`;
         ensureActorLoop();
         return true;
     }
@@ -1494,20 +1548,34 @@
         setTimeout(() => puff.remove(), 300);
     }
 
-    function stepVenueActors() {
+    function stepVenueActors(deltaMs = ACTOR_STEP_MS) {
+        const deltaScale = deltaMs / ACTOR_BASE_STEP_MS;
         ['player', 'rival'].forEach((who) => {
             const actors = venueActors[who];
             const bounds = getSceneBounds(who);
             if (!bounds) return;
+            setSceneHeavyMode(who, actors.size);
             const removeKeys = [];
+            const transformWrites = [];
 
             actors.forEach((actor, key) => {
+                const clampedX = Math.max(8, Math.min(bounds.width - 24, actor.x));
+                const clampedY = Math.max(8, Math.min(bounds.height - 36, actor.y));
+                const offscreen = clampedX <= 8 || clampedX >= bounds.width - 24 || clampedY <= 8 || clampedY >= bounds.height - 36;
+                actor.skipTickCounter = (actor.skipTickCounter || 0) + 1;
+
                 const dx = actor.targetX - actor.x;
                 const dy = actor.targetY - actor.y;
                 const dist = Math.hypot(dx, dy);
+                const stationary = dist <= 1 && actor.state !== 'exiting';
+                const skipEvery = offscreen ? ACTOR_OFFSCREEN_SKIP_FRAMES : ACTOR_IDLE_SKIP_FRAMES;
+                if (stationary && (actor.skipTickCounter % skipEvery !== 0)) {
+                    return;
+                }
+
                 if (dist > 1) {
                     const maxSpeed = actor.state === 'exiting' ? ACTOR_MAX_SPEED + 1.2 : ACTOR_MAX_SPEED;
-                    const speed = Math.min(maxSpeed, ACTOR_MIN_SPEED + dist * ACTOR_DISTANCE_SPEED_FACTOR);
+                    const speed = Math.min(maxSpeed, ACTOR_MIN_SPEED + dist * ACTOR_DISTANCE_SPEED_FACTOR) * deltaScale;
                     actor.x += (dx / dist) * speed;
                     actor.y += (dy / dist) * speed;
                 } else if (actor.state === 'exiting') {
@@ -1517,8 +1585,7 @@
                     const target = pickBehaviorTarget(who);
                     actor.targetX = target.x;
                     actor.targetY = target.y;
-                    actor.behavior = target.behavior;
-                    actor.el.title = `${actor.guestName} • ${target.behavior}`;
+                    setActorBehavior(actor, target.behavior);
                 }
 
                 // Spawn micro-VFX puffs occasionally when idle at target
@@ -1528,24 +1595,28 @@
 
                 // --- Sprite frame animation ---
                 const isMoving = dist > 2;
-                // frameTick counts 50ms ticks; swap sub-frame every ~6 ticks (300ms)
-                actor.frameTick = (actor.frameTick || 0) + 1;
-                if (actor.frameTick >= 6) {
-                    actor.frameTick = 0;
+                actor.frameMs = (actor.frameMs || 0) + deltaMs;
+                if (actor.frameMs >= 300) {
+                    actor.frameMs = 0;
                     actor.frame = (actor.frame || 0) === 0 ? 1 : 0; // toggle 0/1
                 }
                 // Frame index: idle = 0-1, walk = 2-3
                 const spriteFrame = isMoving ? (2 + actor.frame) : actor.frame;
-                const spriteEl = actor.el.firstChild;
+                const spriteEl = actor.el.querySelector('.actor-sprite');
                 if (spriteEl && spriteEl.style) {
                     spriteEl.style.backgroundPosition = `-${spriteFrame * SPRITE_W * SPRITE_SCALE}px 0`;
                 }
 
-                actor.t += actor.state === 'exiting' ? 0.06 : 0.18;
+                actor.t += (actor.state === 'exiting' ? 0.06 : 0.18) * deltaScale;
                 const bob = actor.state === 'exiting' ? 0 : Math.sin(actor.t) * 1.5;
-                actor.el.style.left = `${Math.max(8, Math.min(bounds.width - 24, actor.x))}px`;
-                actor.el.style.top = `${Math.max(8, Math.min(bounds.height - 36, actor.y + bob))}px`;
+                const renderX = Math.max(8, Math.min(bounds.width - 24, actor.x));
+                const renderY = Math.max(8, Math.min(bounds.height - 36, actor.y + bob));
+                if (actor.renderX !== renderX || actor.renderY !== renderY) {
+                    transformWrites.push([actor, renderX, renderY]);
+                }
             });
+
+            transformWrites.forEach(([actor, x, y]) => setActorTransform(actor, x, y));
 
             removeKeys.forEach((key) => {
                 const actor = actors.get(key);
