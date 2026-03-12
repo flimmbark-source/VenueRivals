@@ -71,22 +71,6 @@
         });
     });
 
-    presentationBus.on(presentationEvents.HEAT_CHANGED, ({ who, currentHeat = 0, previousHeat = 0 }) => {
-        if (who === 'player' && currentHeat > previousHeat) {
-            pulseClass(document.getElementById('player-heat-text'), 'heat-text-hit', 520);
-        }
-    });
-
-    presentationBus.on(presentationEvents.RARE_GUEST_ADMITTED, ({ who, guestId }) => {
-        animateAdmittedGuestEntrance(who || 'player', guestId);
-    });
-
-    presentationBus.on(presentationEvents.ABILITY_USED, ({ who }) => {
-        if (who === 'rival') triggerRivalEcho('ability');
-    });
-
-    presentationBus.on(presentationEvents.RIVAL_SPIKE, () => triggerRivalEcho('spike'));
-
     const VENUE_BACKGROUND_IMAGE_SRC = 'css/public/Venue1.png';
     const ACTOR_TICK_MS = 50;
     const ACTOR_MIN_SPEED = 0.65;
@@ -647,37 +631,6 @@
         if (el) el.textContent = text;
     }
 
-    function pulseClass(el, className, durationMs = 700) {
-        if (!el || !className) return;
-        el.classList.remove(className);
-        void el.offsetWidth;
-        el.classList.add(className);
-        window.setTimeout(() => el.classList.remove(className), durationMs);
-    }
-
-    function triggerRivalEcho(kind = 'action') {
-        const playerArea = document.getElementById('player-area');
-        const feedback = document.getElementById('player-feedback');
-        const rivalStrip = document.querySelector('#rival-area .venue-area-stats');
-        pulseClass(playerArea, 'rival-pressure-echo', kind === 'spike' ? 900 : 620);
-        pulseClass(feedback, 'rival-feedback-echo', 620);
-        pulseClass(rivalStrip, 'rival-status-echo', 620);
-    }
-
-    function animateAdmittedGuestEntrance(who, guestId) {
-        const slotsEl = document.getElementById(`${who}-slots`);
-        if (!slotsEl || !guestId) return;
-        const candidates = [...slotsEl.querySelectorAll(`.guest-slot.occupied-slot[data-guest-id="${guestId}"]`)];
-        const target = candidates[candidates.length - 1];
-        if (!target) return;
-
-        pulseClass(target, 'guest-signature-enter', 700);
-        const tier = (Game.GUESTS[guestId]?.tier || '').toLowerCase();
-        if (tier === 'rare') {
-            pulseClass(target, 'guest-rare-signature-enter', 1200);
-        }
-    }
-
     function showWaitingPopup(message) {
         closeWaitingPopup();
         waitingPopupBackdropEl = document.createElement('div');
@@ -1109,12 +1062,7 @@
         else if (pct > 70) fill.classList.add('danger');
         else if (pct > 50) fill.classList.add('warning');
         else fill.classList.add('safe');
-
-        const breathMs = pct > 85 ? 420 : pct > 70 ? 620 : pct > 50 ? 900 : 1400;
-        fill.style.setProperty('--heat-breath-ms', `${breathMs}ms`);
-        fill.classList.toggle('heat-breathing', !busted);
-
-        text.textContent = `🔥 ${heat}/${max}`;
+        text.textContent = `\u{1F525} ${heat}/${max}`;
     }
 
     function emitHudDeltaPing(statType, nextValue, previousValue, targetEl, placement = 'above') {
@@ -1132,16 +1080,16 @@
         }
 
         const sign = delta > 0 ? '+' : '';
-        spawnNumberPing(targetEl, `${sign}${delta}`, color, placement, statType);
+        spawnNumberPing(targetEl, `${sign}${delta}`, color, placement);
     }
 
-    function spawnNumberPing(targetEl, text, color, placement = 'above', statType = 'generic') {
+    function spawnNumberPing(targetEl, text, color, placement = 'above') {
         if (!targetEl || !text) return;
         const rect = targetEl.getBoundingClientRect();
         if (!rect || (rect.width === 0 && rect.height === 0)) return;
 
         const ping = document.createElement('div');
-        ping.className = `number-ping ${placement === 'below' ? 'below' : 'above'} ping-${statType}`;
+        ping.className = `number-ping ${placement === 'below' ? 'below' : 'above'}`;
         ping.style.setProperty('--ping-color', color || '#ffd166');
         ping.style.left = `${rect.left + (rect.width / 2)}px`;
         ping.style.top = `${placement === 'below' ? rect.bottom + 6 : rect.top - 6}px`;
@@ -2248,7 +2196,6 @@
                 wrapper.classList.add('purchase-confirmed');
                 setTimeout(() => wrapper.classList.remove('purchase-confirmed'), 240);
             }
-            pulseClass(document.getElementById('buy-phase-panel'), 'shop-purchase-flash', 360);
             return true;
         }
 
@@ -2259,7 +2206,6 @@
             wrapper.classList.add('purchase-confirmed');
             setTimeout(() => wrapper.classList.remove('purchase-confirmed'), 240);
         }
-        pulseClass(document.getElementById('buy-phase-panel'), 'shop-purchase-flash', 360);
         renderShop();
         updateHUD();
         publishState();
@@ -2818,7 +2764,6 @@
             animateExitGuest(selfKey, result.pendingOut);
         }
         renderHouseGrid(selfKey);
-        animateAdmittedGuestEntrance(selfKey, result.admitted);
         renderArrivingGuest(selfKey);
         // Re-render reveal overlay — admitted/drawn guests are no longer in
         // the deck so the ID-based filter will drop them automatically.
@@ -3159,7 +3104,6 @@
             // Only re-render rival grid if their house visibly changed
             if (gameState.rival.house.length !== rivalHouseSnapshot) {
                 renderHouseGrid('rival');
-                animateAdmittedGuestEntrance('rival', result.admitted);
             }
             // Re-render reveal overlay — drawn guest no longer in deck.
             if (revealDoorIntel.rival) renderRevealDoorIntel('rival');
@@ -3330,7 +3274,6 @@
                 renderHouseGrid('rival');
             }
             showFeedback(`${r.name} closed their door`, 'money', 2000, 'rival');
-            triggerRivalEcho('close');
         }
 
         renderArrivingGuest('rival');
@@ -3497,9 +3440,7 @@
     function showBuyPanel() {
         document.getElementById('guest-phase-panel').style.display = 'none';
         setResultsPanelsVisible(false);
-        const buyPanel = document.getElementById('buy-phase-panel');
-        buyPanel.style.display = '';
-        pulseClass(buyPanel, 'shop-panel-enter', 520);
+        document.getElementById('buy-phase-panel').style.display = '';
         document.getElementById('gameover-panel').style.display = 'none';
         setPhoneBuyPhaseLayout(true);
     }
