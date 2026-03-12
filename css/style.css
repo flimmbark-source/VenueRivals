@@ -2273,8 +2273,16 @@ body {
     text-align: center;
 }
 
+#rival-round-results-panel {
+    text-align: center;
+}
+
 .results-content {
     margin-bottom: 12px;
+}
+
+#rival-round-results-panel .results-content {
+    margin-bottom: 0;
 }
 
 .results-content h3 {
@@ -2415,10 +2423,16 @@ body {
 }
 
 .shop-inspect-indicator {
+    position: absolute;
+    left: 35px;
+    top: 50%;
+    transform: translate(-50%, -50%);
     text-align: center;
     font-size: 1.4rem;
     line-height: 1;
-    margin-bottom: 4px;
+    margin: 0;
+    z-index: 4;
+    pointer-events: none;
     animation: tooltipIn 0.15s ease;
 }
 
@@ -3452,6 +3466,7 @@ body {
     align-items: center;
     justify-content: flex-start;
     width: 100%;
+    position: relative;
     gap: 12px;
     font-size: 0.66rem;
     font-family: 'Poppins', sans-serif;
@@ -3466,11 +3481,15 @@ body {
 }
 
 .phone-phase {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     text-align: center;
     color: var(--text-primary);
     font-weight: 700;
     text-shadow: 0 0 8px var(--hud-led-glow);
     letter-spacing: 1.5px;
+    pointer-events: none;
 }
 
 .phone-connection {

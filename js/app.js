@@ -642,12 +642,19 @@
         return Array.isArray(currentMarket) ? currentMarket : [];
     }
 
+    function setResultsPanelsVisible(isVisible) {
+        const display = isVisible ? '' : 'none';
+        document.getElementById('round-results-panel').style.display = display;
+        const rivalResultsPanel = document.getElementById('rival-round-results-panel');
+        if (rivalResultsPanel) rivalResultsPanel.style.display = display;
+    }
+
     function syncPanelsForState() {
         if (!gameState) return;
 
         if (gameState.phase === 'buy') {
             document.getElementById('guest-phase-panel').style.display = 'none';
-            document.getElementById('round-results-panel').style.display = 'none';
+            setResultsPanelsVisible(false);
             document.getElementById('buy-phase-panel').style.display = '';
             document.getElementById('gameover-panel').style.display = 'none';
             renderShop();
@@ -657,7 +664,7 @@
 
         if (gameState.phase === 'gameover') {
             document.getElementById('guest-phase-panel').style.display = 'none';
-            document.getElementById('round-results-panel').style.display = 'none';
+            setResultsPanelsVisible(false);
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = '';
             setPhoneBuyPhaseLayout(false);
@@ -666,7 +673,7 @@
 
         if (Game.bothDone(gameState)) {
             document.getElementById('guest-phase-panel').style.display = 'none';
-            document.getElementById('round-results-panel').style.display = '';
+            setResultsPanelsVisible(true);
             document.getElementById('buy-phase-panel').style.display = 'none';
             document.getElementById('gameover-panel').style.display = 'none';
             // If buy phase has already started (results being shown before shop opens), keep compact HUD.
@@ -675,7 +682,7 @@
         }
 
         document.getElementById('guest-phase-panel').style.display = '';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
         setPhoneBuyPhaseLayout(false);
@@ -2040,7 +2047,7 @@
             const indicator = document.createElement('div');
             indicator.className = 'shop-inspect-indicator';
             indicator.textContent = '🔍';
-            panel.insertBefore(indicator, panel.firstChild);
+            panel.appendChild(indicator);
         }
     }
 
@@ -3102,26 +3109,24 @@
 
         const targetReached = !!gameState.winner;
 
-        let html = `<h3>Round ${gameState.round} Results</h3>`;
+        const playerHtml = `<h3>Round ${gameState.round} Results</h3>
+            <div class="results-row"><span class="label player-color">${p.name}</span></div>
+            <div class="results-row"><span class="label">💵 Money earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+$${pEarned.money}${pEarned.busted ? ' (busted)' : ''}</span></div>
+            <div class="results-row"><span class="label">⭐ Points earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+${pEarned.points}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
 
-        // Player results
-        html += `<div class="results-row"><span class="label player-color">${p.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+$${pEarned.money}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+${pEarned.points}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
+        const rivalHtml = `<h3>Round ${gameState.round} Results</h3>
+            <div class="results-row"><span class="label rival-color">${r.name}</span></div>
+            <div class="results-row"><span class="label">💵 Money earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+$${rEarned.money}${rEarned.busted ? ' (busted)' : ''}</span></div>
+            <div class="results-row"><span class="label">⭐ Points earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+${rEarned.points}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
 
-        html += '<div class="results-divider"></div>';
-
-        // Rival results
-        html += `<div class="results-row"><span class="label rival-color">${r.name}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u{1F4B5} Money earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+$${rEarned.money}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
-        html += `<div class="results-row"><span class="label">\u2B50 Points earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+${rEarned.points}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
-
-        document.getElementById('results-content').innerHTML = html;
+        document.getElementById('player-results-content').innerHTML = playerHtml;
+        const rivalResultsContent = document.getElementById('rival-results-content');
+        if (rivalResultsContent) rivalResultsContent.innerHTML = rivalHtml;
         document.getElementById('btn-next-phase').textContent = targetReached ? 'Final Results' : 'Continue to Shop';
 
         // Show results panel
         document.getElementById('guest-phase-panel').style.display = 'none';
-        document.getElementById('round-results-panel').style.display = '';
+        setResultsPanelsVisible(true);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
 
@@ -3179,7 +3184,7 @@
 
     function showBuyPanel() {
         document.getElementById('guest-phase-panel').style.display = 'none';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = '';
         document.getElementById('gameover-panel').style.display = 'none';
         setPhoneBuyPhaseLayout(true);
@@ -3341,7 +3346,7 @@
 
         // Reset UI
         document.getElementById('guest-phase-panel').style.display = '';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = 'none';
 
@@ -3397,7 +3402,7 @@
 
         // Show game over panel
         document.getElementById('guest-phase-panel').style.display = 'none';
-        document.getElementById('round-results-panel').style.display = 'none';
+        setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = 'none';
         document.getElementById('gameover-panel').style.display = '';
 
