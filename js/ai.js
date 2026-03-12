@@ -31,9 +31,40 @@ const AI = (() => {
         return Game.getHeatCapacity(venue, player);
     }
 
+    function getGuestStats(guestId) {
+        const guest = Game.GUESTS[guestId];
+        if (!guest) {
+            return { heat: 0, money: 0, points: 0, cost: 0, ability: null };
+        }
+
+        return {
+            heat: guest.heat,
+            money: guest.money,
+            points: guest.points,
+            cost: guest.cost,
+            ability: guest.ability || null,
+        };
+    }
+
+
+    function scoreRoundValueForStyle(money, points, venueStyle) {
+        let total = money + points;
+        if (venueStyle === 'money') total += money;
+        if (venueStyle === 'points') total += points;
+        return total;
+    }
+
     function estimateRoundValueForGuest(rival, venue, guestId) {
         const sampledDeck = [...rival.fullDeck, guestId];
+        const guestStatsById = Object.create(null);
+        for (let i = 0; i < sampledDeck.length; i++) {
+            const id = sampledDeck[i];
+            guestStatsById[id] = getGuestStats(id);
+        }
+
         const bustPenalty = Game.BUST_PENALTY;
+        const venueStyle = venue.style;
+        const heatCap = getHeatCapacity(venue, rival);
         let totalScore = 0;
 
         for (let i = 0; i < MONTE_CARLO_RUNS; i++) {
@@ -42,19 +73,19 @@ const AI = (() => {
             let money = 0;
             let points = 0;
             for (let j = 0; j < drawOrder.length; j++) {
-                const guest = Game.GUESTS[drawOrder[j]];
+                const guest = guestStatsById[drawOrder[j]];
                 heat += guest.heat;
                 money += guest.money;
                 points += guest.points;
 
-                if (heat > getHeatCapacity(venue, rival)) {
+                if (heat > heatCap) {
                     money = Math.floor(money * bustPenalty);
                     points = Math.floor(points * bustPenalty);
                     break;
                 }
             }
 
-            totalScore += scoreRoundValue(money, points, venue);
+            totalScore += scoreRoundValueForStyle(money, points, venueStyle);
         }
 
         return totalScore / MONTE_CARLO_RUNS;
@@ -88,15 +119,14 @@ const AI = (() => {
         });
     }
 
-    function estimateRolloutFromDoorState(baseState, orderedDeck, venue, heatCap) {
+    function estimateRolloutFromDoorState(baseState, orderedDeck, guestStatsById, venueStyle, heatCap, bustPenalty) {
         let heat = baseState.heat;
         let money = baseState.money;
         let points = baseState.points;
-        const bustPenalty = Game.BUST_PENALTY;
 
         for (let i = 0; i < orderedDeck.length; i++) {
-            const closeScore = scoreRoundValue(money, points, venue);
-            const nextGuest = Game.GUESTS[orderedDeck[i]];
+            const closeScore = scoreRoundValueForStyle(money, points, venueStyle);
+            const nextGuest = guestStatsById[orderedDeck[i]];
             const nextHeat = heat + nextGuest.heat;
             const nextMoney = money + nextGuest.money;
             const nextPoints = points + nextGuest.points;
@@ -104,10 +134,10 @@ const AI = (() => {
             if (nextHeat > heatCap) {
                 const bustedMoney = Math.floor(nextMoney * bustPenalty);
                 const bustedPoints = Math.floor(nextPoints * bustPenalty);
-                return scoreRoundValue(bustedMoney, bustedPoints, venue);
+                return scoreRoundValueForStyle(bustedMoney, bustedPoints, venueStyle);
             }
 
-            const continueScore = scoreRoundValue(nextMoney, nextPoints, venue);
+            const continueScore = scoreRoundValueForStyle(nextMoney, nextPoints, venueStyle);
             const heatPressure = nextHeat / heatCap;
             const nearEnd = i >= orderedDeck.length - 1;
 
@@ -125,15 +155,15 @@ const AI = (() => {
             points = nextPoints;
         }
 
-        return scoreRoundValue(money, points, venue);
+        return scoreRoundValueForStyle(money, points, venueStyle);
     }
 
     function estimateAdmitVsCloseValue(rival, venue) {
-        const arrivingGuest = Game.GUESTS[rival.arrivingGuest];
+        const arrivingGuest = getGuestStats(rival.arrivingGuest);
         // Close value includes the arriving guest because closeDoor still
         // moves them into the house (applyGuestImpact adds their stats).
-        const closeMoney = rival.roundMoney + (arrivingGuest?.money || 0);
-        const closePoints = rival.roundPoints + (arrivingGuest?.points || 0);
+        const closeMoney = rival.roundMoney + arrivingGuest.money;
+        const closePoints = rival.roundPoints + arrivingGuest.points;
         const closeValue = scoreRoundValue(closeMoney, closePoints, venue);
 
         // If no deck remains, admitting and closing are equivalent.
@@ -142,16 +172,23 @@ const AI = (() => {
         }
 
         const bustPenalty = Game.BUST_PENALTY;
+        const venueStyle = venue.style;
         const heatCap = getHeatCapacity(venue, rival);
+        const roundDeck = [...rival.roundDeck];
+        const guestStatsById = Object.create(null);
+        for (let i = 0; i < roundDeck.length; i++) {
+            const id = roundDeck[i];
+            guestStatsById[id] = getGuestStats(id);
+        }
         let admitTotal = 0;
         for (let i = 0; i < MONTE_CARLO_RUNS; i++) {
-            const orderedDeck = shuffleCopy(rival.roundDeck);
+            const orderedDeck = shuffleCopy(roundDeck);
 
             // Simulate rolling out future guests starting from the state
             // AFTER admitting the current arriving guest.
             admitTotal += estimateRolloutFromDoorState(
                 { heat: rival.heat, money: closeMoney, points: closePoints },
-                orderedDeck, venue, heatCap
+                orderedDeck, guestStatsById, venueStyle, heatCap, bustPenalty
             );
         }
 
