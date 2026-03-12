@@ -631,6 +631,22 @@
         if (el) el.textContent = text;
     }
 
+
+    function updatePlayAreaLabels() {
+        const playerLabelEl = document.getElementById('player-area-label');
+        const rivalLabelEl = document.getElementById('rival-area-label');
+        if (!playerLabelEl || !rivalLabelEl) return;
+
+        if (!gameState) {
+            playerLabelEl.textContent = 'YOU';
+            rivalLabelEl.textContent = 'RIVAL';
+            return;
+        }
+
+        playerLabelEl.textContent = gameState.player?.name || 'YOU';
+        rivalLabelEl.textContent = gameState.rival?.name || 'RIVAL';
+    }
+
     function showWaitingPopup(message) {
         closeWaitingPopup();
         waitingPopupBackdropEl = document.createElement('div');
@@ -751,6 +767,7 @@
         updateGuestDetail();
         updateVenueStatus('player');
         updateVenueStatus('rival');
+        updatePlayAreaLabels();
         updateHUD();
         applyPartyView(false);
     }
@@ -878,6 +895,7 @@
 
             gameState = incoming;
             currentMarket = evt.payload.currentMarket || currentMarket;
+            updatePlayAreaLabels();
 
             // Only sync panels if phase actually changed (can trigger layout recalcs)
             if (prevPhase !== gameState.phase) {
@@ -3535,6 +3553,7 @@
         if (options.rivalGuestList?.length) gameState.rival.guestList = [...options.rivalGuestList];
 
         switchScreen('game');
+        updatePlayAreaLabels();
         syncPresentationState();
         startNewRound();
     }
@@ -3564,6 +3583,7 @@
         updateGuestDetail();
         updateVenueStatus('player');
         updateVenueStatus('rival');
+        updatePlayAreaLabels();
         updateHUD();
         setPartyView('player', false);
 
