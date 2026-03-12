@@ -2718,6 +2718,29 @@
         publishState();
     }
 
+    function createPlayerVisibleSnapshot() {
+        if (!gameState?.player) return null;
+        return {
+            arrivingGuest: gameState.player.arrivingGuest,
+            doorClosed: gameState.player.doorClosed,
+            busted: gameState.player.busted,
+            heat: gameState.player.heat,
+            roundMoney: gameState.player.roundMoney,
+            roundPoints: gameState.player.roundPoints,
+        };
+    }
+
+    function hasPlayerVisibleStateChanged(snapshot) {
+        if (!snapshot || !gameState?.player) return true;
+        const player = gameState.player;
+        return snapshot.arrivingGuest !== player.arrivingGuest
+            || snapshot.doorClosed !== player.doorClosed
+            || snapshot.busted !== player.busted
+            || snapshot.heat !== player.heat
+            || snapshot.roundMoney !== player.roundMoney
+            || snapshot.roundPoints !== player.roundPoints;
+    }
+
     function runAdmit(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
         if (targetingMode && actor === 'player') exitTargetingMode();
@@ -2729,14 +2752,7 @@
         const prevPlayerHeat = gameState.player.heat;
         const prevRivalHeat = gameState.rival.heat;
         // Snapshot player's visible state so we can avoid unnecessary re-renders
-        const playerSnapshot = {
-            arrivingGuest: gameState.player.arrivingGuest,
-            doorClosed: gameState.player.doorClosed,
-            busted: gameState.player.busted,
-            heat: gameState.player.heat,
-            roundMoney: gameState.player.roundMoney,
-            roundPoints: gameState.player.roundPoints,
-        };
+        const playerSnapshot = createPlayerVisibleSnapshot();
         const result = Game.admitGuest(self, venue, opponent, opponentVenue);
         if (!result) return;
         if (selfKey === 'player') {
@@ -2789,14 +2805,8 @@
 
         // Only refresh player detail if the action was by the player, or
         // if the opponent's action changed the player's visible state.
-        if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
-            arrivingGuest: gameState.player.arrivingGuest,
-            doorClosed: gameState.player.doorClosed,
-            busted: gameState.player.busted,
-            heat: gameState.player.heat,
-            roundMoney: gameState.player.roundMoney,
-            roundPoints: gameState.player.roundPoints,
-        })) updateGuestDetail();
+        const playerVisibleStateChanged = hasPlayerVisibleStateChanged(playerSnapshot);
+        if (selfKey === 'player' || playerVisibleStateChanged) updateGuestDetail();
         updateVenueStatus(selfKey);
         updateHUD();
         presentationBus.emit(presentationEvents.GUEST_ADMITTED, { who: selfKey, guestId: result.admitted });
@@ -2847,14 +2857,7 @@
         const selfHouseBefore = getHouseRenderKey(self);
         const opponentHouseBefore = getHouseRenderKey(opponent);
         // Snapshot player's visible state
-        const playerSnapshot = {
-            arrivingGuest: gameState.player.arrivingGuest,
-            doorClosed: gameState.player.doorClosed,
-            busted: gameState.player.busted,
-            heat: gameState.player.heat,
-            roundMoney: gameState.player.roundMoney,
-            roundPoints: gameState.player.roundPoints,
-        };
+        const playerSnapshot = createPlayerVisibleSnapshot();
         const selectedForAbility = selfKey === 'player'
             ? (explicitTarget || getSelectedPlayerAbilityTarget())
             : null;
@@ -2884,22 +2887,9 @@
         if (getHouseRenderKey(opponent) !== opponentHouseBefore) renderHouseGrid(opponentKey);
         renderArrivingGuest(selfKey);
         // Only re-render the opponent's arriving area if the player's visible arriving state changed
-        if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
-            arrivingGuest: gameState.player.arrivingGuest,
-            doorClosed: gameState.player.doorClosed,
-            busted: gameState.player.busted,
-            heat: gameState.player.heat,
-            roundMoney: gameState.player.roundMoney,
-            roundPoints: gameState.player.roundPoints,
-        })) renderArrivingGuest(opponentKey);
-        if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
-            arrivingGuest: gameState.player.arrivingGuest,
-            doorClosed: gameState.player.doorClosed,
-            busted: gameState.player.busted,
-            heat: gameState.player.heat,
-            roundMoney: gameState.player.roundMoney,
-            roundPoints: gameState.player.roundPoints,
-        })) updateGuestDetail();
+        const playerVisibleStateChanged = hasPlayerVisibleStateChanged(playerSnapshot);
+        if (selfKey === 'player' || playerVisibleStateChanged) renderArrivingGuest(opponentKey);
+        if (selfKey === 'player' || playerVisibleStateChanged) updateGuestDetail();
         updateVenueStatus(selfKey);
         updateVenueStatus(opponentKey);
         updateHUD();
@@ -2963,14 +2953,7 @@
         if (self.doorClosed || self.busted) return;
 
         const venue = Game.VENUES[self.venueId];
-        const playerSnapshot = {
-            arrivingGuest: gameState.player.arrivingGuest,
-            doorClosed: gameState.player.doorClosed,
-            busted: gameState.player.busted,
-            heat: gameState.player.heat,
-            roundMoney: gameState.player.roundMoney,
-            roundPoints: gameState.player.roundPoints,
-        };
+        const playerSnapshot = createPlayerVisibleSnapshot();
         const result = Game.closeDoor(self, venue, opponent);
         if (selfKey === 'player') playerFlashWindowInstanceId = null;
         if (result?.pushedOut && result.pushedOut.length) {
@@ -2978,14 +2961,8 @@
         }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
-        if (selfKey === 'player' || JSON.stringify(playerSnapshot) !== JSON.stringify({
-            arrivingGuest: gameState.player.arrivingGuest,
-            doorClosed: gameState.player.doorClosed,
-            busted: gameState.player.busted,
-            heat: gameState.player.heat,
-            roundMoney: gameState.player.roundMoney,
-            roundPoints: gameState.player.roundPoints,
-        })) updateGuestDetail();
+        const playerVisibleStateChanged = hasPlayerVisibleStateChanged(playerSnapshot);
+        if (selfKey === 'player' || playerVisibleStateChanged) updateGuestDetail();
         updateVenueStatus(selfKey);
         updateHUD();
         removeTooltip();
@@ -3052,14 +3029,7 @@
         const p = gameState.player;
         const rVenue = Game.VENUES[r.venueId];
         const pVenue = Game.VENUES[p.venueId];
-        const playerSnapshot = {
-            arrivingGuest: gameState.player.arrivingGuest,
-            doorClosed: gameState.player.doorClosed,
-            busted: gameState.player.busted,
-            heat: gameState.player.heat,
-            roundMoney: gameState.player.roundMoney,
-            roundPoints: gameState.player.roundPoints,
-        };
+        const playerSnapshot = createPlayerVisibleSnapshot();
         const rivalHouseSnapshot = gameState.rival.house.length;
         const prevPlayerHeat = gameState.player.heat;
         const prevRivalHeat = gameState.rival.heat;
@@ -3252,14 +3222,7 @@
             }
 
             // Only re-render player grid if their visible state actually changed
-            if (JSON.stringify(playerSnapshot) !== JSON.stringify({
-                arrivingGuest: gameState.player.arrivingGuest,
-                doorClosed: gameState.player.doorClosed,
-                busted: gameState.player.busted,
-                heat: gameState.player.heat,
-                roundMoney: gameState.player.roundMoney,
-                roundPoints: gameState.player.roundPoints,
-            })) renderHouseGrid('player');
+            if (hasPlayerVisibleStateChanged(playerSnapshot)) renderHouseGrid('player');
             // Only re-render rival grid if their house visibly changed
             if (gameState.rival.house.length !== rivalHouseSnapshot) {
                 renderHouseGrid('rival');
@@ -3278,25 +3241,12 @@
 
         renderArrivingGuest('rival');
         // Only update player's arriving area if their visible arriving state changed
-        if (JSON.stringify(playerSnapshot) !== JSON.stringify({
-            arrivingGuest: gameState.player.arrivingGuest,
-            doorClosed: gameState.player.doorClosed,
-            busted: gameState.player.busted,
-            heat: gameState.player.heat,
-            roundMoney: gameState.player.roundMoney,
-            roundPoints: gameState.player.roundPoints,
-        })) renderArrivingGuest('player');
+        const playerVisibleStateChanged = hasPlayerVisibleStateChanged(playerSnapshot);
+        if (playerVisibleStateChanged) renderArrivingGuest('player');
         updateVenueStatus('rival');
         // Refresh player UI only if their visible state changed
         updateVenueStatus('player');
-        if (JSON.stringify(playerSnapshot) !== JSON.stringify({
-            arrivingGuest: gameState.player.arrivingGuest,
-            doorClosed: gameState.player.doorClosed,
-            busted: gameState.player.busted,
-            heat: gameState.player.heat,
-            roundMoney: gameState.player.roundMoney,
-            roundPoints: gameState.player.roundPoints,
-        })) updateGuestDetail();
+        if (playerVisibleStateChanged) updateGuestDetail();
         updateHUD();
         if (gameState.player.heat > prevPlayerHeat) {
             presentationBus.emit(presentationEvents.RIVAL_SPIKE, {
