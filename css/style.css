@@ -1056,9 +1056,12 @@ body {
 
 .rival-venue {
     border-color: rgba(255, 110, 110, 0.38);
+}
+
+.player-venue {
+    border-color: rgba(76, 201, 240, 0.38);
     order: -1;
 }
-.player-venue { border-color: rgba(76, 201, 240, 0.38); }
 
 .player-venue {
     display: flex;
