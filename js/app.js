@@ -853,6 +853,13 @@
             // Only sync panels if phase actually changed (can trigger layout recalcs)
             if (prevPhase !== gameState.phase) {
                 syncPanelsForState();
+
+                // Render game-over / round-results content for the join player
+                if (gameState.phase === 'gameover') {
+                    showGameOver();
+                } else if (Game.bothDone(gameState) && prevPhase === 'guest') {
+                    renderRoundResultsContent();
+                }
             }
 
             // Only update HUD if game structure or round changed
@@ -863,6 +870,7 @@
             // Only re-render rival UI if their state actually changed
             if (prevRivalKey !== newRivalKey) {
                 renderHouseGrid('rival');
+                renderArrivingGuest('rival');
                 updateVenueStatus('rival');
             }
 
@@ -3208,6 +3216,30 @@
         }
 
         publishState();
+    }
+
+    // Render round results content without mutating game state (used by join player via state-sync).
+    function renderRoundResultsContent() {
+        const p = gameState.player;
+        const r = gameState.rival;
+        const pEarned = Game.getRoundEarnings(p);
+        const rEarned = Game.getRoundEarnings(r);
+        const targetReached = !!gameState.winner;
+
+        const playerHtml = `<h3>Round ${gameState.round} Results</h3>
+            <div class="results-row"><span class="label player-color">${p.name}</span></div>
+            <div class="results-row"><span class="label">💵 Money earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+$${pEarned.money}${pEarned.busted ? ' (busted)' : ''}</span></div>
+            <div class="results-row"><span class="label">⭐ Points earned</span><span class="value ${pEarned.busted ? 'bust-value' : 'positive'}">+${pEarned.points}${pEarned.busted ? ' (busted)' : ''}</span></div>`;
+
+        const rivalHtml = `<h3>Round ${gameState.round} Results</h3>
+            <div class="results-row"><span class="label rival-color">${r.name}</span></div>
+            <div class="results-row"><span class="label">💵 Money earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+$${rEarned.money}${rEarned.busted ? ' (busted)' : ''}</span></div>
+            <div class="results-row"><span class="label">⭐ Points earned</span><span class="value ${rEarned.busted ? 'bust-value' : 'positive'}">+${rEarned.points}${rEarned.busted ? ' (busted)' : ''}</span></div>`;
+
+        document.getElementById('player-results-content').innerHTML = playerHtml;
+        const rivalResultsContent = document.getElementById('rival-results-content');
+        if (rivalResultsContent) rivalResultsContent.innerHTML = rivalHtml;
+        document.getElementById('btn-next-phase').textContent = targetReached ? 'Final Results' : 'Continue to Shop';
     }
 
     function handleNextPhase() {
