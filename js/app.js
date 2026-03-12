@@ -513,6 +513,7 @@
 
     const MIN_DECK_SIZE = 4;
     const MAX_DECK_SIZE = 15;
+    const DECK_INSPECT_MAX_SIZE = 8;
     const ABLY_API_KEY = '_tDhUg.HYf2eA:VPJbNYIBgqUrolL5QzcLSyj4XRCheq3cizKtHVAtGCA';
 
     const TAG_ICONS = {
@@ -3525,12 +3526,27 @@
         return decks.length ? decks[0][0] : null;
     }
 
+    function createNeutralInventoryCounts() {
+        return Object.keys(Game.GUESTS)
+            .filter((guestId) => Game.GUESTS[guestId]?.venue === 'Neutral')
+            .sort((a, b) => Game.GUESTS[a].name.localeCompare(Game.GUESTS[b].name))
+            .reduce((acc, guestId) => {
+                acc[guestId] = 2;
+                return acc;
+            }, {});
+    }
+
+    function resetDeckManageInspectState() {
+        loadoutState.deckInspectMode = false;
+    }
+
     function applyDeck(deckId) {
         const deck = Game.DECKS[deckId];
         if (!deck) return;
         loadoutState.selectedDeckId = deckId;
         loadoutState.previewDeckId = deckId;
-        loadoutState.deck = [...deck.guests];
+        loadoutState.deck = [...deck.guests].slice(0, DECK_INSPECT_MAX_SIZE);
+        resetDeckManageInspectState();
     }
 
     function getDefaultGuestListId(venueId) {
@@ -3552,13 +3568,17 @@
         const defaultGuestListId = getDefaultGuestListId(defaultVenue);
         loadoutState = {
             venueId: defaultVenue,
-            deck: defaultDeckId ? [...Game.DECKS[defaultDeckId].guests] : [...Game.VENUES[defaultVenue].startingDeck],
+            deck: defaultDeckId
+                ? [...Game.DECKS[defaultDeckId].guests].slice(0, DECK_INSPECT_MAX_SIZE)
+                : [...Game.VENUES[defaultVenue].startingDeck].slice(0, DECK_INSPECT_MAX_SIZE),
             inventory: [...Game.VENUES[defaultVenue].market],
             selectedDeckId: defaultDeckId,
             previewDeckId: defaultDeckId,
             selectedGuestListId: defaultGuestListId,
             previewGuestListId: defaultGuestListId,
             guestList: defaultGuestListId ? [...Game.GUEST_LISTS[defaultGuestListId].guests] : [...Game.VENUES[defaultVenue].startingDeck],
+            deckInspectMode: false,
+            deckInventoryCounts: createNeutralInventoryCounts(),
         };
         selectedVenueType = defaultVenue;
         renderLoadout();
@@ -3703,11 +3723,13 @@
     }
 
     function openDeckManage() {
+        resetDeckManageInspectState();
         document.getElementById('deck-manage-overlay').style.display = '';
         renderDeckManage();
     }
 
     function closeDeckManage() {
+        resetDeckManageInspectState();
         document.getElementById('deck-manage-overlay').style.display = 'none';
         renderLoadout();
     }
@@ -3723,12 +3745,30 @@
     }
 
     function renderDeckManage() {
+        const overlay = document.getElementById('deck-manage-overlay');
+        const panel = overlay.querySelector('.loadout-overlay-panel');
+        const body = overlay.querySelector('.deck-manage-body');
+        const backBtn = document.getElementById('btn-deck-manage-back');
+        const title = overlay.querySelector('.loadout-overlay-top h3');
         const presetsGrid = document.getElementById('deck-presets-grid');
+        const presetsSection = presetsGrid.closest('.deck-manage-section');
+        const previewSection = document.getElementById('deck-preview-section');
+        const inventorySection = document.getElementById('deck-guest-inventory-section');
         const badge = document.getElementById('deck-size-badge');
         const decks = getAllDecks();
+        const inspectMode = !!loadoutState.deckInspectMode;
 
-        badge.textContent = `${decks.length} presets`;
+        title.textContent = inspectMode ? 'Deck Builder' : 'Select Deck';
+        badge.textContent = inspectMode
+            ? `${loadoutState.deck.length}/${DECK_INSPECT_MAX_SIZE} in deck`
+            : `${decks.length} presets`;
         badge.className = 'deck-size-badge';
+        backBtn.style.display = inspectMode ? '' : 'none';
+        panel.classList.toggle('deck-inspect-mode', inspectMode);
+        body.classList.toggle('deck-inspect-mode-body', inspectMode);
+        if (presetsSection) presetsSection.style.display = inspectMode ? 'none' : '';
+        if (inventorySection) inventorySection.style.display = inspectMode ? '' : 'none';
+        if (previewSection) previewSection.classList.toggle('deck-preview-locked', inspectMode);
 
         presetsGrid.innerHTML = '';
         decks.forEach(([id, deck]) => {
@@ -3751,25 +3791,42 @@
                 </div>
             `;
             card.addEventListener('click', () => {
-                applyDeck(id);
+                if (selected && !loadoutState.deckInspectMode) {
+                    loadoutState.deckInspectMode = true;
+                } else {
+                    applyDeck(id);
+                }
                 renderDeckManage();
                 checkStartEnabled();
             });
             presetsGrid.appendChild(card);
         });
 
-        renderDeckPreview(loadoutState.selectedDeckId);
+        renderDeckPreview();
+        if (inspectMode) renderDeckGuestInventory();
     }
 
-    function createDeckManageCard(guestId) {
+    function createDeckManageCard(guestId, options = {}) {
+        const { draggable = false, quantity = null } = options;
         const guest = Game.GUESTS[guestId];
         const wrapper = document.createElement('div');
         wrapper.className = 'deck-manage-card';
+        if (draggable) {
+            wrapper.classList.add('deck-draggable');
+            wrapper.draggable = true;
+        }
 
         const nameEl = document.createElement('div');
         nameEl.className = 'deck-card-name' + (guest.ability ? ' has-ability' : '');
         nameEl.textContent = guest.name;
         wrapper.appendChild(nameEl);
+
+        if (quantity !== null) {
+            const qtyEl = document.createElement('div');
+            qtyEl.className = 'deck-card-qty';
+            qtyEl.textContent = `x${quantity}`;
+            wrapper.appendChild(qtyEl);
+        }
 
         const slot = createGuestSlot(guestId, false, { interactive: false });
         wrapper.appendChild(slot);
@@ -3796,21 +3853,95 @@
         });
     }
 
-    function renderDeckPreview(deckId) {
+    function parseDeckDragData(event) {
+        const raw = event.dataTransfer?.getData('text/plain');
+        if (!raw) return null;
+        try {
+            return JSON.parse(raw);
+        } catch {
+            return null;
+        }
+    }
+
+    function onDeckPreviewDrop(event) {
+        event.preventDefault();
+        const data = parseDeckDragData(event);
+        if (!data || loadoutState.deck.length >= DECK_INSPECT_MAX_SIZE) return;
+
+        if (data.from === 'inventory') {
+            const currentQty = loadoutState.deckInventoryCounts[data.guestId] || 0;
+            if (currentQty <= 0) return;
+            loadoutState.deckInventoryCounts[data.guestId] = currentQty - 1;
+            loadoutState.deck.push(data.guestId);
+            renderDeckManage();
+            renderLoadoutDeck();
+            checkStartEnabled();
+        }
+    }
+
+    function onDeckInventoryDrop(event) {
+        event.preventDefault();
+        const data = parseDeckDragData(event);
+        if (!data || data.from !== 'deck') return;
+
+        if (Number.isInteger(data.index) && data.index >= 0 && data.index < loadoutState.deck.length) {
+            const [removedGuestId] = loadoutState.deck.splice(data.index, 1);
+            if (removedGuestId) {
+                loadoutState.deckInventoryCounts[removedGuestId] = (loadoutState.deckInventoryCounts[removedGuestId] || 0) + 1;
+            }
+            renderDeckManage();
+            renderLoadoutDeck();
+            checkStartEnabled();
+        }
+    }
+
+    function renderDeckGuestInventory() {
+        const inventoryGrid = document.getElementById('deck-guest-inventory-grid');
+        inventoryGrid.innerHTML = '';
+        inventoryGrid.ondragover = (event) => event.preventDefault();
+        inventoryGrid.ondrop = onDeckInventoryDrop;
+
+        Object.entries(loadoutState.deckInventoryCounts).forEach(([guestId, qty]) => {
+            if (qty <= 0) return;
+            const card = createDeckManageCard(guestId, { draggable: true, quantity: qty });
+            card.addEventListener('dragstart', (event) => {
+                event.dataTransfer?.setData('text/plain', JSON.stringify({ from: 'inventory', guestId }));
+            });
+            inventoryGrid.appendChild(card);
+        });
+    }
+
+    function renderDeckPreview() {
         const previewGrid = document.getElementById('deck-preview-grid');
         const previewEmpty = document.getElementById('deck-preview-empty');
-        const deck = Game.DECKS[deckId];
+        const inspectMode = !!loadoutState.deckInspectMode;
+        const deck = inspectMode
+            ? { guests: loadoutState.deck }
+            : Game.DECKS[loadoutState.selectedDeckId];
 
         previewGrid.innerHTML = '';
+        previewGrid.ondragover = null;
+        previewGrid.ondrop = null;
         if (!deck) {
             previewEmpty.style.display = '';
             return;
         }
 
         previewEmpty.style.display = 'none';
-        deck.guests.forEach((guestId) => {
-            const card = createDeckManageCard(guestId);
-            card.addEventListener('click', () => showTooltipForTarget(card, guestId, { who: 'rival', source: 'deck-preview' }));
+        if (inspectMode) {
+            previewGrid.ondragover = (event) => event.preventDefault();
+            previewGrid.ondrop = onDeckPreviewDrop;
+        }
+
+        deck.guests.forEach((guestId, index) => {
+            const card = createDeckManageCard(guestId, { draggable: inspectMode });
+            if (inspectMode) {
+                card.addEventListener('dragstart', (event) => {
+                    event.dataTransfer?.setData('text/plain', JSON.stringify({ from: 'deck', guestId, index }));
+                });
+            } else {
+                card.addEventListener('click', () => showTooltipForTarget(card, guestId, { who: 'rival', source: 'deck-preview' }));
+            }
             previewGrid.appendChild(card);
         });
     }
@@ -4178,6 +4309,10 @@
         });
         document.getElementById('btn-close-venue-select').addEventListener('click', closeVenueSelect);
         document.getElementById('btn-close-deck-manage').addEventListener('click', closeDeckManage);
+        document.getElementById('btn-deck-manage-back').addEventListener('click', () => {
+            resetDeckManageInspectState();
+            renderDeckManage();
+        });
         document.getElementById('btn-close-guest-list-manage').addEventListener('click', closeGuestListManage);
 
         // Close overlays on background click
