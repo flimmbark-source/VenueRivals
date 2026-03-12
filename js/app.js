@@ -46,6 +46,31 @@
         rival: { heat: null, money: null, points: null },
     };
 
+    const presentationBus = window.Presentation?.createEventBus?.() || { on() {}, emit() {} };
+    const presentationEvents = window.Presentation?.EVENTS || {};
+    let presentationState = window.Presentation?.derivePresentationState?.({}) || {
+        heatBand: 'calm',
+        momentType: 'idle',
+        pressure: 'none',
+        venueMood: 'neutral',
+        rivalThreat: 'low',
+    };
+    let presentationMomentHint = null;
+    let presentationMomentTimerId = null;
+
+    const rendererEffectEvents = [
+        presentationEvents.RARE_GUEST_ADMITTED,
+        presentationEvents.RIVAL_SPIKE,
+        presentationEvents.ROUND_BANKED,
+        presentationEvents.ROUND_BUST,
+        presentationEvents.ABILITY_USED,
+    ].filter(Boolean);
+    rendererEffectEvents.forEach((eventName) => {
+        presentationBus.on(eventName, (payload) => {
+            Renderer.triggerGameEffect?.(eventName, payload);
+        });
+    });
+
     const VENUE_BACKGROUND_IMAGE_SRC = 'css/public/Venue1.png';
     const ACTOR_TICK_MS = 50;
     const ACTOR_MIN_SPEED = 0.65;
@@ -557,6 +582,7 @@
 
     const titleCanvas = document.getElementById('title-canvas');
     const gameoverCanvas = document.getElementById('gameover-canvas');
+    const gameEffectsCanvas = document.getElementById('game-effects-canvas');
 
     // === Screen Management ===
     function switchScreen(name) {
@@ -571,6 +597,8 @@
         function loop() {
             if (currentScreen === 'title') {
                 Renderer.drawTitleScreen(titleCanvas);
+            } else if (currentScreen === 'game') {
+                Renderer.drawGameEffects?.(gameEffectsCanvas, presentationState, gameState);
             }
             animLoopId = requestAnimationFrame(loop);
         }
@@ -904,6 +932,71 @@
         return { self: gameState.player, opponent: gameState.rival, selfKey: 'player', opponentKey: 'rival' };
     }
 
+    function setMomentHint(momentType, durationMs = 1200) {
+        presentationMomentHint = momentType || null;
+        if (presentationMomentTimerId) {
+            clearTimeout(presentationMomentTimerId);
+            presentationMomentTimerId = null;
+        }
+        if (presentationMomentHint && Number.isFinite(durationMs) && durationMs > 0) {
+            presentationMomentTimerId = setTimeout(() => {
+                presentationMomentHint = null;
+                presentationMomentTimerId = null;
+                syncPresentationState();
+            }, durationMs);
+        }
+        syncPresentationState();
+    }
+
+    function applyPresentationStateToDom(state) {
+        const gameScreen = document.getElementById('game-screen');
+        if (!gameScreen || !state) return;
+        gameScreen.dataset.heatBand = state.heatBand;
+        gameScreen.dataset.momentType = state.momentType;
+        gameScreen.dataset.pressure = state.pressure;
+        gameScreen.dataset.venueMood = state.venueMood;
+        gameScreen.dataset.rivalThreat = state.rivalThreat;
+    }
+
+    function syncPresentationState(meta = {}) {
+        const previous = presentationState;
+        const derivePresentationState = window.Presentation?.derivePresentationState;
+        if (!derivePresentationState) return previous;
+
+        presentationState = derivePresentationState({
+            gameState,
+            previousState: previous,
+            momentHint: presentationMomentHint,
+        });
+        applyPresentationStateToDom(presentationState);
+
+        if (gameState && previous) {
+            if (gameState.player?.heat !== undefined && gameState.player.heat !== (meta.previousPlayerHeat ?? gameState.player.heat)) {
+                presentationBus.emit(presentationEvents.HEAT_CHANGED, {
+                    who: 'player',
+                    previousHeat: meta.previousPlayerHeat,
+                    currentHeat: gameState.player.heat,
+                    heatBand: presentationState.heatBand,
+                });
+            }
+            if (gameState.rival?.heat !== undefined && gameState.rival.heat !== (meta.previousRivalHeat ?? gameState.rival.heat)) {
+                presentationBus.emit(presentationEvents.HEAT_CHANGED, {
+                    who: 'rival',
+                    previousHeat: meta.previousRivalHeat,
+                    currentHeat: gameState.rival.heat,
+                });
+            }
+            if (presentationState.heatBand === 'critical' && previous.heatBand !== 'critical' && !gameState.player?.busted) {
+                presentationBus.emit(presentationEvents.BUST_WARNING, {
+                    who: 'player',
+                    heat: gameState.player.heat,
+                });
+            }
+        }
+
+        return presentationState;
+    }
+
     // === HUD Update ===
     function updateHUD() {
         if (!gameState) return;
@@ -955,6 +1048,7 @@
         const playerVenue = Game.VENUES[p.venueId];
         updateHeatBar('player', p.heat, Game.getHeatCapacity(playerVenue, p), p.busted);
         updateHeatBar('rival', r.heat, Game.getHeatCapacity(Game.VENUES[r.venueId], r), r.busted);
+        syncPresentationState();
     }
 
     function updateHeatBar(who, heat, max, busted = false) {
@@ -2632,6 +2726,8 @@
 
         const venue = Game.VENUES[self.venueId];
         const opponentVenue = Game.VENUES[opponent.venueId];
+        const prevPlayerHeat = gameState.player.heat;
+        const prevRivalHeat = gameState.rival.heat;
         // Snapshot player's visible state so we can avoid unnecessary re-renders
         const playerSnapshot = {
             arrivingGuest: gameState.player.arrivingGuest,
@@ -2703,10 +2799,20 @@
         })) updateGuestDetail();
         updateVenueStatus(selfKey);
         updateHUD();
+        presentationBus.emit(presentationEvents.GUEST_ADMITTED, { who: selfKey, guestId: result.admitted });
+        if (Game.GUESTS[result.admitted]?.tier?.toLowerCase?.() === 'rare') {
+            presentationBus.emit(presentationEvents.RARE_GUEST_ADMITTED, { who: selfKey, guestId: result.admitted });
+            setMomentHint('rare_admit', 1500);
+        } else {
+            setMomentHint('admit', 1000);
+        }
+        syncPresentationState({ previousPlayerHeat: prevPlayerHeat, previousRivalHeat: prevRivalHeat });
         removeTooltip();
         removeIconTooltip();
 
         if (result.busted) {
+            presentationBus.emit(presentationEvents.ROUND_BUST, { who: selfKey, source: 'admit' });
+            setMomentHint('bust', 1800);
             document.getElementById(`${selfKey}-area`).classList.add('bust-flash');
             showFeedback(`${self.name} BUSTED!`, 'bust', 3000, selfKey);
             setTimeout(() => {
@@ -2736,6 +2842,8 @@
 
         const selfVenue = Game.VENUES[self.venueId];
         const opponentVenue = Game.VENUES[opponent.venueId];
+        const prevPlayerHeat = gameState.player.heat;
+        const prevRivalHeat = gameState.rival.heat;
         const selfHouseBefore = getHouseRenderKey(self);
         const opponentHouseBefore = getHouseRenderKey(opponent);
         // Snapshot player's visible state
@@ -2795,6 +2903,13 @@
         updateVenueStatus(selfKey);
         updateVenueStatus(opponentKey);
         updateHUD();
+        presentationBus.emit(presentationEvents.ABILITY_USED, {
+            who: selfKey,
+            abilityType: result.ability?.type,
+            abilityName: result.ability?.name,
+        });
+        setMomentHint('ability', 1100);
+        syncPresentationState({ previousPlayerHeat: prevPlayerHeat, previousRivalHeat: prevRivalHeat });
 
         // Keep tooltip open for player ability use — pulse it and disable button
         if (selfKey === 'player' && tooltipEl) {
@@ -2819,6 +2934,8 @@
         removeIconTooltip();
 
         if (opponent.busted) {
+            presentationBus.emit(presentationEvents.ROUND_BUST, { who: opponentKey, source: 'ability' });
+            setMomentHint('bust', 1800);
             document.getElementById(`${opponentKey}-area`).classList.add('bust-flash');
             showFeedback(`${opponent.name} BUSTED!`, 'bust', 2500, opponentKey);
             setTimeout(() => {
@@ -2875,6 +2992,7 @@
         removeIconTooltip();
 
         showFeedback('You closed the door safely', 'money', 2000, selfKey);
+        setMomentHint('idle', 500);
         checkGuestPhaseDone();
         publishState();
     }
@@ -2943,6 +3061,8 @@
             roundPoints: gameState.player.roundPoints,
         };
         const rivalHouseSnapshot = gameState.rival.house.length;
+        const prevPlayerHeat = gameState.player.heat;
+        const prevRivalHeat = gameState.rival.heat;
 
         if (action === 'admit') {
             const result = Game.admitGuest(r, rVenue, gameState.player, Game.VENUES[gameState.player.venueId]);
@@ -2988,7 +3108,17 @@
             // Re-render reveal overlay — drawn guest no longer in deck.
             if (revealDoorIntel.rival) renderRevealDoorIntel('rival');
 
+            presentationBus.emit(presentationEvents.GUEST_ADMITTED, { who: 'rival', guestId: result.admitted });
+            if (Game.GUESTS[result.admitted]?.tier?.toLowerCase?.() === 'rare') {
+                presentationBus.emit(presentationEvents.RARE_GUEST_ADMITTED, { who: 'rival', guestId: result.admitted });
+                setMomentHint('rare_admit', 1500);
+            } else {
+                setMomentHint('admit', 900);
+            }
+
             if (result.busted) {
+                presentationBus.emit(presentationEvents.ROUND_BUST, { who: 'rival', source: 'admit' });
+                setMomentHint('bust', 1800);
                 document.getElementById('rival-area').classList.add('bust-flash');
                 showFeedback(`${r.name} BUSTED!`, 'bust', 2500, 'rival');
                 setTimeout(() => {
@@ -3091,6 +3221,12 @@
             }
 
             showFeedback(`${r.name}: \u26A1 ${result.ability.name}`, 'disruption', 2500, 'rival');
+            presentationBus.emit(presentationEvents.ABILITY_USED, {
+                who: 'rival',
+                abilityType: result.ability?.type,
+                abilityName: result.ability?.name,
+            });
+            setMomentHint('ability', 1000);
             if (result.revealedGuests) setRevealDoorIntel('rival', result.revealedGuests);
             // Refresh reveal overlays in case ability removed guests from queues.
             if (!result.revealedGuests && revealDoorIntel.rival) renderRevealDoorIntel('rival');
@@ -3104,6 +3240,8 @@
 
             // Check if player was busted
             if (p.busted) {
+                presentationBus.emit(presentationEvents.ROUND_BUST, { who: 'player', source: 'rival-ability' });
+                setMomentHint('bust', 1800);
                 document.getElementById('player-area').classList.add('bust-flash');
                 showFeedback(`${p.name} BUSTED!`, 'bust', 3000, 'player');
                 updateGuestDetail();
@@ -3160,6 +3298,14 @@
             roundPoints: gameState.player.roundPoints,
         })) updateGuestDetail();
         updateHUD();
+        if (gameState.player.heat > prevPlayerHeat) {
+            presentationBus.emit(presentationEvents.RIVAL_SPIKE, {
+                amount: gameState.player.heat - prevPlayerHeat,
+                previousHeat: prevPlayerHeat,
+                currentHeat: gameState.player.heat,
+            });
+        }
+        syncPresentationState({ previousPlayerHeat: prevPlayerHeat, previousRivalHeat: prevRivalHeat });
     }
 
     // === Phase Transitions ===
@@ -3185,6 +3331,11 @@
 
         Game.endGuestPhase(gameState);
         updateHUD();
+        presentationBus.emit(presentationEvents.ROUND_BANKED, {
+            player: { money: pEarned.money, points: pEarned.points, busted: pEarned.busted },
+            rival: { money: rEarned.money, points: rEarned.points, busted: rEarned.busted },
+            round: gameState.round,
+        });
 
         const targetReached = !!gameState.winner;
 
@@ -3260,6 +3411,7 @@
         const deferPanel = !!options.deferPanel;
         gameState.phase = 'buy';
         updateHUD();
+        setMomentHint('shop', 1400);
 
         // Generate markets
         const playerMarket = Game.getMarket(gameState.player.venueId);
@@ -3433,6 +3585,7 @@
         if (options.rivalGuestList?.length) gameState.rival.guestList = [...options.rivalGuestList];
 
         switchScreen('game');
+        syncPresentationState();
         startNewRound();
     }
 
@@ -3446,6 +3599,7 @@
         setPhoneBuyPhaseLayout(false);
 
         showFeedback(`ROUND ${gameState.round}`, 'points', 1500, 'player');
+        setMomentHint('idle', 600);
 
         // Reset UI
         document.getElementById('guest-phase-panel').style.display = '';
@@ -3475,6 +3629,7 @@
         const r = gameState.rival;
 
         document.getElementById('hud-phase').textContent = 'GAME OVER';
+        setMomentHint(gameState.winner === 'player' ? 'win' : 'loss', 2200);
 
         const title = document.getElementById('gameover-title');
         title.textContent = won ? 'Victory!' : 'Defeated!';
