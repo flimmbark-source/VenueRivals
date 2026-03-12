@@ -32,6 +32,102 @@
         return [event.assetId || 'unknown', event.shaderId || 'none', event.scene || 'unknown', event.matchContext || 'unknown'].join('::');
     }
 
+    function createObjectPool(options = {}) {
+        const factory = typeof options.factory === 'function' ? options.factory : (() => ({}));
+        const reset = typeof options.reset === 'function' ? options.reset : (() => {});
+        const maxSize = Number.isFinite(options.maxSize) && options.maxSize > 0 ? options.maxSize : 256;
+        const available = [];
+        let totalCreated = 0;
+
+        function acquire() {
+            if (available.length > 0) return available.pop();
+            totalCreated += 1;
+            return factory();
+        }
+
+        function release(item) {
+            if (!item || available.length >= maxSize) return;
+            reset(item);
+            available.push(item);
+        }
+
+        function stats() {
+            return {
+                available: available.length,
+                totalCreated,
+                maxSize,
+            };
+        }
+
+        return {
+            acquire,
+            release,
+            stats,
+        };
+    }
+
+    function createFrameBudgetGuard(options = {}) {
+        const budgetsMs = {
+            ai: 3,
+            particles: 2,
+            ui: 1.5,
+            pathing: 2,
+            ...options.budgetsMs,
+        };
+        const measurements = new Map();
+
+        function record(subsystem, durationMs) {
+            const key = subsystem || 'unknown';
+            const existing = measurements.get(key) || [];
+            existing.push(Number(durationMs) || 0);
+            measurements.set(key, existing);
+        }
+
+        function summarizeSubsystem(subsystem) {
+            const values = measurements.get(subsystem) || [];
+            if (!values.length) {
+                return {
+                    subsystem,
+                    budgetMs: budgetsMs[subsystem],
+                    averageMs: 0,
+                    maxMs: 0,
+                    overBudget: false,
+                };
+            }
+            const total = values.reduce((sum, value) => sum + value, 0);
+            const averageMs = total / values.length;
+            const maxMs = Math.max(...values);
+            const budgetMs = budgetsMs[subsystem];
+            return {
+                subsystem,
+                budgetMs,
+                averageMs: Number(averageMs.toFixed(2)),
+                maxMs: Number(maxMs.toFixed(2)),
+                overBudget: Number.isFinite(budgetMs) ? averageMs > budgetMs : false,
+            };
+        }
+
+        function report() {
+            return Object.keys(budgetsMs).map((subsystem) => summarizeSubsystem(subsystem));
+        }
+
+        function assertWithinBudgets() {
+            const violations = report().filter((entry) => entry.overBudget);
+            if (!violations.length) return;
+            const details = violations
+                .map((entry) => `${entry.subsystem}: avg ${entry.averageMs}ms > budget ${entry.budgetMs}ms`)
+                .join(', ');
+            throw new Error(`Frame-time budget exceeded (${details})`);
+        }
+
+        return {
+            budgetsMs,
+            record,
+            report,
+            assertWithinBudgets,
+        };
+    }
+
     function createRuntime(options = {}) {
         const hitchThresholdMs = Number(options.hitchThresholdMs) > 0 ? Number(options.hitchThresholdMs) : DEFAULT_HITCH_THRESHOLD_MS;
         const platform = normalizePlatform(options.platformHint);
@@ -39,6 +135,10 @@
         const assets = new Map();
         const hitches = [];
         const hitchAggregates = new Map();
+        const nonCriticalSystems = new Map();
+        const workerQueue = [];
+        const profileSamples = [];
+        const budgetGuard = createFrameBudgetGuard({ budgetsMs: options.frameBudgetsMs });
 
         (options.assetCatalog || []).forEach((asset) => {
             if (!asset || !asset.id) return;
@@ -147,6 +247,87 @@
             };
         }
 
+        function profileFrame(sample) {
+            if (!sample || !sample.scenario) return null;
+            const normalized = {
+                scenario: sample.scenario,
+                frameMs: Number(sample.frameMs) || 0,
+                uiOverlayMs: Number(sample.uiOverlayMs) || 0,
+                particleMs: Number(sample.particleMs) || 0,
+                abilitySpamMs: Number(sample.abilitySpamMs) || 0,
+                entities: Number(sample.entities) || 0,
+                timestamp: sample.timestamp || Date.now(),
+            };
+            profileSamples.push(normalized);
+            budgetGuard.record('ui', normalized.uiOverlayMs);
+            budgetGuard.record('particles', normalized.particleMs);
+            return normalized;
+        }
+
+        function getMainThreadProfile(limit = 20) {
+            return [...profileSamples]
+                .sort((a, b) => b.frameMs - a.frameMs)
+                .slice(0, Math.max(1, limit));
+        }
+
+        function profileWorstCaseMoments() {
+            const scenarios = ['largeFight', 'particlesBurst', 'uiOverlayStack', 'abilitySpam'];
+            const rows = scenarios.map((scenario) => {
+                const samples = profileSamples.filter((entry) => entry.scenario === scenario);
+                if (!samples.length) {
+                    return {
+                        scenario,
+                        count: 0,
+                        averageFrameMs: 0,
+                        peakFrameMs: 0,
+                    };
+                }
+                const total = samples.reduce((sum, item) => sum + item.frameMs, 0);
+                return {
+                    scenario,
+                    count: samples.length,
+                    averageFrameMs: Number((total / samples.length).toFixed(2)),
+                    peakFrameMs: Number(Math.max(...samples.map((item) => item.frameMs)).toFixed(2)),
+                };
+            });
+            return rows.sort((a, b) => b.peakFrameMs - a.peakFrameMs);
+        }
+
+        function registerNonCriticalSystem(systemName, optionsForSystem = {}) {
+            nonCriticalSystems.set(systemName, {
+                intervalFrames: Math.max(1, Number(optionsForSystem.intervalFrames) || 1),
+                lane: optionsForSystem.lane || 'default',
+                lastRunFrame: -1,
+            });
+        }
+
+        function shouldRunSystem(systemName, frameNumber) {
+            const config = nonCriticalSystems.get(systemName);
+            if (!config) return true;
+            const frame = Number(frameNumber) || 0;
+            if (config.lastRunFrame < 0 || frame - config.lastRunFrame >= config.intervalFrames) {
+                config.lastRunFrame = frame;
+                return true;
+            }
+            return false;
+        }
+
+        function enqueueWorkerJob(job) {
+            if (!job || typeof job.execute !== 'function') return false;
+            workerQueue.push(job);
+            return true;
+        }
+
+        function drainWorkerJobs(maxJobsPerTick = 2) {
+            const completed = [];
+            const allowed = Math.max(1, Number(maxJobsPerTick) || 1);
+            while (completed.length < allowed && workerQueue.length) {
+                const job = workerQueue.shift();
+                completed.push(job.execute());
+            }
+            return completed;
+        }
+
         return {
             hitchThresholdMs,
             platform,
@@ -156,8 +337,17 @@
             planStreaming,
             chooseFallback,
             getMemoryPolicy,
+            profileFrame,
+            getMainThreadProfile,
+            profileWorstCaseMoments,
+            registerNonCriticalSystem,
+            shouldRunSystem,
+            enqueueWorkerJob,
+            drainWorkerJobs,
+            createObjectPool,
+            frameBudgetGuard: budgetGuard,
         };
     }
 
-    return { createRuntime, normalizePlatform };
+    return { createRuntime, normalizePlatform, createObjectPool, createFrameBudgetGuard };
 }));
