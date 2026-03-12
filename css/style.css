@@ -2273,8 +2273,16 @@ body {
     text-align: center;
 }
 
+#rival-round-results-panel {
+    text-align: center;
+}
+
 .results-content {
     margin-bottom: 12px;
+}
+
+#rival-round-results-panel .results-content {
+    margin-bottom: 0;
 }
 
 .results-content h3 {
