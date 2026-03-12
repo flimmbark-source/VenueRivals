@@ -4051,3 +4051,135 @@ body {
     color: var(--text-secondary);
     font-size: 0.64rem;
 }
+
+/* === Phase 3 Motion UI === */
+.heat-fill.heat-breathing {
+    animation: heatBreath var(--heat-breath-ms, 1200ms) ease-in-out infinite;
+    transform-origin: left center;
+}
+
+.phone-heat-text.heat-text-hit {
+    animation: heatTextHit 0.5s ease;
+}
+
+#game-screen[data-pressure='urgent'] .slot-door-card.entry-side {
+    animation: controlBtnDangerPulse 0.75s ease-in-out infinite;
+}
+
+#game-screen[data-pressure='rising'] .slot-door-card.entry-side,
+#game-screen[data-pressure='rising'] .slot-door-card.exit-side {
+    animation: controlBtnDangerPulse 1.4s ease-in-out infinite;
+}
+
+.guest-slot.tier-rare {
+    box-shadow: 0 0 10px rgba(127, 90, 240, 0.3);
+}
+
+.guest-slot.guest-signature-enter {
+    animation: guestSignatureEnter 0.68s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.guest-slot.guest-rare-signature-enter {
+    animation: rareGuestSignatureEnter 1.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.number-ping.ping-points .number-ping-reel {
+    text-shadow: 0 0 16px rgba(255, 209, 102, 0.85);
+    animation: numberPingReel 320ms linear 1, scorePingSpark 380ms ease-out;
+}
+
+#buy-phase-panel.shop-panel-enter .shop-layout {
+    animation: shopPanelSlideIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#buy-phase-panel.shop-purchase-flash {
+    animation: shopPurchaseConfirmFlash 0.32s ease-out;
+}
+
+#player-area.rival-pressure-echo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border: 1px solid rgba(255, 110, 110, 0.55);
+    box-shadow: inset 0 0 22px rgba(255, 110, 110, 0.28);
+    border-radius: 10px;
+    animation: rivalBoardEcho 0.62s ease-out;
+}
+
+#player-feedback.rival-feedback-echo {
+    animation: rivalStripEcho 0.62s ease-out;
+}
+
+#rival-area .venue-area-stats.rival-status-echo {
+    animation: rivalStripEcho 0.62s ease-out;
+}
+
+@keyframes heatBreath {
+    0%, 100% { filter: brightness(0.94) saturate(0.95); }
+    50% { filter: brightness(1.22) saturate(1.18); }
+}
+
+@keyframes heatTextHit {
+    0% { transform: translateY(0) scale(1); }
+    40% { transform: translateY(-1px) scale(1.08); text-shadow: 0 0 12px rgba(255, 92, 92, 0.85); }
+    100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes controlBtnDangerPulse {
+    0%, 100% { box-shadow: 0 0 6px rgba(255, 110, 110, 0.18); }
+    50% { box-shadow: 0 0 14px rgba(255, 110, 110, 0.45); }
+}
+
+@keyframes guestSignatureEnter {
+    0% { transform: translateY(6px) scale(0.84); filter: brightness(1.35); }
+    55% { transform: translateY(-2px) scale(1.08); }
+    100% { transform: translateY(0) scale(1); filter: brightness(1); }
+}
+
+@keyframes rareGuestSignatureEnter {
+    0% { transform: scale(0.8); box-shadow: 0 0 0 rgba(255, 209, 102, 0); }
+    28% { transform: scale(1.16); box-shadow: 0 0 22px rgba(255, 209, 102, 0.85); }
+    100% { transform: scale(1); box-shadow: 0 0 10px rgba(127, 90, 240, 0.35); }
+}
+
+@keyframes scorePingSpark {
+    0% { letter-spacing: 1px; }
+    100% { letter-spacing: 0.3px; }
+}
+
+@keyframes shopPanelSlideIn {
+    0% { transform: translateY(14px); opacity: 0.6; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes shopPurchaseConfirmFlash {
+    0% { box-shadow: 0 0 0 rgba(44, 182, 125, 0); }
+    50% { box-shadow: 0 0 20px rgba(44, 182, 125, 0.35); }
+    100% { box-shadow: 0 0 0 rgba(44, 182, 125, 0); }
+}
+
+@keyframes rivalBoardEcho {
+    0% { opacity: 0.85; }
+    100% { opacity: 0; }
+}
+
+@keyframes rivalStripEcho {
+    0% { transform: scale(1); filter: brightness(1); }
+    40% { transform: scale(1.02); filter: brightness(1.25); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .heat-fill.heat-breathing,
+    .phone-heat-text.heat-text-hit,
+    .guest-slot.guest-signature-enter,
+    .guest-slot.guest-rare-signature-enter,
+    #buy-phase-panel.shop-panel-enter .shop-layout,
+    #buy-phase-panel.shop-purchase-flash,
+    #player-area.rival-pressure-echo::before,
+    #player-feedback.rival-feedback-echo,
+    #rival-area .venue-area-stats.rival-status-echo {
+        animation: none !important;
+    }
+}
