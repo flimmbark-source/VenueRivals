@@ -1814,6 +1814,19 @@ body {
     transform-origin: left center;
 }
 
+
+.guest-slot .slot-sprite-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(76,201,240,0.22));
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    color: rgba(255,255,255,0.8);
+    font-size: 0.45rem;
+    letter-spacing: 1px;
+}
+
 .guest-slot .slot-emoji.has-ability {
     filter: drop-shadow(0 0 4px rgba(255, 209, 102, 0.45));
 }

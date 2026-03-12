@@ -38,6 +38,10 @@
     let swipeStartX = null;
     let playerFlashWindowInstanceId = null;
     let venueBackgroundPreloadImage = null;
+    let performanceRuntime = null;
+    let spriteWarmupQueue = [];
+    let warmupTimerId = null;
+    let lastAnimFrameTs = 0;
     let roundActionLog = [];
     let actionLogPopupEl = null;
     let shopInspectMode = false;
@@ -173,6 +177,7 @@
     // ---- Sprite drawing engine ----
     function generateSpriteSheet(guestId) {
         if (_spriteCache[guestId]) return _spriteCache[guestId];
+        const spriteBuildStart = performance.now();
 
         const bp = GUEST_SPRITES[guestId] || GUEST_SPRITES.familiarFace;
         const skin = SKIN[bp.skin] || SKIN.light;
@@ -519,6 +524,7 @@
 
         const dataUrl = canvas.toDataURL('image/png');
         _spriteCache[guestId] = dataUrl;
+        recordSpriteHitch(guestId, performance.now() - spriteBuildStart);
         return dataUrl;
     }
 
@@ -530,10 +536,89 @@
     }
 
     function getGuestCardSpriteHtml(guestId) {
-        const sheetUrl = generateSpriteSheet(guestId);
         const fw = SPRITE_W * SPRITE_SCALE;
         const fh = SPRITE_H * SPRITE_SCALE;
+        const spritePolicy = getSpritePolicy(guestId);
+        if (spritePolicy.strategy !== 'full' && !_spriteCache[guestId]) {
+            scheduleSpriteWarmup([guestId]);
+            return `<span class="slot-sprite slot-sprite-placeholder" style="width:${fw}px;height:${fh}px" aria-hidden="true">…</span>`;
+        }
+        const sheetUrl = generateSpriteSheet(guestId);
         return `<span class="slot-sprite" style="background-image:url(${sheetUrl});width:${fw}px;height:${fh}px;background-position:0 0;background-size:${fw * SPRITE_FRAMES}px ${fh}px" aria-hidden="true"></span>`;
+    }
+
+
+    function getPerformanceAssetCatalog() {
+        const spriteAssets = Object.keys(GUEST_SPRITES).map((guestId) => ({
+            id: `sprite:${guestId}`,
+            type: 'material',
+            shaderId: 'pixel-sprite',
+            estimatedMb: 0.7,
+            phases: ['loading', 'preMatch', 'liveMatch'],
+            critical: guestId === 'familiarFace' || guestId === 'gatecrasher',
+            fallback: 'lod',
+            priority: guestId === 'familiarFace' ? 3 : 1,
+        }));
+        return [
+            {
+                id: 'image:venue-background',
+                type: 'texture',
+                shaderId: 'venue-bg',
+                estimatedMb: 8,
+                phases: ['loading', 'preMatch', 'liveMatch'],
+                critical: true,
+                fallback: 'placeholder',
+                priority: 5,
+            },
+            ...spriteAssets,
+        ];
+    }
+
+    function hydratePerformanceRuntime() {
+        if (!window.PerformanceRuntime?.createRuntime || performanceRuntime) return;
+        performanceRuntime = window.PerformanceRuntime.createRuntime({
+            platformHint: `${navigator.userAgent || ''} ${navigator.platform || ''}`,
+            assetCatalog: getPerformanceAssetCatalog(),
+        });
+    }
+
+    function recordSpriteHitch(guestId, durationMs) {
+        performanceRuntime?.recordHitch({
+            assetId: `sprite:${guestId}`,
+            shaderId: 'pixel-sprite',
+            scene: currentScreen,
+            matchContext: gameState?.phase || 'menu',
+            durationMs,
+        });
+    }
+
+    function flushSpriteWarmupQueue() {
+        if (!spriteWarmupQueue.length) {
+            warmupTimerId = null;
+            return;
+        }
+        const guestId = spriteWarmupQueue.shift();
+        if (guestId && !_spriteCache[guestId]) {
+            generateSpriteSheet(guestId);
+        }
+        warmupTimerId = window.setTimeout(flushSpriteWarmupQueue, 20);
+    }
+
+    function scheduleSpriteWarmup(guestIds = []) {
+        const filtered = guestIds.filter((id) => id && !_spriteCache[id]);
+        if (!filtered.length) return;
+        spriteWarmupQueue = [...new Set([...spriteWarmupQueue, ...filtered])];
+        if (warmupTimerId) return;
+        warmupTimerId = window.setTimeout(flushSpriteWarmupQueue, 0);
+    }
+
+    function getSpritePolicy(guestId) {
+        const policy = performanceRuntime?.getMemoryPolicy(Object.keys(_spriteCache).length * 0.7);
+        if (!policy) return { strategy: 'full' };
+        if (policy.shouldTrim && !_spriteCache[guestId]) {
+            return performanceRuntime.chooseFallback(`sprite:${guestId}`, 140);
+        }
+        return { strategy: 'full' };
     }
 
     const MIN_DECK_SIZE = 4;
@@ -595,6 +680,17 @@
     function startAnimLoop() {
         cancelAnimationFrame(animLoopId);
         function loop() {
+            const now = performance.now();
+            if (lastAnimFrameTs) {
+                performanceRuntime?.recordHitch({
+                    assetId: 'frame:main-loop',
+                    shaderId: 'canvas2d',
+                    scene: currentScreen,
+                    matchContext: gameState?.phase || 'menu',
+                    durationMs: now - lastAnimFrameTs,
+                });
+            }
+            lastAnimFrameTs = now;
             if (currentScreen === 'title') {
                 Renderer.drawTitleScreen(titleCanvas);
             } else if (currentScreen === 'game') {
@@ -3592,6 +3688,14 @@
         if (options.rivalDeck?.length) gameState.rival.fullDeck = [...options.rivalDeck];
         if (options.rivalGuestList?.length) gameState.rival.guestList = [...options.rivalGuestList];
 
+        const predictedPhases = ['preMatch', 'liveMatch'];
+        const preMatchPlan = performanceRuntime?.planStreaming(predictedPhases) || [];
+        const prioritized = preMatchPlan
+            .filter((item) => item.assetId.startsWith('sprite:') && item.decompressEarly)
+            .slice(0, 10)
+            .map((item) => item.assetId.replace('sprite:', ''));
+        scheduleSpriteWarmup(prioritized);
+
         switchScreen('game');
         updatePlayAreaLabels();
         syncPresentationState();
@@ -4695,14 +4799,33 @@
 
     function preloadVenueBackground() {
         if (venueBackgroundPreloadImage) return;
+        const start = performance.now();
         venueBackgroundPreloadImage = new Image();
         venueBackgroundPreloadImage.decoding = 'async';
         venueBackgroundPreloadImage.src = VENUE_BACKGROUND_IMAGE_SRC;
+        venueBackgroundPreloadImage.decode?.()
+            .then(() => {
+                performanceRuntime?.recordHitch({
+                    assetId: 'image:venue-background',
+                    shaderId: 'venue-bg',
+                    scene: currentScreen,
+                    matchContext: gameState?.phase || 'menu',
+                    durationMs: performance.now() - start,
+                });
+            })
+            .catch(() => {});
     }
 
     // === Init ===
     function init() {
+        hydratePerformanceRuntime();
         preloadVenueBackground();
+        const loadingPlan = performanceRuntime?.planShaderPrewarm('loading') || [];
+        const warmupSprites = loadingPlan
+            .filter((asset) => asset.id.startsWith('sprite:'))
+            .slice(0, 8)
+            .map((asset) => asset.id.replace('sprite:', ''));
+        scheduleSpriteWarmup(warmupSprites);
         initLoadout();
         setupEventListeners();
         applyPartyView(false);
