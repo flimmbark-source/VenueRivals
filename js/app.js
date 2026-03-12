@@ -1368,17 +1368,21 @@
             const dx = prev.left - next.left;
             const dy = prev.top - next.top;
             if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-            slotEl.classList.add('slot-animating');
+            // Phase 1: Snap to old position instantly (no transition).
+            slotEl.style.transition = 'none';
             slotEl.style.transform = `translate(${dx}px, ${dy}px)`;
             animatedSlots.push(slotEl);
         });
 
         if (!animatedSlots.length) return;
-        // Force a layout read so the browser registers the starting position
-        // before we enable the transition (more reliable than double-rAF).
+        // Force the browser to commit the snapped position before we
+        // enable the transition, so the slide only goes one direction.
         void slotsEl.offsetHeight;
+        // Phase 2: Enable transition and clear transform → card slides to its new slot.
         requestAnimationFrame(() => {
             animatedSlots.forEach((slotEl) => {
+                slotEl.classList.add('slot-animating');
+                slotEl.style.transition = '';
                 slotEl.style.transform = '';
             });
         });
@@ -1388,7 +1392,6 @@
                 slotEl.classList.remove('slot-animating');
             });
         };
-        // Clean up class after the transition ends; timeout as a safety net
         const first = animatedSlots[0];
         const cleanup = () => { first.removeEventListener('transitionend', handler); onDone(); };
         const handler = (e) => { if (e.propertyName === 'transform') cleanup(); };
