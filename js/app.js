@@ -1345,6 +1345,10 @@
 
     // === Guest Slot Rendering ===
 
+    // Animation hints set before renderHouseGrid so the FLIP system can
+    // coordinate arriving→house and house→exit transitions.
+    let _slotAnimHints = null;
+
     function captureSlotPositions(slotsEl) {
         if (!slotsEl) return new Map();
         const positions = new Map();
@@ -1358,41 +1362,111 @@
 
     function animateSlotReflow(slotsEl, previousPositions) {
         if (!slotsEl || !previousPositions || previousPositions.size === 0) return;
+        const hints = _slotAnimHints;
+        _slotAnimHints = null;
+
+        // Build a set of new render keys so we can detect removed slots.
+        const newKeys = new Set();
+        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((el) => {
+            if (el.dataset.renderKey) newKeys.add(el.dataset.renderKey);
+        });
+
+        // Find the old arriving key (if any) for arriving→house remapping.
+        let oldArrivingKey = null;
+        let oldArrivingRect = null;
+        for (const [key, rect] of previousPositions) {
+            if (key.startsWith('arriving:')) {
+                oldArrivingKey = key;
+                oldArrivingRect = rect;
+                break;
+            }
+        }
+
+        // Identify exited keys (in old positions but not in new DOM).
+        const exitedKeys = [];
+        for (const [key, rect] of previousPositions) {
+            if (!newKeys.has(key) && !key.startsWith('arriving:')) {
+                exitedKeys.push({ key, rect });
+            }
+        }
+
         const animatedSlots = [];
+
+        // --- Animate existing & newly-admitted slots ---
         slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
             const key = slotEl.dataset.renderKey;
             if (!key) return;
-            const prev = previousPositions.get(key);
+            let prev = previousPositions.get(key);
+            // If this is an inst: key with no previous position, check if it
+            // was the arriving guest that just got admitted into the house.
+            if (!prev && key.startsWith('inst:') && oldArrivingRect) {
+                prev = oldArrivingRect;
+                oldArrivingRect = null; // consume it so we only remap once
+            }
             if (!prev) return;
             const next = slotEl.getBoundingClientRect();
             const dx = prev.left - next.left;
             const dy = prev.top - next.top;
             if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-            // Phase 1: Snap to old position instantly (no transition).
             slotEl.style.transition = 'none';
             slotEl.style.transform = `translate(${dx}px, ${dy}px)`;
             animatedSlots.push(slotEl);
         });
 
-        if (!animatedSlots.length) return;
-        // Force the browser to commit the snapped position before we
-        // enable the transition, so the slide only goes one direction.
+        // --- Create exit ghosts for pushed-out guests ---
+        const exitGhosts = [];
+        exitedKeys.forEach(({ key, rect }) => {
+            // Try to resolve the guest ID from the render key (inst:N or house:id:idx).
+            let resolvedGuestId = null;
+            if (hints && hints.exitedGuestIds) {
+                resolvedGuestId = hints.exitedGuestIds.shift();
+            }
+            if (!resolvedGuestId) {
+                const m = key.match(/^house:([^:]+):/);
+                if (m) resolvedGuestId = m[1];
+            }
+            if (!resolvedGuestId || !Game.GUESTS[resolvedGuestId]) return;
+
+            const ghost = createGuestSlot(resolvedGuestId, false, { interactive: false });
+            ghost.classList.add('exit-ghost', 'slot-animating');
+            ghost.style.position = 'fixed';
+            ghost.style.left = `${rect.left}px`;
+            ghost.style.top = `${rect.top}px`;
+            ghost.style.width = `${rect.width}px`;
+            ghost.style.height = `${rect.height}px`;
+            ghost.style.margin = '0';
+            ghost.style.transition = 'none';
+            ghost.style.transform = 'translate(0, 0)';
+            document.body.appendChild(ghost);
+
+            // Slide left and fade out.
+            exitGhosts.push(ghost);
+        });
+
+        if (!animatedSlots.length && !exitGhosts.length) return;
+
+        // Force the browser to commit snapped positions.
         void slotsEl.offsetHeight;
-        // Phase 2: Enable transition and clear transform → card slides to its new slot.
+
+        // Phase 2: Enable transitions and clear transforms → everything slides at once.
         requestAnimationFrame(() => {
             animatedSlots.forEach((slotEl) => {
                 slotEl.classList.add('slot-animating');
                 slotEl.style.transition = '';
                 slotEl.style.transform = '';
             });
+            exitGhosts.forEach((ghost) => {
+                ghost.style.transition = '';
+                ghost.style.transform = 'translate(-60px, 0)';
+                ghost.style.opacity = '0';
+            });
         });
 
         const onDone = () => {
-            animatedSlots.forEach((slotEl) => {
-                slotEl.classList.remove('slot-animating');
-            });
+            animatedSlots.forEach((el) => el.classList.remove('slot-animating'));
+            exitGhosts.forEach((el) => el.remove());
         };
-        const first = animatedSlots[0];
+        const first = animatedSlots[0] || exitGhosts[0];
         const cleanup = () => { first.removeEventListener('transitionend', handler); onDone(); };
         const handler = (e) => { if (e.propertyName === 'transform') cleanup(); };
         first.addEventListener('transitionend', handler);
@@ -1670,31 +1744,15 @@
         showExitStamp(who);
 
         // Move matching venue actor to exit door before it disappears.
-        // (syncVenueActors also enforces exits for removed actors as a fallback.)
         queueVenueActorExit(who, guestId);
 
-        // Animate the grid card itself drifting left and fading out.
-        let sourceSlot = guestId ? document.querySelector(`#${who}-slots .occupied-slot[data-guest-id="${guestId}"]`) : null;
-        if (!sourceSlot) sourceSlot = document.querySelector(`#${who}-slots .occupied-slot`);
-        if (!sourceSlot) return;
-
-        const resolvedGuestId = guestId || sourceSlot.dataset.guestId;
-        if (!resolvedGuestId || !Game.GUESTS[resolvedGuestId]) return;
-
-        const ghost = createGuestSlot(resolvedGuestId, false);
-        ghost.classList.add('exit-ghost');
-
-        const sourceRect = sourceSlot.getBoundingClientRect();
-        ghost.style.left = `${sourceRect.left}px`;
-        ghost.style.top = `${sourceRect.top}px`;
-        document.body.appendChild(ghost);
-
-        requestAnimationFrame(() => {
-            ghost.style.transform = 'translate(-56px, 0)';
-            ghost.classList.add('leaving');
-        });
-
-        setTimeout(() => ghost.remove(), 380);
+        // Queue a hint so the FLIP system creates a coordinated exit ghost
+        // when renderHouseGrid runs. The old ghost code is no longer needed
+        // because animateSlotReflow detects removed render keys and creates
+        // sliding exit ghosts automatically.
+        if (!_slotAnimHints) _slotAnimHints = {};
+        if (!_slotAnimHints.exitedGuestIds) _slotAnimHints.exitedGuestIds = [];
+        if (guestId) _slotAnimHints.exitedGuestIds.push(typeof guestId === 'object' ? guestId.guestId || guestId : guestId);
     }
 
     function getPlayerFlashWindowEntry() {
