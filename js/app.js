@@ -1368,23 +1368,32 @@
             const dx = prev.left - next.left;
             const dy = prev.top - next.top;
             if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-            slotEl.style.transition = 'none';
+            slotEl.classList.add('slot-animating');
             slotEl.style.transform = `translate(${dx}px, ${dy}px)`;
             animatedSlots.push(slotEl);
         });
 
         if (!animatedSlots.length) return;
+        // Force a layout read so the browser registers the starting position
+        // before we enable the transition (more reliable than double-rAF).
+        void slotsEl.offsetHeight;
         requestAnimationFrame(() => {
             animatedSlots.forEach((slotEl) => {
-                slotEl.style.transition = 'transform 220ms ease';
                 slotEl.style.transform = '';
             });
-            window.setTimeout(() => {
-                animatedSlots.forEach((slotEl) => {
-                    slotEl.style.transition = '';
-                });
-            }, 240);
         });
+
+        const onDone = () => {
+            animatedSlots.forEach((slotEl) => {
+                slotEl.classList.remove('slot-animating');
+            });
+        };
+        // Clean up class after the transition ends; timeout as a safety net
+        const first = animatedSlots[0];
+        const cleanup = () => { first.removeEventListener('transitionend', handler); onDone(); };
+        const handler = (e) => { if (e.propertyName === 'transform') cleanup(); };
+        first.addEventListener('transitionend', handler);
+        window.setTimeout(cleanup, 350);
     }
 
     function createGuestSlot(guestId, animate, options = {}) {
