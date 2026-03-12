@@ -1630,6 +1630,73 @@
         return el;
     }
 
+    function patchGuestSlotContent(slot, guestId) {
+        if (!slot) return;
+        if (slot.dataset.guestId === guestId) return;
+        const fresh = createGuestSlot(guestId, false, { interactive: false });
+        slot.className = fresh.className;
+        slot.innerHTML = fresh.innerHTML;
+        slot.title = fresh.title;
+        slot.dataset.guestId = guestId;
+    }
+
+    function patchChildrenInOrder(parent, desiredChildren) {
+        if (!parent) return;
+        const wanted = new Set(desiredChildren);
+        Array.from(parent.children).forEach((child) => {
+            if (!wanted.has(child)) child.remove();
+        });
+        desiredChildren.forEach((child, index) => {
+            const current = parent.children[index];
+            if (current !== child) {
+                parent.insertBefore(child, current || null);
+            }
+        });
+    }
+
+    function bindHouseGridSlotDelegates() {
+        ['player-slots', 'rival-slots'].forEach((id) => {
+            const container = document.getElementById(id);
+            if (!container || container.dataset.boundSlotDelegate === '1') return;
+            container.dataset.boundSlotDelegate = '1';
+            container.addEventListener('click', (e) => {
+                const slot = e.target.closest('.occupied-slot[data-guest-id]');
+                if (!slot || !container.contains(slot)) return;
+                const who = id === 'player-slots' ? 'player' : 'rival';
+                const guestId = slot.dataset.guestId;
+                const source = slot.dataset.slotSource || 'house';
+                const instanceId = slot.dataset.instanceId != null ? Number(slot.dataset.instanceId) : null;
+                const abilityUsed = slot.dataset.abilityUsed === '1';
+
+                if (who === 'player') {
+                    if (targetingMode) {
+                        if (source === 'house') {
+                            if (instanceId != null && isValidTarget(instanceId)) {
+                                handleTargetClick(guestId, instanceId);
+                            }
+                        } else if (source === 'arriving' && targetingMode.canTargetArriving) {
+                            handleArrivingTargetClick();
+                        }
+                        return;
+                    }
+
+                    if (source === 'arriving') {
+                        selectedGridGuest = { guestId, source: 'arriving' };
+                    } else {
+                        selectedGridGuest = { guestId, source: 'house', instanceId };
+                    }
+                    _lastGuestDetailKey = null;
+                    refreshSelectedGridSlotVisual();
+                    updateGuestDetail();
+                    showTooltipForTarget(slot, guestId, { who: 'player', source, guestId, instanceId, abilityUsed });
+                    return;
+                }
+
+                showTooltipForTarget(slot, guestId, { who: 'rival', source, guestId, abilityUsed });
+            });
+        });
+    }
+
     function renderHouseGrid(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const slotsEl = document.getElementById(`${who}-slots`);
@@ -1639,7 +1706,6 @@
             const key = slotEl.dataset.renderKey;
             if (key) existingSlotsByKey.set(key, slotEl);
         });
-        slotsEl.innerHTML = '';
         const venue = Game.VENUES[player.venueId];
 
         const houseCapacity = Game.getHouseCapacity(venue, player);
@@ -1675,13 +1741,16 @@
             const renderKey = instanceId != null ? `inst:${instanceId}` : `house:${guestId}:${guestIndex}`;
             const slot = existingSlotsByKey.get(renderKey) || createGuestSlot(guestId, false, { interactive: false });
             existingSlotsByKey.delete(renderKey);
+            patchGuestSlotContent(slot, guestId);
             slot.classList.remove('ability-used', 'valid-target', 'dimmed-target', 'selected', 'just-entered', 'arriving-in-grid');
             slot.dataset.renderKey = renderKey;
-            slot.onclick = null;
+            slot.dataset.guestId = guestId;
+            slot.dataset.slotSource = 'house';
+            if (instanceId != null) slot.dataset.instanceId = String(instanceId);
+            else delete slot.dataset.instanceId;
+            slot.dataset.abilityUsed = abilityUsed ? '1' : '0';
             if (abilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
-                slot.dataset.slotSource = 'house';
-                if (instanceId != null) slot.dataset.instanceId = String(instanceId);
                 if (who === 'player' && instanceId != null && instanceId === playerFlashWindowInstanceId) slot.classList.add('just-entered');
 
                 // Targeting mode: highlight valid targets, dim others
@@ -1698,23 +1767,6 @@
                     (selectedGridGuest.instanceId == null || selectedGridGuest.instanceId === instanceId)) {
                     slot.classList.add('selected');
                 }
-                slot.onclick = () => {
-                    if (targetingMode) {
-                        if (instanceId != null && isValidTarget(instanceId)) {
-                            handleTargetClick(guestId, instanceId);
-                        }
-                        return;
-                    }
-                    selectedGridGuest = { guestId, source: 'house', instanceId };
-                    _lastGuestDetailKey = null;
-                    refreshSelectedGridSlotVisual();
-                    updateGuestDetail();
-                    showTooltipForTarget(slot, guestId, { who: 'player', source: 'house', guestId, instanceId, abilityUsed });
-                };
-            } else {
-                slot.onclick = () => {
-                    showTooltipForTarget(slot, guestId, { who: 'rival', source: 'house', abilityUsed });
-                };
             }
             houseSlots.push(slot);
         });
@@ -1726,14 +1778,17 @@
             const renderKey = `arriving:${arrivingGuestId}`;
             const slot = existingSlotsByKey.get(renderKey) || createGuestSlot(arrivingGuestId, false, { interactive: false });
             existingSlotsByKey.delete(renderKey);
+            patchGuestSlotContent(slot, arrivingGuestId);
             slot.classList.remove('ability-used', 'valid-target', 'dimmed-target', 'selected');
             slot.classList.add('arriving-in-grid');
             slot.dataset.renderKey = renderKey;
-            slot.onclick = null;
+            slot.dataset.guestId = arrivingGuestId;
+            slot.dataset.slotSource = 'arriving';
+            delete slot.dataset.instanceId;
+            const arrivingAbilityUsed = who === 'player' && !!player.arrivingAbilityUsed;
+            slot.dataset.abilityUsed = arrivingAbilityUsed ? '1' : '0';
             if (who === 'player' && player.arrivingAbilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
-                slot.dataset.slotSource = 'arriving';
-                slot.dataset.guestId = arrivingGuestId;
                 if (targetingMode) {
                     if (targetingMode.canTargetArriving) {
                         slot.classList.add('valid-target');
@@ -1744,24 +1799,6 @@
                 if (!targetingMode && selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === arrivingGuestId) {
                     slot.classList.add('selected');
                 }
-                slot.onclick = () => {
-                    if (targetingMode) {
-                        if (targetingMode.canTargetArriving) {
-                            handleArrivingTargetClick();
-                        }
-                        return;
-                    }
-                    selectedGridGuest = { guestId: arrivingGuestId, source: 'arriving' };
-                    _lastGuestDetailKey = null;
-                    refreshSelectedGridSlotVisual();
-                    updateGuestDetail();
-                    const arrivingAbilityUsed = !!gameState.player.arrivingAbilityUsed;
-                    showTooltipForTarget(slot, arrivingGuestId, { who: 'player', source: 'arriving', guestId: arrivingGuestId, abilityUsed: arrivingAbilityUsed });
-                };
-            } else {
-                slot.onclick = () => {
-                    showTooltipForTarget(slot, arrivingGuestId, { who: 'rival', source: 'arriving', guestId: arrivingGuestId });
-                };
             }
             arrivingSlot = slot;
         }
@@ -1772,23 +1809,26 @@
             const allSlots = [...houseSlots];
             if (arrivingSlot) allSlots.push(arrivingSlot);
 
-            // Base row (bottom): first 5 slots stay fixed in place.
-            const mainRow = document.createElement('div');
-            mainRow.className = 'slots-main-row';
-            allSlots.slice(0, 5).forEach(s => mainRow.appendChild(s));
-
-            // Overflow row (above base): slots 6+ stack upward.
-            const overflowRow = document.createElement('div');
-            overflowRow.className = 'slots-overflow-row';
-            allSlots.slice(5).forEach(s => overflowRow.appendChild(s));
-
-            // Append overflow first so extra slots appear above the original row.
-            slotsEl.appendChild(overflowRow);
-            slotsEl.appendChild(mainRow);
+            let overflowRow = slotsEl.querySelector(':scope > .slots-overflow-row');
+            let mainRow = slotsEl.querySelector(':scope > .slots-main-row');
+            if (!overflowRow) {
+                overflowRow = document.createElement('div');
+                overflowRow.className = 'slots-overflow-row';
+            }
+            if (!mainRow) {
+                mainRow = document.createElement('div');
+                mainRow.className = 'slots-main-row';
+            }
+            patchChildrenInOrder(overflowRow, allSlots.slice(5));
+            patchChildrenInOrder(mainRow, allSlots.slice(0, 5));
+            patchChildrenInOrder(slotsEl, [overflowRow, mainRow]);
         } else {
-            houseSlots.forEach(s => slotsEl.appendChild(s));
-            if (arrivingSlot) slotsEl.appendChild(arrivingSlot);
+            const linearSlots = [...houseSlots];
+            if (arrivingSlot) linearSlots.push(arrivingSlot);
+            patchChildrenInOrder(slotsEl, linearSlots);
         }
+
+        existingSlotsByKey.forEach((slot) => slot.remove());
 
         animateSlotReflow(slotsEl, previousPositions);
         syncVenueActors(who);
@@ -4556,6 +4596,7 @@
         });
 
         bindPartyCarouselInteractions();
+        bindHouseGridSlotDelegates();
 
         const feedbackBars = [document.getElementById('player-feedback'), document.getElementById('rival-feedback')].filter(Boolean);
         feedbackBars.forEach((bar) => {
