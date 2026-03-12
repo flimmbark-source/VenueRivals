@@ -29,6 +29,25 @@ const Renderer = (() => {
     let animFrame = 0;
     let particles = [];
 
+    const gameFxState = {
+        flashes: [],
+        exhale: 0,
+        collapse: 0,
+        stinger: 0,
+    };
+
+    const VENUE_PALETTES = {
+        'velvet-noir': { calm: ['#0f1330', '#2b1b50'], warm: ['#1a1f44', '#4b2a6b'], hot: ['#3a234f', '#6a2f59'], critical: ['#180d24', '#5b1b33'] },
+        'gold-rush': { calm: ['#171b2e', '#3b2b4f'], warm: ['#2d2445', '#65412f'], hot: ['#4a2c24', '#87522d'], critical: ['#2d1a14', '#a24a22'] },
+        'spotlight-pop': { calm: ['#111b34', '#2a2c58'], warm: ['#1f2e56', '#433f7e'], hot: ['#2a2b68', '#664c9d'], critical: ['#1a1637', '#76295b'] },
+        'neon-haze': { calm: ['#0c1b2f', '#1a3554'], warm: ['#123054', '#245c7c'], hot: ['#173f5c', '#2d7b8a'], critical: ['#102336', '#1f6f75'] },
+        'runway-glow': { calm: ['#121930', '#31224d'], warm: ['#26284d', '#59316f'], hot: ['#40285a', '#8a3c77'], critical: ['#271837', '#982f62'] },
+        'grit-smoke': { calm: ['#17161f', '#2f2333'], warm: ['#2d202d', '#4c2f3a'], hot: ['#42242b', '#683431'], critical: ['#251418', '#6f1f22'] },
+        'underground-static': { calm: ['#131621', '#262e3f'], warm: ['#222c42', '#364962'], hot: ['#2a3442', '#4f5f75'], critical: ['#141820', '#4a2e4f'] },
+        'riot-pulse': { calm: ['#191624', '#2f2442'], warm: ['#2d2236', '#523349'], hot: ['#4a232a', '#7a2f37'], critical: ['#260f13', '#8a1f2d'] },
+        neutral: { calm: ['#101a30', '#2a274b'], warm: ['#1d2a49', '#3e3b66'], hot: ['#2a2d4f', '#5d3d65'], critical: ['#181a33', '#6a2f4f'] },
+    };
+
     // === Utility ===
     function roundRect(ctx, x, y, w, h, r) {
         ctx.beginPath();
@@ -316,6 +335,177 @@ const Renderer = (() => {
         }
     }
 
+    function getPalette(venueMood, heatBand) {
+        const mood = VENUE_PALETTES[venueMood] || VENUE_PALETTES.neutral;
+        if (heatBand === 'critical' || heatBand === 'bust') return mood.critical;
+        if (heatBand === 'hot') return mood.hot;
+        if (heatBand === 'warm') return mood.warm;
+        return mood.calm;
+    }
+
+    function fitCanvas(canvas) {
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        const w = Math.floor(canvas.clientWidth * dpr);
+        const h = Math.floor(canvas.clientHeight * dpr);
+        if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w;
+            canvas.height = h;
+        }
+        return { w, h, dpr };
+    }
+
+    function drawNoise(ctx, w, h, amount, tint) {
+        const count = Math.floor((w * h) / 8000 * amount);
+        ctx.save();
+        ctx.fillStyle = tint;
+        for (let i = 0; i < count; i++) {
+            const x = (Math.random() * w) | 0;
+            const y = (Math.random() * h) | 0;
+            ctx.globalAlpha = Math.random() * 0.08 * amount;
+            ctx.fillRect(x, y, 1 + (Math.random() * 2), 1 + (Math.random() * 2));
+        }
+        ctx.restore();
+        ctx.globalAlpha = 1;
+    }
+
+    function drawGameEffects(canvas, presentationState = {}, gameState = null) {
+        if (!canvas) return;
+        const { w, h } = fitCanvas(canvas);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.clearRect(0, 0, w, h);
+
+        const heatBand = presentationState.heatBand || 'calm';
+        const venueMood = presentationState.venueMood || 'neutral';
+        const pressure = presentationState.pressure || 'none';
+        const venueId = gameState?.player?.venueId;
+        const venue = (typeof Game !== 'undefined' && Game?.VENUES) ? Game.VENUES[venueId] : null;
+        const heatCap = (typeof Game !== 'undefined' && Game?.getHeatCapacity && gameState?.player)
+            ? Game.getHeatCapacity(venue, gameState.player)
+            : (venue?.bustThreshold || 3);
+        const heatRatio = Math.max(0, Math.min(1, ((gameState?.player?.heat || 0) / Math.max(1, heatCap || 3))));
+        const [top, bottom] = getPalette(venueMood, heatBand);
+
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, top);
+        grad.addColorStop(1, bottom);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        const t = animFrame * 0.01;
+        // slow parallax silhouettes
+        for (let layer = 0; layer < 3; layer++) {
+            const speed = 0.08 + layer * 0.04 + heatRatio * 0.12;
+            const yBase = h * (0.66 + layer * 0.09);
+            const amp = 12 + layer * 8;
+            ctx.fillStyle = `rgba(8, 10, 20, ${0.2 + layer * 0.1})`;
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            for (let x = 0; x <= w; x += 14) {
+                const y = yBase + Math.sin((x * 0.015) + t * speed * 6 + layer) * amp;
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(w, h);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // drifting dust / smoke
+        const particleCount = Math.floor(18 + heatRatio * 70);
+        for (let i = 0; i < particleCount; i++) {
+            const phase = (animFrame * (0.2 + heatRatio * 0.6) + i * 37) * 0.01;
+            const x = ((i * 131 + animFrame * (0.3 + heatRatio)) % (w + 120)) - 60;
+            const y = (h * 0.15) + ((Math.sin(phase) * 0.5 + 0.5) * h * 0.8);
+            const radius = 1 + ((i % 7) * 0.35) + heatRatio * 2;
+            ctx.fillStyle = heatBand === 'calm' ? 'rgba(220,230,255,0.12)' : heatBand === 'warm' ? 'rgba(255,220,180,0.14)' : 'rgba(255,170,150,0.16)';
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        if (heatBand === 'hot' || heatBand === 'critical' || heatBand === 'bust') {
+            // edge pulse + heat haze
+            const pulse = 0.15 + 0.12 * Math.sin(animFrame * 0.17);
+            const vignette = ctx.createRadialGradient(w * 0.5, h * 0.55, h * 0.18, w * 0.5, h * 0.55, h * 0.72);
+            vignette.addColorStop(0, 'rgba(255,120,90,0)');
+            vignette.addColorStop(1, `rgba(255,70,70,${pulse + heatRatio * 0.24})`);
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, w, h);
+
+            for (let y = 0; y < h; y += 3) {
+                const wobble = Math.sin(y * 0.02 + animFrame * 0.2) * (2 + heatRatio * 4);
+                ctx.fillStyle = `rgba(255,255,255,${0.01 + heatRatio * 0.03})`;
+                ctx.fillRect(w * 0.1 + wobble, y, w * 0.8, 1);
+            }
+        }
+
+        if (pressure !== 'none') {
+            const sideAlpha = pressure === 'urgent' ? 0.22 : 0.12;
+            const left = ctx.createLinearGradient(0, 0, w * 0.2, 0);
+            left.addColorStop(0, `rgba(76,201,240,${sideAlpha})`);
+            left.addColorStop(1, 'rgba(76,201,240,0)');
+            ctx.fillStyle = left;
+            ctx.fillRect(0, 0, w * 0.2, h);
+
+            const right = ctx.createLinearGradient(w, 0, w * 0.8, 0);
+            right.addColorStop(0, `rgba(255,110,110,${sideAlpha})`);
+            right.addColorStop(1, 'rgba(255,110,110,0)');
+            ctx.fillStyle = right;
+            ctx.fillRect(w * 0.8, 0, w * 0.2, h);
+        }
+
+        if (heatBand === 'critical' || heatBand === 'bust') {
+            drawNoise(ctx, w, h, 1 + heatRatio * 2, 'rgba(255,255,255,0.5)');
+            gameFxState.collapse = Math.min(1, gameFxState.collapse + 0.02);
+        } else {
+            gameFxState.collapse = Math.max(0, gameFxState.collapse - 0.015);
+        }
+
+        // stinger / exhale / collapse flashes from gameplay events
+        gameFxState.exhale *= 0.92;
+        gameFxState.stinger *= 0.88;
+        if (gameFxState.flashes.length) {
+            for (let i = gameFxState.flashes.length - 1; i >= 0; i--) {
+                const f = gameFxState.flashes[i];
+                f.life -= 0.03;
+                if (f.life <= 0) { gameFxState.flashes.splice(i, 1); continue; }
+                ctx.fillStyle = `rgba(${f.color},${f.life * 0.25})`;
+                ctx.fillRect(0, 0, w, h);
+            }
+        }
+
+        if (gameFxState.stinger > 0.02) {
+            ctx.fillStyle = `rgba(255,220,140,${gameFxState.stinger * 0.3})`;
+            ctx.fillRect(0, 0, w, h);
+        }
+        if (gameFxState.exhale > 0.02) {
+            ctx.fillStyle = `rgba(120,255,190,${gameFxState.exhale * 0.2})`;
+            ctx.fillRect(0, 0, w, h);
+        }
+        if (gameFxState.collapse > 0.01) {
+            ctx.fillStyle = `rgba(10,0,0,${gameFxState.collapse * 0.35})`;
+            ctx.fillRect(0, 0, w, h);
+        }
+
+        animFrame++;
+    }
+
+    function triggerGameEffect(eventName, payload = {}) {
+        if (eventName === 'RARE_GUEST_ADMITTED') {
+            gameFxState.stinger = Math.min(1, gameFxState.stinger + 0.85);
+            gameFxState.flashes.push({ life: 0.9, color: '255,220,120' });
+        } else if (eventName === 'RIVAL_SPIKE') {
+            gameFxState.flashes.push({ life: 0.7, color: '255,100,100' });
+        } else if (eventName === 'ROUND_BANKED') {
+            gameFxState.exhale = Math.min(1, gameFxState.exhale + 0.9);
+        } else if (eventName === 'ROUND_BUST') {
+            gameFxState.collapse = Math.min(1, gameFxState.collapse + 0.95);
+            gameFxState.flashes.push({ life: 1, color: '255,255,255' });
+        } else if (eventName === 'ABILITY_USED') {
+            gameFxState.flashes.push({ life: 0.45, color: payload.who === 'rival' ? '255,110,110' : '120,210,255' });
+        }
+    }
+
     function resetAnimState() {
         particles = [];
         animFrame = 0;
@@ -330,6 +520,8 @@ const Renderer = (() => {
         drawParticles,
         resetAnimState,
         getAnimFrame,
+        drawGameEffects,
+        triggerGameEffect,
         COLORS,
     };
 })();

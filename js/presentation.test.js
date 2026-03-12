@@ -36,6 +36,20 @@ describe('presentation layer derivation', () => {
   });
 });
 
+
+  test('exposes phase-2 motion event names', () => {
+    expect(Presentation.EVENTS).toMatchObject({
+      HEAT_CHANGED: 'HEAT_CHANGED',
+      BUST_WARNING: 'BUST_WARNING',
+      GUEST_ADMITTED: 'GUEST_ADMITTED',
+      RARE_GUEST_ADMITTED: 'RARE_GUEST_ADMITTED',
+      ABILITY_USED: 'ABILITY_USED',
+      ROUND_BANKED: 'ROUND_BANKED',
+      ROUND_BUST: 'ROUND_BUST',
+      RIVAL_SPIKE: 'RIVAL_SPIKE',
+    });
+  });
+
 describe('presentation event bus', () => {
   test('emits payload to subscribers', () => {
     const bus = Presentation.createEventBus();

@@ -923,6 +923,22 @@ body {
     overflow: hidden;
     position: relative;
 }
+#game-effects-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.92;
+}
+
+.party-carousel,
+.context-panel-overlay,
+.venue-feedback.global-feedback-bar {
+    position: relative;
+    z-index: 1;
+}
 
 
 .party-carousel {

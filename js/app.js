@@ -58,6 +58,19 @@
     let presentationMomentHint = null;
     let presentationMomentTimerId = null;
 
+    const rendererEffectEvents = [
+        presentationEvents.RARE_GUEST_ADMITTED,
+        presentationEvents.RIVAL_SPIKE,
+        presentationEvents.ROUND_BANKED,
+        presentationEvents.ROUND_BUST,
+        presentationEvents.ABILITY_USED,
+    ].filter(Boolean);
+    rendererEffectEvents.forEach((eventName) => {
+        presentationBus.on(eventName, (payload) => {
+            Renderer.triggerGameEffect?.(eventName, payload);
+        });
+    });
+
     const VENUE_BACKGROUND_IMAGE_SRC = 'css/public/Venue1.png';
     const ACTOR_TICK_MS = 50;
     const ACTOR_MIN_SPEED = 0.65;
@@ -569,6 +582,7 @@
 
     const titleCanvas = document.getElementById('title-canvas');
     const gameoverCanvas = document.getElementById('gameover-canvas');
+    const gameEffectsCanvas = document.getElementById('game-effects-canvas');
 
     // === Screen Management ===
     function switchScreen(name) {
@@ -583,6 +597,8 @@
         function loop() {
             if (currentScreen === 'title') {
                 Renderer.drawTitleScreen(titleCanvas);
+            } else if (currentScreen === 'game') {
+                Renderer.drawGameEffects?.(gameEffectsCanvas, presentationState, gameState);
             }
             animLoopId = requestAnimationFrame(loop);
         }
