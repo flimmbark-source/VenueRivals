@@ -2423,6 +2423,8 @@ body {
     grid-template-columns: repeat(5, auto);
     gap: 18px 8px;
     justify-content: center;
+    position: relative;
+    top: -8px;
 }
 
 .shop-upgrades {
@@ -2430,6 +2432,8 @@ body {
     flex-direction: column;
     gap: 18px;
     align-items: center;
+    position: relative;
+    top: -8px;
 }
 
 .shop-upgrades-label {
