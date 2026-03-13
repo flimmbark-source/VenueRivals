@@ -143,21 +143,21 @@ const GUESTS = {
   },
   wallflower: {
     name: "Wallflower", emoji: "🌸",
-    heat: 0, money: 3, points: 0, cost: 4,
+    heat: 1, money: 3, points: 0, cost: 4,
     venue: "Velvet Room", tags: ["VIP"], tier: "common",
     ability: { name: "Wallflower", icon: "🌸", desc: "When scored, +1 Point for each empty slot.", trigger: "scoring", type: "wallflower" },
     desc: "WALLFLOWER — At scoring, +1 Point for each empty slot.",
   },
   linkUpFriend: {
     name: "Link-Up Friend", emoji: "🔗",
-    heat: 0, money: 1, points: 1, cost: 5,
+    heat: 1, money: 1, points: 1, cost: 5,
     venue: "Velvet Room", tags: ["VIP", "Broker"], tier: "uncommon",
     ability: { name: "Clique", icon: "🔗", desc: "When scored, +1 Point for each adjacent guest sharing a tag.", trigger: "scoring", type: "clique" },
     desc: "CLIQUE — At scoring, +1 Point for each adjacent guest sharing a tag with this guest.",
   },
   headliner: {
     name: "Headliner", emoji: "🌟",
-    heat: 0, money: 4, points: 2, cost: 7,
+    heat: 2, money: 4, points: 2, cost: 7,
     venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "rare",
     ability: { name: "Center of Attention", icon: "🔦", desc: "When scored, +2 Points if this guest is Newest.", trigger: "scoring", type: "centerOfAttention", value: 2 },
     desc: "CENTER OF ATTENTION — At scoring, +2 Points if this guest is Newest.",
@@ -201,7 +201,7 @@ const GUESTS = {
   },
   tabRunner: {
     name: "Tab Runner", emoji: "💸",
-    heat: 0, money: 2, points: 1, cost: 4,
+    heat: 1, money: 2, points: 1, cost: 4,
     venue: "Night Market", tags: ["Broker"], tier: "common",
     ability: { name: "Parting Gift", icon: "💸", desc: "Upon leaving, Gain 2 Money.", trigger: "departure", type: "gainMoney", value: 2 },
     desc: "PARTING GIFT — When this guest leaves, gain 2 Money.",
