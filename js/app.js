@@ -1390,7 +1390,7 @@
                     '#2cb67d',
                     'above',
                     'arcade-burst',
-                    { driftX: randomMoneyDriftX, driftY: -138 },
+                    { driftX: randomMoneyDriftX, driftY: -62 },
                 );
                 setTimeout(() => {
                     spawnNumberPing(
@@ -1399,7 +1399,7 @@
                         '#ffd166',
                         'above',
                         'arcade-burst',
-                        { driftX: randomPointsDriftX, driftY: -150 },
+                        { driftX: randomPointsDriftX, driftY: -70 },
                     );
                 }, 80);
             };
