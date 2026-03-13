@@ -1519,9 +1519,63 @@
         const exitDoor = geometry?.exitDoor || { x: 14, y: 14 };
         const actors = venueActors[who];
         const wanted = new Set();
+        const arrivingActorKey = 'arriving-guest';
         const venue = Game.VENUES[player.venueId];
         const houseCapacity = Game.getHouseCapacity(venue, player);
         const visibleHouseEntries = getVisibleHouseEntries(player, houseCapacity);
+
+        // Keep the currently revealed guest represented in-scene so actor count
+        // stays aligned with the visible guest strip (house + arrival slot).
+        if (player.arrivingGuest) {
+            const arrivingGuestId = player.arrivingGuest;
+            const arrivingGuest = Game.GUESTS[arrivingGuestId];
+            if (arrivingGuest) {
+                wanted.add(arrivingActorKey);
+                let arrivingActor = actors.get(arrivingActorKey);
+                const waitingTarget = {
+                    x: Math.max(12, entryDoor.x - 18),
+                    y: Math.min(sceneBounds.height - 18, entryDoor.y + 16),
+                };
+
+                if (!arrivingActor || arrivingActor.guestId !== arrivingGuestId) {
+                    if (arrivingActor?.el) arrivingActor.el.remove();
+
+                    const el = document.createElement('div');
+                    el.className = 'venue-actor entering';
+                    el.innerHTML = getActorHtml(arrivingGuestId);
+                    el.title = `${arrivingGuest.name} • waiting at door`;
+                    layer.appendChild(el);
+
+                    arrivingActor = {
+                        el,
+                        spriteEl: el.querySelector('.actor-sprite'),
+                        x: entryDoor.x,
+                        y: entryDoor.y,
+                        targetX: waitingTarget.x,
+                        targetY: waitingTarget.y,
+                        behavior: 'waiting',
+                        state: 'active',
+                        t: Math.random() * Math.PI * 2,
+                        guestName: arrivingGuest.name,
+                        guestId: arrivingGuestId,
+                        frame: 0,
+                        frameMs: 0,
+                        skipTickCounter: 0,
+                    };
+                    setActorTransform(arrivingActor, entryDoor.x, entryDoor.y);
+                    actors.set(arrivingActorKey, arrivingActor);
+                    setTimeout(() => el.classList.remove('entering'), 320);
+                }
+
+                arrivingActor.guestId = arrivingGuestId;
+                arrivingActor.guestName = arrivingGuest.name;
+                arrivingActor.state = 'active';
+                arrivingActor.targetX = waitingTarget.x;
+                arrivingActor.targetY = waitingTarget.y;
+                setActorBehavior(arrivingActor, 'waiting');
+                setActorTitle(arrivingActor);
+            }
+        }
 
         visibleHouseEntries.forEach((entry, idx) => {
             const guestId = entry.guestId || entry;
@@ -1580,7 +1634,7 @@
             actor.guestId = guestId;
             actor.guestName = guest.name;
 
-            if (actor.state === 'active' && Math.random() < 0.03) {
+            if (key !== arrivingActorKey && actor.state === 'active' && Math.random() < 0.03) {
                 const target = pickBehaviorTarget(who, sceneBounds);
                 actor.targetX = target.x;
                 actor.targetY = target.y;
@@ -1589,8 +1643,8 @@
             setActorTitle(actor);
         });
 
-        // Keep arriving guests out of the venue actor layer until they are admitted.
-        // This prevents a brief pop-in at the scene origin before the guest joins the house.
+        // Arriving guest is now rendered as a waiting actor; all non-wanted
+        // actors are sent to exit cleanly.
 
         for (const [key, actor] of actors.entries()) {
             if (!wanted.has(key) && actor.state !== 'exiting') {
@@ -1698,7 +1752,7 @@
                 } else if (actor.state === 'exiting') {
                     actor.el.classList.add('leaving');
                     removeKeys.push(key);
-                } else if (Math.random() < 0.025) {
+                } else if (key !== 'arriving-guest' && Math.random() < 0.025) {
                     const target = pickBehaviorTarget(who, bounds);
                     actor.targetX = target.x;
                     actor.targetY = target.y;
