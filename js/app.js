@@ -1359,7 +1359,7 @@
         }, 1900);
     }
 
-    function animateCloseDoorPayoutGuest(who, processedGuest) {
+    function animateCloseDoorPayoutGuest(who, processedGuest, onCount = null) {
         const slotsEl = document.getElementById(`${who}-slots`);
         const guestId = processedGuest?.guestId;
         const instanceId = processedGuest?.instanceId;
@@ -1377,6 +1377,7 @@
 
         return new Promise((resolve) => {
             const emitPings = () => {
+                if (typeof onCount === 'function') onCount();
                 spawnNumberPing(slot, `+$${guest.money || 0}`, '#2cb67d', 'above', 'arcade-burst');
                 setTimeout(() => {
                     spawnNumberPing(slot, `+${guest.points || 0}`, '#ffd166', 'above', 'arcade-burst');
@@ -1416,11 +1417,13 @@
         if (slotsEl) slotsEl.classList.add('close-door-payout-active');
         if (sceneEl) sceneEl.classList.add('close-door-payout-active');
         for (const processedGuest of processedGuests) {
+            const handleCount = () => {
+                registerCloseDoorGuestPayout(who, processedGuest?.guestId);
+                updateHUD();
+                publishState();
+            };
             // eslint-disable-next-line no-await-in-loop
-            await animateCloseDoorPayoutGuest(who, processedGuest);
-            registerCloseDoorGuestPayout(who, processedGuest?.guestId);
-            updateHUD();
-            publishState();
+            await animateCloseDoorPayoutGuest(who, processedGuest, handleCount);
         }
         if (slotsEl) slotsEl.classList.remove('close-door-payout-active');
         if (sceneEl) sceneEl.classList.remove('close-door-payout-active');
