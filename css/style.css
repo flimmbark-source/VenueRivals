@@ -4083,3 +4083,234 @@ body {
     color: var(--text-secondary);
     font-size: 0.64rem;
 }
+
+/* === AA pass: venue architecture + premium HUD unification === */
+.game-layout::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 12% 12%, rgba(76, 201, 240, 0.2), transparent 34%),
+        radial-gradient(circle at 88% 10%, rgba(255, 78, 205, 0.2), transparent 35%),
+        linear-gradient(180deg, rgba(6, 8, 16, 0.12), rgba(6, 8, 16, 0.55));
+    z-index: 0;
+}
+
+.state-drama-banner {
+    min-height: 28px;
+    margin: 2px 8px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.58rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(220, 231, 255, 0.95);
+    background: linear-gradient(180deg, rgba(13, 16, 29, 0.88), rgba(8, 10, 19, 0.86));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+#game-screen[data-pressure="urgent"] .state-drama-banner {
+    border-color: rgba(255, 155, 90, 0.72);
+    color: #ffd4b0;
+    box-shadow: 0 0 16px rgba(255, 124, 76, 0.25), inset 0 1px 0 rgba(255,255,255,0.1);
+    animation: bannerAlert 0.7s ease-in-out infinite;
+}
+
+@keyframes bannerAlert {
+    0%, 100% { opacity: 0.95; }
+    50% { opacity: 0.72; }
+}
+
+.venue-area {
+    border-radius: 14px;
+    background:
+        linear-gradient(180deg, rgba(23, 28, 46, 0.94), rgba(7, 10, 21, 0.95));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        inset 0 -22px 40px rgba(0, 0, 0, 0.35);
+}
+
+.venue-scene {
+    border: 1px solid rgba(127, 90, 240, 0.3);
+    background:
+        radial-gradient(circle at 52% 72%, rgba(184, 104, 255, 0.22), rgba(184, 104, 255, 0) 48%),
+        linear-gradient(145deg, rgba(30, 36, 60, 0.85), rgba(9, 11, 21, 0.88)),
+        url('./public/Venue1.png') center / cover no-repeat;
+}
+
+.venue-scene::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(35, 42, 65, 0.24), rgba(8, 9, 16, 0.46)),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 12px),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 2px, transparent 2px 11px);
+    z-index: 1;
+}
+
+.venue-scene::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background:
+        radial-gradient(circle at 50% 55%, rgba(178, 94, 255, 0.18), transparent 42%),
+        radial-gradient(circle at 18% 8%, rgba(76, 201, 240, 0.25), transparent 28%),
+        radial-gradient(circle at 86% 14%, rgba(255, 106, 195, 0.24), transparent 24%);
+    mix-blend-mode: screen;
+}
+
+.venue-depth,
+.venue-props {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.venue-depth-far {
+    z-index: 1;
+    background:
+        linear-gradient(180deg, rgba(8, 10, 16, 0.1), rgba(8, 10, 16, 0.55)),
+        linear-gradient(90deg, rgba(12, 16, 32, 0.52), transparent 22%, transparent 78%, rgba(12, 16, 32, 0.58));
+}
+
+.venue-depth-front {
+    z-index: 6;
+    background:
+        linear-gradient(180deg, transparent 74%, rgba(6, 7, 12, 0.76) 100%),
+        linear-gradient(92deg, rgba(0, 0, 0, 0.46), transparent 24%, transparent 76%, rgba(0, 0, 0, 0.52));
+}
+
+.venue-props-mid { z-index: 3; }
+.venue-props .prop { position: absolute; display: block; }
+.venue-props .speaker-stack {
+    left: 2%; top: 18%; width: 24px; height: 56px;
+    border: 1px solid rgba(255,255,255,0.18); border-radius: 6px;
+    background: linear-gradient(180deg, rgba(22, 24, 36, 0.95), rgba(6, 8, 14, 0.95));
+    box-shadow: 0 5px 12px rgba(0,0,0,0.45);
+}
+.venue-props .speaker-stack::before,
+.venue-props .speaker-stack::after {
+    content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+    border-radius: 50%; border: 1px solid rgba(196, 215, 255, 0.22);
+    background: radial-gradient(circle at 35% 32%, rgba(255,255,255,0.15), rgba(40,44,58,0.9));
+}
+.venue-props .speaker-stack::before { top: 6px; width: 12px; height: 12px; }
+.venue-props .speaker-stack::after { bottom: 7px; width: 14px; height: 14px; }
+
+.venue-props .dj-booth {
+    left: 33%; top: 8%; width: 34%; height: 14%;
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(22, 16, 38, 0.92), rgba(8, 9, 17, 0.94));
+    border: 1px solid rgba(127, 90, 240, 0.42);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.45), 0 0 12px rgba(127, 90, 240, 0.15);
+}
+
+.venue-props .neon-sign {
+    right: 8%; top: 6%; width: 25%; height: 12%;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 149, 221, 0.7);
+    background: rgba(255, 82, 196, 0.09);
+    box-shadow: 0 0 16px rgba(255, 82, 196, 0.38);
+}
+
+.venue-props .velvet-rope {
+    right: 7%; bottom: 20%; width: 27%; height: 2px;
+    background: linear-gradient(90deg, rgba(255, 174, 214, 0.1), rgba(255, 72, 154, 0.8), rgba(255, 174, 214, 0.1));
+}
+
+.venue-props .bar-edge {
+    left: 8%; bottom: 15%; width: 26%; height: 10px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(245, 184, 96, 0.45), rgba(40, 21, 10, 0.85));
+}
+
+.venue-props .corner-plant {
+    right: 3%; bottom: 7%; width: 16px; height: 34px;
+    background: radial-gradient(circle at 40% 18%, rgba(99, 201, 141, 0.86), rgba(23, 74, 48, 0.9));
+    clip-path: polygon(50% 0%, 73% 24%, 95% 53%, 77% 84%, 52% 100%, 29% 83%, 8% 53%, 26% 23%);
+    opacity: 0.74;
+}
+
+.venue-props .cable-run {
+    left: 12%; top: 34%; width: 72%; height: 1px;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(22, 28, 45, 0.75), rgba(0, 0, 0, 0));
+    transform: rotate(-4deg);
+}
+
+.actor-layer { z-index: 4; }
+.venue-actor {
+    filter: drop-shadow(0 3px 5px rgba(0,0,0,0.78)) drop-shadow(0 0 6px rgba(136, 190, 255, 0.17));
+    animation: actorIdle 2.6s ease-in-out infinite;
+}
+
+@keyframes actorIdle {
+    0%, 100% { transform: translateY(0); }
+    45% { transform: translateY(-1px); }
+    70% { transform: translateY(1px); }
+}
+
+.guest-slot {
+    background: linear-gradient(180deg, rgba(22, 25, 40, 0.96), rgba(8, 10, 18, 0.96));
+    border: 1px solid rgba(190, 220, 255, 0.32);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 4px 10px rgba(0,0,0,0.42);
+}
+
+.guest-slot::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    top: 2px;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(76, 201, 240, 0.8), rgba(255, 82, 196, 0.75));
+    opacity: 0.9;
+}
+
+.phone-status-strip,
+.venue-info-panel,
+.global-feedback-bar,
+.context-panel,
+.phone-shell {
+    border-radius: 10px;
+    border: 1px solid rgba(181, 209, 255, 0.22);
+    background: linear-gradient(180deg, rgba(14, 17, 31, 0.94), rgba(8, 10, 20, 0.95));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px rgba(0,0,0,0.35);
+}
+
+.phone-round,
+.phone-phase,
+.phone-connection,
+.venue-area-label,
+.action-log-title,
+.feedback-msg {
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: 0.8px;
+}
+
+#game-screen[data-heat-band="critical"] .venue-scene,
+#game-screen[data-pressure="urgent"] .venue-scene {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(255, 142, 92, 0.35), 0 0 24px rgba(255, 82, 82, 0.22);
+}
+
+#game-screen[data-rival-threat="high"] .rival-venue {
+    transform: scale(0.99);
+    filter: saturate(0.9) brightness(0.9);
+}
+
+#game-screen[data-moment-type="win"] .player-venue,
+#game-screen[data-moment-type="rare_admit"] .player-venue {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 0 24px rgba(124, 221, 172, 0.24);
+}
+
+.player-venue { flex: 1.25; }
+.rival-venue { flex: 0.82; opacity: 0.9; }
+.phone-hud { margin-top: 4px; }
+#guest-phase-panel { min-height: 142px; }

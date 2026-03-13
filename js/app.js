@@ -1169,6 +1169,44 @@
         syncPresentationState();
     }
 
+    function updateStateDramaBanner(state, feedbackText = '') {
+        const banner = document.getElementById('state-drama-banner');
+        if (!banner) return;
+
+        if (feedbackText && typeof feedbackText === 'string') {
+            banner.textContent = feedbackText;
+            return;
+        }
+
+        if (!state) {
+            banner.textContent = 'Venue Systems Stable • Doors Open';
+            return;
+        }
+
+        if (state.momentType === 'win') {
+            banner.textContent = 'Momentum Spike • Rival Floor Collapsing';
+            return;
+        }
+        if (state.momentType === 'loss') {
+            banner.textContent = 'Security Breach • Rival Controls The Night';
+            return;
+        }
+        if (state.heatBand === 'critical' || state.heatBand === 'bust') {
+            banner.textContent = 'BUST RISK CRITICAL • Warning Lights Active';
+            return;
+        }
+        if (state.rivalThreat === 'high') {
+            banner.textContent = 'Rival Pressure High • Hold Your Crowd';
+            return;
+        }
+        if (state.momentType === 'rare_admit') {
+            banner.textContent = 'VIP ARRIVAL • Spotlight On Your Floor';
+            return;
+        }
+
+        banner.textContent = 'Crowd Energy Rising • Keep The Door Flowing';
+    }
+
     function applyPresentationStateToDom(state) {
         const gameScreen = document.getElementById('game-screen');
         if (!gameScreen || !state) return;
@@ -1177,6 +1215,7 @@
         gameScreen.dataset.pressure = state.pressure;
         gameScreen.dataset.venueMood = state.venueMood;
         gameScreen.dataset.rivalThreat = state.rivalThreat;
+        updateStateDramaBanner(state);
     }
 
     function syncPresentationState(meta = {}) {
@@ -2998,6 +3037,7 @@
     // === Center Feedback ===
     function showFeedback(text, type, duration, who = activePartyView) {
         addRoundActionLogEntry(text);
+        updateStateDramaBanner(presentationState, text);
 
         const feedbackEls = [document.getElementById('player-feedback')].filter(Boolean);
         if (!feedbackEls.length) return;
