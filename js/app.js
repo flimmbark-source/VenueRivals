@@ -52,6 +52,8 @@
     let lastAnimFrameTs = 0;
     let roundActionLog = [];
     let actionLogPopupEl = null;
+    let closeDoorPayoutSequenceActive = false;
+    let closeDoorPayoutSequencePendingDoneCheck = false;
     let shopInspectMode = false;
     const houseRenderCacheKeys = { player: '', rival: '' };
     const hudDeltaSnapshot = {
@@ -1329,13 +1331,13 @@
         spawnNumberPing(targetEl, `${sign}${delta}`, color, placement);
     }
 
-    function spawnNumberPing(targetEl, text, color, placement = 'above') {
+    function spawnNumberPing(targetEl, text, color, placement = 'above', variantClass = '') {
         if (!targetEl || !text) return;
         const rect = targetEl.getBoundingClientRect();
         if (!rect || (rect.width === 0 && rect.height === 0)) return;
 
         const ping = document.createElement('div');
-        ping.className = `number-ping ${placement === 'below' ? 'below' : 'above'}`;
+        ping.className = `number-ping ${placement === 'below' ? 'below' : 'above'} ${variantClass}`.trim();
         ping.style.setProperty('--ping-color', color || '#ffd166');
         ping.style.left = `${rect.left + (rect.width / 2)}px`;
         ping.style.top = `${placement === 'below' ? rect.bottom + 6 : rect.top - 6}px`;
@@ -1354,6 +1356,52 @@
                 if (ping.isConnected) ping.remove();
             }, 650);
         }, 1900);
+    }
+
+    function animateCloseDoorPayoutGuest(who, guestId) {
+        const arrivingEl = document.getElementById(`${who}-arriving`);
+        const guest = Game.GUESTS[guestId];
+        if (!arrivingEl || !guest) return Promise.resolve();
+
+        arrivingEl.innerHTML = '';
+        arrivingEl.classList.add('payout-active');
+        const slot = createGuestSlot(guestId, false, { interactive: false });
+        slot.classList.add('close-door-payout-slot');
+        arrivingEl.appendChild(slot);
+
+        return new Promise((resolve) => {
+            const emitPings = () => {
+                spawnNumberPing(slot, `+$${guest.money || 0}`, '#2cb67d', 'above', 'arcade-burst');
+                setTimeout(() => {
+                    spawnNumberPing(slot, `+${guest.points || 0}`, '#ffd166', 'above', 'arcade-burst');
+                }, 80);
+            };
+
+            setTimeout(emitPings, 190);
+            slot.classList.add('is-payout-animating');
+
+            const done = () => {
+                slot.removeEventListener('animationend', done);
+                if (slot.isConnected) slot.remove();
+                if (!arrivingEl.querySelector('.close-door-payout-slot')) {
+                    arrivingEl.classList.remove('payout-active');
+                }
+                resolve();
+            };
+
+            slot.addEventListener('animationend', done);
+            window.setTimeout(done, 520);
+        });
+    }
+
+    async function runCloseDoorPayoutSequence(who, guestIds = []) {
+        if (!guestIds.length) return;
+        const arrivingEl = document.getElementById(`${who}-arriving`);
+        if (!arrivingEl) return;
+        for (const guestId of guestIds) {
+            // eslint-disable-next-line no-await-in-loop
+            await animateCloseDoorPayoutGuest(who, guestId);
+        }
     }
 
     function renderAbilityBadge(guest) {
@@ -3491,11 +3539,12 @@
         runAbility('player', explicitTarget);
     }
 
-    function runCloseDoor(actor = 'player') {
+    async function runCloseDoor(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
         if (targetingMode && actor === 'player') exitTargetingMode();
         const { self, opponent, selfKey } = getActorState(actor);
         if (self.doorClosed || self.busted) return;
+        if (closeDoorPayoutSequenceActive) return;
 
         const venue = Game.VENUES[self.venueId];
         const playerSnapshot = createPlayerVisibleSnapshot();
@@ -3504,6 +3553,12 @@
         if (result?.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
         }
+        if (selfKey === 'player' && result?.processedGuests?.length) {
+            closeDoorPayoutSequenceActive = true;
+            await runCloseDoorPayoutSequence(selfKey, result.processedGuests);
+            closeDoorPayoutSequenceActive = false;
+        }
+
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
         const playerVisibleStateChanged = hasPlayerVisibleStateChanged(playerSnapshot);
@@ -3516,6 +3571,10 @@
         showFeedback('You closed the door safely', 'money', 2000, selfKey);
         setMomentHint('idle', 500);
         checkGuestPhaseDone();
+        if (closeDoorPayoutSequencePendingDoneCheck) {
+            closeDoorPayoutSequencePendingDoneCheck = false;
+            checkGuestPhaseDone();
+        }
         publishState();
     }
 
@@ -3823,6 +3882,10 @@
     // === Phase Transitions ===
     function checkGuestPhaseDone() {
         if (!gameState || gameState.phase !== 'guest') return;
+        if (closeDoorPayoutSequenceActive) {
+            closeDoorPayoutSequencePendingDoneCheck = true;
+            return;
+        }
         if (!Game.bothDone(gameState)) return;
 
         // Both players done - stop AI timer

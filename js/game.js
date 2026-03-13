@@ -1548,15 +1548,38 @@ const GUESTS = {
 
   function closeDoor(player, venue, opponent = null) {
     if (player.doorClosed || player.busted) return false;
-    // Move arriving guest into the house before closing so it stays in the grid
-    const pushed = moveArrivingGuestIntoHouse(player, venue);
+    // Process the currently arriving guest and the rest of the queue in order.
+    // Closing the door banks the remaining line without adding more heat.
+    const processedGuests = [];
+    const pushed = [];
+
+    const processGuest = (guestId, abilityUsed = false) => {
+      if (!guestId) return;
+      processedGuests.push(guestId);
+      applyGuestImpact(player, guestId);
+      const admittedEntry = createHouseGuest(guestId);
+      admittedEntry.abilityUsed = !!abilityUsed;
+      player.house.unshift(admittedEntry);
+      while (player.house.length > getHouseCapacity(venue, player)) {
+        const removed = player.house.pop();
+        if (removed) pushed.push(getGuestId(removed));
+      }
+    };
+
+    processGuest(player.arrivingGuest, player.arrivingAbilityUsed);
+    while (player.roundDeck.length) {
+      processGuest(player.roundDeck.pop(), false);
+    }
+
     player.doorClosed = true;
     player.phaseComplete = true;
     player.arrivingGuest = null;
     player.arrivingAbilityUsed = false;
+    player.roundDeck = [];
     return {
       closed: true,
-      pushedOut: pushed.map(getGuestId),
+      processedGuests,
+      pushedOut: pushed,
       busted: player.busted,
     };
   }
