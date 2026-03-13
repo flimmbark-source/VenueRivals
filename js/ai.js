@@ -11,6 +11,9 @@ const AI = (() => {
     const EARLY_TEMPO_PROTECTED_GUESTS = 3;
     const ADMIT_ADVANTAGE_MARGIN = 0.75;
 
+    let lastDoorValueEstimateKey = null;
+    let lastDoorValueEstimate = null;
+
     function scoreRoundValue(money, points, venue) {
         let total = money + points;
         if (venue.style === 'money') total += money;
@@ -18,13 +21,15 @@ const AI = (() => {
         return total;
     }
 
-    function shuffleCopy(list) {
-        const result = [...list];
-        for (let i = result.length - 1; i > 0; i--) {
+    function shuffleInPlace(list) {
+        for (let i = list.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [result[i], result[j]] = [result[j], result[i]];
+            if (j !== i) {
+                const temp = list[i];
+                list[i] = list[j];
+                list[j] = temp;
+            }
         }
-        return result;
     }
 
     function getHeatCapacity(venue, player) {
@@ -68,7 +73,8 @@ const AI = (() => {
         let totalScore = 0;
 
         for (let i = 0; i < MONTE_CARLO_RUNS; i++) {
-            const drawOrder = shuffleCopy(sampledDeck);
+            const drawOrder = [...sampledDeck];
+            shuffleInPlace(drawOrder);
             let heat = 0;
             let money = 0;
             let points = 0;
@@ -158,6 +164,71 @@ const AI = (() => {
         return scoreRoundValueForStyle(money, points, venueStyle);
     }
 
+    function buildRoundDeckStats(roundDeck) {
+        const guestStatsById = Object.create(null);
+        for (let i = 0; i < roundDeck.length; i++) {
+            const id = roundDeck[i];
+            if (!guestStatsById[id]) {
+                guestStatsById[id] = getGuestStats(id);
+            }
+        }
+        return guestStatsById;
+    }
+
+    function simulateAdmitRolloutValue(rival, closeMoney, closePoints, venue, roundDeck, guestStatsById) {
+        const deckBuffer = [...roundDeck];
+        const bustPenalty = Game.BUST_PENALTY;
+        const venueStyle = venue.style;
+        const heatCap = getHeatCapacity(venue, rival);
+        const baseState = { heat: rival.heat, money: closeMoney, points: closePoints };
+        let admitTotal = 0;
+
+        for (let i = 0; i < MONTE_CARLO_RUNS; i++) {
+            for (let j = 0; j < roundDeck.length; j++) {
+                deckBuffer[j] = roundDeck[j];
+            }
+            shuffleInPlace(deckBuffer);
+            admitTotal += estimateRolloutFromDoorState(
+                baseState,
+                deckBuffer,
+                guestStatsById,
+                venueStyle,
+                heatCap,
+                bustPenalty,
+            );
+        }
+
+        return admitTotal / MONTE_CARLO_RUNS;
+    }
+
+
+    function buildDoorValueEstimateKey(rival, venue) {
+        const deckKey = Array.isArray(rival.roundDeck) ? rival.roundDeck.join(',') : '';
+        return [
+            venue?.id || rival.venueId || '',
+            rival.heat,
+            rival.roundMoney,
+            rival.roundPoints,
+            rival.arrivingGuest || '',
+            rival.heatCapBonus || 0,
+            rival.shopItemPurchases?.heatCapIncrease || 0,
+            rival.shopItemPurchases?.slotIncrease || 0,
+            rival.slotIncrease || 0,
+            deckKey,
+        ].join('|');
+    }
+
+    function getDoorValueEstimateCached(rival, venue) {
+        const key = buildDoorValueEstimateKey(rival, venue);
+        if (key === lastDoorValueEstimateKey && lastDoorValueEstimate) {
+            return lastDoorValueEstimate;
+        }
+        const nextEstimate = estimateAdmitVsCloseValue(rival, venue);
+        lastDoorValueEstimateKey = key;
+        lastDoorValueEstimate = nextEstimate;
+        return nextEstimate;
+    }
+
     function estimateAdmitVsCloseValue(rival, venue) {
         const arrivingGuest = getGuestStats(rival.arrivingGuest);
         // Close value includes the arriving guest because closeDoor still
@@ -171,30 +242,13 @@ const AI = (() => {
             return { closeValue, admitValue: closeValue };
         }
 
-        const bustPenalty = Game.BUST_PENALTY;
-        const venueStyle = venue.style;
-        const heatCap = getHeatCapacity(venue, rival);
         const roundDeck = [...rival.roundDeck];
-        const guestStatsById = Object.create(null);
-        for (let i = 0; i < roundDeck.length; i++) {
-            const id = roundDeck[i];
-            guestStatsById[id] = getGuestStats(id);
-        }
-        let admitTotal = 0;
-        for (let i = 0; i < MONTE_CARLO_RUNS; i++) {
-            const orderedDeck = shuffleCopy(roundDeck);
-
-            // Simulate rolling out future guests starting from the state
-            // AFTER admitting the current arriving guest.
-            admitTotal += estimateRolloutFromDoorState(
-                { heat: rival.heat, money: closeMoney, points: closePoints },
-                orderedDeck, guestStatsById, venueStyle, heatCap, bustPenalty
-            );
-        }
+        const guestStatsById = buildRoundDeckStats(roundDeck);
+        const admitValue = simulateAdmitRolloutValue(rival, closeMoney, closePoints, venue, roundDeck, guestStatsById);
 
         return {
             closeValue,
-            admitValue: admitTotal / MONTE_CARLO_RUNS,
+            admitValue,
         };
     }
 
@@ -305,7 +359,7 @@ const AI = (() => {
      * Decide what to do with the current arriving guest.
      * Returns 'admit' | 'ability' | 'close' | null
      */
-    function estimateDoorSafeAction(rival, guest, venue, player, playerVenue) {
+    function estimateDoorSafeAction(rival, guest, venue, player, playerVenue, precomputedDoorValues = null) {
         if (!guest) return 'close';
 
         // Already over threshold while this guest is at the door.
@@ -329,7 +383,7 @@ const AI = (() => {
         }
 
         // Monte Carlo decision between admitting, ability usage, and banking current value.
-        const values = estimateAdmitVsCloseValue(rival, venue);
+        const values = precomputedDoorValues || getDoorValueEstimateCached(rival, venue);
         const abilityValue = rival.arrivingAbilityUsed
             ? Number.NEGATIVE_INFINITY
             : estimateAbilityValue(rival, player, venue, playerVenue, guest);
@@ -520,13 +574,19 @@ const AI = (() => {
         }
 
         const guest = Game.GUESTS[rival.arrivingGuest];
-        const doorAction = estimateDoorSafeAction(rival, guest, venue, player, playerVenue);
+        const rivalHeatCap = getHeatCapacity(venue, rival);
+        const needsDoorValues = !!guest
+            && rival.heat <= rivalHeatCap
+            && (rival.heat + guest.heat) <= rivalHeatCap
+            && !(rival.house.length < EARLY_TEMPO_PROTECTED_GUESTS && (rivalHeatCap - rival.heat) >= 1);
+        const doorValues = needsDoorValues ? getDoorValueEstimateCached(rival, venue) : null;
+        const doorAction = estimateDoorSafeAction(rival, guest, venue, player, playerVenue, doorValues);
 
         // Compare house ability value against door action
         if (houseAbility && houseAbility.value > 2) {
             // Only use house ability if it's clearly better than admitting/closing
-            const values = estimateAdmitVsCloseValue(rival, venue);
-            const bestDoorValue = Math.max(values.admitValue, values.closeValue);
+            const resolvedDoorValues = doorValues || getDoorValueEstimateCached(rival, venue);
+            const bestDoorValue = Math.max(resolvedDoorValues.admitValue, resolvedDoorValues.closeValue);
             if (houseAbility.value + bestDoorValue * 0.9 > bestDoorValue) {
                 return houseAbility;
             }
