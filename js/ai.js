@@ -4,7 +4,8 @@
    ============================================ */
 
 const AI = (() => {
-    const MONTE_CARLO_RUNS = 120;
+    const DOOR_MONTE_CARLO_RUNS = 120;
+    const BUY_MONTE_CARLO_RUNS = 60;
     const ROLLOUT_CLOSE_HEAT_PRESSURE = 0.93;
     const ROLLOUT_LOW_UPSIDE_THRESHOLD = 0;
     const ROLLOUT_MIN_ADMITS_BEFORE_CLOSE = 2;
@@ -67,7 +68,7 @@ const AI = (() => {
         const heatCap = getHeatCapacity(venue, rival);
         let totalScore = 0;
 
-        for (let i = 0; i < MONTE_CARLO_RUNS; i++) {
+        for (let i = 0; i < BUY_MONTE_CARLO_RUNS; i++) {
             const drawOrder = shuffleCopy(sampledDeck);
             let heat = 0;
             let money = 0;
@@ -88,7 +89,7 @@ const AI = (() => {
             totalScore += scoreRoundValueForStyle(money, points, venueStyle);
         }
 
-        return totalScore / MONTE_CARLO_RUNS;
+        return totalScore / BUY_MONTE_CARLO_RUNS;
     }
 
     function buildGuestScoreMap(rival, market, venue) {
@@ -181,7 +182,7 @@ const AI = (() => {
             guestStatsById[id] = getGuestStats(id);
         }
         let admitTotal = 0;
-        for (let i = 0; i < MONTE_CARLO_RUNS; i++) {
+        for (let i = 0; i < DOOR_MONTE_CARLO_RUNS; i++) {
             const orderedDeck = shuffleCopy(roundDeck);
 
             // Simulate rolling out future guests starting from the state
@@ -194,7 +195,7 @@ const AI = (() => {
 
         return {
             closeValue,
-            admitValue: admitTotal / MONTE_CARLO_RUNS,
+            admitValue: admitTotal / DOOR_MONTE_CARLO_RUNS,
         };
     }
 

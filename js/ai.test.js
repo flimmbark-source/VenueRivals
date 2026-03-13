@@ -44,8 +44,8 @@ describe('AI buy phase Monte Carlo ranking', () => {
 
     AI.decideBuyPhaseActions(state, market);
 
-    // 3 market guests * 120 runs * (sampledDeck length 3 -> 2 random draws per shuffle)
-    expect(randomSpy).toHaveBeenCalledTimes(720);
+    // 3 market guests * 60 runs * (sampledDeck length 3 -> 2 random draws per shuffle)
+    expect(randomSpy).toHaveBeenCalledTimes(360);
   });
 
   test('produces deterministic buy ranking for a fixed random stream', () => {
