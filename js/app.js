@@ -1589,56 +1589,8 @@
             setActorTitle(actor);
         });
 
-        // Arriving guest appears in venue grid before admit: show their actor immediately.
-        if (player.arrivingGuest && !player.doorClosed && !player.busted) {
-            wanted.add('arriving-guest');
-            const guestId = player.arrivingGuest;
-            const guest = Game.GUESTS[guestId];
-            if (guest) {
-                let arrivingActor = actors.get('arriving-guest');
-                if (!arrivingActor) {
-                    const target = pickBehaviorTarget(who, sceneBounds);
-                    const spawn = entryDoor;
-                    const el = document.createElement('div');
-                    el.className = 'venue-actor entering';
-                    el.innerHTML = getActorHtml(guestId);
-                    layer.appendChild(el);
-                    arrivingActor = {
-                        el,
-                        spriteEl: el.querySelector('.actor-sprite'),
-                        x: spawn.x,
-                        y: spawn.y,
-                        targetX: target.x,
-                        targetY: target.y,
-                        behavior: target.behavior,
-                        state: 'active',
-                        t: Math.random() * Math.PI * 2,
-                        guestName: guest.name,
-                        guestId,
-                        frame: 0,
-                        frameMs: 0,
-                        skipTickCounter: 0,
-                        idleTickCounter: 0,
-                    };
-                    setActorTransform(arrivingActor, spawn.x, spawn.y);
-                    actors.set('arriving-guest', arrivingActor);
-                    setTimeout(() => el.classList.remove('entering'), 320);
-                } else {
-                    const guestChanged = arrivingActor.guestId !== guestId;
-                    arrivingActor.guestId = guestId;
-                    arrivingActor.guestName = guest.name;
-                    if (guestChanged) {
-                        arrivingActor.el.innerHTML = getActorHtml(guestId);
-                        arrivingActor.spriteEl = arrivingActor.el.querySelector('.actor-sprite');
-                    }
-                    if (arrivingActor.state === 'exiting') {
-                        arrivingActor.state = 'active';
-                        arrivingActor.el.classList.remove('exiting', 'leaving');
-                    }
-                }
-                setActorTitle(arrivingActor);
-            }
-        }
+        // Keep arriving guests out of the venue actor layer until they are admitted.
+        // This prevents a brief pop-in at the scene origin before the guest joins the house.
 
         for (const [key, actor] of actors.entries()) {
             if (!wanted.has(key) && actor.state !== 'exiting') {
