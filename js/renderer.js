@@ -28,6 +28,8 @@ const Renderer = (() => {
 
     let animFrame = 0;
     let particles = [];
+    const MAX_SCREEN_FLASHES = 10;
+    const gradientCache = new Map();
 
     const gameFxState = {
         flashes: [],
@@ -313,14 +315,16 @@ const Renderer = (() => {
     }
 
     function drawParticles(ctx) {
-        for (let i = particles.length - 1; i >= 0; i--) {
+        let nextWriteIndex = 0;
+        for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
             p.x += p.vx;
             p.y += p.vy;
             p.vy += 0.05;
             p.life -= p.decay;
 
-            if (p.life <= 0) { particles.splice(i, 1); continue; }
+            if (p.life <= 0) continue;
+            particles[nextWriteIndex++] = p;
 
             ctx.globalAlpha = p.life;
             ctx.font = `${p.size}px sans-serif`;
@@ -333,6 +337,15 @@ const Renderer = (() => {
 
             ctx.globalAlpha = 1;
         }
+        particles.length = nextWriteIndex;
+    }
+
+    function getCachedGradient(ctx, key, builder) {
+        const existing = gradientCache.get(key);
+        if (existing) return existing;
+        const created = builder(ctx);
+        gradientCache.set(key, created);
+        return created;
     }
 
     function getPalette(venueMood, heatBand) {
@@ -386,9 +399,12 @@ const Renderer = (() => {
         const heatRatio = Math.max(0, Math.min(1, ((gameState?.player?.heat || 0) / Math.max(1, heatCap || 3))));
         const [top, bottom] = getPalette(venueMood, heatBand);
 
-        const grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0, top);
-        grad.addColorStop(1, bottom);
+        const grad = getCachedGradient(ctx, `bg:${w}:${h}:${top}:${bottom}`, () => {
+            const bg = ctx.createLinearGradient(0, 0, 0, h);
+            bg.addColorStop(0, top);
+            bg.addColorStop(1, bottom);
+            return bg;
+        });
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
 
@@ -411,7 +427,8 @@ const Renderer = (() => {
         }
 
         // drifting dust / smoke
-        const particleCount = Math.floor(18 + heatRatio * 70);
+        const pixelScale = Math.max(0.75, Math.min(1.6, (w * h) / (1280 * 720)));
+        const particleCount = Math.floor((16 + heatRatio * 48) * pixelScale);
         for (let i = 0; i < particleCount; i++) {
             const phase = (animFrame * (0.2 + heatRatio * 0.6) + i * 37) * 0.01;
             const x = ((i * 131 + animFrame * (0.3 + heatRatio)) % (w + 120)) - 60;
@@ -426,13 +443,19 @@ const Renderer = (() => {
         if (heatBand === 'hot' || heatBand === 'critical' || heatBand === 'bust') {
             // edge pulse + heat haze
             const pulse = 0.15 + 0.12 * Math.sin(animFrame * 0.17);
-            const vignette = ctx.createRadialGradient(w * 0.5, h * 0.55, h * 0.18, w * 0.5, h * 0.55, h * 0.72);
-            vignette.addColorStop(0, 'rgba(255,120,90,0)');
-            vignette.addColorStop(1, `rgba(255,70,70,${pulse + heatRatio * 0.24})`);
+            const vignette = getCachedGradient(ctx, `vignette:${w}:${h}`, () => {
+                const vg = ctx.createRadialGradient(w * 0.5, h * 0.55, h * 0.18, w * 0.5, h * 0.55, h * 0.72);
+                vg.addColorStop(0, 'rgba(255,120,90,0)');
+                vg.addColorStop(1, 'rgba(255,70,70,1)');
+                return vg;
+            });
             ctx.fillStyle = vignette;
+            ctx.globalAlpha = Math.max(0, Math.min(1, pulse + heatRatio * 0.24));
             ctx.fillRect(0, 0, w, h);
+            ctx.globalAlpha = 1;
 
-            for (let y = 0; y < h; y += 3) {
+            const scanlineStep = w > 1280 ? 4 : 3;
+            for (let y = 0; y < h; y += scanlineStep) {
                 const wobble = Math.sin(y * 0.02 + animFrame * 0.2) * (2 + heatRatio * 4);
                 ctx.fillStyle = `rgba(255,255,255,${0.01 + heatRatio * 0.03})`;
                 ctx.fillRect(w * 0.1 + wobble, y, w * 0.8, 1);
@@ -455,7 +478,9 @@ const Renderer = (() => {
         }
 
         if (heatBand === 'critical' || heatBand === 'bust') {
-            drawNoise(ctx, w, h, 1 + heatRatio * 2, 'rgba(255,255,255,0.5)');
+            if ((animFrame & 1) === 0) {
+                drawNoise(ctx, w, h, 0.8 + heatRatio * 1.5, 'rgba(255,255,255,0.5)');
+            }
             gameFxState.collapse = Math.min(1, gameFxState.collapse + 0.02);
         } else {
             gameFxState.collapse = Math.max(0, gameFxState.collapse - 0.015);
@@ -465,13 +490,16 @@ const Renderer = (() => {
         gameFxState.exhale *= 0.92;
         gameFxState.stinger *= 0.88;
         if (gameFxState.flashes.length) {
-            for (let i = gameFxState.flashes.length - 1; i >= 0; i--) {
+            let nextWriteIndex = 0;
+            for (let i = 0; i < gameFxState.flashes.length; i++) {
                 const f = gameFxState.flashes[i];
                 f.life -= 0.03;
-                if (f.life <= 0) { gameFxState.flashes.splice(i, 1); continue; }
+                if (f.life <= 0) continue;
+                gameFxState.flashes[nextWriteIndex++] = f;
                 ctx.fillStyle = `rgba(${f.color},${f.life * 0.25})`;
                 ctx.fillRect(0, 0, w, h);
             }
+            gameFxState.flashes.length = nextWriteIndex;
         }
 
         if (gameFxState.stinger > 0.02) {
@@ -491,24 +519,37 @@ const Renderer = (() => {
     }
 
     function triggerGameEffect(eventName, payload = {}) {
+        const pushFlash = (life, color) => {
+            if (gameFxState.flashes.length >= MAX_SCREEN_FLASHES) {
+                const existing = gameFxState.flashes.find((flash) => flash.color === color);
+                if (existing) {
+                    existing.life = Math.min(1, existing.life + life * 0.6);
+                    return;
+                }
+                gameFxState.flashes.shift();
+            }
+            gameFxState.flashes.push({ life, color });
+        };
+
         if (eventName === 'RARE_GUEST_ADMITTED') {
             gameFxState.stinger = Math.min(1, gameFxState.stinger + 0.85);
-            gameFxState.flashes.push({ life: 0.9, color: '255,220,120' });
+            pushFlash(0.9, '255,220,120');
         } else if (eventName === 'RIVAL_SPIKE') {
-            gameFxState.flashes.push({ life: 0.7, color: '255,100,100' });
+            pushFlash(0.7, '255,100,100');
         } else if (eventName === 'ROUND_BANKED') {
             gameFxState.exhale = Math.min(1, gameFxState.exhale + 0.9);
         } else if (eventName === 'ROUND_BUST') {
             gameFxState.collapse = Math.min(1, gameFxState.collapse + 0.95);
-            gameFxState.flashes.push({ life: 1, color: '255,255,255' });
+            pushFlash(1, '255,255,255');
         } else if (eventName === 'ABILITY_USED') {
-            gameFxState.flashes.push({ life: 0.45, color: payload.who === 'rival' ? '255,110,110' : '120,210,255' });
+            pushFlash(0.45, payload.who === 'rival' ? '255,110,110' : '120,210,255');
         }
     }
 
     function resetAnimState() {
         particles = [];
         animFrame = 0;
+        gradientCache.clear();
     }
 
     function getAnimFrame() { return animFrame; }

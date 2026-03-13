@@ -48,11 +48,13 @@
     let performanceRuntime = null;
     let spriteWarmupQueue = [];
     let warmupTimerId = null;
+    let activeNumberPings = 0;
     let lastAnimFrameTs = 0;
     let roundActionLog = [];
     let actionLogPopupEl = null;
     let shopInspectMode = false;
     const houseRenderCacheKeys = { player: '', rival: '' };
+    const MAX_ACTIVE_NUMBER_PINGS = 24;
     const hudDeltaSnapshot = {
         player: { heat: null, money: null, points: null },
         rival: { heat: null, money: null, points: null },
@@ -575,6 +577,11 @@
         const fw = SPRITE_W * SPRITE_SCALE;
         const fh = SPRITE_H * SPRITE_SCALE;
         const spritePolicy = getSpritePolicy(guestId);
+        const inLiveGuestPhase = currentScreen === 'game' && gameState?.phase === 'guest';
+        if (!_spriteCache[guestId] && inLiveGuestPhase) {
+            scheduleSpriteWarmup([guestId]);
+            return `<span class="slot-sprite slot-sprite-placeholder" style="width:${fw}px;height:${fh}px" aria-hidden="true">…</span>`;
+        }
         if (spritePolicy.strategy !== 'full' && !_spriteCache[guestId]) {
             scheduleSpriteWarmup([guestId]);
             return `<span class="slot-sprite slot-sprite-placeholder" style="width:${fw}px;height:${fh}px" aria-hidden="true">…</span>`;
@@ -1238,6 +1245,7 @@
 
     function spawnNumberPing(targetEl, text, color, placement = 'above') {
         if (!targetEl || !text) return;
+        if (activeNumberPings >= MAX_ACTIVE_NUMBER_PINGS) return;
         const rect = targetEl.getBoundingClientRect();
         if (!rect || (rect.width === 0 && rect.height === 0)) return;
 
@@ -1253,12 +1261,14 @@
         ping.appendChild(reel);
 
         document.body.appendChild(ping);
+        activeNumberPings += 1;
         requestAnimationFrame(() => ping.classList.add('is-visible'));
 
         setTimeout(() => {
             ping.classList.remove('is-visible');
             setTimeout(() => {
                 if (ping.isConnected) ping.remove();
+                activeNumberPings = Math.max(0, activeNumberPings - 1);
             }, 650);
         }, 1900);
     }
