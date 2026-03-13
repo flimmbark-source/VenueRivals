@@ -36,7 +36,7 @@
     const venueActors = { player: new Map(), rival: new Map() };
     const venueGeometryCache = {
         player: { dirty: true, bounds: { width: 280, height: 150 }, entryDoor: { x: 260.4, y: 12 }, exitDoor: { x: 14, y: 14 } },
-        rival: { dirty: true, bounds: { width: 280, height: 150 }, entryDoor: { x: 260.4, y: 12 }, exitDoor: { x: 14, y: 14 } },
+        rival: { dirty: true, bounds: { width: 280, height: 150 }, entryDoor: { x: 260.4, y: 132 }, exitDoor: { x: 14, y: 14 } },
     };
     let venueGeometryObserver = null;
     let actorAnimFrameId = null;
@@ -1397,6 +1397,20 @@
         }, bounds);
     }
 
+    function getDefaultEntryDoorPosition(who, bounds) {
+        if (who === 'rival') {
+            return clampDoorPosition({ x: bounds.width - 20, y: bounds.height - 18 }, bounds);
+        }
+        return clampDoorPosition({ x: bounds.width * 0.93, y: 12 }, bounds);
+    }
+
+    function getDefaultExitDoorPosition(who, bounds) {
+        if (who === 'rival') {
+            return clampDoorPosition({ x: 14, y: 14 }, bounds);
+        }
+        return clampDoorPosition({ x: 14, y: 14 }, bounds);
+    }
+
     function getVenueGeometry(who) {
         const cached = venueGeometryCache[who];
         if (!cached) return null;
@@ -1409,12 +1423,17 @@
         };
         const entryDoorId = who === 'player' ? 'player-door-card' : 'rival-door-card';
         const exitDoorId = who === 'player' ? 'player-exit-card' : 'rival-exit-card';
-        const entryFallback = clampDoorPosition({ x: bounds.width * 0.93, y: 12 }, bounds);
-        const exitFallback = clampDoorPosition({ x: 14, y: 14 }, bounds);
+        const entryFallback = getDefaultEntryDoorPosition(who, bounds);
+        const exitFallback = getDefaultExitDoorPosition(who, bounds);
 
         cached.bounds = bounds;
-        cached.entryDoor = computeDoorPosition(sceneEl, entryDoorId, entryFallback, bounds);
-        cached.exitDoor = computeDoorPosition(sceneEl, exitDoorId, exitFallback, bounds);
+        if (who === 'rival') {
+            cached.entryDoor = entryFallback;
+            cached.exitDoor = exitFallback;
+        } else {
+            cached.entryDoor = computeDoorPosition(sceneEl, entryDoorId, entryFallback, bounds);
+            cached.exitDoor = computeDoorPosition(sceneEl, exitDoorId, exitFallback, bounds);
+        }
         cached.dirty = false;
         return cached;
     }
@@ -1436,11 +1455,13 @@
     }
 
     function getEntryDoorPosition(who) {
-        return getVenueGeometry(who)?.entryDoor || { x: 260.4, y: 12 };
+        const bounds = getSceneBounds(who) || { width: 280, height: 150 };
+        return getVenueGeometry(who)?.entryDoor || getDefaultEntryDoorPosition(who, bounds);
     }
 
     function getExitDoorPosition(who) {
-        return getVenueGeometry(who)?.exitDoor || { x: 14, y: 14 };
+        const bounds = getSceneBounds(who) || { width: 280, height: 150 };
+        return getVenueGeometry(who)?.exitDoor || getDefaultExitDoorPosition(who, bounds);
     }
 
     function setupVenueGeometryInvalidation() {
@@ -1781,15 +1802,6 @@
                 const offscreen = clampedX <= 8 || clampedX >= bounds.width - 24 || clampedY <= 8 || clampedY >= bounds.height - 36;
                 actor.skipTickCounter = (actor.skipTickCounter || 0) + 1;
 
-                const dx = actor.targetX - actor.x;
-                const dy = actor.targetY - actor.y;
-                const dist = Math.hypot(dx, dy);
-                const stationary = dist <= 1 && actor.state !== 'exiting';
-                const skipEvery = offscreen ? ACTOR_OFFSCREEN_SKIP_FRAMES : ACTOR_IDLE_SKIP_FRAMES;
-                if (stationary && (actor.skipTickCounter % skipEvery !== 0)) {
-                    return;
-                }
-
                 if (actor.state !== 'exiting' && actor.isArrivingPlaceholder) {
                     const nowMs = performance.now();
                     if ((actor.waitUntilMs || 0) <= nowMs) {
@@ -1800,6 +1812,15 @@
                         actor.targetY = roamingTarget.y;
                         setActorBehavior(actor, roamingTarget.behavior);
                     }
+                }
+
+                const dx = actor.targetX - actor.x;
+                const dy = actor.targetY - actor.y;
+                const dist = Math.hypot(dx, dy);
+                const stationary = dist <= 1 && actor.state !== 'exiting';
+                const skipEvery = offscreen ? ACTOR_OFFSCREEN_SKIP_FRAMES : ACTOR_IDLE_SKIP_FRAMES;
+                if (stationary && (actor.skipTickCounter % skipEvery !== 0)) {
+                    return;
                 }
 
                 if (dist > 1) {

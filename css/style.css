@@ -2561,7 +2561,7 @@ body {
 
 .shop-done-btn {
     position: absolute;
-    right: 30%;
+    left: 50%;
     bottom: 8px;
     width: 156px;
     height: 25px;
@@ -2576,20 +2576,22 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 3;
+    transform: translateX(-50%);
     box-shadow: 0 8px 18px rgba(0,0,0,0.38);
 }
 
 .shop-done-btn:hover {
-    transform: scale(1.05);
+    transform: translateX(-50%) scale(1.05);
 }
 
 .phone-hud .shop-done-btn {
-    right: 8px;
+    left: 50%;
     bottom: 8px;
     width: 154px;
     height: 26px;
     min-height: 26px;
     min-width: 154px;
+    transform: translateX(-50%);
 }
 
 
