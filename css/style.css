@@ -2436,6 +2436,15 @@ body {
     top: -8px;
 }
 
+
+.shop-grid > .shop-card-wrapper:nth-child(-n+5) {
+    margin-top: 8px;
+}
+
+.shop-upgrades > .shop-card-wrapper:first-of-type {
+    margin-top: 8px;
+}
+
 .shop-upgrades-label {
     font-family: 'Poppins', sans-serif;
     font-weight: 700;
