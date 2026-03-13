@@ -1513,7 +1513,6 @@
         const player = who === 'player' ? gameState.player : gameState.rival;
         const layer = document.getElementById(`${who}-actors`);
         if (!layer || !player) return;
-        const isBuyPhase = gameState?.phase === 'buy';
         const geometry = getVenueGeometry(who);
         const sceneBounds = geometry?.bounds || { width: 280, height: 150 };
         const entryDoor = geometry?.entryDoor || { x: sceneBounds.width * 0.93, y: 12 };
@@ -1524,7 +1523,7 @@
         const houseCapacity = Game.getHouseCapacity(venue, player);
         const visibleHouseEntries = getVisibleHouseEntries(player, houseCapacity);
 
-        if (!isBuyPhase) visibleHouseEntries.forEach((entry, idx) => {
+        visibleHouseEntries.forEach((entry, idx) => {
             const guestId = entry.guestId || entry;
             const guest = Game.GUESTS[guestId];
             if (!guest) return;
@@ -1539,9 +1538,6 @@
                 actors.delete('arriving-guest');
                 actor = arrivingActor;
                 actor.state = 'active';
-                actor.role = 'house';
-                actor.hasLeftDoor = true;
-                actor.holdAtDoorUntil = 0;
                 actor.el.classList.remove('entering', 'exiting', 'leaving');
             }
 
@@ -1568,7 +1564,6 @@
                     frame: 0,
                     frameMs: 0,
                     skipTickCounter: 0,
-                    role: 'house',
                 };
                 setActorTransform(actor, spawn.x, spawn.y);
                 actors.set(key, actor);
@@ -1594,14 +1589,13 @@
             setActorTitle(actor);
         });
 
-        if (!isBuyPhase && player.arrivingGuest) {
+        if (player.arrivingGuest) {
             const guestId = player.arrivingGuest;
             const guest = Game.GUESTS[guestId];
             if (guest) {
                 const key = 'arriving-guest';
                 wanted.add(key);
                 let actor = actors.get(key);
-                const now = performance.now();
                 const waitingTarget = {
                     x: Math.max(12, Math.min(sceneBounds.width - 12, entryDoor.x - 24)),
                     y: Math.max(14, Math.min(sceneBounds.height - 12, entryDoor.y + 22)),
@@ -1628,9 +1622,6 @@
                         frame: 0,
                         frameMs: 0,
                         skipTickCounter: 0,
-                        role: 'arriving',
-                        holdAtDoorUntil: now + 2800,
-                        hasLeftDoor: false,
                     };
                     setActorTransform(actor, entryDoor.x, entryDoor.y);
                     actors.set(key, actor);
@@ -1640,26 +1631,11 @@
                     actor.el.classList.remove('exiting', 'leaving');
                 }
 
-                if (actor.guestId !== guestId) {
-                    actor.holdAtDoorUntil = now + 2800;
-                    actor.hasLeftDoor = false;
-                }
-
                 actor.guestId = guestId;
                 actor.guestName = guest.name;
-                actor.role = 'arriving';
-
-                if (now < (actor.holdAtDoorUntil || 0)) {
-                    actor.targetX = waitingTarget.x;
-                    actor.targetY = waitingTarget.y;
-                    if (actor.behavior !== 'lounge') setActorBehavior(actor, 'lounge');
-                } else if (!actor.hasLeftDoor) {
-                    const roamingTarget = pickBehaviorTarget(who, sceneBounds);
-                    actor.targetX = roamingTarget.x;
-                    actor.targetY = roamingTarget.y;
-                    setActorBehavior(actor, roamingTarget.behavior);
-                    actor.hasLeftDoor = true;
-                }
+                actor.targetX = waitingTarget.x;
+                actor.targetY = waitingTarget.y;
+                setActorBehavior(actor, 'lounge');
                 setActorTitle(actor);
             }
         }
@@ -1739,7 +1715,6 @@
 
     function stepVenueActors(deltaMs = ACTOR_STEP_MS) {
         const deltaScale = deltaMs / ACTOR_BASE_STEP_MS;
-        const now = performance.now();
         ['player', 'rival'].forEach((who) => {
             const actors = venueActors[who];
             const bounds = getSceneBounds(who);
@@ -1749,14 +1724,6 @@
             const transformWrites = [];
 
             actors.forEach((actor, key) => {
-                if (actor.state !== 'exiting' && actor.role === 'arriving' && !actor.hasLeftDoor && now >= (actor.holdAtDoorUntil || 0)) {
-                    const target = pickBehaviorTarget(who, bounds);
-                    actor.targetX = target.x;
-                    actor.targetY = target.y;
-                    setActorBehavior(actor, target.behavior);
-                    actor.hasLeftDoor = true;
-                }
-
                 const clampedX = Math.max(8, Math.min(bounds.width - 24, actor.x));
                 const clampedY = Math.max(8, Math.min(bounds.height - 36, actor.y));
                 const offscreen = clampedX <= 8 || clampedX >= bounds.width - 24 || clampedY <= 8 || clampedY >= bounds.height - 36;
