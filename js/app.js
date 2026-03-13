@@ -1397,12 +1397,33 @@
         });
     }
 
+    function registerCloseDoorGuestPayout(who, guestId) {
+        if (!gameState || !guestId) return;
+        const actor = who === 'player' ? gameState.player : gameState.rival;
+        const guest = Game.GUESTS[guestId];
+        if (!actor || !guest) return;
+
+        actor.roundMoney += guest.money || 0;
+        actor.roundPoints += guest.points || 0;
+        actor.guestMoney = Math.max(0, (actor.guestMoney || 0) - (guest.money || 0));
+        actor.guestPoints = Math.max(0, (actor.guestPoints || 0) - (guest.points || 0));
+    }
+
     async function runCloseDoorPayoutSequence(who, processedGuests = []) {
         if (!processedGuests.length) return;
+        const slotsEl = document.getElementById(`${who}-slots`);
+        const sceneEl = document.getElementById(`${who}-scene`);
+        if (slotsEl) slotsEl.classList.add('close-door-payout-active');
+        if (sceneEl) sceneEl.classList.add('close-door-payout-active');
         for (const processedGuest of processedGuests) {
             // eslint-disable-next-line no-await-in-loop
             await animateCloseDoorPayoutGuest(who, processedGuest);
+            registerCloseDoorGuestPayout(who, processedGuest?.guestId);
+            updateHUD();
+            publishState();
         }
+        if (slotsEl) slotsEl.classList.remove('close-door-payout-active');
+        if (sceneEl) sceneEl.classList.remove('close-door-payout-active');
     }
 
     function renderAbilityBadge(guest) {
