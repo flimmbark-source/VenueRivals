@@ -1555,6 +1555,13 @@ body {
 
 .door-icon { font-size: 1.1rem; }
 
+.scene-door .door-icon,
+.scene-door .door-label {
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 .door-label {
     font-size: 0.5rem;
     color: var(--text-muted);
