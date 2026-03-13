@@ -1519,6 +1519,21 @@
         const exitDoor = geometry?.exitDoor || { x: 14, y: 14 };
         const actors = venueActors[who];
         const wanted = new Set();
+        const shouldClearActors = gameState?.phase === 'buy';
+
+        if (shouldClearActors) {
+            for (const actor of actors.values()) {
+                if (actor.state === 'exiting') continue;
+                actor.state = 'exiting';
+                setActorBehavior(actor, 'leaving');
+                actor.targetX = exitDoor.x;
+                actor.targetY = exitDoor.y;
+                actor.el.classList.add('exiting');
+            }
+            ensureActorLoop();
+            return;
+        }
+
         const venue = Game.VENUES[player.venueId];
         const houseCapacity = Game.getHouseCapacity(venue, player);
         const visibleHouseEntries = getVisibleHouseEntries(player, houseCapacity);
@@ -1633,9 +1648,28 @@
 
                 actor.guestId = guestId;
                 actor.guestName = guest.name;
-                actor.targetX = waitingTarget.x;
-                actor.targetY = waitingTarget.y;
-                setActorBehavior(actor, 'lounge');
+
+                if (typeof actor.waitAtDoorUntilMs !== 'number') {
+                    actor.waitAtDoorUntilMs = performance.now() + 2500;
+                }
+
+                if (actor.waitAtDoorUntilMs > performance.now()) {
+                    actor.targetX = waitingTarget.x;
+                    actor.targetY = waitingTarget.y;
+                    setActorBehavior(actor, 'lounge');
+                } else if (!actor.hasRoamedFromDoor) {
+                    const roamTarget = pickBehaviorTarget(who, sceneBounds);
+                    actor.targetX = roamTarget.x;
+                    actor.targetY = roamTarget.y;
+                    setActorBehavior(actor, roamTarget.behavior);
+                    actor.hasRoamedFromDoor = true;
+                } else if (actor.state === 'active' && Math.random() < 0.03) {
+                    const roamTarget = pickBehaviorTarget(who, sceneBounds);
+                    actor.targetX = roamTarget.x;
+                    actor.targetY = roamTarget.y;
+                    setActorBehavior(actor, roamTarget.behavior);
+                }
+
                 setActorTitle(actor);
             }
         }
