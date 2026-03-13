@@ -2438,11 +2438,11 @@ body {
 
 
 .shop-grid > .shop-card-wrapper:nth-child(-n+5) {
-    margin-top: 8px;
+    margin-top: 22px;
 }
 
 .shop-upgrades > .shop-card-wrapper:first-of-type {
-    margin-top: 8px;
+    margin-top: 22px;
 }
 
 .shop-upgrades-label {
