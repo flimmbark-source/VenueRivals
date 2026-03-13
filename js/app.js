@@ -12,6 +12,7 @@
     let selectedVenueType = null;
     let currentScreen = 'title';
     let animLoopId = null;
+    let animLoopTimeoutId = null;
     let aiTimerId = null;
     let currentMarket = null;
     let tooltipEl = null;
@@ -57,6 +58,27 @@
         player: { heat: null, money: null, points: null },
         rival: { heat: null, money: null, points: null },
     };
+    const hudNodeCache = {
+        roundNum: null,
+        roundTotal: null,
+        phase: null,
+        playerPts: null,
+        playerMoney: null,
+        rivalPts: null,
+        rivalMoney: null,
+        playerHeatText: null,
+        rivalHeatText: null,
+        playerHeatFill: null,
+        rivalHeatFill: null,
+        playerStatus: null,
+        rivalStatus: null,
+        playerDoor: null,
+        playerDoorCard: null,
+        playerExit: null,
+        playerExitCard: null,
+    };
+    let lastPresentationSyncKey = '';
+    const heatBarClassSnapshot = { player: '', rival: '' };
 
     const presentationBus = window.Presentation?.createEventBus?.() || { on() {}, emit() {} };
     const presentationEvents = window.Presentation?.EVENTS || {};
@@ -712,9 +734,20 @@
         currentScreen = name;
     }
 
+    function clearAnimLoop() {
+        if (animLoopId) {
+            cancelAnimationFrame(animLoopId);
+            animLoopId = null;
+        }
+        if (animLoopTimeoutId) {
+            clearTimeout(animLoopTimeoutId);
+            animLoopTimeoutId = null;
+        }
+    }
+
     // === Animation Loop ===
     function startAnimLoop() {
-        cancelAnimationFrame(animLoopId);
+        clearAnimLoop();
         function loop() {
             const now = performance.now();
             if (lastAnimFrameTs) {
@@ -732,6 +765,20 @@
             } else if (currentScreen === 'game') {
                 Renderer.drawGameEffects?.(gameEffectsCanvas, presentationState, gameState);
             }
+            const shouldAnimate = currentScreen === 'title' || currentScreen === 'game';
+            if (!shouldAnimate) {
+                animLoopId = null;
+                return;
+            }
+
+            if (document.hidden && currentScreen === 'title') {
+                animLoopTimeoutId = setTimeout(() => {
+                    animLoopTimeoutId = null;
+                    loop();
+                }, 250);
+                return;
+            }
+
             animLoopId = requestAnimationFrame(loop);
         }
         loop();
@@ -777,6 +824,27 @@
 
         playerLabelEl.textContent = gameState.player?.name || 'YOU';
         rivalLabelEl.textContent = gameState.rival?.name || 'RIVAL';
+    }
+
+    function getHudNode(key, id) {
+        if (hudNodeCache[key] && hudNodeCache[key].isConnected) return hudNodeCache[key];
+        const node = document.getElementById(id);
+        hudNodeCache[key] = node || null;
+        return node;
+    }
+
+    function ensureHudNodes() {
+        return {
+            roundNum: getHudNode('roundNum', 'hud-round-num'),
+            roundTotal: getHudNode('roundTotal', 'hud-round-total'),
+            phase: getHudNode('phase', 'hud-phase'),
+            playerPts: getHudNode('playerPts', 'hud-player-pts'),
+            playerMoney: getHudNode('playerMoney', 'player-money'),
+            rivalPts: getHudNode('rivalPts', 'rival-pts'),
+            rivalMoney: getHudNode('rivalMoney', 'rival-money'),
+            playerHeatText: getHudNode('playerHeatText', 'player-heat-text'),
+            rivalHeatText: getHudNode('rivalHeatText', 'rival-heat-text'),
+        };
     }
 
     function showWaitingPopup(message) {
@@ -1116,6 +1184,24 @@
         const derivePresentationState = window.Presentation?.derivePresentationState;
         if (!derivePresentationState) return previous;
 
+        const presentationKey = gameState
+            ? [
+                gameState.phase,
+                gameState.round,
+                gameState.player?.heat,
+                gameState.player?.busted ? 1 : 0,
+                gameState.player?.doorClosed ? 1 : 0,
+                gameState.rival?.heat,
+                gameState.rival?.busted ? 1 : 0,
+                gameState.rival?.doorClosed ? 1 : 0,
+                presentationMomentHint || '',
+            ].join('|')
+            : `no-state|${presentationMomentHint || ''}`;
+        if (!meta.force && presentationKey === lastPresentationSyncKey) {
+            return previous;
+        }
+        lastPresentationSyncKey = presentationKey;
+
         presentationState = derivePresentationState({
             gameState,
             previousState: previous,
@@ -1154,11 +1240,17 @@
     function updateHUD() {
         if (!gameState) return;
         const p = gameState.player;
-        const hudRoundNumEl = document.getElementById('hud-round-num');
-        const hudRoundTotalEl = document.getElementById('hud-round-total');
-        const hudPhaseEl = document.getElementById('hud-phase');
-        const hudPlayerPtsEl = document.getElementById('hud-player-pts');
-        const playerMoneyEl = document.getElementById('player-money');
+        const {
+            roundNum: hudRoundNumEl,
+            roundTotal: hudRoundTotalEl,
+            phase: hudPhaseEl,
+            playerPts: hudPlayerPtsEl,
+            playerMoney: playerMoneyEl,
+            rivalPts: rivalPtsEl,
+            rivalMoney: rivalMoneyEl,
+            playerHeatText,
+            rivalHeatText,
+        } = ensureHudNodes();
 
         if (!hudRoundNumEl || !hudRoundTotalEl || !hudPhaseEl || !hudPlayerPtsEl || !playerMoneyEl) {
             return;
@@ -1176,15 +1268,12 @@
         const displayedRivalPoints = r.points + (r.roundPoints || 0);
         const displayedRivalMoney = r.money + (r.roundMoney || 0);
 
-        const rivalMoneyEl = document.getElementById('rival-money');
-        const rivalPtsEl = document.getElementById('rival-pts');
-
         emitHudDeltaPing('points', displayedPlayerPoints, hudDeltaSnapshot.player.points, hudPlayerPtsEl, 'below');
         emitHudDeltaPing('money', displayedPlayerMoney, hudDeltaSnapshot.player.money, playerMoneyEl, 'below');
         emitHudDeltaPing('points', displayedRivalPoints, hudDeltaSnapshot.rival.points, rivalPtsEl, 'below');
         emitHudDeltaPing('money', displayedRivalMoney, hudDeltaSnapshot.rival.money, rivalMoneyEl, 'below');
-        emitHudDeltaPing('heat', p.heat, hudDeltaSnapshot.player.heat, document.getElementById('player-heat-text'), 'above');
-        emitHudDeltaPing('heat', r.heat, hudDeltaSnapshot.rival.heat, document.getElementById('rival-heat-text'), 'above');
+        emitHudDeltaPing('heat', p.heat, hudDeltaSnapshot.player.heat, playerHeatText, 'above');
+        emitHudDeltaPing('heat', r.heat, hudDeltaSnapshot.rival.heat, rivalHeatText, 'above');
 
         hudDeltaSnapshot.player.points = displayedPlayerPoints;
         hudDeltaSnapshot.player.money = displayedPlayerMoney;
@@ -1205,16 +1294,19 @@
     }
 
     function updateHeatBar(who, heat, max, busted = false) {
-        const fill = document.getElementById(`${who}-heat-fill`);
-        const text = document.getElementById(`${who}-heat-text`);
+        const fill = getHudNode(who === 'player' ? 'playerHeatFill' : 'rivalHeatFill', `${who}-heat-fill`);
+        const text = getHudNode(who === 'player' ? 'playerHeatText' : 'rivalHeatText', `${who}-heat-text`);
         if (!fill || !text) return;
         const pct = busted ? 100 : Math.min(100, (heat / max) * 100);
         fill.style.width = pct + '%';
-        fill.className = 'heat-fill';
-        if (pct > 85) fill.classList.add('critical');
-        else if (pct > 70) fill.classList.add('danger');
-        else if (pct > 50) fill.classList.add('warning');
-        else fill.classList.add('safe');
+        let nextClass = 'safe';
+        if (pct > 85) nextClass = 'critical';
+        else if (pct > 70) nextClass = 'danger';
+        else if (pct > 50) nextClass = 'warning';
+        if (heatBarClassSnapshot[who] !== nextClass) {
+            fill.className = `heat-fill ${nextClass}`;
+            heatBarClassSnapshot[who] = nextClass;
+        }
         text.textContent = `\u{1F525} ${heat}/${max}`;
     }
 
@@ -2160,7 +2252,7 @@
 
     function updateVenueStatus(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
-        const statusEl = document.getElementById(`${who}-status`);
+        const statusEl = getHudNode(who === 'player' ? 'playerStatus' : 'rivalStatus', `${who}-status`);
         if (!statusEl) return;
 
         if (player.busted) {
@@ -2367,8 +2459,14 @@
     }
 
     function setGuestPhaseControls({ canAdmit = false, canClose = false, canFlash = false } = {}) {
-        const entryDoors = [document.getElementById('player-door'), document.getElementById('player-door-card')].filter(Boolean);
-        const exitDoors = [document.getElementById('player-exit'), document.getElementById('player-exit-card')].filter(Boolean);
+        const entryDoors = [
+            getHudNode('playerDoor', 'player-door'),
+            getHudNode('playerDoorCard', 'player-door-card'),
+        ].filter(Boolean);
+        const exitDoors = [
+            getHudNode('playerExit', 'player-exit'),
+            getHudNode('playerExitCard', 'player-exit-card'),
+        ].filter(Boolean);
         entryDoors.forEach((entryDoor) => {
             entryDoor.classList.toggle('door-action-disabled', !canAdmit);
             entryDoor.setAttribute('aria-disabled', canAdmit ? 'false' : 'true');
@@ -3348,21 +3446,32 @@
     // === AI Guest Phase ===
     function startAITimer() {
         if (isMultiplayer()) return;
-        if (aiTimerId) clearInterval(aiTimerId);
+        if (aiTimerId) {
+            clearTimeout(aiTimerId);
+            aiTimerId = null;
+        }
         const baseDelay = 1200;
         const variance = 600;
 
+        function stopAITimer() {
+            if (!aiTimerId) return;
+            clearTimeout(aiTimerId);
+            aiTimerId = null;
+        }
+
+        function scheduleNext() {
+            aiTimerId = setTimeout(aiTick, baseDelay + Math.random() * variance);
+        }
+
         function aiTick() {
             if (!gameState || gameState.phase !== 'guest') {
-                clearInterval(aiTimerId);
-                aiTimerId = null;
+                stopAITimer();
                 return;
             }
 
             const r = gameState.rival;
             if (r.phaseComplete) {
-                clearInterval(aiTimerId);
-                aiTimerId = null;
+                stopAITimer();
                 checkGuestPhaseDone();
                 return;
             }
@@ -3372,18 +3481,23 @@
                 // Defensive fallback: if rival still has an active turn, bank safely.
                 if (!r.phaseComplete && !r.doorClosed && !r.busted) {
                     executeAIAction('close');
+                    scheduleNext();
                     return;
                 }
-                clearInterval(aiTimerId);
-                aiTimerId = null;
+                stopAITimer();
                 checkGuestPhaseDone();
                 return;
             }
 
             executeAIAction(action);
+            if (gameState?.phase === 'guest' && !gameState?.rival?.phaseComplete) {
+                scheduleNext();
+            } else {
+                stopAITimer();
+            }
         }
 
-        aiTimerId = setInterval(aiTick, baseDelay + Math.random() * variance);
+        scheduleNext();
     }
 
     function executeAIAction(action) {
@@ -3626,7 +3740,7 @@
         if (!Game.bothDone(gameState)) return;
 
         // Both players done - stop AI timer
-        if (aiTimerId) { clearInterval(aiTimerId); aiTimerId = null; }
+        if (aiTimerId) { clearTimeout(aiTimerId); aiTimerId = null; }
 
         // Small delay for last animation
         setTimeout(showRoundResults, 600);
@@ -4700,7 +4814,7 @@
 
     function handleMenuMainMenu() {
         closeGameMenu();
-        if (aiTimerId) { clearInterval(aiTimerId); aiTimerId = null; }
+        if (aiTimerId) { clearTimeout(aiTimerId); aiTimerId = null; }
         Renderer.resetAnimState();
         clearVenueActors();
         gameState = null;
@@ -4933,7 +5047,7 @@
 
         // Game over
         document.getElementById('btn-play-again').addEventListener('click', () => {
-            if (aiTimerId) { clearInterval(aiTimerId); aiTimerId = null; }
+            if (aiTimerId) { clearTimeout(aiTimerId); aiTimerId = null; }
             Renderer.resetAnimState();
             clearVenueActors();
             gameState = null;
