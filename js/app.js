@@ -52,6 +52,7 @@
     let roundActionLog = [];
     let actionLogPopupEl = null;
     let shopInspectMode = false;
+    const houseRenderCacheKeys = { player: '', rival: '' };
     const hudDeltaSnapshot = {
         player: { heat: null, money: null, points: null },
         rival: { heat: null, money: null, points: null },
@@ -1458,6 +1459,7 @@
                 layer.appendChild(el);
                 actor = {
                     el,
+                    spriteEl: el.querySelector('.actor-sprite'),
                     x: spawn.x,
                     y: spawn.y,
                     targetX: target.x,
@@ -1511,6 +1513,7 @@
                     layer.appendChild(el);
                     arrivingActor = {
                         el,
+                        spriteEl: el.querySelector('.actor-sprite'),
                         x: spawn.x,
                         y: spawn.y,
                         targetX: target.x,
@@ -1529,9 +1532,13 @@
                     actors.set('arriving-guest', arrivingActor);
                     setTimeout(() => el.classList.remove('entering'), 320);
                 } else {
+                    const guestChanged = arrivingActor.guestId !== guestId;
                     arrivingActor.guestId = guestId;
                     arrivingActor.guestName = guest.name;
-                    arrivingActor.el.innerHTML = getActorHtml(guestId);
+                    if (guestChanged) {
+                        arrivingActor.el.innerHTML = getActorHtml(guestId);
+                        arrivingActor.spriteEl = arrivingActor.el.querySelector('.actor-sprite');
+                    }
                     if (arrivingActor.state === 'exiting') {
                         arrivingActor.state = 'active';
                         arrivingActor.el.classList.remove('exiting', 'leaving');
@@ -1668,7 +1675,7 @@
                 }
                 // Frame index: idle = 0-1, walk = 2-3
                 const spriteFrame = isMoving ? (2 + actor.frame) : actor.frame;
-                const spriteEl = actor.el.querySelector('.actor-sprite');
+                const spriteEl = actor.spriteEl;
                 if (spriteEl && spriteEl.style) {
                     spriteEl.style.backgroundPosition = `-${spriteFrame * SPRITE_W * SPRITE_SCALE}px 0`;
                 }
@@ -1719,9 +1726,11 @@
         const hints = _slotAnimHints;
         _slotAnimHints = null;
 
+        const occupiedSlots = [...slotsEl.querySelectorAll('.occupied-slot[data-render-key]')];
+
         // Build a set of new render keys so we can detect removed slots.
         const newKeys = new Set();
-        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((el) => {
+        occupiedSlots.forEach((el) => {
             if (el.dataset.renderKey) newKeys.add(el.dataset.renderKey);
         });
 
@@ -1747,7 +1756,7 @@
         const animatedSlots = [];
 
         // --- Animate existing & newly-admitted slots ---
-        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
+        occupiedSlots.forEach((slotEl) => {
             const key = slotEl.dataset.renderKey;
             if (!key) return;
             let prev = previousPositions.get(key);
@@ -1940,6 +1949,18 @@
     function renderHouseGrid(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const slotsEl = document.getElementById(`${who}-slots`);
+        if (!player || !slotsEl) return;
+
+        const selectedKey = who === 'player' && selectedGridGuest
+            ? `${selectedGridGuest.source}:${selectedGridGuest.guestId || ''}:${selectedGridGuest.instanceId ?? ''}`
+            : 'none';
+        const renderStateKey = `${getHouseRenderKey(player)}::target:${who === 'player' ? buildTargetingRenderKey() : 'none'}::selected:${selectedKey}`;
+        if (houseRenderCacheKeys[who] === renderStateKey) {
+            syncVenueActors(who);
+            return;
+        }
+        houseRenderCacheKeys[who] = renderStateKey;
+
         const previousPositions = captureSlotPositions(slotsEl);
         const existingSlotsByKey = new Map();
         slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
@@ -1960,6 +1981,7 @@
         const houseSlots = [];
 
         const visibleHouseEntries = getVisibleHouseEntries(player, houseCapacity);
+        const targetingLookup = who === 'player' ? buildTargetingLookup(player) : null;
 
         // Count occupied slots: house + arriving guest (cap to capacity for empties)
         const occupiedCount = visibleHouseEntries.length + (player.arrivingGuest ? 1 : 0);
@@ -1993,8 +2015,8 @@
                 if (who === 'player' && instanceId != null && instanceId === playerFlashWindowInstanceId) slot.classList.add('just-entered');
 
                 // Targeting mode: highlight valid targets, dim others
-                if (targetingMode && instanceId != null) {
-                    if (isValidTarget(instanceId)) {
+                if (targetingLookup?.enabled && instanceId != null) {
+                    if (targetingLookup.validInstanceIds.has(instanceId)) {
                         slot.classList.add('valid-target');
                     } else {
                         slot.classList.add('dimmed-target');
@@ -2028,8 +2050,8 @@
             slot.dataset.abilityUsed = arrivingAbilityUsed ? '1' : '0';
             if (who === 'player' && player.arrivingAbilityUsed) slot.classList.add('ability-used');
             if (who === 'player') {
-                if (targetingMode) {
-                    if (targetingMode.canTargetArriving) {
+                if (targetingLookup?.enabled) {
+                    if (targetingLookup.canTargetArriving) {
                         slot.classList.add('valid-target');
                     } else {
                         slot.classList.add('dimmed-target');
@@ -2079,10 +2101,53 @@
             if (!entry) return '';
             if (typeof entry === 'string') return entry;
             const guestId = entry.guestId || '';
-            if (entry.instanceId == null) return guestId;
-            return `${guestId}:${entry.instanceId}`;
+            const abilityUsed = entry.abilityUsed ? 1 : 0;
+            if (entry.instanceId == null) return `${guestId}:${abilityUsed}`;
+            return `${guestId}:${entry.instanceId}:${abilityUsed}`;
         }).join('|');
-        return `${houseKey}::arriving:${playerState.arrivingGuest || ''}`;
+        return `${houseKey}::arriving:${playerState.arrivingGuest || ''}:${playerState.arrivingAbilityUsed ? 1 : 0}`;
+    }
+
+    function buildTargetingRenderKey() {
+        if (!targetingMode) return 'none';
+        const targetKeys = Array.isArray(targetingMode.validTargets)
+            ? targetingMode.validTargets.map((target) => {
+                if (target?.instanceId != null) return `i:${target.instanceId}`;
+                if (target?.index != null) return `x:${target.index}`;
+                if (target?.guestId) return `g:${target.guestId}`;
+                return '';
+            }).filter(Boolean)
+            : [];
+        targetKeys.sort();
+        return `${targetingMode.canTargetArriving ? 'arriving' : 'house'}|${targetKeys.join(',')}`;
+    }
+
+    function buildTargetingLookup(player) {
+        if (!targetingMode || !player) {
+            return { enabled: false, validInstanceIds: new Set(), canTargetArriving: false };
+        }
+
+        const validInstanceIds = new Set();
+        const validIndexes = new Set();
+        const validGuestIds = new Set();
+        (targetingMode.validTargets || []).forEach((target) => {
+            if (target?.instanceId != null) validInstanceIds.add(target.instanceId);
+            if (target?.index != null) validIndexes.add(target.index);
+            if (target?.guestId) validGuestIds.add(target.guestId);
+        });
+
+        (player.house || []).forEach((entry, index) => {
+            if (!entry || typeof entry === 'string' || entry.instanceId == null) return;
+            if (validIndexes.has(index) || validGuestIds.has(entry.guestId)) {
+                validInstanceIds.add(entry.instanceId);
+            }
+        });
+
+        return {
+            enabled: true,
+            validInstanceIds,
+            canTargetArriving: !!targetingMode.canTargetArriving,
+        };
     }
 
     function renderArrivingGuest(who) {
