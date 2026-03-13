@@ -112,6 +112,7 @@
     const ACTOR_MIN_SPEED = 0.65;
     const ACTOR_DISTANCE_SPEED_FACTOR = 0.065;
     const ACTOR_MAX_SPEED = 4.2;
+    const ARRIVING_ACTOR_IDLE_MS = 1000;
     const ACTOR_IDLE_SKIP_FRAMES = 5;
     const ACTOR_OFFSCREEN_SKIP_FRAMES = 8;
     const ACTOR_HEAVY_SCENE_THRESHOLD = 12;
@@ -1519,6 +1520,19 @@
         const exitDoor = geometry?.exitDoor || { x: 14, y: 14 };
         const actors = venueActors[who];
         const wanted = new Set();
+        if (gameState?.phase !== 'guest') {
+            for (const actor of actors.values()) {
+                if (actor.state === 'exiting') continue;
+                actor.state = 'exiting';
+                setActorBehavior(actor, 'leaving');
+                actor.targetX = exitDoor.x;
+                actor.targetY = exitDoor.y;
+                actor.el.classList.add('exiting');
+            }
+            ensureActorLoop();
+            return;
+        }
+
         const venue = Game.VENUES[player.venueId];
         const houseCapacity = Game.getHouseCapacity(venue, player);
         const visibleHouseEntries = getVisibleHouseEntries(player, houseCapacity);
@@ -1619,6 +1633,7 @@
                         t: Math.random() * Math.PI * 2,
                         guestName: guest.name,
                         guestId,
+                        holdAtDoorUntil: performance.now() + ARRIVING_ACTOR_IDLE_MS,
                         frame: 0,
                         frameMs: 0,
                         skipTickCounter: 0,
@@ -1633,9 +1648,18 @@
 
                 actor.guestId = guestId;
                 actor.guestName = guest.name;
-                actor.targetX = waitingTarget.x;
-                actor.targetY = waitingTarget.y;
-                setActorBehavior(actor, 'lounge');
+
+                if (actor.holdAtDoorUntil && performance.now() < actor.holdAtDoorUntil) {
+                    actor.targetX = waitingTarget.x;
+                    actor.targetY = waitingTarget.y;
+                    setActorBehavior(actor, 'lounge');
+                } else if (actor.holdAtDoorUntil) {
+                    actor.holdAtDoorUntil = 0;
+                    const target = pickBehaviorTarget(who, sceneBounds);
+                    actor.targetX = target.x;
+                    actor.targetY = target.y;
+                    setActorBehavior(actor, target.behavior);
+                }
                 setActorTitle(actor);
             }
         }
