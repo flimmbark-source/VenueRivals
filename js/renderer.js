@@ -70,26 +70,6 @@ const Renderer = (() => {
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
 
-
-        // authored key and spill lighting: dance sign + hidden fixtures
-        const keyAlpha = momentType === 'rare_admit' ? 0.3 : momentType === 'win' ? 0.24 : 0.16;
-        const keyLight = ctx.createRadialGradient(w * 0.5, h * 0.2, 8, w * 0.5, h * 0.2, h * 0.62);
-        keyLight.addColorStop(0, `rgba(255,160,236,${keyAlpha})`);
-        keyLight.addColorStop(1, 'rgba(255,160,236,0)');
-        ctx.fillStyle = keyLight;
-        ctx.fillRect(0, 0, w, h);
-
-        const sideConeL = ctx.createLinearGradient(0, 0, w * 0.4, h * 0.7);
-        sideConeL.addColorStop(0, 'rgba(76,201,240,0.16)');
-        sideConeL.addColorStop(1, 'rgba(76,201,240,0)');
-        ctx.fillStyle = sideConeL;
-        ctx.fillRect(0, 0, w * 0.5, h);
-
-        const sideConeR = ctx.createLinearGradient(w, 0, w * 0.6, h * 0.75);
-        sideConeR.addColorStop(0, 'rgba(255,120,180,0.14)');
-        sideConeR.addColorStop(1, 'rgba(255,120,180,0)');
-        ctx.fillStyle = sideConeR;
-        ctx.fillRect(w * 0.5, 0, w * 0.5, h);
     }
 
     function drawStars(ctx, w, h, count) {
@@ -284,26 +264,6 @@ const Renderer = (() => {
         ctx.fillRect(0, 0, w, h);
 
 
-        // authored key and spill lighting: dance sign + hidden fixtures
-        const keyAlpha = momentType === 'rare_admit' ? 0.3 : momentType === 'win' ? 0.24 : 0.16;
-        const keyLight = ctx.createRadialGradient(w * 0.5, h * 0.2, 8, w * 0.5, h * 0.2, h * 0.62);
-        keyLight.addColorStop(0, `rgba(255,160,236,${keyAlpha})`);
-        keyLight.addColorStop(1, 'rgba(255,160,236,0)');
-        ctx.fillStyle = keyLight;
-        ctx.fillRect(0, 0, w, h);
-
-        const sideConeL = ctx.createLinearGradient(0, 0, w * 0.4, h * 0.7);
-        sideConeL.addColorStop(0, 'rgba(76,201,240,0.16)');
-        sideConeL.addColorStop(1, 'rgba(76,201,240,0)');
-        ctx.fillStyle = sideConeL;
-        ctx.fillRect(0, 0, w * 0.5, h);
-
-        const sideConeR = ctx.createLinearGradient(w, 0, w * 0.6, h * 0.75);
-        sideConeR.addColorStop(0, 'rgba(255,120,180,0.14)');
-        sideConeR.addColorStop(1, 'rgba(255,120,180,0)');
-        ctx.fillStyle = sideConeR;
-        ctx.fillRect(w * 0.5, 0, w * 0.5, h);
-
         for (let i = 0; i < 50; i++) {
             const cx = (42 * (i + 1) * 7) % w;
             const cy = (42 * (i + 1) * 3) % h;
@@ -436,26 +396,6 @@ const Renderer = (() => {
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
 
-
-        // authored key and spill lighting: dance sign + hidden fixtures
-        const keyAlpha = momentType === 'rare_admit' ? 0.3 : momentType === 'win' ? 0.24 : 0.16;
-        const keyLight = ctx.createRadialGradient(w * 0.5, h * 0.2, 8, w * 0.5, h * 0.2, h * 0.62);
-        keyLight.addColorStop(0, `rgba(255,160,236,${keyAlpha})`);
-        keyLight.addColorStop(1, 'rgba(255,160,236,0)');
-        ctx.fillStyle = keyLight;
-        ctx.fillRect(0, 0, w, h);
-
-        const sideConeL = ctx.createLinearGradient(0, 0, w * 0.4, h * 0.7);
-        sideConeL.addColorStop(0, 'rgba(76,201,240,0.16)');
-        sideConeL.addColorStop(1, 'rgba(76,201,240,0)');
-        ctx.fillStyle = sideConeL;
-        ctx.fillRect(0, 0, w * 0.5, h);
-
-        const sideConeR = ctx.createLinearGradient(w, 0, w * 0.6, h * 0.75);
-        sideConeR.addColorStop(0, 'rgba(255,120,180,0.14)');
-        sideConeR.addColorStop(1, 'rgba(255,120,180,0)');
-        ctx.fillStyle = sideConeR;
-        ctx.fillRect(w * 0.5, 0, w * 0.5, h);
 
         const t = animFrame * 0.01;
         // slow parallax silhouettes
