@@ -1548,38 +1548,38 @@ const GUESTS = {
 
   function closeDoor(player, venue, opponent = null) {
     if (player.doorClosed || player.busted) return false;
-    // Process the currently arriving guest and the rest of the queue in order.
-    // Closing the door banks the remaining line without adding more heat.
+    // Bank only the currently arriving guest when closing.
+    const hadArrivingGuest = !!player.arrivingGuest;
+    const pushed = moveArrivingGuestIntoHouse(player, venue);
     const processedGuests = [];
-    const pushed = [];
+    if (hadArrivingGuest && player.house.length) {
+      const newestEntry = player.house[0];
+      processedGuests.push({
+        guestId: getGuestId(newestEntry),
+        instanceId:
+          newestEntry && typeof newestEntry === "object"
+            ? newestEntry.instanceId
+            : null,
+      });
+    }
 
-    const processGuest = (guestId, abilityUsed = false) => {
-      if (!guestId) return;
-      applyGuestImpact(player, guestId);
-      const admittedEntry = createHouseGuest(guestId);
-      admittedEntry.abilityUsed = !!abilityUsed;
-      processedGuests.push({ guestId, instanceId: admittedEntry.instanceId });
-      player.house.unshift(admittedEntry);
-      while (player.house.length > getHouseCapacity(venue, player)) {
-        const removed = player.house.pop();
-        if (removed) pushed.push(getGuestId(removed));
-      }
-    };
-
-    processGuest(player.arrivingGuest, player.arrivingAbilityUsed);
-    while (player.roundDeck.length) {
-      processGuest(player.roundDeck.pop(), false);
+    // Then animate the remaining visible in-house line.
+    for (let i = 1; i < player.house.length; i++) {
+      const entry = player.house[i];
+      processedGuests.push({
+        guestId: getGuestId(entry),
+        instanceId: entry && typeof entry === "object" ? entry.instanceId : null,
+      });
     }
 
     player.doorClosed = true;
     player.phaseComplete = true;
     player.arrivingGuest = null;
     player.arrivingAbilityUsed = false;
-    player.roundDeck = [];
     return {
       closed: true,
       processedGuests,
-      pushedOut: pushed,
+      pushedOut: pushed.map(getGuestId),
       busted: player.busted,
     };
   }
