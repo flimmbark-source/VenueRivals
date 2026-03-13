@@ -2806,8 +2806,8 @@ body {
     100% { background: transparent; }
 }
 
-.entering { animation: slideInFromRight 0.3s ease both; }
-.exiting { animation: slideOutLeft 0.3s ease both; }
+.guest-slot.entering { animation: slideInFromRight 0.3s ease both; }
+.guest-slot.exiting { animation: slideOutLeft 0.3s ease both; }
 .bust-flash { animation: bustFlash 0.5s ease; }
 
 .exit-ghost {

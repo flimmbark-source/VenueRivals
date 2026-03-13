@@ -1589,8 +1589,56 @@
             setActorTitle(actor);
         });
 
-        // Keep arriving guests out of the venue actor layer until they are admitted.
-        // This prevents a brief pop-in at the scene origin before the guest joins the house.
+        if (player.arrivingGuest) {
+            const guestId = player.arrivingGuest;
+            const guest = Game.GUESTS[guestId];
+            if (guest) {
+                const key = 'arriving-guest';
+                wanted.add(key);
+                let actor = actors.get(key);
+                const waitingTarget = {
+                    x: Math.max(12, Math.min(sceneBounds.width - 12, entryDoor.x - 24)),
+                    y: Math.max(14, Math.min(sceneBounds.height - 12, entryDoor.y + 22)),
+                };
+
+                if (!actor) {
+                    const el = document.createElement('div');
+                    el.className = 'venue-actor entering';
+                    el.innerHTML = getActorHtml(guestId);
+                    el.title = `${guest.name} • arriving`;
+                    layer.appendChild(el);
+                    actor = {
+                        el,
+                        spriteEl: el.querySelector('.actor-sprite'),
+                        x: entryDoor.x,
+                        y: entryDoor.y,
+                        targetX: waitingTarget.x,
+                        targetY: waitingTarget.y,
+                        behavior: 'lounge',
+                        state: 'active',
+                        t: Math.random() * Math.PI * 2,
+                        guestName: guest.name,
+                        guestId,
+                        frame: 0,
+                        frameMs: 0,
+                        skipTickCounter: 0,
+                    };
+                    setActorTransform(actor, entryDoor.x, entryDoor.y);
+                    actors.set(key, actor);
+                    setTimeout(() => el.classList.remove('entering'), 320);
+                } else if (actor.state === 'exiting') {
+                    actor.state = 'active';
+                    actor.el.classList.remove('exiting', 'leaving');
+                }
+
+                actor.guestId = guestId;
+                actor.guestName = guest.name;
+                actor.targetX = waitingTarget.x;
+                actor.targetY = waitingTarget.y;
+                setActorBehavior(actor, 'lounge');
+                setActorTitle(actor);
+            }
+        }
 
         for (const [key, actor] of actors.entries()) {
             if (!wanted.has(key) && actor.state !== 'exiting') {
