@@ -1541,7 +1541,6 @@
                 el.className = 'venue-actor entering';
                 el.innerHTML = getActorHtml(player.arrivingGuest);
                 el.title = `${arrivingGuest.name} • waiting`;
-                layer.appendChild(el);
                 arrivingActor = {
                     el,
                     spriteEl: el.querySelector('.actor-sprite'),
@@ -1559,6 +1558,7 @@
                     skipTickCounter: 0,
                 };
                 setActorTransform(arrivingActor, entryDoor.x, entryDoor.y);
+                layer.appendChild(el);
                 actors.set(arrivingKey, arrivingActor);
                 setTimeout(() => el.classList.remove('entering'), 320);
             } else {
@@ -1596,7 +1596,6 @@
                 el.className = 'venue-actor entering';
                 el.innerHTML = getActorHtml(guestId);
                 el.title = `${guest.name} • entering`;
-                layer.appendChild(el);
                 actor = {
                     el,
                     spriteEl: el.querySelector('.actor-sprite'),
@@ -1614,6 +1613,7 @@
                     skipTickCounter: 0,
                 };
                 setActorTransform(actor, spawn.x, spawn.y);
+                layer.appendChild(el);
                 actors.set(key, actor);
                 setTimeout(() => el.classList.remove('entering'), 320);
             } else if (actor.state === 'exiting') {
