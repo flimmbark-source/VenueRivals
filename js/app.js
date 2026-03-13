@@ -1344,8 +1344,9 @@
             if (Number.isFinite(motion.driftX)) ping.style.setProperty('--ping-drift-x', `${motion.driftX}px`);
             if (Number.isFinite(motion.driftY)) ping.style.setProperty('--ping-drift-y', `${motion.driftY}px`);
         }
+        const startOffsetY = motion && Number.isFinite(motion.startOffsetY) ? motion.startOffsetY : 0;
         ping.style.left = `${rect.left + (rect.width / 2)}px`;
-        ping.style.top = `${placement === 'below' ? rect.bottom + 6 : rect.top - 6}px`;
+        ping.style.top = `${placement === 'below' ? rect.bottom + 6 : rect.top - 6 + startOffsetY}px`;
 
         const reel = document.createElement('span');
         reel.className = 'number-ping-reel';
@@ -1393,7 +1394,7 @@
                         '#2cb67d',
                         'above',
                         'arcade-burst',
-                        { driftX: randomMoneyDriftX, driftY: -62 },
+                        { driftX: randomMoneyDriftX, driftY: -62, startOffsetY: 10 },
                     );
                 }
                 if (pointsValue > 0) {
@@ -1404,7 +1405,7 @@
                             '#ffd166',
                             'above',
                             'arcade-burst',
-                            { driftX: randomPointsDriftX, driftY: -70 },
+                            { driftX: randomPointsDriftX, driftY: -70, startOffsetY: 10 },
                         );
                     }, 80);
                 }
