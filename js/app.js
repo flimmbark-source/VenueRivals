@@ -1554,7 +1554,12 @@
                 actors.delete('arriving-guest');
                 actor = arrivingActor;
                 actor.state = 'active';
+                actor.waitUntilMs = 0;
                 actor.el.classList.remove('entering', 'exiting', 'leaving');
+                const target = pickBehaviorTarget(who, sceneBounds);
+                actor.targetX = target.x;
+                actor.targetY = target.y;
+                setActorBehavior(actor, target.behavior);
             }
 
             if (!actor) {
@@ -1644,10 +1649,25 @@
                     setActorTransform(actor, entryDoor.x, entryDoor.y);
                     actors.set(key, actor);
                     setTimeout(() => el.classList.remove('entering'), 320);
-                } else if (actor.state === 'exiting') {
-                    actor.state = 'active';
-                    actor.el.classList.remove('exiting', 'leaving');
-                    actor.waitUntilMs = nowMs + ARRIVING_ACTOR_WAIT_MS;
+                } else {
+                    const guestChanged = actor.guestId !== guestId;
+                    if (actor.state === 'exiting') {
+                        actor.state = 'active';
+                        actor.el.classList.remove('exiting', 'leaving');
+                    }
+                    if (guestChanged) {
+                        actor.guestId = guestId;
+                        actor.guestName = guest.name;
+                        actor.waitUntilMs = nowMs + ARRIVING_ACTOR_WAIT_MS;
+                        actor.x = entryDoor.x;
+                        actor.y = entryDoor.y;
+                        actor.targetX = waitingTarget.x;
+                        actor.targetY = waitingTarget.y;
+                        actor.skipTickCounter = 0;
+                        setActorTransform(actor, entryDoor.x, entryDoor.y);
+                        actor.el.classList.add('entering');
+                        setTimeout(() => actor?.el?.classList.remove('entering'), 320);
+                    }
                 }
 
                 actor.guestId = guestId;
