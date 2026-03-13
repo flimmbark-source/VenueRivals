@@ -1362,8 +1362,11 @@
         if (!layer || !player) return;
         const actors = venueActors[who];
         const wanted = new Set();
+        const venue = Game.VENUES[player.venueId];
+        const houseCapacity = Game.getHouseCapacity(venue, player);
+        const visibleHouseEntries = getVisibleHouseEntries(player, houseCapacity);
 
-        player.house.forEach((entry, idx) => {
+        visibleHouseEntries.forEach((entry, idx) => {
             const guestId = entry.guestId || entry;
             const guest = Game.GUESTS[guestId];
             if (!guest) return;
@@ -1821,6 +1824,13 @@
         });
     }
 
+    function getVisibleHouseEntries(player, houseCapacity) {
+        if (!player) return [];
+        const entries = Array.isArray(player.house) ? player.house : [];
+        if (entries.length <= houseCapacity) return entries;
+        return entries.slice(entries.length - houseCapacity);
+    }
+
     function bindHouseGridSlotDelegates() {
         ['player-slots', 'rival-slots'].forEach((id) => {
             const container = document.getElementById(id);
@@ -1886,8 +1896,10 @@
         // Collect all house slot elements (empty + guests) into an array
         const houseSlots = [];
 
+        const visibleHouseEntries = getVisibleHouseEntries(player, houseCapacity);
+
         // Count occupied slots: house + arriving guest (cap to capacity for empties)
-        const occupiedCount = Math.min(player.house.length, houseCapacity) + (player.arrivingGuest ? 1 : 0);
+        const occupiedCount = visibleHouseEntries.length + (player.arrivingGuest ? 1 : 0);
 
         // Empty slots
         for (let i = 0; i < houseCapacity - occupiedCount; i++) {
@@ -1897,10 +1909,7 @@
         }
 
         // House guests oldest-to-newest but only up to capacity
-        let guests = [...player.house].reverse();
-        if (guests.length > houseCapacity) {
-            guests = guests.slice(guests.length - houseCapacity);
-        }
+        const guests = [...visibleHouseEntries].reverse();
         guests.forEach((entry, guestIndex) => {
             const guestId = entry.guestId || entry;
             const instanceId = typeof entry === 'string' ? null : entry.instanceId;
