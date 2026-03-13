@@ -5122,10 +5122,20 @@
 
 
         // Guest phase controls
-        document.getElementById('player-door').addEventListener('click', handleAdmit);
-        document.getElementById('player-door-card').addEventListener('click', handleAdmit);
-        document.getElementById('player-exit').addEventListener('click', handleCloseDoor);
-        document.getElementById('player-exit-card').addEventListener('click', handleCloseDoor);
+        const bindDoorActivation = (selector, handler) => {
+            const door = document.querySelector(selector);
+            if (!door) return;
+            door.addEventListener('click', handler);
+            door.addEventListener('touchend', handler, { passive: true });
+            door.querySelectorAll('.door-icon, .door-label').forEach((el) => {
+                el.addEventListener('click', handler);
+                el.addEventListener('touchend', handler, { passive: true });
+            });
+        };
+        bindDoorActivation('#player-door', handleAdmit);
+        bindDoorActivation('#player-door-card', handleAdmit);
+        bindDoorActivation('#player-exit', handleCloseDoor);
+        bindDoorActivation('#player-exit-card', handleCloseDoor);
 
         // Round results
         document.getElementById('btn-next-phase').addEventListener('click', handleNextPhase);
