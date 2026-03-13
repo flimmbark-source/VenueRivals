@@ -52,6 +52,9 @@
     let lastAnimFrameTs = 0;
     let roundActionLog = [];
     let actionLogPopupEl = null;
+    let closeDoorPayoutSequenceActive = false;
+    let closeDoorPayoutSequencePendingDoneCheck = false;
+    let suppressNextArrivingRemap = false;
     let shopInspectMode = false;
     const houseRenderCacheKeys = { player: '', rival: '' };
     const hudDeltaSnapshot = {
@@ -1329,16 +1332,21 @@
         spawnNumberPing(targetEl, `${sign}${delta}`, color, placement);
     }
 
-    function spawnNumberPing(targetEl, text, color, placement = 'above') {
+    function spawnNumberPing(targetEl, text, color, placement = 'above', variantClass = '', motion = null) {
         if (!targetEl || !text) return;
         const rect = targetEl.getBoundingClientRect();
         if (!rect || (rect.width === 0 && rect.height === 0)) return;
 
         const ping = document.createElement('div');
-        ping.className = `number-ping ${placement === 'below' ? 'below' : 'above'}`;
+        ping.className = `number-ping ${placement === 'below' ? 'below' : 'above'} ${variantClass}`.trim();
         ping.style.setProperty('--ping-color', color || '#ffd166');
+        if (motion) {
+            if (Number.isFinite(motion.driftX)) ping.style.setProperty('--ping-drift-x', `${motion.driftX}px`);
+            if (Number.isFinite(motion.driftY)) ping.style.setProperty('--ping-drift-y', `${motion.driftY}px`);
+        }
+        const startOffsetY = motion && Number.isFinite(motion.startOffsetY) ? motion.startOffsetY : 0;
         ping.style.left = `${rect.left + (rect.width / 2)}px`;
-        ping.style.top = `${placement === 'below' ? rect.bottom + 6 : rect.top - 6}px`;
+        ping.style.top = `${placement === 'below' ? rect.bottom + 6 : rect.top - 6 + startOffsetY}px`;
 
         const reel = document.createElement('span');
         reel.className = 'number-ping-reel';
@@ -1354,6 +1362,98 @@
                 if (ping.isConnected) ping.remove();
             }, 650);
         }, 1900);
+    }
+
+    function animateCloseDoorPayoutGuest(who, processedGuest, onCount = null) {
+        const slotsEl = document.getElementById(`${who}-slots`);
+        const guestId = processedGuest?.guestId;
+        const instanceId = processedGuest?.instanceId;
+        const guest = Game.GUESTS[guestId];
+        if (!slotsEl || !guest || !guestId) return Promise.resolve();
+
+        let slot = null;
+        if (instanceId != null) {
+            slot = slotsEl.querySelector(`.occupied-slot[data-instance-id="${instanceId}"]`);
+        }
+        if (!slot) {
+            slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${guestId}"]`);
+        }
+        if (!slot) return Promise.resolve();
+
+        return new Promise((resolve) => {
+            const emitPings = () => {
+                const randomMoneyDriftX = (Math.random() * 56) - 28;
+                const randomPointsDriftX = (Math.random() * 56) - 28;
+                const moneyValue = guest.money || 0;
+                const pointsValue = guest.points || 0;
+                if (typeof onCount === 'function') onCount();
+                if (moneyValue > 0) {
+                    spawnNumberPing(
+                        slot,
+                        `+$${moneyValue}`,
+                        '#2cb67d',
+                        'above',
+                        'arcade-burst',
+                        { driftX: randomMoneyDriftX, driftY: -62, startOffsetY: 10 },
+                    );
+                }
+                if (pointsValue > 0) {
+                    setTimeout(() => {
+                        spawnNumberPing(
+                            slot,
+                            `+${pointsValue}`,
+                            '#ffd166',
+                            'above',
+                            'arcade-burst',
+                            { driftX: randomPointsDriftX, driftY: -70, startOffsetY: 10 },
+                        );
+                    }, 80);
+                }
+            };
+
+            setTimeout(emitPings, 190);
+            slot.classList.add('close-door-payout-slot', 'is-payout-animating');
+
+            const done = () => {
+                slot.removeEventListener('animationend', done);
+                slot.classList.remove('is-payout-animating', 'close-door-payout-slot');
+                resolve();
+            };
+
+            slot.addEventListener('animationend', done);
+            window.setTimeout(done, 520);
+        });
+    }
+
+    function registerCloseDoorGuestPayout(who, guestId) {
+        if (!gameState || !guestId) return;
+        const actor = who === 'player' ? gameState.player : gameState.rival;
+        const guest = Game.GUESTS[guestId];
+        if (!actor || !guest) return;
+
+        actor.roundMoney += guest.money || 0;
+        actor.roundPoints += guest.points || 0;
+        actor.guestMoney = Math.max(0, (actor.guestMoney || 0) - (guest.money || 0));
+        actor.guestPoints = Math.max(0, (actor.guestPoints || 0) - (guest.points || 0));
+    }
+
+    async function runCloseDoorPayoutSequence(who, processedGuests = []) {
+        if (!processedGuests.length) return;
+        const slotsEl = document.getElementById(`${who}-slots`);
+        const sceneEl = document.getElementById(`${who}-scene`);
+        if (slotsEl) slotsEl.classList.add('close-door-payout-active');
+        if (sceneEl) sceneEl.classList.add('close-door-payout-active');
+        for (const processedGuest of processedGuests) {
+            const handleCount = () => {
+                registerCloseDoorGuestPayout(who, processedGuest?.guestId);
+                updateHUD();
+                publishState();
+            };
+            // eslint-disable-next-line no-await-in-loop
+            await animateCloseDoorPayoutGuest(who, processedGuest, handleCount);
+        }
+        if (slotsEl) slotsEl.classList.remove('close-door-payout-active');
+        if (sceneEl) sceneEl.classList.remove('close-door-payout-active');
     }
 
     function renderAbilityBadge(guest) {
@@ -1939,7 +2039,7 @@
             let prev = previousPositions.get(key);
             // If this is an inst: key with no previous position, check if it
             // was the arriving guest that just got admitted into the house.
-            if (!prev && key.startsWith('inst:') && oldArrivingRect) {
+            if (!prev && key.startsWith('inst:') && oldArrivingRect && !suppressNextArrivingRemap) {
                 prev = oldArrivingRect;
                 oldArrivingRect = null; // consume it so we only remap once
             }
@@ -3491,11 +3591,12 @@
         runAbility('player', explicitTarget);
     }
 
-    function runCloseDoor(actor = 'player') {
+    async function runCloseDoor(actor = 'player') {
         if (!gameState || gameState.phase !== 'guest') return;
         if (targetingMode && actor === 'player') exitTargetingMode();
         const { self, opponent, selfKey } = getActorState(actor);
         if (self.doorClosed || self.busted) return;
+        if (closeDoorPayoutSequenceActive) return;
 
         const venue = Game.VENUES[self.venueId];
         const playerSnapshot = createPlayerVisibleSnapshot();
@@ -3504,8 +3605,17 @@
         if (result?.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
         }
+        if (selfKey === 'player' && result?.processedGuests?.length) {
+            suppressNextArrivingRemap = true;
+        }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
+        if (selfKey === 'player' && result?.processedGuests?.length) {
+            closeDoorPayoutSequenceActive = true;
+            await runCloseDoorPayoutSequence(selfKey, result.processedGuests);
+            closeDoorPayoutSequenceActive = false;
+        }
+        suppressNextArrivingRemap = false;
         const playerVisibleStateChanged = hasPlayerVisibleStateChanged(playerSnapshot);
         if (selfKey === 'player' || playerVisibleStateChanged) updateGuestDetail();
         updateVenueStatus(selfKey);
@@ -3516,6 +3626,10 @@
         showFeedback('You closed the door safely', 'money', 2000, selfKey);
         setMomentHint('idle', 500);
         checkGuestPhaseDone();
+        if (closeDoorPayoutSequencePendingDoneCheck) {
+            closeDoorPayoutSequencePendingDoneCheck = false;
+            checkGuestPhaseDone();
+        }
         publishState();
     }
 
@@ -3823,6 +3937,10 @@
     // === Phase Transitions ===
     function checkGuestPhaseDone() {
         if (!gameState || gameState.phase !== 'guest') return;
+        if (closeDoorPayoutSequenceActive) {
+            closeDoorPayoutSequencePendingDoneCheck = true;
+            return;
+        }
         if (!Game.bothDone(gameState)) return;
 
         // Both players done - stop AI timer

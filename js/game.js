@@ -1548,14 +1548,37 @@ const GUESTS = {
 
   function closeDoor(player, venue, opponent = null) {
     if (player.doorClosed || player.busted) return false;
-    // Move arriving guest into the house before closing so it stays in the grid
+    // Bank only the currently arriving guest when closing.
+    const hadArrivingGuest = !!player.arrivingGuest;
     const pushed = moveArrivingGuestIntoHouse(player, venue);
+    const processedGuests = [];
+    if (hadArrivingGuest && player.house.length) {
+      const newestEntry = player.house[0];
+      processedGuests.push({
+        guestId: getGuestId(newestEntry),
+        instanceId:
+          newestEntry && typeof newestEntry === "object"
+            ? newestEntry.instanceId
+            : null,
+      });
+    }
+
+    // Then animate the remaining visible in-house line.
+    for (let i = 1; i < player.house.length; i++) {
+      const entry = player.house[i];
+      processedGuests.push({
+        guestId: getGuestId(entry),
+        instanceId: entry && typeof entry === "object" ? entry.instanceId : null,
+      });
+    }
+
     player.doorClosed = true;
     player.phaseComplete = true;
     player.arrivingGuest = null;
     player.arrivingAbilityUsed = false;
     return {
       closed: true,
+      processedGuests,
       pushedOut: pushed.map(getGuestId),
       busted: player.busted,
     };
