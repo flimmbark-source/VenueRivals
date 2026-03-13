@@ -1548,7 +1548,6 @@
                 el.className = 'venue-actor entering';
                 el.innerHTML = getActorHtml(guestId);
                 el.title = `${guest.name} • entering`;
-                layer.appendChild(el);
                 actor = {
                     el,
                     spriteEl: el.querySelector('.actor-sprite'),
@@ -1566,6 +1565,7 @@
                     skipTickCounter: 0,
                 };
                 setActorTransform(actor, spawn.x, spawn.y);
+                layer.appendChild(el);
                 actors.set(key, actor);
                 setTimeout(() => el.classList.remove('entering'), 320);
             } else if (actor.state === 'exiting') {
@@ -1589,8 +1589,60 @@
             setActorTitle(actor);
         });
 
-        // Keep arriving guests out of the venue actor layer until they are admitted.
-        // This prevents a brief pop-in at the scene origin before the guest joins the house.
+        // Keep the current arriving guest represented in the venue scene so the
+        // actor count matches the revealed cards in the slot strip.
+        if (player.arrivingGuest && Game.GUESTS[player.arrivingGuest]) {
+            const arrivingGuest = Game.GUESTS[player.arrivingGuest];
+            const arrivingKey = 'arriving-guest';
+            const targetX = Math.max(14, Math.min(sceneBounds.width - 26, entryDoor.x - 26));
+            const targetY = Math.max(12, Math.min(sceneBounds.height - 30, entryDoor.y + 18));
+            wanted.add(arrivingKey);
+
+            let arrivingActor = actors.get(arrivingKey);
+            if (!arrivingActor) {
+                const el = document.createElement('div');
+                el.className = 'venue-actor entering';
+                el.innerHTML = getActorHtml(player.arrivingGuest);
+                el.title = `${arrivingGuest.name} • waiting`;
+                arrivingActor = {
+                    el,
+                    spriteEl: el.querySelector('.actor-sprite'),
+                    x: entryDoor.x,
+                    y: entryDoor.y,
+                    targetX,
+                    targetY,
+                    behavior: 'waiting',
+                    state: 'active',
+                    t: Math.random() * Math.PI * 2,
+                    guestName: arrivingGuest.name,
+                    guestId: player.arrivingGuest,
+                    frame: 0,
+                    frameMs: 0,
+                    skipTickCounter: 0,
+                };
+                setActorTransform(arrivingActor, entryDoor.x, entryDoor.y);
+                layer.appendChild(el);
+                actors.set(arrivingKey, arrivingActor);
+                setTimeout(() => el.classList.remove('entering'), 320);
+            } else {
+                if (arrivingActor.guestId !== player.arrivingGuest) {
+                    arrivingActor.el.innerHTML = getActorHtml(player.arrivingGuest);
+                    arrivingActor.spriteEl = arrivingActor.el.querySelector('.actor-sprite');
+                    arrivingActor.frame = 0;
+                    arrivingActor.frameMs = 0;
+                }
+                arrivingActor.guestId = player.arrivingGuest;
+                arrivingActor.guestName = arrivingGuest.name;
+                arrivingActor.targetX = targetX;
+                arrivingActor.targetY = targetY;
+                setActorBehavior(arrivingActor, 'waiting');
+                setActorTitle(arrivingActor);
+            }
+        }
+
+
+        // Arriving guests are tracked with the transient "arriving-guest" key.
+        // Any actor not in `wanted` should transition toward the exit.
 
         for (const [key, actor] of actors.entries()) {
             if (!wanted.has(key) && actor.state !== 'exiting') {
