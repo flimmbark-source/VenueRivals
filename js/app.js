@@ -5125,11 +5125,10 @@
         const bindDoorActivation = (selector, handler) => {
             const door = document.querySelector(selector);
             if (!door) return;
-            door.addEventListener('click', handler);
-            door.addEventListener('touchend', handler, { passive: true });
-            door.querySelectorAll('.door-icon, .door-label').forEach((el) => {
-                el.addEventListener('click', handler);
-                el.addEventListener('touchend', handler, { passive: true });
+            door.addEventListener('pointerup', handler);
+            door.addEventListener('click', (event) => {
+                if (event.detail !== 0) return;
+                handler(event);
             });
         };
         bindDoorActivation('#player-door', handleAdmit);
