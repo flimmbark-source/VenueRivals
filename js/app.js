@@ -115,6 +115,7 @@
     const ACTOR_IDLE_SKIP_FRAMES = 5;
     const ACTOR_OFFSCREEN_SKIP_FRAMES = 8;
     const ACTOR_HEAVY_SCENE_THRESHOLD = 12;
+    const ARRIVING_ACTOR_WAIT_MS = 1000;
 
     // === Pixel Sprite Generator (Multi-frame) ===
     // Generates 4-frame sprite sheets: idle0, idle1, walk0, walk1.
@@ -1519,6 +1520,21 @@
         const exitDoor = geometry?.exitDoor || { x: 14, y: 14 };
         const actors = venueActors[who];
         const wanted = new Set();
+        const phaseAllowsGuests = gameState?.phase === 'guest';
+
+        if (!phaseAllowsGuests) {
+            for (const actor of actors.values()) {
+                if (actor.state === 'exiting') continue;
+                actor.state = 'exiting';
+                setActorBehavior(actor, 'leaving');
+                actor.targetX = exitDoor.x;
+                actor.targetY = exitDoor.y;
+                actor.el.classList.add('exiting');
+            }
+            ensureActorLoop();
+            return;
+        }
+
         const venue = Game.VENUES[player.venueId];
         const houseCapacity = Game.getHouseCapacity(venue, player);
         const visibleHouseEntries = getVisibleHouseEntries(player, houseCapacity);
@@ -1596,6 +1612,7 @@
                 const key = 'arriving-guest';
                 wanted.add(key);
                 let actor = actors.get(key);
+                const nowMs = performance.now();
                 const waitingTarget = {
                     x: Math.max(12, Math.min(sceneBounds.width - 12, entryDoor.x - 24)),
                     y: Math.max(14, Math.min(sceneBounds.height - 12, entryDoor.y + 22)),
@@ -1622,6 +1639,7 @@
                         frame: 0,
                         frameMs: 0,
                         skipTickCounter: 0,
+                        waitUntilMs: nowMs + ARRIVING_ACTOR_WAIT_MS,
                     };
                     setActorTransform(actor, entryDoor.x, entryDoor.y);
                     actors.set(key, actor);
@@ -1629,13 +1647,23 @@
                 } else if (actor.state === 'exiting') {
                     actor.state = 'active';
                     actor.el.classList.remove('exiting', 'leaving');
+                    actor.waitUntilMs = nowMs + ARRIVING_ACTOR_WAIT_MS;
                 }
 
                 actor.guestId = guestId;
                 actor.guestName = guest.name;
-                actor.targetX = waitingTarget.x;
-                actor.targetY = waitingTarget.y;
-                setActorBehavior(actor, 'lounge');
+
+                const shouldWaitAtDoor = (actor.waitUntilMs || 0) > nowMs;
+                if (shouldWaitAtDoor) {
+                    actor.targetX = waitingTarget.x;
+                    actor.targetY = waitingTarget.y;
+                    setActorBehavior(actor, 'lounge');
+                } else if (actor.behavior === 'lounge' || Math.hypot(actor.targetX - actor.x, actor.targetY - actor.y) <= 2) {
+                    const roamingTarget = pickBehaviorTarget(who, sceneBounds);
+                    actor.targetX = roamingTarget.x;
+                    actor.targetY = roamingTarget.y;
+                    setActorBehavior(actor, roamingTarget.behavior);
+                }
                 setActorTitle(actor);
             }
         }
@@ -3839,6 +3867,8 @@
         gameState.phase = 'buy';
         updateHUD();
         setMomentHint('shop', 1400);
+        syncVenueActors('player');
+        syncVenueActors('rival');
 
         // Generate markets
         const playerMarket = Game.getMarket(gameState.player.venueId);
