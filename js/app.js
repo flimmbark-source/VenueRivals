@@ -1555,6 +1555,7 @@
                 actor = arrivingActor;
                 actor.state = 'active';
                 actor.waitUntilMs = 0;
+                actor.isArrivingPlaceholder = false;
                 actor.el.classList.remove('entering', 'exiting', 'leaving');
                 const target = pickBehaviorTarget(who, sceneBounds);
                 actor.targetX = target.x;
@@ -1645,6 +1646,7 @@
                         frameMs: 0,
                         skipTickCounter: 0,
                         waitUntilMs: nowMs + ARRIVING_ACTOR_WAIT_MS,
+                        isArrivingPlaceholder: true,
                     };
                     setActorTransform(actor, entryDoor.x, entryDoor.y);
                     actors.set(key, actor);
@@ -1659,6 +1661,7 @@
                         actor.guestId = guestId;
                         actor.guestName = guest.name;
                         actor.waitUntilMs = nowMs + ARRIVING_ACTOR_WAIT_MS;
+                        actor.isArrivingPlaceholder = true;
                         actor.x = entryDoor.x;
                         actor.y = entryDoor.y;
                         actor.targetX = waitingTarget.x;
@@ -1679,6 +1682,7 @@
                     actor.targetY = waitingTarget.y;
                     setActorBehavior(actor, 'lounge');
                 } else if (actor.behavior === 'lounge' || Math.hypot(actor.targetX - actor.x, actor.targetY - actor.y) <= 2) {
+                    actor.isArrivingPlaceholder = false;
                     const roamingTarget = pickBehaviorTarget(who, sceneBounds);
                     actor.targetX = roamingTarget.x;
                     actor.targetY = roamingTarget.y;
@@ -1786,6 +1790,18 @@
                     return;
                 }
 
+                if (actor.state !== 'exiting' && actor.isArrivingPlaceholder) {
+                    const nowMs = performance.now();
+                    if ((actor.waitUntilMs || 0) <= nowMs) {
+                        actor.isArrivingPlaceholder = false;
+                        actor.waitUntilMs = 0;
+                        const roamingTarget = pickBehaviorTarget(who, bounds);
+                        actor.targetX = roamingTarget.x;
+                        actor.targetY = roamingTarget.y;
+                        setActorBehavior(actor, roamingTarget.behavior);
+                    }
+                }
+
                 if (dist > 1) {
                     const maxSpeed = actor.state === 'exiting' ? ACTOR_MAX_SPEED + 1.2 : ACTOR_MAX_SPEED;
                     const speed = Math.min(maxSpeed, ACTOR_MIN_SPEED + dist * ACTOR_DISTANCE_SPEED_FACTOR) * deltaScale;
@@ -1794,7 +1810,7 @@
                 } else if (actor.state === 'exiting') {
                     actor.el.classList.add('leaving');
                     removeKeys.push(key);
-                } else if (Math.random() < 0.025) {
+                } else if (!actor.isArrivingPlaceholder && Math.random() < 0.025) {
                     const target = pickBehaviorTarget(who, bounds);
                     actor.targetX = target.x;
                     actor.targetY = target.y;
