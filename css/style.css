@@ -1697,6 +1697,22 @@ body {
     justify-content: flex-end;
 }
 
+
+.venue-slot-counts {
+    position: absolute;
+    right: 52px;
+    bottom: 10px;
+    z-index: 5;
+    font-size: 0.52rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: rgba(236, 240, 255, 0.92);
+    background: rgba(10, 12, 22, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 2px 7px;
+    pointer-events: none;
+}
 .guest-slots::after {
     content: '';
     position: absolute;
@@ -2773,6 +2789,11 @@ body {
     to { transform: translateX(-40px); opacity: 0; }
 }
 
+
+@keyframes venueActorFadeIn {
+    from { opacity: 0; filter: blur(1px) drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
+    to { opacity: 1; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.65)); }
+}
 @keyframes feedbackPop {
     from { transform: scale(0.8); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
@@ -2806,8 +2827,9 @@ body {
     100% { background: transparent; }
 }
 
-.entering { animation: slideInFromRight 0.3s ease both; }
-.exiting { animation: slideOutLeft 0.3s ease both; }
+.entering:not(.venue-actor) { animation: slideInFromRight 0.3s ease both; }
+.exiting:not(.venue-actor) { animation: slideOutLeft 0.3s ease both; }
+.venue-actor-entering { animation: venueActorFadeIn 0.22s ease-out both; }
 .bust-flash { animation: bustFlash 0.5s ease; }
 
 .exit-ghost {
