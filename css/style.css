@@ -67,6 +67,15 @@
 
     /* Micro-VFX toggle (1 = on, 0 = off) */
     --vfx-enabled: 1;
+
+    /* Shared gameplay panel treatment */
+    --ui-panel-bg: linear-gradient(180deg, rgba(19, 23, 41, 0.95), rgba(9, 12, 24, 0.94));
+    --ui-panel-border: rgba(170, 182, 220, 0.24);
+    --ui-panel-border-strong: rgba(170, 182, 220, 0.34);
+    --ui-corner: 12px;
+    --ui-corner-tight: 8px;
+    --ui-glow: 0 10px 22px rgba(0, 0, 0, 0.34);
+    --ui-glow-soft: 0 0 8px rgba(127, 90, 240, 0.2);
 }
 
 body {
@@ -950,7 +959,7 @@ body {
     flex-direction: column;
     border-radius: 0;
     background: linear-gradient(180deg, rgba(33, 39, 67, 0.95), rgba(13, 17, 30, 0.96));
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    border: 1px solid var(--ui-panel-border);
     backdrop-filter: blur(6px);
 }
 
@@ -958,10 +967,10 @@ body {
 .party-top-hud {
     position: relative;
     z-index: 9;
-    padding: 8px 12px 6px;
+    padding: 6px 10px 5px;
     background:
         linear-gradient(180deg, var(--hud-panel-bg), rgba(10, 8, 22, 0.5));
-    border-bottom: 1px solid var(--hud-panel-border);
+    border-bottom: 1px solid var(--ui-panel-border-strong);
     box-shadow:
         0 1px 0 rgba(127, 90, 240, 0.08),
         inset 0 -1px 0 rgba(0,0,0,0.3);
@@ -993,11 +1002,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 10px;
-    padding: 6px 10px;
-    border-radius: 10px;
-    background: transparent;
-    border: 0;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: var(--ui-corner-tight);
+    background: rgba(10, 12, 24, 0.68);
+    border: 1px solid var(--ui-panel-border);
     font-family: 'Poppins', sans-serif;
     font-size: 0.68rem;
     font-weight: 700;
@@ -1010,7 +1019,7 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 8px;
     margin-left: auto;
 }
 
@@ -1018,7 +1027,7 @@ body {
     text-transform: uppercase;
     letter-spacing: 1.5px;
     font-size: 0.58rem;
-    opacity: 0.7;
+    opacity: 0.88;
 }
 
 .player-stats .venue-area-label {
@@ -1048,18 +1057,20 @@ body {
     flex-direction: column;
     gap: 6px;
     overflow: hidden;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 16px;
-    background: linear-gradient(180deg, rgba(24, 29, 50, 0.95), rgba(10, 12, 25, 0.94));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--ui-panel-border-strong);
+    border-radius: var(--ui-corner);
+    background: var(--ui-panel-bg);
+    box-shadow: var(--ui-glow), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .rival-venue {
-    border-color: rgba(255, 110, 110, 0.38);
+    border-color: rgba(255, 110, 110, 0.26);
+    background: linear-gradient(180deg, rgba(18, 19, 33, 0.94), rgba(9, 11, 21, 0.92));
+    opacity: 0.94;
 }
 
 .player-venue {
-    border-color: rgba(76, 201, 240, 0.38);
+    border-color: rgba(76, 201, 240, 0.3);
     order: -1;
 }
 
@@ -1099,12 +1110,13 @@ body {
 .heat-bar,
 .phone-phase-progress {
     position: relative;
-    height: 6px;
+    height: 9px;
     flex: 1;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 3px;
+    background: linear-gradient(180deg, rgba(7, 9, 19, 0.95), rgba(18, 23, 43, 0.72));
+    border-radius: 999px;
+    border: 1px solid var(--ui-panel-border);
     overflow: hidden;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.02);
     /* LED segment overlay */
     background-image:
         repeating-linear-gradient(
@@ -1119,7 +1131,8 @@ body {
     width: 0;
     border-radius: inherit;
     transition: width 0.25s ease, background 0.25s ease;
-    background: linear-gradient(90deg, #2cb67d, #7be495);
+    background: linear-gradient(90deg, #2cb67d, #7be495 58%, #8df3bf);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.28);
 }
 
 .heat-fill.warning {
@@ -1157,15 +1170,15 @@ body {
 .venue-scene {
     position: relative;
     height: auto;
-    border-radius: 14px;
-    border: 1px solid rgba(127, 90, 240, 0.15);
+    border-radius: var(--ui-corner);
+    border: 1px solid var(--ui-panel-border);
     background:
         linear-gradient(180deg, rgba(20, 18, 38, 0.25), rgba(14, 12, 30, 0.35)),
         url('./public/Venue1.png') center / cover no-repeat;
     overflow: hidden;
     margin-bottom: 6px;
     padding-top: 42px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), var(--ui-glow-soft);
 }
 
 .venue-scene .venue-area-stats {
@@ -1714,9 +1727,9 @@ body {
 .guest-slot {
     width: 46px;
     height: 55px;
-    border-radius: 8px;
-    background: var(--bg-light);
-    border: 2px solid var(--bg-light);
+    border-radius: var(--ui-corner-tight);
+    background: linear-gradient(180deg, rgba(40, 44, 74, 0.96), rgba(27, 31, 56, 0.96));
+    border: 1px solid var(--ui-panel-border);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1724,7 +1737,7 @@ body {
     flex-shrink: 0;
     position: relative;
     cursor: pointer;
-    transition: transform 0.2s ease, opacity 0.2s ease;
+    transition: transform 0.2s ease, opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     overflow: visible;
     will-change: transform;
 }
@@ -1757,7 +1770,7 @@ body {
 
 .guest-slot .slot-stat {
     position: absolute;
-    font-size: 0.82rem;
+    font-size: 0.72rem;
     font-weight: 700;
     line-height: 1;
     text-shadow: 0 1px 3px rgba(0,0,0,0.65);
@@ -1765,8 +1778,8 @@ body {
 
 .guest-slot .slot-heat {
     top: auto;
-    bottom: 3px;
-    right: 4px;
+    bottom: 4px;
+    right: 5px;
     left: auto;
     transform: none;
     color: var(--color-heat);
@@ -1775,15 +1788,15 @@ body {
 }
 
 .guest-slot .slot-money {
-    right: 3px;
+    right: 5px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--color-money);
 }
 
 .guest-slot .slot-points {
-    right: 4px;
-    top: 10px;
+    right: 5px;
+    top: 12px;
     transform: translateY(-50%);
     bottom: auto;
     color: var(--color-points);
@@ -1853,8 +1866,8 @@ body {
 
 
 .guest-slot.selected {
-    border-color: #ffffff;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 0 12px rgba(127, 90, 240, 0.5);
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.95), 0 0 14px rgba(127, 90, 240, 0.55);
 }
 
 .guest-slot.arriving-in-grid {
@@ -1994,6 +2007,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    padding: 0 2px;
 }
 
 .venue-heat-row {
@@ -2037,9 +2051,9 @@ body {
 .global-feedback-bar {
     margin: 4px 8px 0;
     padding: 0 6px;
-    border-radius: 8px;
-    background: rgba(7, 10, 20, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--ui-corner-tight);
+    background: rgba(9, 12, 22, 0.78);
+    border: 1px solid var(--ui-panel-border);
 }
 
 .feedback-msg {
@@ -2051,15 +2065,15 @@ body {
     justify-content: flex-start;
     position: absolute;
     inset: 0;
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     font-weight: 700;
     line-height: 1.2;
     padding: 5px 10px;
-    border-radius: 11px;
+    border-radius: var(--ui-corner-tight);
     text-align: left;
     color: var(--text-primary);
-    background: rgba(20, 25, 42, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(20, 24, 41, 0.9);
+    border: 1px solid var(--ui-panel-border-strong);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     overflow: hidden;
 }
@@ -2176,32 +2190,33 @@ body {
     max-height: min(48vh, 320px);
     display: flex;
     flex-direction: column;
-    border-radius: 12px;
-    background: rgba(9, 12, 22, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+    border-radius: var(--ui-corner);
+    background: rgba(9, 12, 22, 0.95);
+    border: 1px solid var(--ui-panel-border-strong);
+    box-shadow: var(--ui-glow);
     overflow: hidden;
 }
 
 .action-log-title {
-    font-size: 0.55rem;
+    font-size: 0.58rem;
     font-weight: 700;
     letter-spacing: 0.4px;
     color: var(--accent-gold);
-    padding: 8px 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--ui-panel-border);
 }
 
 .action-log-list {
     overflow-y: auto;
-    padding: 6px 0;
+    padding: 4px 0;
 }
 
 .action-log-item {
-    font-size: 0.55rem;
-    line-height: 1.35;
+    font-size: 0.56rem;
+    line-height: 1.4;
     color: var(--text-primary);
     padding: 4px 10px;
+    border-top: 1px solid rgba(170, 182, 220, 0.08);
 }
 
 .action-log-empty {
@@ -3604,44 +3619,50 @@ body {
 .phone-status-strip {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: space-between;
     width: 100%;
     position: relative;
-    gap: 12px;
-    font-size: 0.66rem;
+    gap: 8px;
+    font-size: 0.62rem;
     font-family: 'Poppins', sans-serif;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.9px;
 }
 
 .phone-round {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     color: var(--color-points);
     font-weight: 700;
     text-shadow: 0 0 6px rgba(255, 209, 102, 0.4);
 }
 
 .phone-phase {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    position: static;
     text-align: center;
     color: var(--text-primary);
     font-weight: 700;
     text-shadow: 0 0 8px var(--hud-led-glow);
-    letter-spacing: 1.5px;
+    letter-spacing: 1.2px;
     pointer-events: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--ui-panel-border);
+    border-radius: 999px;
+    padding: 2px 8px;
 }
 
 .phone-connection {
     display: flex;
     justify-content: flex-end;
-    margin-left: auto;
-    gap: 8px;
-    font-size: 0.72rem;
+    margin-left: 0;
+    gap: 5px;
+    font-size: 0.68rem;
     font-weight: 700;
     text-transform: none;
     letter-spacing: 0;
-    color: var(--text-primary);
+    color: var(--text-secondary);
+    align-items: center;
 }
 
 /* Cash register style money */
@@ -3711,8 +3732,8 @@ body {
 }
 
 .party-top-hud .phone-status-strip {
-    font-size: 0.62rem;
-    letter-spacing: 1.2px;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
 }
 
 .party-top-hud .phone-heat-row {
