@@ -36,7 +36,7 @@
     const venueActors = { player: new Map(), rival: new Map() };
     const venueGeometryCache = {
         player: { dirty: true, bounds: { width: 280, height: 150 }, entryDoor: { x: 260.4, y: 12 }, exitDoor: { x: 14, y: 14 } },
-        rival: { dirty: true, bounds: { width: 280, height: 150 }, entryDoor: { x: 260.4, y: 12 }, exitDoor: { x: 14, y: 14 } },
+        rival: { dirty: true, bounds: { width: 280, height: 150 }, entryDoor: { x: 260.4, y: 132 }, exitDoor: { x: 14, y: 14 } },
     };
     let venueGeometryObserver = null;
     let actorAnimFrameId = null;
@@ -115,6 +115,7 @@
     const ACTOR_IDLE_SKIP_FRAMES = 5;
     const ACTOR_OFFSCREEN_SKIP_FRAMES = 8;
     const ACTOR_HEAVY_SCENE_THRESHOLD = 12;
+    const ARRIVING_ACTOR_WAIT_MS = 1000;
 
     // === Pixel Sprite Generator (Multi-frame) ===
     // Generates 4-frame sprite sheets: idle0, idle1, walk0, walk1.
@@ -1396,6 +1397,20 @@
         }, bounds);
     }
 
+    function getDefaultEntryDoorPosition(who, bounds) {
+        if (who === 'rival') {
+            return clampDoorPosition({ x: bounds.width - 20, y: bounds.height - 18 }, bounds);
+        }
+        return clampDoorPosition({ x: bounds.width * 0.93, y: 12 }, bounds);
+    }
+
+    function getDefaultExitDoorPosition(who, bounds) {
+        if (who === 'rival') {
+            return clampDoorPosition({ x: 14, y: 14 }, bounds);
+        }
+        return clampDoorPosition({ x: 14, y: 14 }, bounds);
+    }
+
     function getVenueGeometry(who) {
         const cached = venueGeometryCache[who];
         if (!cached) return null;
@@ -1408,12 +1423,17 @@
         };
         const entryDoorId = who === 'player' ? 'player-door-card' : 'rival-door-card';
         const exitDoorId = who === 'player' ? 'player-exit-card' : 'rival-exit-card';
-        const entryFallback = clampDoorPosition({ x: bounds.width * 0.93, y: 12 }, bounds);
-        const exitFallback = clampDoorPosition({ x: 14, y: 14 }, bounds);
+        const entryFallback = getDefaultEntryDoorPosition(who, bounds);
+        const exitFallback = getDefaultExitDoorPosition(who, bounds);
 
         cached.bounds = bounds;
-        cached.entryDoor = computeDoorPosition(sceneEl, entryDoorId, entryFallback, bounds);
-        cached.exitDoor = computeDoorPosition(sceneEl, exitDoorId, exitFallback, bounds);
+        if (who === 'rival') {
+            cached.entryDoor = entryFallback;
+            cached.exitDoor = exitFallback;
+        } else {
+            cached.entryDoor = computeDoorPosition(sceneEl, entryDoorId, entryFallback, bounds);
+            cached.exitDoor = computeDoorPosition(sceneEl, exitDoorId, exitFallback, bounds);
+        }
         cached.dirty = false;
         return cached;
     }
@@ -1435,11 +1455,13 @@
     }
 
     function getEntryDoorPosition(who) {
-        return getVenueGeometry(who)?.entryDoor || { x: 260.4, y: 12 };
+        const bounds = getSceneBounds(who) || { width: 280, height: 150 };
+        return getVenueGeometry(who)?.entryDoor || getDefaultEntryDoorPosition(who, bounds);
     }
 
     function getExitDoorPosition(who) {
-        return getVenueGeometry(who)?.exitDoor || { x: 14, y: 14 };
+        const bounds = getSceneBounds(who) || { width: 280, height: 150 };
+        return getVenueGeometry(who)?.exitDoor || getDefaultExitDoorPosition(who, bounds);
     }
 
     function setupVenueGeometryInvalidation() {
@@ -1519,6 +1541,21 @@
         const exitDoor = geometry?.exitDoor || { x: 14, y: 14 };
         const actors = venueActors[who];
         const wanted = new Set();
+        const phaseAllowsGuests = gameState?.phase === 'guest';
+
+        if (!phaseAllowsGuests) {
+            for (const actor of actors.values()) {
+                if (actor.state === 'exiting') continue;
+                actor.state = 'exiting';
+                setActorBehavior(actor, 'leaving');
+                actor.targetX = exitDoor.x;
+                actor.targetY = exitDoor.y;
+                actor.el.classList.add('exiting');
+            }
+            ensureActorLoop();
+            return;
+        }
+
         const venue = Game.VENUES[player.venueId];
         const houseCapacity = Game.getHouseCapacity(venue, player);
         const visibleHouseEntries = getVisibleHouseEntries(player, houseCapacity);
@@ -1538,7 +1575,13 @@
                 actors.delete('arriving-guest');
                 actor = arrivingActor;
                 actor.state = 'active';
+                actor.waitUntilMs = 0;
+                actor.isArrivingPlaceholder = false;
                 actor.el.classList.remove('entering', 'exiting', 'leaving');
+                const target = pickBehaviorTarget(who, sceneBounds);
+                actor.targetX = target.x;
+                actor.targetY = target.y;
+                setActorBehavior(actor, target.behavior);
             }
 
             if (!actor) {
@@ -1596,6 +1639,7 @@
                 const key = 'arriving-guest';
                 wanted.add(key);
                 let actor = actors.get(key);
+                const nowMs = performance.now();
                 const waitingTarget = {
                     x: Math.max(12, Math.min(sceneBounds.width - 12, entryDoor.x - 24)),
                     y: Math.max(14, Math.min(sceneBounds.height - 12, entryDoor.y + 22)),
@@ -1622,20 +1666,49 @@
                         frame: 0,
                         frameMs: 0,
                         skipTickCounter: 0,
+                        waitUntilMs: nowMs + ARRIVING_ACTOR_WAIT_MS,
+                        isArrivingPlaceholder: true,
                     };
                     setActorTransform(actor, entryDoor.x, entryDoor.y);
                     actors.set(key, actor);
                     setTimeout(() => el.classList.remove('entering'), 320);
-                } else if (actor.state === 'exiting') {
-                    actor.state = 'active';
-                    actor.el.classList.remove('exiting', 'leaving');
+                } else {
+                    const guestChanged = actor.guestId !== guestId;
+                    if (actor.state === 'exiting') {
+                        actor.state = 'active';
+                        actor.el.classList.remove('exiting', 'leaving');
+                    }
+                    if (guestChanged) {
+                        actor.guestId = guestId;
+                        actor.guestName = guest.name;
+                        actor.waitUntilMs = nowMs + ARRIVING_ACTOR_WAIT_MS;
+                        actor.isArrivingPlaceholder = true;
+                        actor.x = entryDoor.x;
+                        actor.y = entryDoor.y;
+                        actor.targetX = waitingTarget.x;
+                        actor.targetY = waitingTarget.y;
+                        actor.skipTickCounter = 0;
+                        setActorTransform(actor, entryDoor.x, entryDoor.y);
+                        actor.el.classList.add('entering');
+                        setTimeout(() => actor?.el?.classList.remove('entering'), 320);
+                    }
                 }
 
                 actor.guestId = guestId;
                 actor.guestName = guest.name;
-                actor.targetX = waitingTarget.x;
-                actor.targetY = waitingTarget.y;
-                setActorBehavior(actor, 'lounge');
+
+                const shouldWaitAtDoor = (actor.waitUntilMs || 0) > nowMs;
+                if (shouldWaitAtDoor) {
+                    actor.targetX = waitingTarget.x;
+                    actor.targetY = waitingTarget.y;
+                    setActorBehavior(actor, 'lounge');
+                } else if (actor.behavior === 'lounge' || Math.hypot(actor.targetX - actor.x, actor.targetY - actor.y) <= 2) {
+                    actor.isArrivingPlaceholder = false;
+                    const roamingTarget = pickBehaviorTarget(who, sceneBounds);
+                    actor.targetX = roamingTarget.x;
+                    actor.targetY = roamingTarget.y;
+                    setActorBehavior(actor, roamingTarget.behavior);
+                }
                 setActorTitle(actor);
             }
         }
@@ -1729,6 +1802,18 @@
                 const offscreen = clampedX <= 8 || clampedX >= bounds.width - 24 || clampedY <= 8 || clampedY >= bounds.height - 36;
                 actor.skipTickCounter = (actor.skipTickCounter || 0) + 1;
 
+                if (actor.state !== 'exiting' && actor.isArrivingPlaceholder) {
+                    const nowMs = performance.now();
+                    if ((actor.waitUntilMs || 0) <= nowMs) {
+                        actor.isArrivingPlaceholder = false;
+                        actor.waitUntilMs = 0;
+                        const roamingTarget = pickBehaviorTarget(who, bounds);
+                        actor.targetX = roamingTarget.x;
+                        actor.targetY = roamingTarget.y;
+                        setActorBehavior(actor, roamingTarget.behavior);
+                    }
+                }
+
                 const dx = actor.targetX - actor.x;
                 const dy = actor.targetY - actor.y;
                 const dist = Math.hypot(dx, dy);
@@ -1746,7 +1831,7 @@
                 } else if (actor.state === 'exiting') {
                     actor.el.classList.add('leaving');
                     removeKeys.push(key);
-                } else if (Math.random() < 0.025) {
+                } else if (!actor.isArrivingPlaceholder && Math.random() < 0.025) {
                     const target = pickBehaviorTarget(who, bounds);
                     actor.targetX = target.x;
                     actor.targetY = target.y;
@@ -3839,6 +3924,8 @@
         gameState.phase = 'buy';
         updateHUD();
         setMomentHint('shop', 1400);
+        syncVenueActors('player');
+        syncVenueActors('rival');
 
         // Generate markets
         const playerMarket = Game.getMarket(gameState.player.venueId);
