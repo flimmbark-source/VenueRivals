@@ -1538,14 +1538,14 @@
                 actors.delete('arriving-guest');
                 actor = arrivingActor;
                 actor.state = 'active';
-                actor.el.classList.remove('entering', 'exiting', 'leaving');
+                actor.el.classList.remove('venue-actor-entering', 'exiting', 'leaving');
             }
 
             if (!actor) {
                 const target = pickBehaviorTarget(who, sceneBounds);
                 const spawn = entryDoor;
                 const el = document.createElement('div');
-                el.className = 'venue-actor entering';
+                el.className = 'venue-actor venue-actor-entering';
                 el.innerHTML = getActorHtml(guestId);
                 el.title = `${guest.name} • entering`;
                 layer.appendChild(el);
@@ -1567,7 +1567,7 @@
                 };
                 setActorTransform(actor, spawn.x, spawn.y);
                 actors.set(key, actor);
-                setTimeout(() => el.classList.remove('entering'), 320);
+                setTimeout(() => el.classList.remove('venue-actor-entering'), 320);
             } else if (actor.state === 'exiting') {
                 actor.state = 'active';
                 actor.el.classList.remove('exiting', 'leaving');
@@ -1990,6 +1990,14 @@
         });
     }
 
+    function updateVenueSlotCounts(who, player, visibleHouseEntries) {
+        const countsEl = document.getElementById(`${who}-slot-counts`);
+        if (!countsEl || !player) return;
+        const inVenue = visibleHouseEntries.length;
+        const atDoor = player.arrivingGuest ? 1 : 0;
+        countsEl.textContent = `In venue: ${inVenue}, At door: ${atDoor}`;
+    }
+
     function renderHouseGrid(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const slotsEl = document.getElementById(`${who}-slots`);
@@ -2025,10 +2033,11 @@
         const houseSlots = [];
 
         const visibleHouseEntries = getVisibleHouseEntries(player, houseCapacity);
+        updateVenueSlotCounts(who, player, visibleHouseEntries);
         const targetingLookup = who === 'player' ? buildTargetingLookup(player) : null;
 
         // Count occupied slots: house + arriving guest (cap to capacity for empties)
-        const occupiedCount = visibleHouseEntries.length + (player.arrivingGuest ? 1 : 0);
+        const occupiedCount = Math.min(houseCapacity, visibleHouseEntries.length + (player.arrivingGuest ? 1 : 0));
 
         // Empty slots
         for (let i = 0; i < houseCapacity - occupiedCount; i++) {
