@@ -54,6 +54,7 @@
     let actionLogPopupEl = null;
     let closeDoorPayoutSequenceActive = false;
     let closeDoorPayoutSequencePendingDoneCheck = false;
+    let suppressNextArrivingRemap = false;
     let shopInspectMode = false;
     const houseRenderCacheKeys = { player: '', rival: '' };
     const hudDeltaSnapshot = {
@@ -1358,16 +1359,21 @@
         }, 1900);
     }
 
-    function animateCloseDoorPayoutGuest(who, guestId) {
-        const arrivingEl = document.getElementById(`${who}-arriving`);
+    function animateCloseDoorPayoutGuest(who, processedGuest) {
+        const slotsEl = document.getElementById(`${who}-slots`);
+        const guestId = processedGuest?.guestId;
+        const instanceId = processedGuest?.instanceId;
         const guest = Game.GUESTS[guestId];
-        if (!arrivingEl || !guest) return Promise.resolve();
+        if (!slotsEl || !guest || !guestId) return Promise.resolve();
 
-        arrivingEl.innerHTML = '';
-        arrivingEl.classList.add('payout-active');
-        const slot = createGuestSlot(guestId, false, { interactive: false });
-        slot.classList.add('close-door-payout-slot');
-        arrivingEl.appendChild(slot);
+        let slot = null;
+        if (instanceId != null) {
+            slot = slotsEl.querySelector(`.occupied-slot[data-instance-id="${instanceId}"]`);
+        }
+        if (!slot) {
+            slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${guestId}"]`);
+        }
+        if (!slot) return Promise.resolve();
 
         return new Promise((resolve) => {
             const emitPings = () => {
@@ -1378,14 +1384,11 @@
             };
 
             setTimeout(emitPings, 190);
-            slot.classList.add('is-payout-animating');
+            slot.classList.add('close-door-payout-slot', 'is-payout-animating');
 
             const done = () => {
                 slot.removeEventListener('animationend', done);
-                if (slot.isConnected) slot.remove();
-                if (!arrivingEl.querySelector('.close-door-payout-slot')) {
-                    arrivingEl.classList.remove('payout-active');
-                }
+                slot.classList.remove('is-payout-animating', 'close-door-payout-slot');
                 resolve();
             };
 
@@ -1394,13 +1397,11 @@
         });
     }
 
-    async function runCloseDoorPayoutSequence(who, guestIds = []) {
-        if (!guestIds.length) return;
-        const arrivingEl = document.getElementById(`${who}-arriving`);
-        if (!arrivingEl) return;
-        for (const guestId of guestIds) {
+    async function runCloseDoorPayoutSequence(who, processedGuests = []) {
+        if (!processedGuests.length) return;
+        for (const processedGuest of processedGuests) {
             // eslint-disable-next-line no-await-in-loop
-            await animateCloseDoorPayoutGuest(who, guestId);
+            await animateCloseDoorPayoutGuest(who, processedGuest);
         }
     }
 
@@ -1987,7 +1988,7 @@
             let prev = previousPositions.get(key);
             // If this is an inst: key with no previous position, check if it
             // was the arriving guest that just got admitted into the house.
-            if (!prev && key.startsWith('inst:') && oldArrivingRect) {
+            if (!prev && key.startsWith('inst:') && oldArrivingRect && !suppressNextArrivingRemap) {
                 prev = oldArrivingRect;
                 oldArrivingRect = null; // consume it so we only remap once
             }
@@ -3554,13 +3555,16 @@
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
         }
         if (selfKey === 'player' && result?.processedGuests?.length) {
+            suppressNextArrivingRemap = true;
+        }
+        renderHouseGrid(selfKey);
+        renderArrivingGuest(selfKey);
+        if (selfKey === 'player' && result?.processedGuests?.length) {
             closeDoorPayoutSequenceActive = true;
             await runCloseDoorPayoutSequence(selfKey, result.processedGuests);
             closeDoorPayoutSequenceActive = false;
         }
-
-        renderHouseGrid(selfKey);
-        renderArrivingGuest(selfKey);
+        suppressNextArrivingRemap = false;
         const playerVisibleStateChanged = hasPlayerVisibleStateChanged(playerSnapshot);
         if (selfKey === 'player' || playerVisibleStateChanged) updateGuestDetail();
         updateVenueStatus(selfKey);

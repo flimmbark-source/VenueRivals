@@ -1555,10 +1555,10 @@ const GUESTS = {
 
     const processGuest = (guestId, abilityUsed = false) => {
       if (!guestId) return;
-      processedGuests.push(guestId);
       applyGuestImpact(player, guestId);
       const admittedEntry = createHouseGuest(guestId);
       admittedEntry.abilityUsed = !!abilityUsed;
+      processedGuests.push({ guestId, instanceId: admittedEntry.instanceId });
       player.house.unshift(admittedEntry);
       while (player.house.length > getHouseCapacity(venue, player)) {
         const removed = player.house.pop();
