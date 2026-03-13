@@ -1532,10 +1532,13 @@
                     actors.set('arriving-guest', arrivingActor);
                     setTimeout(() => el.classList.remove('entering'), 320);
                 } else {
+                    const guestChanged = arrivingActor.guestId !== guestId;
                     arrivingActor.guestId = guestId;
                     arrivingActor.guestName = guest.name;
-                    arrivingActor.el.innerHTML = getActorHtml(guestId);
-                    arrivingActor.spriteEl = arrivingActor.el.querySelector('.actor-sprite');
+                    if (guestChanged) {
+                        arrivingActor.el.innerHTML = getActorHtml(guestId);
+                        arrivingActor.spriteEl = arrivingActor.el.querySelector('.actor-sprite');
+                    }
                     if (arrivingActor.state === 'exiting') {
                         arrivingActor.state = 'active';
                         arrivingActor.el.classList.remove('exiting', 'leaving');
@@ -1723,9 +1726,11 @@
         const hints = _slotAnimHints;
         _slotAnimHints = null;
 
+        const occupiedSlots = [...slotsEl.querySelectorAll('.occupied-slot[data-render-key]')];
+
         // Build a set of new render keys so we can detect removed slots.
         const newKeys = new Set();
-        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((el) => {
+        occupiedSlots.forEach((el) => {
             if (el.dataset.renderKey) newKeys.add(el.dataset.renderKey);
         });
 
@@ -1751,7 +1756,7 @@
         const animatedSlots = [];
 
         // --- Animate existing & newly-admitted slots ---
-        slotsEl.querySelectorAll('.occupied-slot[data-render-key]').forEach((slotEl) => {
+        occupiedSlots.forEach((slotEl) => {
             const key = slotEl.dataset.renderKey;
             if (!key) return;
             let prev = previousPositions.get(key);
@@ -1950,7 +1955,10 @@
             ? `${selectedGridGuest.source}:${selectedGridGuest.guestId || ''}:${selectedGridGuest.instanceId ?? ''}`
             : 'none';
         const renderStateKey = `${getHouseRenderKey(player)}::target:${who === 'player' ? buildTargetingRenderKey() : 'none'}::selected:${selectedKey}`;
-        if (houseRenderCacheKeys[who] === renderStateKey) return;
+        if (houseRenderCacheKeys[who] === renderStateKey) {
+            syncVenueActors(who);
+            return;
+        }
         houseRenderCacheKeys[who] = renderStateKey;
 
         const previousPositions = captureSlotPositions(slotsEl);
