@@ -1332,7 +1332,7 @@
         spawnNumberPing(targetEl, `${sign}${delta}`, color, placement);
     }
 
-    function spawnNumberPing(targetEl, text, color, placement = 'above', variantClass = '') {
+    function spawnNumberPing(targetEl, text, color, placement = 'above', variantClass = '', motion = null) {
         if (!targetEl || !text) return;
         const rect = targetEl.getBoundingClientRect();
         if (!rect || (rect.width === 0 && rect.height === 0)) return;
@@ -1340,6 +1340,10 @@
         const ping = document.createElement('div');
         ping.className = `number-ping ${placement === 'below' ? 'below' : 'above'} ${variantClass}`.trim();
         ping.style.setProperty('--ping-color', color || '#ffd166');
+        if (motion) {
+            if (Number.isFinite(motion.driftX)) ping.style.setProperty('--ping-drift-x', `${motion.driftX}px`);
+            if (Number.isFinite(motion.driftY)) ping.style.setProperty('--ping-drift-y', `${motion.driftY}px`);
+        }
         ping.style.left = `${rect.left + (rect.width / 2)}px`;
         ping.style.top = `${placement === 'below' ? rect.bottom + 6 : rect.top - 6}px`;
 
@@ -1377,10 +1381,26 @@
 
         return new Promise((resolve) => {
             const emitPings = () => {
+                const randomMoneyDriftX = (Math.random() * 56) - 28;
+                const randomPointsDriftX = (Math.random() * 56) - 28;
                 if (typeof onCount === 'function') onCount();
-                spawnNumberPing(slot, `+$${guest.money || 0}`, '#2cb67d', 'above', 'arcade-burst');
+                spawnNumberPing(
+                    slot,
+                    `+$${guest.money || 0}`,
+                    '#2cb67d',
+                    'above',
+                    'arcade-burst',
+                    { driftX: randomMoneyDriftX, driftY: -138 },
+                );
                 setTimeout(() => {
-                    spawnNumberPing(slot, `+${guest.points || 0}`, '#ffd166', 'above', 'arcade-burst');
+                    spawnNumberPing(
+                        slot,
+                        `+${guest.points || 0}`,
+                        '#ffd166',
+                        'above',
+                        'arcade-burst',
+                        { driftX: randomPointsDriftX, driftY: -150 },
+                    );
                 }, 80);
             };
 
