@@ -1383,25 +1383,31 @@
             const emitPings = () => {
                 const randomMoneyDriftX = (Math.random() * 56) - 28;
                 const randomPointsDriftX = (Math.random() * 56) - 28;
+                const moneyValue = guest.money || 0;
+                const pointsValue = guest.points || 0;
                 if (typeof onCount === 'function') onCount();
-                spawnNumberPing(
-                    slot,
-                    `+$${guest.money || 0}`,
-                    '#2cb67d',
-                    'above',
-                    'arcade-burst',
-                    { driftX: randomMoneyDriftX, driftY: -62 },
-                );
-                setTimeout(() => {
+                if (moneyValue > 0) {
                     spawnNumberPing(
                         slot,
-                        `+${guest.points || 0}`,
-                        '#ffd166',
+                        `+$${moneyValue}`,
+                        '#2cb67d',
                         'above',
                         'arcade-burst',
-                        { driftX: randomPointsDriftX, driftY: -70 },
+                        { driftX: randomMoneyDriftX, driftY: -62 },
                     );
-                }, 80);
+                }
+                if (pointsValue > 0) {
+                    setTimeout(() => {
+                        spawnNumberPing(
+                            slot,
+                            `+${pointsValue}`,
+                            '#ffd166',
+                            'above',
+                            'arcade-burst',
+                            { driftX: randomPointsDriftX, driftY: -70 },
+                        );
+                    }, 80);
+                }
             };
 
             setTimeout(emitPings, 190);
