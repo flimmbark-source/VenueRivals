@@ -33,6 +33,11 @@
     let pendingHostMatchConfig = null;
     const revealDoorIntel = { player: null, rival: null };
     const venueActors = { player: new Map(), rival: new Map() };
+    const venueGeometryCache = {
+        player: { dirty: true, bounds: { width: 280, height: 150 }, entryDoor: { x: 260.4, y: 12 }, exitDoor: { x: 14, y: 14 } },
+        rival: { dirty: true, bounds: { width: 280, height: 150 }, entryDoor: { x: 260.4, y: 12 }, exitDoor: { x: 14, y: 14 } },
+    };
+    let venueGeometryObserver = null;
     let actorAnimFrameId = null;
     let actorLoopLastTs = 0;
     let actorDeltaAccumulatorMs = 0;
@@ -863,6 +868,7 @@
         const phoneScreenEl = document.querySelector('#phone-hud .phone-screen');
         if (!phoneScreenEl) return;
         phoneScreenEl.classList.toggle('buy-phase-compact', !!isBuyPhase);
+        invalidateVenueGeometryCache();
     }
 
     function mapStateToJoinPerspective(state) {
@@ -901,12 +907,14 @@
 
     function applyPartyView(animate = true) {
         // Split-screen: both views visible, no transform needed
+        invalidateVenueGeometryCache();
     }
 
     function setPartyView(view, animate = true) {
         if (view !== 'player' && view !== 'rival') return;
         activePartyView = view;
         removeTooltip();
+        invalidateVenueGeometryCache();
         applyPartyView(animate);
         updateHUD();
         updateGuestDetail();
@@ -1268,17 +1276,61 @@
         return `g-${guestId}-${index}`;
     }
 
-    function getSceneBounds(who) {
-        const scene = document.getElementById(`${who}-scene`);
-        if (!scene) return null;
+    function invalidateVenueGeometryCache(who = null) {
+        if (who === 'player' || who === 'rival') {
+            venueGeometryCache[who].dirty = true;
+            return;
+        }
+        venueGeometryCache.player.dirty = true;
+        venueGeometryCache.rival.dirty = true;
+    }
+
+    function clampDoorPosition(position, bounds) {
         return {
-            width: scene.clientWidth || 280,
-            height: scene.clientHeight || 150,
+            x: Math.max(8, Math.min(bounds.width - 8, position.x)),
+            y: Math.max(8, Math.min(bounds.height - 8, position.y)),
         };
     }
 
-    function pickBehaviorTarget(who) {
-        const bounds = getSceneBounds(who);
+    function computeDoorPosition(sceneEl, doorId, fallback, bounds) {
+        const doorEl = document.getElementById(doorId);
+        if (!sceneEl || !doorEl) return fallback;
+        const sceneRect = sceneEl.getBoundingClientRect();
+        const doorRect = doorEl.getBoundingClientRect();
+        return clampDoorPosition({
+            x: (doorRect.left - sceneRect.left) + (doorRect.width / 2),
+            y: (doorRect.top - sceneRect.top) + (doorRect.height / 2),
+        }, bounds);
+    }
+
+    function getVenueGeometry(who) {
+        const cached = venueGeometryCache[who];
+        if (!cached) return null;
+        if (!cached.dirty) return cached;
+
+        const sceneEl = document.getElementById(`${who}-scene`);
+        const bounds = {
+            width: sceneEl?.clientWidth || 280,
+            height: sceneEl?.clientHeight || 150,
+        };
+        const entryDoorId = who === 'player' ? 'player-door-card' : 'rival-door-card';
+        const exitDoorId = who === 'player' ? 'player-exit-card' : 'rival-exit-card';
+        const entryFallback = clampDoorPosition({ x: bounds.width * 0.93, y: 12 }, bounds);
+        const exitFallback = clampDoorPosition({ x: 14, y: 14 }, bounds);
+
+        cached.bounds = bounds;
+        cached.entryDoor = computeDoorPosition(sceneEl, entryDoorId, entryFallback, bounds);
+        cached.exitDoor = computeDoorPosition(sceneEl, exitDoorId, exitFallback, bounds);
+        cached.dirty = false;
+        return cached;
+    }
+
+    function getSceneBounds(who) {
+        return getVenueGeometry(who)?.bounds || null;
+    }
+
+    function pickBehaviorTarget(who, sceneBounds = null) {
+        const bounds = sceneBounds || getSceneBounds(who);
         if (!bounds) return { x: 120, y: 80, behavior: 'hang' };
         const choices = [
             { behavior: 'dance', x: bounds.width * 0.34, y: bounds.height * 0.46 },
@@ -1289,30 +1341,38 @@
         return choices[Math.floor(Math.random() * choices.length)];
     }
 
-    function getDoorPositionFromElement(who, elementId, fallback) {
-        const sceneEl = document.getElementById(`${who}-scene`);
-        const doorEl = document.getElementById(elementId);
-        if (!sceneEl || !doorEl) return fallback;
-        const sceneRect = sceneEl.getBoundingClientRect();
-        const doorRect = doorEl.getBoundingClientRect();
-        return {
-            x: Math.max(8, Math.min(sceneRect.width - 8, (doorRect.left - sceneRect.left) + (doorRect.width / 2))),
-            y: Math.max(8, Math.min(sceneRect.height - 8, (doorRect.top - sceneRect.top) + (doorRect.height / 2))),
-        };
-    }
-
     function getEntryDoorPosition(who) {
-        const bounds = getSceneBounds(who) || { width: 280, height: 150 };
-        const fallback = { x: bounds.width * 0.93, y: 12 };
-        const elementId = who === 'player' ? 'player-door-card' : 'rival-door-card';
-        return getDoorPositionFromElement(who, elementId, fallback);
+        return getVenueGeometry(who)?.entryDoor || { x: 260.4, y: 12 };
     }
 
     function getExitDoorPosition(who) {
-        const bounds = getSceneBounds(who) || { width: 280, height: 150 };
-        const fallback = { x: 14, y: 14 };
-        const elementId = who === 'player' ? 'player-exit-card' : 'rival-exit-card';
-        return getDoorPositionFromElement(who, elementId, fallback);
+        return getVenueGeometry(who)?.exitDoor || { x: 14, y: 14 };
+    }
+
+    function setupVenueGeometryInvalidation() {
+        if (venueGeometryObserver) return;
+        const invalidateAll = () => invalidateVenueGeometryCache();
+        window.addEventListener('resize', invalidateAll);
+        window.addEventListener('orientationchange', invalidateAll);
+
+        venueGeometryObserver = new MutationObserver(() => invalidateAll());
+        const observedRoots = [
+            document.getElementById('game-screen'),
+            document.getElementById('guest-phase-panel'),
+            document.getElementById('phone-hud'),
+            document.getElementById('desktop-hud'),
+            document.getElementById('player-scene'),
+            document.getElementById('rival-scene'),
+        ].filter(Boolean);
+
+        observedRoots.forEach((el) => {
+            venueGeometryObserver.observe(el, {
+                attributes: true,
+                attributeFilter: ['class', 'style'],
+                childList: true,
+                subtree: false,
+            });
+        });
     }
 
     function ensureActorLoop() {
@@ -1360,6 +1420,10 @@
         const player = who === 'player' ? gameState.player : gameState.rival;
         const layer = document.getElementById(`${who}-actors`);
         if (!layer || !player) return;
+        const geometry = getVenueGeometry(who);
+        const sceneBounds = geometry?.bounds || { width: 280, height: 150 };
+        const entryDoor = geometry?.entryDoor || { x: sceneBounds.width * 0.93, y: 12 };
+        const exitDoor = geometry?.exitDoor || { x: 14, y: 14 };
         const actors = venueActors[who];
         const wanted = new Set();
         const venue = Game.VENUES[player.venueId];
@@ -1385,8 +1449,8 @@
             }
 
             if (!actor) {
-                const target = pickBehaviorTarget(who);
-                const spawn = getEntryDoorPosition(who);
+                const target = pickBehaviorTarget(who, sceneBounds);
+                const spawn = entryDoor;
                 const el = document.createElement('div');
                 el.className = 'venue-actor entering';
                 el.innerHTML = getActorHtml(guestId);
@@ -1413,7 +1477,7 @@
             } else if (actor.state === 'exiting') {
                 actor.state = 'active';
                 actor.el.classList.remove('exiting', 'leaving');
-                const target = pickBehaviorTarget(who);
+                const target = pickBehaviorTarget(who, sceneBounds);
                 actor.targetX = target.x;
                 actor.targetY = target.y;
                 setActorBehavior(actor, target.behavior);
@@ -1423,7 +1487,7 @@
             actor.guestName = guest.name;
 
             if (actor.state === 'active' && Math.random() < 0.03) {
-                const target = pickBehaviorTarget(who);
+                const target = pickBehaviorTarget(who, sceneBounds);
                 actor.targetX = target.x;
                 actor.targetY = target.y;
                 setActorBehavior(actor, target.behavior);
@@ -1439,8 +1503,8 @@
             if (guest) {
                 let arrivingActor = actors.get('arriving-guest');
                 if (!arrivingActor) {
-                    const target = pickBehaviorTarget(who);
-                    const spawn = getEntryDoorPosition(who);
+                    const target = pickBehaviorTarget(who, sceneBounds);
+                    const spawn = entryDoor;
                     const el = document.createElement('div');
                     el.className = 'venue-actor entering';
                     el.innerHTML = getActorHtml(guestId);
@@ -1479,11 +1543,10 @@
 
         for (const [key, actor] of actors.entries()) {
             if (!wanted.has(key) && actor.state !== 'exiting') {
-                const exitTarget = getExitDoorPosition(who);
                 actor.state = 'exiting';
                 setActorBehavior(actor, 'leaving');
-                actor.targetX = exitTarget.x;
-                actor.targetY = exitTarget.y;
+                actor.targetX = exitDoor.x;
+                actor.targetY = exitDoor.y;
                 actor.el.classList.add('exiting');
             }
         }
@@ -1585,7 +1648,7 @@
                     actor.el.classList.add('leaving');
                     removeKeys.push(key);
                 } else if (Math.random() < 0.025) {
-                    const target = pickBehaviorTarget(who);
+                    const target = pickBehaviorTarget(who, bounds);
                     actor.targetX = target.x;
                     actor.targetY = target.y;
                     setActorBehavior(actor, target.behavior);
@@ -4908,6 +4971,7 @@
         scheduleSpriteWarmup(warmupSprites);
         initLoadout();
         setupEventListeners();
+        setupVenueGeometryInvalidation();
         applyPartyView(false);
         startAnimLoop();
     }
