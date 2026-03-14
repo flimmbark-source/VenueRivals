@@ -4947,6 +4947,7 @@
                         <tr><td>BOOT</td><td>Remove a guest from your house (triggers their Departure abilities)</td></tr>
                         <tr><td>BOUNCE</td><td>Return a guest from your house to the top of your queue (triggers their Departure abilities)</td></tr>
                         <tr><td>CLEAR HOUSE</td><td>Remove all guests from your house</td></tr>
+                        <tr><td>NUDGE</td><td>Move a targeted guest 1 slot to the left in your house lane</td></tr>
                         <tr><td>COOL X</td><td>Reduce your Heat by X (min 0)</td></tr>
                         <tr><td>PEEK X</td><td>Reveal the next X guests in your queue</td></tr>
                         <tr><td>PLANT</td><td>Queue a Gatecrasher in opponent's queue</td></tr>
