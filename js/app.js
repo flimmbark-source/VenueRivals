@@ -1394,7 +1394,7 @@
                         '#2cb67d',
                         'above',
                         'arcade-burst',
-                        { driftX: randomMoneyDriftX, driftY: -62, startOffsetY: 10 },
+                        { driftX: randomMoneyDriftX, driftY: -62, startOffsetY: -10 },
                     );
                 }
                 if (pointsValue > 0) {
@@ -1405,13 +1405,13 @@
                             '#ffd166',
                             'above',
                             'arcade-burst',
-                            { driftX: randomPointsDriftX, driftY: -70, startOffsetY: 10 },
+                            { driftX: randomPointsDriftX, driftY: -70, startOffsetY: 0 },
                         );
                     }, 80);
                 }
             };
 
-            setTimeout(emitPings, 190);
+            setTimeout(emitPings, -190);
             slot.classList.add('close-door-payout-slot', 'is-payout-animating');
 
             const done = () => {
