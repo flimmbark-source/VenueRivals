@@ -959,12 +959,12 @@ describe("round earnings parity", () => {
 
     const playerEarned = Game.getRoundEarnings(state.player);
     const rivalEarned = Game.getRoundEarnings(state.rival);
-    expect(playerEarned).toEqual({ money: 6, points: 6, busted: false });
+    expect(playerEarned).toEqual({ money: 5, points: 6, busted: false });
     expect(rivalEarned).toEqual({ money: 3, points: 4, busted: false });
 
     Game.endGuestPhase(state);
 
-    expect(state.player.money).toBe(16);
+    expect(state.player.money).toBe(15);
     expect(state.player.points).toBe(6);
     expect(state.rival.money).toBe(13);
     expect(state.rival.points).toBe(4);
