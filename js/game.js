@@ -1132,6 +1132,46 @@ const GUESTS = {
         result.effects.push(`bounced ${GUESTS[getGuestId(bounced)].name}`);
         break;
       }
+      case "nudge": {
+        const targeting = ability.targeting || "oldest";
+        let targetIdx;
+        if (targeting === "choice") {
+          targetIdx = resolveChoiceTarget(player, selectedGuest);
+          if (targetIdx < 0) {
+            if (player.house.length === 0) {
+              result.effects.push("no valid target");
+            } else {
+              result.needsTargetChoice = true;
+              result.validTargets = player.house.map((e, i) => ({ index: i, guestId: getGuestId(e) }));
+            }
+            break;
+          }
+        } else {
+          targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
+        }
+
+        if (targetIdx < 0 || targetIdx >= player.house.length) {
+          result.effects.push("no valid target");
+          break;
+        }
+
+        const swapIdx = targetIdx + 1;
+        if (swapIdx >= player.house.length) {
+          result.effects.push("target already at left edge");
+          break;
+        }
+
+        const locked = getLockedIndexes(player);
+        if (locked.has(targetIdx) || locked.has(swapIdx)) {
+          result.effects.push("target is locked");
+          break;
+        }
+
+        const [entry] = player.house.splice(targetIdx, 1);
+        player.house.splice(swapIdx, 0, entry);
+        result.effects.push(`nudged ${GUESTS[getGuestId(entry)].name} left`);
+        break;
+      }
       case "clearHouse": {
         const cleared = [];
         while (player.house.length > 0) {
