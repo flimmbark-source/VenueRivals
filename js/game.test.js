@@ -215,6 +215,25 @@ describe("nudge ability", () => {
     expect(result.needsTargetChoice).toBe(true);
     expect(activator.abilityUsed).toBe(false);
   });
+
+  test("nudging the leftmost guest pushes them out", () => {
+    const activator = makeHouseEntry("stagehand");
+    const leftmost = makeHouseEntry("familiarFace");
+    const player = makePlayer({ house: [activator, leftmost] });
+    const opponent = makeOpponent();
+
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house",
+      guestId: "stagehand",
+      instanceId: activator.instanceId,
+      targetInstanceId: leftmost.instanceId,
+    });
+
+    expect(result).not.toBeNull();
+    expect(player.house.map((entry) => entry.instanceId)).toEqual([activator.instanceId]);
+    expect(result.pushedOut).toEqual(["familiarFace"]);
+    expect(result.effects[0]).toMatch(/nudged Familiar Face out/);
+  });
 });
 
 // ── boot with choice targeting (Fed-Up Roommate) ─────────────────
