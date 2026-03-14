@@ -1368,6 +1368,43 @@
         }, 1900);
     }
 
+    function spawnAbilityPings(targetEl, pings) {
+        if (!targetEl || !pings?.length) return;
+        // Trigger pop-up animation on the target element
+        targetEl.classList.remove('ability-ping-pop');
+        void targetEl.offsetWidth; // reflow to restart animation
+        targetEl.classList.add('ability-ping-pop');
+        setTimeout(() => targetEl.classList.remove('ability-ping-pop'), 500);
+
+        pings.forEach((ping, i) => {
+            const delay = i * 80;
+            const driftX = (Math.random() * 56) - 28;
+            if (ping.type === 'money') {
+                setTimeout(() => {
+                    spawnNumberPing(
+                        targetEl,
+                        `+$${ping.value}`,
+                        '#2cb67d',
+                        'above',
+                        'arcade-burst',
+                        { driftX, driftY: -62, startOffsetY: -10 },
+                    );
+                }, delay);
+            } else if (ping.type === 'points') {
+                setTimeout(() => {
+                    spawnNumberPing(
+                        targetEl,
+                        `+${ping.value}`,
+                        '#ffd166',
+                        'above',
+                        'arcade-burst',
+                        { driftX, driftY: -70, startOffsetY: 0 },
+                    );
+                }, delay);
+            }
+        });
+    }
+
     function animateCloseDoorPayoutGuest(who, processedGuest, onCount = null) {
         const slotsEl = document.getElementById(`${who}-slots`);
         const guestId = processedGuest?.guestId;
@@ -3437,6 +3474,18 @@
             }
         }
 
+        // Spawn departure pings on slots BEFORE they're removed by renderHouseGrid
+        if (result.pings?.length) {
+            const slotsEl = document.getElementById(`${selfKey}-slots`);
+            if (slotsEl) {
+                const departurePings = result.pings.filter(p => p.phase === 'departure');
+                departurePings.forEach(ping => {
+                    const slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
+                    if (slot) spawnAbilityPings(slot, [ping]);
+                });
+            }
+        }
+
         if (result.pushedOut && result.pushedOut.length) {
             result.pushedOut.forEach(id => animateExitGuest(selfKey, id));
         }
@@ -3445,6 +3494,14 @@
         }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
+
+        // Spawn arrival pings on the door card after the new guest enters the slot
+        if (result.arrivalPings?.length && self.arrivingGuest) {
+            const doorEl = document.getElementById(selfKey === 'player' ? 'player-door-card' : 'rival-door');
+            if (doorEl) {
+                setTimeout(() => spawnAbilityPings(doorEl, result.arrivalPings), 320);
+            }
+        }
         // Re-render reveal overlay — admitted/drawn guests are no longer in
         // the deck so the ID-based filter will drop them automatically.
         if (revealDoorIntel[selfKey]) renderRevealDoorIntel(selfKey);
@@ -3751,6 +3808,18 @@
                 }
             }
 
+            // Spawn departure pings before slots are removed
+            if (result.pings?.length) {
+                const slotsEl = document.getElementById('rival-slots');
+                if (slotsEl) {
+                    const departurePings = result.pings.filter(p => p.phase === 'departure');
+                    departurePings.forEach(ping => {
+                        const slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
+                        if (slot) spawnAbilityPings(slot, [ping]);
+                    });
+                }
+            }
+
             if (result.pushedOut && result.pushedOut.length) {
                 result.pushedOut.forEach(id => animateExitGuest('rival', id));
             }
@@ -3763,6 +3832,14 @@
             }
             // Re-render reveal overlay — drawn guest no longer in deck.
             if (revealDoorIntel.rival) renderRevealDoorIntel('rival');
+
+            // Spawn arrival pings for the next drawn guest
+            if (result.arrivalPings?.length && r.arrivingGuest) {
+                const doorEl = document.getElementById('rival-door');
+                if (doorEl) {
+                    setTimeout(() => spawnAbilityPings(doorEl, result.arrivalPings), 320);
+                }
+            }
 
             presentationBus.emit(presentationEvents.GUEST_ADMITTED, { who: 'rival', guestId: result.admitted });
             if (Game.GUESTS[result.admitted]?.tier?.toLowerCase?.() === 'rare') {
@@ -4276,6 +4353,10 @@
             if (pa.effects?.length) {
                 const guest = Game.GUESTS[gameState.player.arrivingGuest];
                 if (guest) showFeedback(`${guest.name}: ${pa.effects.join(', ')}`, 'disruption', 2500, 'player');
+            }
+            if (pa.pings?.length && gameState.player.arrivingGuest) {
+                const doorEl = document.getElementById('player-door-card');
+                if (doorEl) setTimeout(() => spawnAbilityPings(doorEl, pa.pings), 320);
             }
             if (pa.revealedGuests) setRevealDoorIntel('player', pa.revealedGuests);
             if (pa.needsStackChoice && pa.revealedGuests?.length >= 2) {
