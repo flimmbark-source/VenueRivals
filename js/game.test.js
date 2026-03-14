@@ -173,6 +173,50 @@ describe("bounce ability (choice targeting)", () => {
   });
 });
 
+
+// ── nudge ability (left by 1 slot) ──────────────────────────────
+
+describe("nudge ability", () => {
+  test("moves targeted guest one slot to the left", () => {
+    const activator = makeHouseEntry("stagehand");
+    const middle = makeHouseEntry("familiarFace");
+    const leftNeighbor = makeHouseEntry("loudFriend");
+    const player = makePlayer({ house: [activator, middle, leftNeighbor] });
+    const opponent = makeOpponent();
+
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house",
+      guestId: "stagehand",
+      instanceId: activator.instanceId,
+      targetInstanceId: middle.instanceId,
+    });
+
+    expect(result).not.toBeNull();
+    expect(player.house.map((entry) => entry.instanceId)).toEqual([
+      activator.instanceId,
+      leftNeighbor.instanceId,
+      middle.instanceId,
+    ]);
+    expect(result.effects[0]).toMatch(/nudged Familiar Face left/);
+  });
+
+  test("returns needsTargetChoice for choice targeting with no selected target", () => {
+    const activator = makeHouseEntry("stagehand");
+    const target = makeHouseEntry("familiarFace");
+    const player = makePlayer({ house: [activator, target] });
+    const opponent = makeOpponent();
+
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house",
+      guestId: "stagehand",
+      instanceId: activator.instanceId,
+    });
+
+    expect(result.needsTargetChoice).toBe(true);
+    expect(activator.abilityUsed).toBe(false);
+  });
+});
+
 // ── boot with choice targeting (Fed-Up Roommate) ─────────────────
 
 describe("boot ability (choice targeting)", () => {
