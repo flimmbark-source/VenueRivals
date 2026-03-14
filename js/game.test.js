@@ -25,6 +25,10 @@ function makePlayer(overrides = {}) {
     slotIncrease: 0,
     heatCapBonus: 0,
     shopItemPurchases: { slotIncrease: 0, heatCapIncrease: 0 },
+    arrivingBonusPoints: 0,
+    arrivingCopiedAbility: null,
+    pendingPlusOne: false,
+    pendingMagnet: false,
     ...overrides,
   };
 }
@@ -455,49 +459,51 @@ describe("nameDrop ability (action)", () => {
 // ── Arrival abilities ────────────────────────────────────────────
 
 describe("arrival: scoreNow (Main Character)", () => {
-  test("scores 2 points on admission", () => {
+  test("scores 2 points at draw time", () => {
     const player = makePlayer({
-      arrivingGuest: "mainCharacter",
-      roundDeck: ["familiarFace"],
+      roundDeck: ["mainCharacter"],
       roundPoints: 0,
     });
     const opponent = makeOpponent();
     const venue = Game.VENUES.velvetRoom;
-    const result = Game.admitGuest(player, venue, opponent, venue);
-    expect(result).not.toBeNull();
-    expect(result.admitted).toBe("mainCharacter");
+    // Arrival fires at draw time
+    const drawRes = Game.drawNextGuest(player, venue, false, opponent);
+    expect(drawRes.success).toBe(true);
+    expect(player.arrivingGuest).toBe("mainCharacter");
     expect(player.roundPoints).toBe(2);
-    expect(result.effects).toContain("scored 2 points on arrival");
+    expect(drawRes.arrivalResult.effects).toContain("scored 2 points on arrival");
   });
 });
 
 describe("arrival: queueGatecrasher (Address Leaker)", () => {
-  test("plants gatecrasher on opponent's queue", () => {
+  test("plants gatecrasher on opponent's queue at draw time", () => {
     const player = makePlayer({
-      arrivingGuest: "addressLeaker",
-      roundDeck: ["familiarFace"],
+      roundDeck: ["addressLeaker"],
     });
     const opponent = makeOpponent({ roundDeck: ["familiarFace"] });
     const venue = Game.VENUES.velvetRoom;
-    const result = Game.admitGuest(player, venue, opponent, venue);
-    expect(result).not.toBeNull();
+    const drawRes = Game.drawNextGuest(player, venue, false, opponent);
+    expect(drawRes.success).toBe(true);
     expect(opponent.roundDeck).toContain("gatecrasher");
-    expect(result.effects).toContain("planted gatecrasher on opponent's queue");
+    expect(drawRes.arrivalResult.effects).toContain("planted gatecrasher on opponent's queue");
   });
 });
 
 describe("arrival: plusOne (Plus-One Prince)", () => {
   test("auto-admits the next guest", () => {
     const player = makePlayer({
-      arrivingGuest: "plusOnePrince",
-      roundDeck: ["familiarFace", "loudFriend"],
+      roundDeck: ["familiarFace", "loudFriend", "plusOnePrince"],
     });
     const opponent = makeOpponent();
     const venue = Game.VENUES.velvetRoom;
+    // Draw plusOnePrince — sets pendingPlusOne at draw time
+    Game.drawNextGuest(player, venue, false, opponent);
+    expect(player.arrivingGuest).toBe("plusOnePrince");
+    expect(player.pendingPlusOne).toBe(true);
+    // Admit — should auto-admit the next guest
     const result = Game.admitGuest(player, venue, opponent, venue);
     expect(result).not.toBeNull();
     expect(result.autoAdmitted).not.toBeNull();
-    // Plus-One Prince entered, then the next guest was auto-admitted
     expect(result.autoAdmitted.admitted).toBeDefined();
   });
 });
@@ -505,47 +511,54 @@ describe("arrival: plusOne (Plus-One Prince)", () => {
 describe("arrival: socialClimber", () => {
   test("gains +1 bonusPoints on entry", () => {
     const player = makePlayer({
-      arrivingGuest: "socialClimber",
-      roundDeck: ["familiarFace"],
+      roundDeck: ["familiarFace", "socialClimber"],
     });
     const opponent = makeOpponent();
     const venue = Game.VENUES.velvetRoom;
-    const result = Game.admitGuest(player, venue, opponent, venue);
-    expect(result).not.toBeNull();
+    // Draw socialClimber — sets arrivingBonusPoints at draw time
+    Game.drawNextGuest(player, venue, false, opponent);
+    expect(player.arrivingGuest).toBe("socialClimber");
+    expect(player.arrivingBonusPoints).toBe(1);
+    // Admit — bonusPoints transferred to house entry
+    Game.admitGuest(player, venue, opponent, venue);
     const entry = player.house.find(e => typeof e !== "string" && e.guestId === "socialClimber");
     expect(entry.bonusPoints).toBe(1);
   });
 });
 
 describe("arrival: stackChoice (Group Chat Host)", () => {
-  test("reveals 2 and sets needsStackChoice on admission", () => {
+  test("reveals 2 and sets needsStackChoice at draw time", () => {
     const player = makePlayer({
-      arrivingGuest: "groupChatHost",
-      roundDeck: ["familiarFace", "loudFriend", "bottleBringer"],
+      roundDeck: ["familiarFace", "loudFriend", "bottleBringer", "groupChatHost"],
     });
     const opponent = makeOpponent();
     const venue = Game.VENUES.velvetRoom;
-    const result = Game.admitGuest(player, venue, opponent, venue);
-    expect(result).not.toBeNull();
-    expect(result.needsStackChoice).toBe(true);
-    expect(result.revealedGuests).toHaveLength(2);
+    // Draw groupChatHost — stackChoice fires at draw time
+    const drawRes = Game.drawNextGuest(player, venue, false, opponent);
+    expect(drawRes.success).toBe(true);
+    expect(drawRes.arrivalResult).not.toBeNull();
+    expect(drawRes.arrivalResult.needsStackChoice).toBe(true);
+    expect(drawRes.arrivalResult.revealedGuests).toHaveLength(2);
   });
 });
 
 describe("arrival: impersonator (Social Butterfly)", () => {
   test("copies action ability of guest to the left", () => {
     // Set up house: doorWatcher is already in house at position 0
-    // Social Butterfly will enter at position 0, pushing doorWatcher to 1
+    // Social Butterfly drawn — at draw time, left neighbor is house[0] = doorWatcher
     const player = makePlayer({
-      arrivingGuest: "socialButterfly",
       house: [makeHouseEntry("doorWatcher")],
-      roundDeck: ["familiarFace"],
+      roundDeck: ["familiarFace", "socialButterfly"],
     });
     const opponent = makeOpponent();
     const venue = Game.VENUES.velvetRoom;
-    const result = Game.admitGuest(player, venue, opponent, venue);
-    expect(result).not.toBeNull();
-    // Social Butterfly should have copied doorWatcher's revealNext ability
+    // Draw socialButterfly — copies doorWatcher's ability at draw time
+    Game.drawNextGuest(player, venue, false, opponent);
+    expect(player.arrivingGuest).toBe("socialButterfly");
+    expect(player.arrivingCopiedAbility).toBeDefined();
+    expect(player.arrivingCopiedAbility.type).toBe("revealNext");
+    // Admit — copiedAbility transferred to house entry
+    Game.admitGuest(player, venue, opponent, venue);
     const butterflyEntry = player.house.find(e => typeof e !== "string" && e.guestId === "socialButterfly");
     expect(butterflyEntry.copiedAbility).toBeDefined();
     expect(butterflyEntry.copiedAbility.type).toBe("revealNext");
