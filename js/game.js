@@ -1155,14 +1155,23 @@ const GUESTS = {
           break;
         }
 
-        const swapIdx = targetIdx + 1;
-        if (swapIdx >= player.house.length) {
-          result.effects.push("target already at left edge");
+        const locked = getLockedIndexes(player);
+        if (locked.has(targetIdx)) {
+          result.effects.push("target is locked");
           break;
         }
 
-        const locked = getLockedIndexes(player);
-        if (locked.has(targetIdx) || locked.has(swapIdx)) {
+        const swapIdx = targetIdx + 1;
+        if (swapIdx >= player.house.length) {
+          const exiting = player.house.splice(targetIdx, 1)[0];
+          const exitingId = getGuestId(exiting);
+          result.pushedOut.push(exitingId);
+          result.effects.push(`nudged ${GUESTS[exitingId].name} out`);
+          handleDepartureEffects(player, opponent, exitingId, result);
+          break;
+        }
+
+        if (locked.has(swapIdx)) {
           result.effects.push("target is locked");
           break;
         }
