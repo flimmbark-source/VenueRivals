@@ -92,7 +92,7 @@ const GUESTS = {
   },
     wingMan: {
     name: "Wingman", emoji: "🤛",
-    heat: 0, money: 1, points: 3, cost: 9,
+    heat: 0, money: 1, points: 1, cost: 4,
     venue: "Neutral", tags: ["VIP"], tier: "common",
     ability: { name: "Distract", icon: "🔄", desc: "Nudge the guest on the Left.", trigger: "flash", type: "nudge", targeting: "leftOfSelf" },
     desc: "DISTRACT — A: Nudge the guest on the Left.",
@@ -106,7 +106,7 @@ const GUESTS = {
   },
     dealer: {
     name: "Dealer", emoji: "🤛",
-    heat: 0, money: 1, points: 4, cost: 8,
+    heat: 0, money: 3, points: 0, cost: 8,
     venue: "Neutral", tags: ["Outlaw"], tier: "Rare",
     ability: { name: "Annoy", icon: "🔄", desc: "Nudge the newest guest.", trigger: "flash", type: "nudge", targeting: "newest" },
     desc: "ANNOY — A: Nudge the newest guest.",
@@ -258,7 +258,7 @@ const GUESTS = {
   },
   messyDrunk: {
     name: "Messy Drunk", emoji: "🍺",
-    heat: 2, money: 0, points: 2, cost: 5,
+    heat: 2, money: 1, points: 2, cost: 6,
     venue: "Back Alley", tags: ["Outlaw"], tier: "common",
     ability: { name: "Leaves a Mess", icon: "💥", desc: "Upon leaving, Plant a Gatecrasher in your opponent’s queue.", trigger: "departure", type: "queueGatecrasher" },
     desc: "LEAVES A MESS — When this guest leaves, plant a Gatecrasher in your opponent’s queue.",
@@ -272,14 +272,14 @@ const GUESTS = {
   },
   chaosChaser: {
     name: "Chaos Chaser", emoji: "🌀",
-    heat: 2, money: 0, points: 2, cost: 6,
+    heat: 2, money: 2, points: 0, cost: 6,
     venue: "Back Alley", tags: ["Performer", "Outlaw"], tier: "uncommon",
     ability: { name: "Chaos Chaser", icon: "🔥", desc: "When scored, +1 Point for each Heat in your house.", trigger: "scoring", type: "chaosChaser" },
     desc: "CHAOS CHASER — At scoring, +1 Point for each Heat in your house.",
   },
   lateLegend: {
     name: "Late Legend", emoji: "🕐",
-    heat: 1, money: 0, points: 2, cost: 6,
+    heat: 1, money: 2, points: 0, cost: 6,
     venue: "Back Alley", tags: ["VIP", "Outlaw"], tier: "uncommon",
     ability: { name: "Last to Leave", icon: "🕐", desc: "+2 Points if this guest is Oldest.", trigger: "scoring", type: "lastToLeave", value: 2 },
     desc: "LAST TO LEAVE — At scoring, +2 Points if this guest is Oldest.",
