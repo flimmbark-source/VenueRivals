@@ -2597,7 +2597,10 @@ body {
 
 .shop-inspect-indicator[aria-pressed="true"] {
     border-color: var(--accent-secondary);
-    box-shadow: 0 0 0 2px rgba(127, 90, 240, 0.25);
+    box-shadow:
+        0 0 0 2px rgba(127, 90, 240, 0.25),
+        0 0 12px rgba(127, 90, 240, 0.28);
+    text-shadow: 0 0 7px rgba(127, 90, 240, 0.45);
     background: rgba(24, 18, 48, 0.8);
 }
 
