@@ -779,6 +779,11 @@ const GUESTS = {
       slotIncrease: 0,
       heatCapBonus: 0,
       shopItemPurchases: { slotIncrease: 0, heatCapIncrease: 0 },
+      // Pending arrival state (set at draw time, consumed at admit time)
+      arrivingBonusPoints: 0,
+      arrivingCopiedAbility: null,
+      pendingPlusOne: false,
+      pendingMagnet: false,
     };
   }
   function createGameState(
@@ -831,16 +836,22 @@ const GUESTS = {
       p.doorClosed = false;
       p.busted = false;
       p.phaseComplete = false;
+      p.arrivingBonusPoints = 0;
+      p.arrivingCopiedAbility = null;
+      p.pendingPlusOne = false;
+      p.pendingMagnet = false;
     });
     // ignore pendingOut at round start; there should be none
-    drawNextGuest(state.player, VENUES[state.player.venueId]);
-    drawNextGuest(state.rival, VENUES[state.rival.venueId]);
+    // Arrival effects fire at draw time, so pass opponents
+    const playerRes = drawNextGuest(state.player, VENUES[state.player.venueId], false, state.rival);
+    const rivalRes = drawNextGuest(state.rival, VENUES[state.rival.venueId], false, state.player);
+    return { playerArrival: playerRes.arrivalResult, rivalArrival: rivalRes.arrivalResult };
   }
 
   // returns object indicating whether a card was drawn and, if the house
   // is already full, the ID of the guest who will be pushed out the next time
   // the arriving guest is admitted.
-  function drawNextGuest(player, venue, skipBustCheck = false) {
+  function drawNextGuest(player, venue, skipBustCheck = false, opponent = null) {
     if (player.roundDeck.length === 0) {
       player.arrivingGuest = null;
       player.arrivingAbilityUsed = false;
@@ -859,6 +870,12 @@ const GUESTS = {
       pendingOut = getGuestId(exiting);
     }
 
+    // Reset pending arrival state from previous guest
+    player.arrivingBonusPoints = 0;
+    player.arrivingCopiedAbility = null;
+    player.pendingPlusOne = false;
+    player.pendingMagnet = false;
+
     player.arrivingGuest = player.roundDeck.pop();
     player.arrivingAbilityUsed = false;
     const guest = GUESTS[player.arrivingGuest];
@@ -868,7 +885,18 @@ const GUESTS = {
         applyBustState(player);
       }
     }
-    return { success: true, pendingOut };
+
+    // Fire arrival effects at draw time (when the guest appears at the door)
+    let arrivalResult = null;
+    if (!player.busted && player.arrivingGuest) {
+      arrivalResult = { effects: [], pushedOut: [] };
+      handleArrivalEffects(player, opponent, player.arrivingGuest, venue, arrivalResult);
+      if (!arrivalResult.effects.length && !arrivalResult.needsStackChoice && !arrivalResult.needsNameDropChoice) {
+        arrivalResult = null;
+      }
+    }
+
+    return { success: true, pendingOut, arrivalResult };
   }
 
   function applyGuestImpact(player, guestId) {
@@ -895,6 +923,15 @@ const GUESTS = {
     const popped = [];
     const admittedEntry = createHouseGuest(player.arrivingGuest);
     admittedEntry.abilityUsed = !!player.arrivingAbilityUsed;
+    // Transfer pending arrival state from draw-time effects
+    if (player.arrivingBonusPoints) {
+      admittedEntry.bonusPoints = player.arrivingBonusPoints;
+      player.arrivingBonusPoints = 0;
+    }
+    if (player.arrivingCopiedAbility) {
+      admittedEntry.copiedAbility = player.arrivingCopiedAbility;
+      player.arrivingCopiedAbility = null;
+    }
     player.house.unshift(admittedEntry);
     player.arrivingAbilityUsed = false;
     // trim to capacity, collecting every removed guest
@@ -990,6 +1027,13 @@ const GUESTS = {
       busted: false,
       effects: [],
     };
+
+    // Capture draw-time arrival flags before they're reset by the next draw
+    const hadPlusOne = player.pendingPlusOne;
+    const hadMagnet = player.pendingMagnet;
+    player.pendingPlusOne = false;
+    player.pendingMagnet = false;
+
     const pushed = moveArrivingGuestIntoHouse(player, venue);
     // Handle departure effects for pushed-out guests
     pushed.forEach(exit => {
@@ -1004,27 +1048,29 @@ const GUESTS = {
     player.arrivingGuest = null;
     player.arrivingAbilityUsed = false;
 
-    // Handle arrival effects for the admitted guest
-    if (!result.busted) {
-      handleArrivalEffects(player, opponent, guestId, venue, result);
-    }
+    // Arrival effects already fired at draw time — no handleArrivalEffects here.
 
-    // Defer drawing the next guest when the arrival ability needs the
-    // player to make a choice (stackChoice / nameDrop) so the deck stays
-    // intact until the choice is resolved.
-    if (!result.busted && !result.needsStackChoice && !result.needsNameDropChoice) {
-      const drawRes = drawNextGuest(player, venue);
+    // Draw the next guest (its arrival effects fire during draw)
+    if (!result.busted) {
+      const drawRes = drawNextGuest(player, venue, false, opponent);
       if (drawRes.pendingOut) {
         result.pendingOut = drawRes.pendingOut;
         handleDepartureEffects(player, opponent, drawRes.pendingOut, result);
       }
       if (player.busted) result.busted = true;
-    } else if (!result.busted && (result.needsStackChoice || result.needsNameDropChoice)) {
-      result.deferredDraw = true;
+
+      // If the NEXT drawn guest's arrival needs a choice, pass it through
+      if (drawRes.arrivalResult?.needsStackChoice || drawRes.arrivalResult?.needsNameDropChoice) {
+        result.needsStackChoice = drawRes.arrivalResult.needsStackChoice || false;
+        result.needsNameDropChoice = drawRes.arrivalResult.needsNameDropChoice || false;
+        result.revealedGuests = drawRes.arrivalResult.revealedGuests;
+        result.deferredDraw = true;
+        result.arrivalEffects = drawRes.arrivalResult.effects;
+      }
     }
 
     // Handle plusOne / magnet: auto-admit the next drawn guest
-    if (!result.busted && !result.deferredDraw && (result.plusOneTriggered || result.magnetTriggered) && _depth < 3) {
+    if (!result.busted && !result.deferredDraw && (hadPlusOne || hadMagnet) && _depth < 3) {
       if (player.arrivingGuest && !player.doorClosed && !player.busted) {
         const autoResult = admitGuest(player, venue, opponent, opponentVenue, _depth + 1);
         if (autoResult) {
@@ -1346,12 +1392,11 @@ const GUESTS = {
     applySimpleEffect(player, opponent, guest.ability.type, guest.ability.value, result, prefix);
   }
 
-  // --- Arrival effects: triggered when a guest enters the house ---
+  // --- Arrival effects: triggered at draw time (when guest appears at the door) ---
   function handleArrivalEffects(player, opponent, guestId, venue, result) {
     const guest = GUESTS[guestId];
     if (!guest?.ability || guest.ability.trigger !== "arrival") return;
 
-    // Handle simple shared effects with arrival-specific messages
     switch (guest.ability.type) {
       case "scoreNow":
         player.roundPoints += guest.ability.value;
@@ -1364,11 +1409,11 @@ const GUESTS = {
         }
         return;
       case "plusOne":
-        result.plusOneTriggered = true;
+        player.pendingPlusOne = true;
         result.effects.push("plus one triggered");
         break;
       case "magnet":
-        result.magnetTriggered = true;
+        player.pendingMagnet = true;
         result.effects.push("magnet triggered — plus one with arrival");
         break;
       case "stackChoice":
@@ -1378,25 +1423,21 @@ const GUESTS = {
         applyNameDropEffect(player.roundDeck, guest.ability.value || 3, result, "");
         break;
       case "socialClimber": {
-        const entry = player.house.find(e => getGuestId(e) === guestId);
-        if (entry && typeof entry !== "string") {
-          entry.bonusPoints = (entry.bonusPoints || 0) + 1;
-          const max = guest.ability.maxBonus || 9;
-          if (entry.bonusPoints > max) entry.bonusPoints = max;
-          result.effects.push(`social climber: +${entry.bonusPoints} permanent points`);
-        }
+        // Guest is at the door, not in house yet. Store pending bonus
+        // to be applied when the guest is admitted.
+        player.arrivingBonusPoints = (player.arrivingBonusPoints || 0) + 1;
+        const max = guest.ability.maxBonus || 9;
+        if (player.arrivingBonusPoints > max) player.arrivingBonusPoints = max;
+        result.effects.push(`social climber: +${player.arrivingBonusPoints} permanent points`);
         break;
       }
       case "impersonator": {
-        // Copy action ability of guest to the left (index 1, since this guest just entered at 0)
-        if (player.house.length > 1) {
-          const leftGuest = GUESTS[getGuestId(player.house[1])];
+        // Guest is at the door. Left neighbor will be house[0] (current newest).
+        if (player.house.length > 0) {
+          const leftGuest = GUESTS[getGuestId(player.house[0])];
           if (leftGuest?.ability && leftGuest.ability.trigger === "flash") {
-            const entry = player.house[0];
-            if (entry && typeof entry !== "string") {
-              entry.copiedAbility = { ...leftGuest.ability };
-              result.effects.push(`copied ${leftGuest.ability.name} from ${leftGuest.name}`);
-            }
+            player.arrivingCopiedAbility = { ...leftGuest.ability };
+            result.effects.push(`copied ${leftGuest.ability.name} from ${leftGuest.name}`);
           } else {
             result.effects.push("no action ability to copy");
           }
@@ -1695,15 +1736,15 @@ const GUESTS = {
     }
   }
 
-  // Resolve a name-drop choice: player picks one guest to admit, rest go back
+  // Resolve a name-drop choice: player picks one guest to come next.
+  // Moves chosen to top of deck so it's drawn next when the current guest is admitted.
   function resolveNameDropChoice(player, venue, opponent, opponentVenue, chosenId) {
     const deck = player.roundDeck;
     const idx = deck.lastIndexOf(chosenId);
     if (idx < 0) return false;
-    // Remove chosen from deck and set as arriving guest
+    // Move chosen to top of deck (end of array = next to be drawn)
     deck.splice(idx, 1);
-    player.arrivingGuest = chosenId;
-    player.arrivingAbilityUsed = false;
+    deck.push(chosenId);
     return true;
   }
 
