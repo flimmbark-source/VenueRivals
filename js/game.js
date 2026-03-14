@@ -223,7 +223,7 @@ const GUESTS = {
     name: "Big Planner", emoji: "📋",
     heat: 1, money: 1, points: 2, cost: 6,
     venue: "Night Market", tags: ["Scout", "Broker"], tier: "uncommon",
-    ability: { name: "Packed House", icon: "🏠", desc: "When scored, +When scored, 4 Points if your house is full.", trigger: "scoring", type: "packedHouse", value: 4 },
+    ability: { name: "Packed House", icon: "🏠", desc: "When scored, +4 Points if your house is full.", trigger: "scoring", type: "packedHouse", value: 4 },
     desc: "PACKED HOUSE — At scoring, +4 Points if your house is full.",
   },
   highRoller: {
@@ -671,6 +671,74 @@ const GUESTS = {
     return normalized;
   }
 
+  // --- Modular ability effect helpers ---
+  // These centralise shared effect logic so each effect type is implemented once.
+
+  function applySimpleEffect(player, opponent, abilityType, value, result, prefix) {
+    switch (abilityType) {
+      case "coolHeat":
+        player.heat = Math.max(0, player.heat - value);
+        result.effects.push(`${prefix}cooled ${value} heat`);
+        return true;
+      case "addOpponentHeat":
+        if (opponent) {
+          opponent.heat += value;
+          result.effects.push(`${prefix}added ${value} heat to opponent`);
+        }
+        return true;
+      case "scoreNow":
+        player.roundPoints += value;
+        result.effects.push(`${prefix}scored ${value} points`);
+        return true;
+      case "gainMoney":
+        player.roundMoney += value;
+        result.effects.push(`${prefix}gained ${value} money`);
+        return true;
+      case "queueGatecrasher":
+        if (opponent) {
+          opponent.roundDeck.push("gatecrasher");
+          result.effects.push(`${prefix}queued gatecrasher for opponent`);
+        }
+        return true;
+      case "setHeatZero": {
+        const oldHeat = player.heat;
+        player.heat = 0;
+        result.effects.push(`${prefix}cooled ${oldHeat} heat`);
+        return true;
+      }
+      default:
+        return false;
+    }
+  }
+
+  function applyPeekEffect(deck, result, prefix) {
+    if (deck.length >= 2) {
+      const topIdx = deck.length - 1;
+      const secondIdx = deck.length - 2;
+      result.revealedGuests = [deck[topIdx], deck[secondIdx]];
+      result.needsStackChoice = true;
+      result.effects.push(`${prefix}peeked: ${GUESTS[deck[topIdx]].name}, ${GUESTS[deck[secondIdx]].name} — choose order`);
+    } else if (deck.length === 1) {
+      result.revealedGuests = [deck[0]];
+      result.effects.push(`${prefix}peeked: ${GUESTS[deck[0]].name}`);
+    } else {
+      result.effects.push(`${prefix}queue empty`);
+    }
+  }
+
+  function applyNameDropEffect(deck, count, result, prefix) {
+    const actual = Math.min(count, deck.length);
+    if (actual > 0) {
+      const revealed = [];
+      for (let i = deck.length - 1; i >= deck.length - actual; i--) {
+        revealed.push(deck[i]);
+      }
+      result.revealedGuests = revealed;
+      result.needsNameDropChoice = true;
+      result.effects.push(`${prefix}revealed: ${revealed.map(id => GUESTS[id].name).join(", ")} — choose one to admit`);
+    }
+  }
+
   function getHouseCapacity(venue, player) {
     // House capacity matches the visible grid size; arriving guest is
     // rendered into the grid now, so don't subtract 1.
@@ -986,22 +1054,10 @@ const GUESTS = {
       : guest;
     const ability = abilityDef.ability;
 
+    // Delegate simple shared effects first
+    if (applySimpleEffect(player, opponent, ability.type, ability.value, result, "")) return;
+
     switch (ability.type) {
-      case "coolHeat": {
-        player.heat = Math.max(0, player.heat - ability.value);
-        result.effects.push(`cooled ${ability.value} heat`);
-        break;
-      }
-      case "addOpponentHeat": {
-        opponent.heat += ability.value;
-        result.effects.push(`added ${ability.value} heat to opponent`);
-        break;
-      }
-      case "scoreNow": {
-        player.roundPoints += ability.value;
-        result.effects.push(`scored ${ability.value} points`);
-        break;
-      }
       case "revealNext": {
         const count = Math.min(ability.value, player.roundDeck.length);
         const revealed = [];
@@ -1017,33 +1073,12 @@ const GUESTS = {
         );
         break;
       }
-      case "stackChoice": {
-        const deck = player.roundDeck;
-        if (deck.length >= 2) {
-          const topIdx = deck.length - 1;
-          const secondIdx = deck.length - 2;
-          result.revealedGuests = [deck[topIdx], deck[secondIdx]];
-          result.needsStackChoice = true;
-          result.effects.push(`peeked: ${GUESTS[deck[topIdx]].name}, ${GUESTS[deck[secondIdx]].name} — choose order`);
-        } else if (deck.length === 1) {
-          result.revealedGuests = [deck[0]];
-          result.effects.push(`peeked: ${GUESTS[deck[0]].name}`);
-        }
+      case "stackChoice":
+        applyPeekEffect(player.roundDeck, result, "");
         break;
-      }
-      case "nameDrop": {
-        const count = Math.min(ability.value || 3, player.roundDeck.length);
-        if (count > 0) {
-          const revealed = [];
-          for (let i = player.roundDeck.length - 1; i >= player.roundDeck.length - count; i--) {
-            revealed.push(player.roundDeck[i]);
-          }
-          result.revealedGuests = revealed;
-          result.needsNameDropChoice = true;
-          result.effects.push(`revealed: ${revealed.map(id => GUESTS[id].name).join(", ")} — choose one to admit`);
-        }
+      case "nameDrop":
+        applyNameDropEffect(player.roundDeck, ability.value || 3, result, "");
         break;
-      }
       case "boot": {
         const targeting = ability.targeting || "oldest";
         // The arriving guest can be targeted only if the ability source is a house guest
@@ -1279,12 +1314,6 @@ const GUESTS = {
         }
         break;
       }
-      case "setHeatZero": {
-        const oldHeat = player.heat;
-        player.heat = 0;
-        result.effects.push(`cooled ${oldHeat} heat`);
-        break;
-      }
       case "bootAdjacent": {
         const booted = [];
         if (sourceIndex >= 0) {
@@ -1306,16 +1335,6 @@ const GUESTS = {
         result.effects.push(booted.length ? `booted ${booted.length} adjacent guests` : "no adjacent guests");
         break;
       }
-      case "queueGatecrasher": {
-        opponent.roundDeck.push("gatecrasher");
-        result.effects.push("queued gatecrasher for opponent");
-        break;
-      }
-      case "gainMoney": {
-        player.roundMoney += ability.value;
-        result.effects.push(`gained ${ability.value} money`);
-        break;
-      }
     }
   }
 
@@ -1323,49 +1342,27 @@ const GUESTS = {
   function handleDepartureEffects(player, opponent, departingGuestId, result) {
     const guest = GUESTS[departingGuestId];
     if (!guest?.ability || guest.ability.trigger !== "departure") return;
-    switch (guest.ability.type) {
-      case "scoreNow":
-        player.roundPoints += guest.ability.value;
-        result.effects.push(`${guest.name} departure: scored ${guest.ability.value} points`);
-        break;
-      case "gainMoney":
-        player.roundMoney += guest.ability.value;
-        result.effects.push(`${guest.name} departure: gained ${guest.ability.value} money`);
-        break;
-      case "coolHeat":
-        player.heat = Math.max(0, player.heat - guest.ability.value);
-        result.effects.push(`${guest.name} departure: cooled ${guest.ability.value} heat`);
-        break;
-      case "queueGatecrasher":
-        if (opponent) {
-          opponent.roundDeck.push("gatecrasher");
-          result.effects.push(`${guest.name} departure: queued gatecrasher for opponent`);
-        }
-        break;
-      case "addOpponentHeat":
-        if (opponent) {
-          opponent.heat += guest.ability.value;
-          result.effects.push(`${guest.name} departure: added ${guest.ability.value} heat to opponent`);
-        }
-        break;
-    }
+    const prefix = `${guest.name} departure: `;
+    applySimpleEffect(player, opponent, guest.ability.type, guest.ability.value, result, prefix);
   }
 
   // --- Arrival effects: triggered when a guest enters the house ---
   function handleArrivalEffects(player, opponent, guestId, venue, result) {
     const guest = GUESTS[guestId];
     if (!guest?.ability || guest.ability.trigger !== "arrival") return;
+
+    // Handle simple shared effects with arrival-specific messages
     switch (guest.ability.type) {
       case "scoreNow":
         player.roundPoints += guest.ability.value;
         result.effects.push(`scored ${guest.ability.value} points on arrival`);
-        break;
+        return;
       case "queueGatecrasher":
         if (opponent) {
           opponent.roundDeck.push("gatecrasher");
           result.effects.push("planted gatecrasher on opponent's queue");
         }
-        break;
+        return;
       case "plusOne":
         result.plusOneTriggered = true;
         result.effects.push("plus one triggered");
@@ -1374,33 +1371,12 @@ const GUESTS = {
         result.magnetTriggered = true;
         result.effects.push("magnet triggered — plus one with arrival");
         break;
-      case "stackChoice": {
-        const deck = player.roundDeck;
-        if (deck.length >= 2) {
-          const topIdx = deck.length - 1;
-          const secondIdx = deck.length - 2;
-          result.revealedGuests = [deck[topIdx], deck[secondIdx]];
-          result.needsStackChoice = true;
-          result.effects.push(`peeked: ${GUESTS[deck[topIdx]].name}, ${GUESTS[deck[secondIdx]].name} — choose order`);
-        } else if (deck.length === 1) {
-          result.revealedGuests = [deck[0]];
-          result.effects.push(`peeked: ${GUESTS[deck[0]].name}`);
-        }
+      case "stackChoice":
+        applyPeekEffect(player.roundDeck, result, "");
         break;
-      }
-      case "nameDrop": {
-        const count = Math.min(guest.ability.value || 3, player.roundDeck.length);
-        if (count > 0) {
-          const revealed = [];
-          for (let i = player.roundDeck.length - 1; i >= player.roundDeck.length - count; i--) {
-            revealed.push(player.roundDeck[i]);
-          }
-          result.revealedGuests = revealed;
-          result.needsNameDropChoice = true;
-          result.effects.push(`revealed: ${revealed.map(id => GUESTS[id].name).join(", ")} — choose one to admit`);
-        }
+      case "nameDrop":
+        applyNameDropEffect(player.roundDeck, guest.ability.value || 3, result, "");
         break;
-      }
       case "socialClimber": {
         const entry = player.house.find(e => getGuestId(e) === guestId);
         if (entry && typeof entry !== "string") {
@@ -1426,36 +1402,6 @@ const GUESTS = {
           }
         } else {
           result.effects.push("no guest to copy from");
-        }
-        break;
-      }
-      case "lock": {
-        const targeting = guest.ability.targeting || "rightOfSelf";
-        const targetIdx = resolveTargetIndex(player, sourceIndex, targeting);
-        if (targetIdx < 0 || targetIdx >= player.house.length) {
-          result.effects.push("no valid target");
-          break;
-        }
-        const entry = normalizeHouseEntry(player, targetIdx);
-        entry.lockUntilClose = true;
-        result.effects.push(`locked ${GUESTS[getGuestId(entry)].name}`);
-        break;
-      }
-      case "stackChoice": {
-        const revealed = [];
-        if (player.roundDeck.length >= 2) {
-          const topIdx = player.roundDeck.length - 1;
-          const secondIdx = player.roundDeck.length - 2;
-          revealed.push(player.roundDeck[topIdx], player.roundDeck[secondIdx]);
-          result.revealedGuests = revealed;
-          result.needsStackChoice = true;
-          result.effects.push(`peeked: ${GUESTS[revealed[0]].name}, ${GUESTS[revealed[1]].name} — choose order`);
-        } else if (player.roundDeck.length === 1) {
-          revealed.push(player.roundDeck[0]);
-          result.revealedGuests = revealed;
-          result.effects.push(`peeked: ${GUESTS[player.roundDeck[0]].name}`);
-        } else {
-          result.effects.push("queue empty");
         }
         break;
       }
