@@ -2595,6 +2595,10 @@ body {
     animation: tooltipIn 0.15s ease;
 }
 
+.shop-inspect-indicator::before {
+    content: "🔍";
+}
+
 .shop-inspect-indicator[aria-pressed="true"] {
     border-color: var(--accent-secondary);
     box-shadow:
