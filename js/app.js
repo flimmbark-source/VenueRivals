@@ -2857,23 +2857,22 @@
         return true;
     }
 
+    function updateShopInspectToggle() {
+        const toggle = document.getElementById('shop-inspect-toggle');
+        if (!toggle) return;
+        toggle.setAttribute('aria-pressed', shopInspectMode ? 'true' : 'false');
+    }
+
     function activateShopInspectMode() {
         if (shopInspectMode) return;
         shopInspectMode = true;
-        const panel = document.getElementById('buy-phase-panel');
-        if (panel && !panel.querySelector('.shop-inspect-indicator')) {
-            const indicator = document.createElement('div');
-            indicator.className = 'shop-inspect-indicator';
-            indicator.textContent = '🔍';
-            panel.appendChild(indicator);
-        }
+        updateShopInspectToggle();
     }
 
     function deactivateShopInspectMode() {
         if (!shopInspectMode) return;
         shopInspectMode = false;
-        const indicator = document.querySelector('.shop-inspect-indicator');
-        if (indicator) indicator.remove();
+        updateShopInspectToggle();
         removeTooltip();
     }
 
@@ -4074,6 +4073,7 @@
         setResultsPanelsVisible(false);
         document.getElementById('buy-phase-panel').style.display = '';
         document.getElementById('gameover-panel').style.display = 'none';
+        updateShopInspectToggle();
         setPhoneBuyPhaseLayout(true);
     }
 
@@ -5260,6 +5260,14 @@
 
         // Buy phase
         document.getElementById('btn-done-shopping').addEventListener('click', handleDoneShopping);
+        document.getElementById('shop-inspect-toggle').addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (shopInspectMode) {
+                deactivateShopInspectMode();
+            } else {
+                activateShopInspectMode();
+            }
+        });
 
         // Game over
         document.getElementById('btn-play-again').addEventListener('click', () => {
