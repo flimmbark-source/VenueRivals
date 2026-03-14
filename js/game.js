@@ -675,6 +675,7 @@ const GUESTS = {
   // These centralise shared effect logic so each effect type is implemented once.
 
   function applySimpleEffect(player, opponent, abilityType, value, result, prefix) {
+    if (!result.pings) result.pings = [];
     switch (abilityType) {
       case "coolHeat":
         player.heat = Math.max(0, player.heat - value);
@@ -689,10 +690,12 @@ const GUESTS = {
       case "scoreNow":
         player.roundPoints += value;
         result.effects.push(`${prefix}scored ${value} points`);
+        result.pings.push({ type: 'points', value });
         return true;
       case "gainMoney":
         player.roundMoney += value;
         result.effects.push(`${prefix}gained ${value} money`);
+        result.pings.push({ type: 'money', value });
         return true;
       case "queueGatecrasher":
         if (opponent) {
@@ -1026,6 +1029,7 @@ const GUESTS = {
       pendingOut: null,
       busted: false,
       effects: [],
+      pings: [],
     };
 
     // Capture draw-time arrival flags before they're reset by the next draw
@@ -1066,6 +1070,9 @@ const GUESTS = {
         result.revealedGuests = drawRes.arrivalResult.revealedGuests;
         result.deferredDraw = true;
         result.arrivalEffects = drawRes.arrivalResult.effects;
+        result.arrivalPings = drawRes.arrivalResult.pings || [];
+      } else if (drawRes.arrivalResult?.pings?.length) {
+        result.arrivalPings = drawRes.arrivalResult.pings;
       }
     }
 
@@ -1389,7 +1396,15 @@ const GUESTS = {
     const guest = GUESTS[departingGuestId];
     if (!guest?.ability || guest.ability.trigger !== "departure") return;
     const prefix = `${guest.name} departure: `;
+    const pingsBefore = result.pings ? result.pings.length : 0;
     applySimpleEffect(player, opponent, guest.ability.type, guest.ability.value, result, prefix);
+    // Tag any new pings with the departing guest ID
+    if (result.pings) {
+      for (let i = pingsBefore; i < result.pings.length; i++) {
+        result.pings[i].guestId = departingGuestId;
+        result.pings[i].phase = 'departure';
+      }
+    }
   }
 
   // --- Arrival effects: triggered at draw time (when guest appears at the door) ---
@@ -1397,10 +1412,12 @@ const GUESTS = {
     const guest = GUESTS[guestId];
     if (!guest?.ability || guest.ability.trigger !== "arrival") return;
 
+    if (!result.pings) result.pings = [];
     switch (guest.ability.type) {
       case "scoreNow":
         player.roundPoints += guest.ability.value;
         result.effects.push(`scored ${guest.ability.value} points on arrival`);
+        result.pings.push({ type: 'points', value: guest.ability.value });
         return;
       case "queueGatecrasher":
         if (opponent) {
