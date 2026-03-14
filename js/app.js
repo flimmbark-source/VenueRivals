@@ -3291,23 +3291,18 @@
         showArrivalChoiceOverlay(who, revealedGuests, (chosenId) => {
             Game.resolveStackChoice(player, chosenId);
             clearRevealDoorIntel(who);
-            // Draw already happened — guest is at the door. Just refresh UI.
-            renderArrivingGuest(who);
-            updateGuestDetail();
-            updateHUD();
-            checkGuestPhaseDone();
-            publishState();
+            completeDeferredDraw(who);
         });
     }
 
     function enterArrivalNameDropChoice(who, revealedGuests, venue, opponent, opponentVenue) {
-        // Show a choice overlay: player picks which guest comes next
+        // Show a choice overlay: player picks which guest to admit now
         const player = who === 'player' ? gameState.player : gameState.rival;
-        showFeedback('Choose which guest comes next', 'disruption', 3000, who);
+        showFeedback('Choose a guest to admit now', 'disruption', 3000, who);
         showArrivalChoiceOverlay(who, revealedGuests, (chosenId) => {
             Game.resolveNameDropChoice(player, venue, opponent, opponentVenue, chosenId);
             clearRevealDoorIntel(who);
-            // Chosen guest moved to top of deck — will be drawn when current guest is admitted
+            // Name drop sets the chosen guest as arrivingGuest; draw is complete
             renderArrivingGuest(who);
             updateGuestDetail();
             updateHUD();
@@ -3415,25 +3410,14 @@
         // Animate entry door opening
         animateDoorOpen(selfKey);
 
-        // Show departure/other effects from admission
+        // Show arrival effect feedback before rendering the new arriving guest
         if (result.effects && result.effects.length > 0) {
             const guest = Game.GUESTS[result.admitted];
-            const admitEffects = result.effects.filter(e =>
+            const arrivalEffects = result.effects.filter(e =>
                 !e.startsWith('departure:') && e !== 'plus one triggered'
             );
-            if (admitEffects.length && guest) {
-                showFeedback(`${guest.name}: ${admitEffects.join(', ')}`, 'disruption', 2500, selfKey);
-            }
-        }
-
-        // Show arrival effects for the NEXT drawn guest (arrival fires at draw time)
-        if (result.arrivalEffects?.length && self.arrivingGuest) {
-            const nextGuest = Game.GUESTS[self.arrivingGuest];
-            const displayEffects = result.arrivalEffects.filter(e =>
-                e !== 'plus one triggered' && !e.startsWith('magnet triggered')
-            );
-            if (displayEffects.length && nextGuest) {
-                showFeedback(`${nextGuest.name}: ${displayEffects.join(', ')}`, 'disruption', 2500, selfKey);
+            if (arrivalEffects.length && guest) {
+                showFeedback(`${guest.name}: ${arrivalEffects.join(', ')}`, 'disruption', 2500, selfKey);
             }
         }
 
@@ -3449,17 +3433,21 @@
         // the deck so the ID-based filter will drop them automatically.
         if (revealDoorIntel[selfKey]) renderRevealDoorIntel(selfKey);
 
-        // Handle arrival choices for the NEXT drawn guest (draw already happened,
-        // the choice just reorders the deck for subsequent draws)
+        // Handle arrival abilities that reveal guests (stackChoice / nameDrop)
         if (result.revealedGuests) {
             setRevealDoorIntel(selfKey, result.revealedGuests);
         }
 
+        // Handle deferred draw: arrival stackChoice or nameDrop needs resolution
+        // before the next guest is drawn from the deck.
         if (result.deferredDraw && selfKey === 'player') {
             if (result.needsStackChoice && result.revealedGuests?.length >= 2) {
                 enterArrivalStackChoice(selfKey, result.revealedGuests, venue, opponent, opponentVenue);
             } else if (result.needsNameDropChoice && result.revealedGuests?.length) {
                 enterArrivalNameDropChoice(selfKey, result.revealedGuests, venue, opponent, opponentVenue);
+            } else {
+                // Fallback: complete the draw immediately
+                completeDeferredDraw(selfKey);
             }
         }
 
@@ -3729,8 +3717,7 @@
             const result = Game.admitGuest(r, rVenue, gameState.player, Game.VENUES[gameState.player.venueId]);
             if (!result) return;
 
-            // AI auto-resolve deferred arrival choice (draw already happened,
-            // just reorder the deck for next draw)
+            // AI auto-resolve deferred draw from arrival stackChoice / nameDrop
             if (result.deferredDraw) {
                 if (result.needsStackChoice && result.revealedGuests?.length >= 2) {
                     const a = Game.GUESTS[result.revealedGuests[0]];
@@ -3739,6 +3726,8 @@
                     const bVal = (b?.money || 0) + (b?.points || 0);
                     const firstId = aVal >= bVal ? result.revealedGuests[0] : result.revealedGuests[1];
                     Game.resolveStackChoice(r, firstId);
+                    // Stack choice just reorders; still need to draw
+                    Game.drawNextGuest(r, rVenue);
                 } else if (result.needsNameDropChoice && result.revealedGuests?.length) {
                     let bestId = result.revealedGuests[0];
                     let bestVal = -Infinity;
@@ -3747,7 +3736,11 @@
                         const val = (g?.money || 0) + (g?.points || 0);
                         if (val > bestVal) { bestVal = val; bestId = id; }
                     }
+                    // resolveNameDropChoice sets arrivingGuest; no draw needed
                     Game.resolveNameDropChoice(r, rVenue, p, pVenue, bestId);
+                } else {
+                    // Fallback: just draw
+                    Game.drawNextGuest(r, rVenue);
                 }
             }
 
@@ -4243,7 +4236,7 @@
 
     function startNewRound() {
         deactivateShopInspectMode();
-        const arrivalInfo = Game.startGuestPhase(gameState);
+        Game.startGuestPhase(gameState);
         roundActionLog = [];
         closeActionLogPopup();
         clearRevealDoorIntel();
@@ -4270,55 +4263,9 @@
         updateHUD();
         setPartyView('player', false);
 
-        // Handle arrival effects from the initial draw
-        if (arrivalInfo?.playerArrival) {
-            const pa = arrivalInfo.playerArrival;
-            if (pa.effects?.length) {
-                const guest = Game.GUESTS[gameState.player.arrivingGuest];
-                if (guest) showFeedback(`${guest.name}: ${pa.effects.join(', ')}`, 'disruption', 2500, 'player');
-            }
-            if (pa.revealedGuests) setRevealDoorIntel('player', pa.revealedGuests);
-            if (pa.needsStackChoice && pa.revealedGuests?.length >= 2) {
-                const venue = Game.VENUES[gameState.player.venueId];
-                enterArrivalStackChoice('player', pa.revealedGuests, venue, gameState.rival, Game.VENUES[gameState.rival.venueId]);
-            } else if (pa.needsNameDropChoice && pa.revealedGuests?.length) {
-                const venue = Game.VENUES[gameState.player.venueId];
-                enterArrivalNameDropChoice('player', pa.revealedGuests, venue, gameState.rival, Game.VENUES[gameState.rival.venueId]);
-            }
-        }
-        // AI auto-resolves its own arrival choices
-        if (arrivalInfo?.rivalArrival) {
-            const ra = arrivalInfo.rivalArrival;
-            if (ra.needsStackChoice && ra.revealedGuests?.length >= 2) {
-                autoResolveArrivalChoice(gameState.rival, ra);
-            } else if (ra.needsNameDropChoice && ra.revealedGuests?.length) {
-                autoResolveArrivalChoice(gameState.rival, ra);
-            }
-        }
-
         // Start AI
         setTimeout(() => startAITimer(), 800);
         publishState();
-    }
-
-    function autoResolveArrivalChoice(player, arrivalResult) {
-        if (arrivalResult.needsStackChoice && arrivalResult.revealedGuests?.length >= 2) {
-            const a = Game.GUESTS[arrivalResult.revealedGuests[0]];
-            const b = Game.GUESTS[arrivalResult.revealedGuests[1]];
-            const aVal = (a?.money || 0) + (a?.points || 0);
-            const bVal = (b?.money || 0) + (b?.points || 0);
-            const firstId = aVal >= bVal ? arrivalResult.revealedGuests[0] : arrivalResult.revealedGuests[1];
-            Game.resolveStackChoice(player, firstId);
-        } else if (arrivalResult.needsNameDropChoice && arrivalResult.revealedGuests?.length) {
-            let bestId = arrivalResult.revealedGuests[0];
-            let bestVal = -Infinity;
-            for (const id of arrivalResult.revealedGuests) {
-                const g = Game.GUESTS[id];
-                const val = (g?.money || 0) + (g?.points || 0);
-                if (val > bestVal) { bestVal = val; bestId = id; }
-            }
-            Game.resolveNameDropChoice(player, Game.VENUES[player.venueId], null, null, bestId);
-        }
     }
 
     // === Game Over ===
