@@ -19,7 +19,7 @@ const GUESTS = {
   },
   bottleBringer: {
     name: "Bottle Bringer", emoji: "🍾",
-    heat: 0, money: 1, points: 0, cost: 3,
+    heat: 0, money: 1, points: 0, cost: 2,
     venue: "Neutral", tags: ["Broker"],
     desc: "No ability.", tier: "common",
   },
@@ -57,7 +57,7 @@ const GUESTS = {
   },
   plusOnePrince: {
     name: "Plus-One Prince", emoji: "👑",
-    heat: 1, money: 1, points: 2, cost: 6,
+    heat: 1, money: 1, points: 1, cost: 3,
     venue: "Neutral", tags: ["VIP"], tier: "uncommon",
     ability: { name: "Plus One", icon: "➕", desc: "On arrival, Admit the next guest immediately.", trigger: "arrival", type: "plusOne" },
     desc: "PLUS ONE — When this guest enters, admit the next guest immediately.",
@@ -78,7 +78,7 @@ const GUESTS = {
   },
   fedUpRoommate: {
     name: "Fed-Up Roommate", emoji: "😤",
-    heat: 1, money: 0, points: 2, cost: 6,
+    heat: 1, money: 2, points: 1, cost: 6,
     venue: "Neutral", tags: ["Outlaw"], tier: "uncommon",
     ability: { name: "Boot", icon: "🥾", desc: "Remove a guest from your house.", trigger: "flash", type: "boot", targeting: "choice" },
     desc: "BOOT — A: Remove a guest from your house.",
