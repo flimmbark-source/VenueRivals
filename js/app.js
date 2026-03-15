@@ -3501,8 +3501,32 @@
             const exitId = drawRes.pendingOut;
             animateExitGuest(who, typeof exitId === 'string' ? exitId : exitId);
         }
+
+        if (drawRes.arrivalResult?.effects?.length && player.arrivingGuest) {
+            const nextGuest = Game.GUESTS[player.arrivingGuest];
+            const displayEffects = drawRes.arrivalResult.effects.filter(e =>
+                e !== 'plus one triggered' && !e.startsWith('magnet triggered')
+            );
+            if (displayEffects.length && nextGuest) {
+                showFeedback(`${nextGuest.name}: ${displayEffects.join(', ')}`, 'disruption', 2500, who);
+            }
+        }
+
         renderHouseGrid(who);
         renderArrivingGuest(who);
+
+        // Arrival pings should pop from the arriving card after the draw places it in-slot.
+        if (drawRes.arrivalResult?.pings?.length && player.arrivingGuest) {
+            setTimeout(() => {
+                const pingTarget = getArrivalPingTarget(who, player.arrivingGuest);
+                if (pingTarget) spawnAbilityPings(pingTarget, drawRes.arrivalResult.pings);
+            }, 320);
+        }
+
+        if (drawRes.arrivalResult?.revealedGuests) {
+            setRevealDoorIntel(who, drawRes.arrivalResult.revealedGuests);
+        }
+
         updateGuestDetail();
         updateVenueStatus(who);
         updateHUD();
@@ -3704,14 +3728,7 @@
         if (!result.revealedGuests && revealDoorIntel[selfKey]) renderRevealDoorIntel(selfKey);
         if (revealDoorIntel[opponentKey]) renderRevealDoorIntel(opponentKey);
 
-        if (result.pushedOut) {
-            animateExitGuest(selfKey, result.pushedOut);
-        }
-        if (result.pendingOut) {
-            animateExitGuest(selfKey, result.pendingOut);
-        }
-
-        // Spawn ability pings from targeted guests before grid re-renders.
+        // Spawn ability/departure pings before guests leave their slots.
         if (result.pings?.length) {
             const abilityPings = result.pings.filter(p => p.phase === 'ability');
             abilityPings.forEach((ping) => {
@@ -3725,6 +3742,13 @@
                 const targetEl = slotsEl?.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
                 if (targetEl) spawnAbilityPings(targetEl, [ping]);
             });
+        }
+
+        if (result.pushedOut) {
+            animateExitGuest(selfKey, result.pushedOut);
+        }
+        if (result.pendingOut) {
+            animateExitGuest(selfKey, result.pendingOut);
         }
 
         const selfRenderChanged = getHouseRenderKey(self) !== selfHouseBefore;
