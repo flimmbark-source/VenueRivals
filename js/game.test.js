@@ -602,6 +602,43 @@ describe("departure: scoreNow (Afterparty Host)", () => {
     expect(result.effects).toEqual(expect.arrayContaining([
       expect.stringContaining("departure: scored 2 points"),
     ]));
+    expect(result.pings).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'points',
+        value: 2,
+        phase: 'departure',
+        target: 'house',
+        guestId: 'afterpartyHost',
+        instanceId: target.instanceId,
+      }),
+    ]));
+  });
+
+  test("keeps departing instanceId on admit push-out departure pings", () => {
+    const oldest = makeHouseEntry("afterpartyHost");
+    const middle = makeHouseEntry("familiarFace");
+    const newest = makeHouseEntry("loudFriend");
+    const player = makePlayer({
+      house: [newest, middle, oldest],
+      arrivingGuest: 'familiarFace',
+      roundDeck: ['bottleBringer'],
+      roundPoints: 0,
+    });
+    const opponent = makeOpponent();
+
+    const result = Game.admitGuest(player, Game.VENUES.velvetRoom, opponent, Game.VENUES.velvetRoom);
+
+    expect(player.roundPoints).toBe(2);
+    expect(result.pings).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'points',
+        value: 2,
+        phase: 'departure',
+        target: 'house',
+        guestId: 'afterpartyHost',
+        instanceId: oldest.instanceId,
+      }),
+    ]));
   });
 });
 
@@ -658,6 +695,74 @@ describe("departure: addOpponentHeat (Drama Starter)", () => {
       targetInstanceId: target.instanceId,
     });
     expect(opponent.heat).toBe(2);
+  });
+});
+
+
+describe("mid-round scoring does not double-count ability grants", () => {
+  test("arrival scoreNow grants once during round and still keeps base stat scoring at end", () => {
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        money: 0,
+        house: [makeHouseEntry("mainCharacter")],
+        roundPoints: 2,
+        roundMoney: 0,
+        guestMoney: 3,
+        guestPoints: 3,
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+
+    Game.endGuestPhase(state);
+
+    // mainCharacter base points (3) + arrival scoreNow (2)
+    expect(state.player.points).toBe(5);
+    expect(state.player.money).toBe(3);
+  });
+
+  test("departure scoreNow grants once and base guest stats are still only counted once at end", () => {
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        money: 0,
+        roundPoints: 2, // afterpartyHost departure trigger resolved during round
+        roundMoney: 0,
+        guestMoney: 0,
+        guestPoints: 3, // afterpartyHost base points from being admitted earlier
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+
+    Game.endGuestPhase(state);
+
+    expect(state.player.points).toBe(5);
+    expect(state.player.money).toBe(0);
+  });
+
+  test("scoreGuest adds mid-round copy of target stats and end scoring still counts the guest once", () => {
+    const state = {
+      round: 1, pointTarget: 50, phase: "guest", guestPhaseScoredRound: null,
+      player: makePlayer({
+        phaseComplete: true,
+        money: 0,
+        roundPoints: 1, // storyPoster scored loudFriend once mid-round
+        roundMoney: 1,
+        guestMoney: 1, // loudFriend base
+        guestPoints: 1, // loudFriend base
+      }),
+      rival: makePlayer({ name: "Rival", isAI: true, phaseComplete: true }),
+      winner: null,
+    };
+
+    Game.endGuestPhase(state);
+
+    expect(state.player.points).toBe(2);
+    expect(state.player.money).toBe(2);
   });
 });
 

@@ -867,10 +867,12 @@ const GUESTS = {
     // reached the exit slot. Remove them immediately so the arriving guest can
     // occupy that grid slot.
     let pendingOut = null;
+    let pendingOutEntry = null;
     const capacity = getHouseCapacity(venue, player);
     if (capacity >= 0 && player.house.length >= capacity && player.house.length) {
       const exiting = player.house.pop();
       pendingOut = getGuestId(exiting);
+      pendingOutEntry = exiting;
     }
 
     // Reset pending arrival state from previous guest
@@ -899,7 +901,7 @@ const GUESTS = {
       }
     }
 
-    return { success: true, pendingOut, arrivalResult };
+    return { success: true, pendingOut, pendingOutEntry, arrivalResult };
   }
 
   function applyGuestImpact(player, guestId) {
@@ -1043,7 +1045,7 @@ const GUESTS = {
     pushed.forEach(exit => {
       const exitId = getGuestId(exit);
       result.pushedOut.push(exitId);
-      handleDepartureEffects(player, opponent, exitId, result);
+      handleDepartureEffects(player, opponent, exit, result);
     });
     if (player.heat > getHeatCapacity(venue, player)) {
       result.busted = true;
@@ -1059,7 +1061,7 @@ const GUESTS = {
       const drawRes = drawNextGuest(player, venue, false, opponent);
       if (drawRes.pendingOut) {
         result.pendingOut = drawRes.pendingOut;
-        handleDepartureEffects(player, opponent, drawRes.pendingOut, result);
+        handleDepartureEffects(player, opponent, drawRes.pendingOutEntry || drawRes.pendingOut, result);
       }
       if (player.busted) result.busted = true;
 
@@ -1149,7 +1151,7 @@ const GUESTS = {
             player.heat = Math.max(0, player.heat - GUESTS[arrivingId].heat);
             result.effects.push(`booted ${GUESTS[arrivingId].name}`);
             result.pushedOut = arrivingId;
-            handleDepartureEffects(player, opponent, arrivingId, result);
+            handleDepartureEffects(player, opponent, { guestId: arrivingId, instanceId: null }, result);
             break;
           }
           if (targetIdx < 0 || targetIdx === -2) {
@@ -1178,7 +1180,7 @@ const GUESTS = {
         const exitGuestId = getGuestId(exiting);
         result.effects.push(`booted ${GUESTS[exitGuestId].name}`);
         result.pushedOut = exitGuestId;
-        handleDepartureEffects(player, opponent, exitGuestId, result);
+        handleDepartureEffects(player, opponent, exiting, result);
         break;
       }
       case "bounce": {
@@ -1258,7 +1260,7 @@ const GUESTS = {
           const exitingId = getGuestId(exiting);
           result.pushedOut.push(exitingId);
           result.effects.push(`nudged ${GUESTS[exitingId].name} out`);
-          handleDepartureEffects(player, opponent, exitingId, result);
+          handleDepartureEffects(player, opponent, exiting, result);
           break;
         }
 
@@ -1278,7 +1280,7 @@ const GUESTS = {
           const removed = player.house.pop();
           const removedId = getGuestId(removed);
           cleared.push(removedId);
-          handleDepartureEffects(player, opponent, removedId, result);
+          handleDepartureEffects(player, opponent, removed, result);
         }
         result.effects.push(cleared.length ? `cleared ${cleared.length} guests` : "house already empty");
         break;
@@ -1392,7 +1394,7 @@ const GUESTS = {
             const exiting = player.house.splice(idx, 1)[0];
             const exitId = getGuestId(exiting);
             booted.push(exitId);
-            handleDepartureEffects(player, opponent, exitId, result);
+            handleDepartureEffects(player, opponent, exiting, result);
           }
         }
         result.effects.push(booted.length ? `booted ${booted.length} adjacent guests` : "no adjacent guests");
@@ -1402,7 +1404,10 @@ const GUESTS = {
   }
 
   // --- Departure effects: triggered when a guest leaves the house ---
-  function handleDepartureEffects(player, opponent, departingGuestId, result) {
+  function handleDepartureEffects(player, opponent, departingGuest, result) {
+    const departingGuestId = getGuestId(departingGuest);
+    const departingInstanceId =
+      departingGuest && typeof departingGuest === "object" ? departingGuest.instanceId : null;
     const guest = GUESTS[departingGuestId];
     if (!guest?.ability || guest.ability.trigger !== "departure") return;
     const prefix = `${guest.name} departure: `;
@@ -1413,6 +1418,10 @@ const GUESTS = {
       for (let i = pingsBefore; i < result.pings.length; i++) {
         result.pings[i].guestId = departingGuestId;
         result.pings[i].phase = 'departure';
+        result.pings[i].target = 'house';
+        if (departingInstanceId != null && result.pings[i].instanceId == null) {
+          result.pings[i].instanceId = departingInstanceId;
+        }
       }
     }
   }
