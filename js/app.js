@@ -1389,18 +1389,23 @@
     function triggerGuestSlotPopup(targetEl, pings, options = {}) {
         if (!targetEl || !pings?.length) return Promise.resolve();
         const { animateSlot = false, onCount = null } = options;
+        const usesSlotPopAnimation = !!animateSlot;
         markAbilityOverflowActive(targetEl);
         targetEl.classList.remove('ability-ping-highlight');
         targetEl.classList.remove('ability-ping-pop');
         void targetEl.offsetWidth; // reflow to restart animation
         targetEl.classList.add('ability-ping-highlight');
-        targetEl.classList.add('ability-ping-pop');
+        if (!usesSlotPopAnimation) {
+            targetEl.classList.add('ability-ping-pop');
+        }
         if (animateSlot) {
             targetEl.classList.add('close-door-payout-slot', 'is-payout-animating');
         }
         setTimeout(() => {
             targetEl.classList.remove('ability-ping-highlight');
-            targetEl.classList.remove('ability-ping-pop');
+            if (!usesSlotPopAnimation) {
+                targetEl.classList.remove('ability-ping-pop');
+            }
         }, 500);
 
         if (typeof onCount === 'function') onCount();
@@ -1448,6 +1453,24 @@
 
     function spawnAbilityPings(targetEl, pings) {
         return triggerGuestSlotPopup(targetEl, pings, { animateSlot: true });
+    }
+
+    function spawnGroupedAbilityPings(pings, resolveTarget) {
+        if (!Array.isArray(pings) || !pings.length || typeof resolveTarget !== 'function') return;
+        const grouped = new Map();
+        pings.forEach((ping) => {
+            const targetEl = resolveTarget(ping);
+            if (!targetEl) return;
+            const existing = grouped.get(targetEl);
+            if (existing) {
+                existing.push(ping);
+            } else {
+                grouped.set(targetEl, [ping]);
+            }
+        });
+        grouped.forEach((targetPings, targetEl) => {
+            spawnAbilityPings(targetEl, targetPings);
+        });
     }
 
     function hasValuePings(pings) {
@@ -3613,7 +3636,7 @@
             const slotsEl = document.getElementById(`${selfKey}-slots`);
             if (slotsEl) {
                 const departurePings = result.pings.filter(p => p.phase === 'departure');
-                departurePings.forEach(ping => {
+                spawnGroupedAbilityPings(departurePings, (ping) => {
                     let slot = null;
                     if (ping.instanceId != null) {
                         slot = slotsEl.querySelector(`.occupied-slot[data-instance-id="${ping.instanceId}"]`);
@@ -3621,7 +3644,7 @@
                     if (!slot) {
                         slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
                     }
-                    if (slot) spawnAbilityPings(slot, [ping]);
+                    return slot;
                 });
             }
         }
@@ -3764,13 +3787,12 @@
         // Spawn ability/departure pings before guests leave their slots.
         if (result.pings?.length) {
             const abilityPings = result.pings.filter(p => p.phase === 'ability');
-            abilityPings.forEach((ping) => {
-                const targetEl = getAbilityPingTarget(selfKey, ping);
-                if (targetEl) spawnAbilityPings(targetEl, [ping]);
+            spawnGroupedAbilityPings(abilityPings, (ping) => {
+                return getAbilityPingTarget(selfKey, ping);
             });
 
             const departurePings = result.pings.filter(p => p.phase === 'departure');
-            departurePings.forEach((ping) => {
+            spawnGroupedAbilityPings(departurePings, (ping) => {
                 const slotsEl = document.getElementById(`${selfKey}-slots`);
                 let targetEl = null;
                 if (ping.instanceId != null) {
@@ -3779,7 +3801,7 @@
                 if (!targetEl) {
                     targetEl = slotsEl?.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
                 }
-                if (targetEl) spawnAbilityPings(targetEl, [ping]);
+                return targetEl;
             });
         }
 
@@ -4025,9 +4047,12 @@
                 const slotsEl = document.getElementById('rival-slots');
                 if (slotsEl) {
                     const departurePings = result.pings.filter(p => p.phase === 'departure');
-                    departurePings.forEach(ping => {
-                        const slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
-                        if (slot) spawnAbilityPings(slot, [ping]);
+                    spawnGroupedAbilityPings(departurePings, (ping) => {
+                        if (ping.instanceId != null) {
+                            const byInstance = slotsEl.querySelector(`.occupied-slot[data-instance-id="${ping.instanceId}"]`);
+                            if (byInstance) return byInstance;
+                        }
+                        return slotsEl.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
                     });
                 }
             }
