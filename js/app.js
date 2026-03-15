@@ -1386,18 +1386,29 @@
         });
     }
 
-    function spawnAbilityPings(targetEl, pings) {
-        if (!targetEl || !pings?.length) return;
+    function triggerGuestSlotPopup(targetEl, pings, options = {}) {
+        if (!targetEl || !pings?.length) return Promise.resolve();
+        const { animateSlot = false, onCount = null } = options;
+        const usesSlotPopAnimation = !!animateSlot;
         markAbilityOverflowActive(targetEl);
         targetEl.classList.remove('ability-ping-highlight');
         targetEl.classList.remove('ability-ping-pop');
         void targetEl.offsetWidth; // reflow to restart animation
         targetEl.classList.add('ability-ping-highlight');
-        targetEl.classList.add('ability-ping-pop');
+        if (!usesSlotPopAnimation) {
+            targetEl.classList.add('ability-ping-pop');
+        }
+        if (animateSlot) {
+            targetEl.classList.add('close-door-payout-slot', 'is-payout-animating');
+        }
         setTimeout(() => {
             targetEl.classList.remove('ability-ping-highlight');
-            targetEl.classList.remove('ability-ping-pop');
+            if (!usesSlotPopAnimation) {
+                targetEl.classList.remove('ability-ping-pop');
+            }
         }, 500);
+
+        if (typeof onCount === 'function') onCount();
 
         pings.forEach((ping, i) => {
             const delay = i * 80;
@@ -1426,6 +1437,50 @@
                 }, delay);
             }
         });
+
+        if (!animateSlot) return Promise.resolve();
+
+        return new Promise((resolve) => {
+            const done = () => {
+                targetEl.removeEventListener('animationend', done);
+                targetEl.classList.remove('is-payout-animating', 'close-door-payout-slot');
+                resolve();
+            };
+            targetEl.addEventListener('animationend', done);
+            window.setTimeout(done, 520);
+        });
+    }
+
+    function spawnAbilityPings(targetEl, pings) {
+        return triggerGuestSlotPopup(targetEl, pings, { animateSlot: true });
+    }
+
+    function spawnGroupedAbilityPings(pings, resolveTarget) {
+        if (!Array.isArray(pings) || !pings.length || typeof resolveTarget !== 'function') return;
+        const grouped = new Map();
+        pings.forEach((ping) => {
+            const targetEl = resolveTarget(ping);
+            if (!targetEl) return;
+            const existing = grouped.get(targetEl);
+            if (existing) {
+                existing.push(ping);
+            } else {
+                grouped.set(targetEl, [ping]);
+            }
+        });
+        grouped.forEach((targetPings, targetEl) => {
+            spawnAbilityPings(targetEl, targetPings);
+        });
+    }
+
+    function hasValuePings(pings) {
+        return Array.isArray(pings) && pings.some((ping) => ping?.type === 'money' || ping?.type === 'points');
+    }
+
+    function isValueEffectText(effectText) {
+        if (!effectText) return false;
+        return /\bscored\b.+\bpoints\b/i.test(effectText)
+            || /\bgained\b.+\bmoney\b/i.test(effectText);
     }
 
     function animateCloseDoorPayoutGuest(who, processedGuest, onCount = null) {
@@ -1444,49 +1499,14 @@
         }
         if (!slot) return Promise.resolve();
 
-        return new Promise((resolve) => {
-            const emitPings = () => {
-                const randomMoneyDriftX = (Math.random() * 56) - 28;
-                const randomPointsDriftX = (Math.random() * 56) - 28;
-                const moneyValue = guest.money || 0;
-                const pointsValue = guest.points || 0;
-                if (typeof onCount === 'function') onCount();
-                if (moneyValue > 0) {
-                    spawnNumberPing(
-                        slot,
-                        `+$${moneyValue}`,
-                        '#2cb67d',
-                        'above',
-                        'arcade-burst',
-                        { driftX: randomMoneyDriftX, driftY: -62, startOffsetY: -10 },
-                    );
-                }
-                if (pointsValue > 0) {
-                    setTimeout(() => {
-                        spawnNumberPing(
-                            slot,
-                            `+${pointsValue}`,
-                            '#ffd166',
-                            'above',
-                            'arcade-burst',
-                            { driftX: randomPointsDriftX, driftY: -70, startOffsetY: 0 },
-                        );
-                    }, 80);
-                }
-            };
-
-            setTimeout(emitPings, -190);
-            slot.classList.add('close-door-payout-slot', 'is-payout-animating');
-
-            const done = () => {
-                slot.removeEventListener('animationend', done);
-                slot.classList.remove('is-payout-animating', 'close-door-payout-slot');
-                resolve();
-            };
-
-            slot.addEventListener('animationend', done);
-            window.setTimeout(done, 520);
-        });
+        const pings = [];
+        if ((guest.money || 0) > 0) pings.push({ type: 'money', value: guest.money || 0 });
+        if ((guest.points || 0) > 0) pings.push({ type: 'points', value: guest.points || 0 });
+        if (!pings.length) {
+            if (typeof onCount === 'function') onCount();
+            return Promise.resolve();
+        }
+        return triggerGuestSlotPopup(slot, pings, { animateSlot: true, onCount });
     }
 
     function registerCloseDoorGuestPayout(who, guestId) {
@@ -3601,11 +3621,13 @@
                 !e.startsWith('departure:') && e !== 'plus one triggered'
             );
             const departureEffects = result.effects.filter(e => e.includes(' departure: '));
-            if (admitEffects.length && guest) {
-                showFeedback(`${guest.name}: ${admitEffects.join(', ')}`, 'disruption', 2500, selfKey);
+            const nonValueAdmitEffects = admitEffects.filter((effect) => !isValueEffectText(effect));
+            const nonValueDepartureEffects = departureEffects.filter((effect) => !isValueEffectText(effect));
+            if (nonValueAdmitEffects.length && guest) {
+                showFeedback(`${guest.name}: ${nonValueAdmitEffects.join(', ')}`, 'disruption', 2500, selfKey);
             }
-            if (departureEffects.length) {
-                showFeedback(departureEffects.join(', '), 'disruption', 2500, selfKey);
+            if (nonValueDepartureEffects.length) {
+                showFeedback(nonValueDepartureEffects.join(', '), 'disruption', 2500, selfKey);
             }
         }
 
@@ -3614,7 +3636,7 @@
             const slotsEl = document.getElementById(`${selfKey}-slots`);
             if (slotsEl) {
                 const departurePings = result.pings.filter(p => p.phase === 'departure');
-                departurePings.forEach(ping => {
+                spawnGroupedAbilityPings(departurePings, (ping) => {
                     let slot = null;
                     if (ping.instanceId != null) {
                         slot = slotsEl.querySelector(`.occupied-slot[data-instance-id="${ping.instanceId}"]`);
@@ -3622,7 +3644,7 @@
                     if (!slot) {
                         slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
                     }
-                    if (slot) spawnAbilityPings(slot, [ping]);
+                    return slot;
                 });
             }
         }
@@ -3639,7 +3661,7 @@
         const arrivingGuestId = self.arrivingGuest;
         const arrivingGuest = arrivingGuestId ? Game.GUESTS[arrivingGuestId] : null;
         const hasArrivalAbility = arrivingGuest?.ability?.trigger === 'arrival';
-        if (hasArrivalAbility) {
+        if (hasArrivalAbility && !hasValuePings(result.arrivalPings)) {
             const displayEffects = (result.arrivalEffects || []).filter(e =>
                 e !== 'plus one triggered' && !e.startsWith('magnet triggered')
             );
@@ -3746,14 +3768,16 @@
 
         const departureEffects = result.effects.filter(e => e.includes(' departure: '));
         const nonDepartureEffects = result.effects.filter(e => !e.includes(' departure: '));
+        const nonValueNonDepartureEffects = nonDepartureEffects.filter((effect) => !isValueEffectText(effect));
+        const nonValueDepartureEffects = departureEffects.filter((effect) => !isValueEffectText(effect));
 
-        if (nonDepartureEffects.length) {
-            showFeedback(`${result.ability.name}: ${nonDepartureEffects.join(', ')}`, 'disruption', 2500, selfKey);
-        } else {
+        if (nonValueNonDepartureEffects.length) {
+            showFeedback(`${result.ability.name}: ${nonValueNonDepartureEffects.join(', ')}`, 'disruption', 2500, selfKey);
+        } else if (!hasValuePings(result.pings)) {
             showFeedback(`${result.ability.name} triggered`, 'disruption', 2500, selfKey);
         }
-        if (departureEffects.length) {
-            showFeedback(departureEffects.join(', '), 'disruption', 2500, selfKey);
+        if (nonValueDepartureEffects.length) {
+            showFeedback(nonValueDepartureEffects.join(', '), 'disruption', 2500, selfKey);
         }
         if (result.revealedGuests) setRevealDoorIntel(selfKey, result.revealedGuests);
         // Abilities may remove guests from either queue; refresh reveal overlays.
@@ -3763,16 +3787,21 @@
         // Spawn ability/departure pings before guests leave their slots.
         if (result.pings?.length) {
             const abilityPings = result.pings.filter(p => p.phase === 'ability');
-            abilityPings.forEach((ping) => {
-                const targetEl = getAbilityPingTarget(selfKey, ping);
-                if (targetEl) spawnAbilityPings(targetEl, [ping]);
+            spawnGroupedAbilityPings(abilityPings, (ping) => {
+                return getAbilityPingTarget(selfKey, ping);
             });
 
             const departurePings = result.pings.filter(p => p.phase === 'departure');
-            departurePings.forEach((ping) => {
+            spawnGroupedAbilityPings(departurePings, (ping) => {
                 const slotsEl = document.getElementById(`${selfKey}-slots`);
-                const targetEl = slotsEl?.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
-                if (targetEl) spawnAbilityPings(targetEl, [ping]);
+                let targetEl = null;
+                if (ping.instanceId != null) {
+                    targetEl = slotsEl?.querySelector(`.occupied-slot[data-instance-id="${ping.instanceId}"]`);
+                }
+                if (!targetEl) {
+                    targetEl = slotsEl?.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
+                }
+                return targetEl;
             });
         }
 
@@ -4018,9 +4047,12 @@
                 const slotsEl = document.getElementById('rival-slots');
                 if (slotsEl) {
                     const departurePings = result.pings.filter(p => p.phase === 'departure');
-                    departurePings.forEach(ping => {
-                        const slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
-                        if (slot) spawnAbilityPings(slot, [ping]);
+                    spawnGroupedAbilityPings(departurePings, (ping) => {
+                        if (ping.instanceId != null) {
+                            const byInstance = slotsEl.querySelector(`.occupied-slot[data-instance-id="${ping.instanceId}"]`);
+                            if (byInstance) return byInstance;
+                        }
+                        return slotsEl.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
                     });
                 }
             }
