@@ -321,6 +321,27 @@ describe("scoreGuest ability", () => {
     expect(player.roundPoints).toBe(1); // loudFriend's base points
     expect(player.roundMoney).toBe(1); // loudFriend's base money
     expect(result.effects[0]).toMatch(/scored 1 points and 1 money from Loud Friend/);
+    expect(result.pings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'points', value: 1, phase: 'ability', guestId: 'loudFriend', target: 'house', instanceId: target.instanceId }),
+      expect.objectContaining({ type: 'money', value: 1, phase: 'ability', guestId: 'loudFriend', target: 'house', instanceId: target.instanceId }),
+    ]));
+  });
+
+  test("can score arriving target and emits arriving pings", () => {
+    const activator = makeHouseEntry("storyPoster");
+    const player = makePlayer({ house: [activator], arrivingGuest: 'loudFriend', roundPoints: 0, roundMoney: 0 });
+    const opponent = makeOpponent();
+    const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "storyPoster", instanceId: activator.instanceId,
+      targetArriving: true,
+    });
+
+    expect(player.roundPoints).toBe(1);
+    expect(player.roundMoney).toBe(1);
+    expect(result.pings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'points', value: 1, phase: 'ability', guestId: 'loudFriend', target: 'arriving' }),
+      expect.objectContaining({ type: 'money', value: 1, phase: 'ability', guestId: 'loudFriend', target: 'arriving' }),
+    ]));
   });
 });
 
