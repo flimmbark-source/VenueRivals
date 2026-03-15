@@ -1281,14 +1281,18 @@ const GUESTS = {
         break;
       }
       case "scoreGuest": {
+        if (!result.pings) result.pings = [];
         const scoreCanTargetArriving = sourceIndex >= 0 && !!player.arrivingGuest;
         const targetIdx = resolveChoiceTarget(player, selectedGuest);
         if (targetIdx === -2 && scoreCanTargetArriving) {
-          const arrivingGuest = GUESTS[player.arrivingGuest];
+          const arrivingGuestId = player.arrivingGuest;
+          const arrivingGuest = GUESTS[arrivingGuestId];
           if (arrivingGuest) {
             player.roundPoints += arrivingGuest.points;
             player.roundMoney += arrivingGuest.money;
             result.effects.push(`scored ${arrivingGuest.points} points and ${arrivingGuest.money} money from ${arrivingGuest.name}`);
+            result.pings.push({ type: 'points', value: arrivingGuest.points, phase: 'ability', guestId: arrivingGuestId, target: 'arriving' });
+            result.pings.push({ type: 'money', value: arrivingGuest.money, phase: 'ability', guestId: arrivingGuestId, target: 'arriving' });
           }
           break;
         }
@@ -1310,6 +1314,9 @@ const GUESTS = {
           player.roundPoints += bonus;
           player.roundMoney += targetGuest.money;
           result.effects.push(`scored ${bonus} points and ${targetGuest.money} money from ${targetGuest.name}`);
+          const targetInstanceId = typeof targetEntry === "string" ? null : targetEntry.instanceId;
+          result.pings.push({ type: 'points', value: bonus, phase: 'ability', guestId: targetGuestId, target: 'house', instanceId: targetInstanceId });
+          result.pings.push({ type: 'money', value: targetGuest.money, phase: 'ability', guestId: targetGuestId, target: 'house', instanceId: targetInstanceId });
         }
         break;
       }
