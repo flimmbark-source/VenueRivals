@@ -1579,7 +1579,18 @@ const GUESTS = {
         pendingOut: null,
         busted: false,
       };
+      const pingsBefore = result.pings ? result.pings.length : 0;
       applyAbilityEffects(player, opponent, guest, result, selectedIndex, selectedGuest);
+      if (result.pings) {
+        for (let i = pingsBefore; i < result.pings.length; i++) {
+          result.pings[i].phase = result.pings[i].phase || "ability";
+          result.pings[i].target = result.pings[i].target || "house";
+          result.pings[i].guestId = result.pings[i].guestId || guestId;
+          if (result.pings[i].instanceId == null) {
+            result.pings[i].instanceId = entry?.instanceId ?? null;
+          }
+        }
+      }
       // Don't mark used if the ability needs a target choice
       if (!result.needsTargetChoice) {
         entry.abilityUsed = true;
@@ -1601,7 +1612,15 @@ const GUESTS = {
       pendingOut: null,
       busted: false,
     };
+    const pingsBefore = result.pings ? result.pings.length : 0;
     applyAbilityEffects(player, opponent, guest, result, -1, selectedGuest);
+    if (result.pings) {
+      for (let i = pingsBefore; i < result.pings.length; i++) {
+        result.pings[i].phase = result.pings[i].phase || "ability";
+        result.pings[i].target = result.pings[i].target || "arriving";
+        result.pings[i].guestId = result.pings[i].guestId || player.arrivingGuest;
+      }
+    }
     if (!result.needsTargetChoice) {
       player.arrivingAbilityUsed = true;
     }
