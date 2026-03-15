@@ -3615,7 +3615,13 @@
             if (slotsEl) {
                 const departurePings = result.pings.filter(p => p.phase === 'departure');
                 departurePings.forEach(ping => {
-                    const slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
+                    let slot = null;
+                    if (ping.instanceId != null) {
+                        slot = slotsEl.querySelector(`.occupied-slot[data-instance-id="${ping.instanceId}"]`);
+                    }
+                    if (!slot) {
+                        slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
+                    }
                     if (slot) spawnAbilityPings(slot, [ping]);
                 });
             }
