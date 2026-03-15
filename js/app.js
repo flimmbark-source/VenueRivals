@@ -3502,18 +3502,23 @@
             animateExitGuest(who, typeof exitId === 'string' ? exitId : exitId);
         }
 
-        if (drawRes.arrivalResult?.effects?.length && player.arrivingGuest) {
-            const nextGuest = Game.GUESTS[player.arrivingGuest];
-            const displayEffects = drawRes.arrivalResult.effects.filter(e =>
-                e !== 'plus one triggered' && !e.startsWith('magnet triggered')
-            );
-            if (displayEffects.length && nextGuest) {
-                showFeedback(`${nextGuest.name}: ${displayEffects.join(', ')}`, 'disruption', 2500, who);
-            }
-        }
-
         renderHouseGrid(who);
         renderArrivingGuest(who);
+
+        const arrivingGuestId = player.arrivingGuest;
+        const arrivalGuest = arrivingGuestId ? Game.GUESTS[arrivingGuestId] : null;
+        const hasArrivalAbility = arrivalGuest?.ability?.trigger === 'arrival';
+
+        if (hasArrivalAbility) {
+            const displayEffects = (drawRes.arrivalResult?.effects || []).filter(e =>
+                e !== 'plus one triggered' && !e.startsWith('magnet triggered')
+            );
+            const popupText = displayEffects.length
+                ? `${arrivalGuest.name}: ${displayEffects.join(', ')}`
+                : `${arrivalGuest.name}: ${arrivalGuest.ability.name} triggered`;
+            // Show after the arriving card has rendered in its slot.
+            setTimeout(() => showFeedback(popupText, 'disruption', 2500, who), 320);
+        }
 
         // Arrival pings should pop from the arriving card after the draw places it in-slot.
         if (drawRes.arrivalResult?.pings?.length && player.arrivingGuest) {
@@ -3591,19 +3596,12 @@
             const admitEffects = result.effects.filter(e =>
                 !e.startsWith('departure:') && e !== 'plus one triggered'
             );
+            const departureEffects = result.effects.filter(e => e.includes(' departure: '));
             if (admitEffects.length && guest) {
                 showFeedback(`${guest.name}: ${admitEffects.join(', ')}`, 'disruption', 2500, selfKey);
             }
-        }
-
-        // Show arrival effects for the NEXT drawn guest (arrival fires at draw time)
-        if (result.arrivalEffects?.length && self.arrivingGuest) {
-            const nextGuest = Game.GUESTS[self.arrivingGuest];
-            const displayEffects = result.arrivalEffects.filter(e =>
-                e !== 'plus one triggered' && !e.startsWith('magnet triggered')
-            );
-            if (displayEffects.length && nextGuest) {
-                showFeedback(`${nextGuest.name}: ${displayEffects.join(', ')}`, 'disruption', 2500, selfKey);
+            if (departureEffects.length) {
+                showFeedback(departureEffects.join(', '), 'disruption', 2500, selfKey);
             }
         }
 
@@ -3627,6 +3625,20 @@
         }
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
+
+        const arrivingGuestId = self.arrivingGuest;
+        const arrivingGuest = arrivingGuestId ? Game.GUESTS[arrivingGuestId] : null;
+        const hasArrivalAbility = arrivingGuest?.ability?.trigger === 'arrival';
+        if (hasArrivalAbility) {
+            const displayEffects = (result.arrivalEffects || []).filter(e =>
+                e !== 'plus one triggered' && !e.startsWith('magnet triggered')
+            );
+            const popupText = displayEffects.length
+                ? `${arrivingGuest.name}: ${displayEffects.join(', ')}`
+                : `${arrivingGuest.name}: ${arrivingGuest.ability.name} triggered`;
+            // Arrival pop-up should happen after the guest appears in the arriving slot.
+            setTimeout(() => showFeedback(popupText, 'disruption', 2500, selfKey), 320);
+        }
 
         // Spawn arrival pings from the arriving guest card in the strip.
         if (result.arrivalPings?.length && self.arrivingGuest) {
