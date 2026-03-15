@@ -312,7 +312,13 @@ describe("scoreGuest ability", () => {
   test("scores target guest's points and money", () => {
     const activator = makeHouseEntry("storyPoster");
     const target = makeHouseEntry("loudFriend"); // loudFriend has 1 point, 1 money
-    const player = makePlayer({ house: [activator, target], roundPoints: 0, roundMoney: 0 });
+    const player = makePlayer({
+      house: [activator, target],
+      roundPoints: 0,
+      roundMoney: 0,
+      guestPoints: 2,
+      guestMoney: 1,
+    });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
       source: "house", guestId: "storyPoster", instanceId: activator.instanceId,
@@ -320,6 +326,8 @@ describe("scoreGuest ability", () => {
     });
     expect(player.roundPoints).toBe(1); // loudFriend's base points
     expect(player.roundMoney).toBe(1); // loudFriend's base money
+    expect(player.guestPoints).toBe(1);
+    expect(player.guestMoney).toBe(0);
     expect(result.effects[0]).toMatch(/scored 1 points and 1 money from Loud Friend/);
     expect(result.pings).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'points', value: 1, phase: 'ability', guestId: 'loudFriend', target: 'house', instanceId: target.instanceId }),
@@ -342,6 +350,43 @@ describe("scoreGuest ability", () => {
       expect.objectContaining({ type: 'points', value: 1, phase: 'ability', guestId: 'loudFriend', target: 'arriving' }),
       expect.objectContaining({ type: 'money', value: 1, phase: 'ability', guestId: 'loudFriend', target: 'arriving' }),
     ]));
+  });
+});
+
+
+describe("mid-round scoring parity for arrival/departure/target abilities", () => {
+  test("arrival scoreNow does not also remain in deferred guest scoring", () => {
+    const player = makePlayer({
+      roundDeck: ["mainCharacter"],
+      guestPoints: 0,
+      roundPoints: 0,
+    });
+    const venue = Game.VENUES.velvetRoom;
+
+    Game.drawNextGuest(player, venue, false, makeOpponent());
+    expect(player.roundPoints).toBe(2);
+
+    Game.admitGuest(player, venue, makeOpponent(), venue);
+    expect(player.guestPoints).toBe(3);
+  });
+
+  test("departure ability removes departing guest deferred base value", () => {
+    const activator = makeHouseEntry("fedUpRoommate");
+    const target = makeHouseEntry("tabRunner");
+    const player = makePlayer({
+      house: [activator, target],
+      roundMoney: 0,
+      guestMoney: 2,
+    });
+    const opponent = makeOpponent();
+
+    Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "fedUpRoommate", instanceId: activator.instanceId,
+      targetInstanceId: target.instanceId,
+    });
+
+    expect(player.roundMoney).toBe(2);
+    expect(player.guestMoney).toBe(2);
   });
 });
 

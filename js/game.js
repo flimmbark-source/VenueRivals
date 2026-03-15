@@ -911,6 +911,13 @@ const GUESTS = {
     player.guestPoints += guest.points;
   }
 
+  function removeGuestImpact(player, guestId) {
+    const guest = GUESTS[guestId];
+    if (!guest) return;
+    player.guestMoney = Math.max(0, (player.guestMoney || 0) - (guest.money || 0));
+    player.guestPoints = Math.max(0, (player.guestPoints || 0) - (guest.points || 0));
+  }
+
   function applyBustState(player) {
     player.busted = true;
     player.phaseComplete = true;
@@ -939,7 +946,9 @@ const GUESTS = {
     player.arrivingAbilityUsed = false;
     // trim to capacity, collecting every removed guest
     while (player.house.length > getHouseCapacity(venue, player)) {
-      popped.push(player.house.pop());
+      const removed = player.house.pop();
+      removeGuestImpact(player, getGuestId(removed));
+      popped.push(removed);
     }
     return popped;
   }
@@ -1316,6 +1325,7 @@ const GUESTS = {
           const bonus = targetGuest.points + ((typeof targetEntry !== "string" && targetEntry.bonusPoints) || 0);
           player.roundPoints += bonus;
           player.roundMoney += targetGuest.money;
+          removeGuestImpact(player, targetGuestId);
           result.effects.push(`scored ${bonus} points and ${targetGuest.money} money from ${targetGuest.name}`);
           const targetInstanceId = typeof targetEntry === "string" ? null : targetEntry.instanceId;
           result.pings.push({ type: 'points', value: bonus, phase: 'ability', guestId: targetGuestId, target: 'house', instanceId: targetInstanceId });
@@ -1403,6 +1413,7 @@ const GUESTS = {
 
   // --- Departure effects: triggered when a guest leaves the house ---
   function handleDepartureEffects(player, opponent, departingGuestId, result) {
+    removeGuestImpact(player, departingGuestId);
     const guest = GUESTS[departingGuestId];
     if (!guest?.ability || guest.ability.trigger !== "departure") return;
     const prefix = `${guest.name} departure: `;
