@@ -1063,16 +1063,19 @@ const GUESTS = {
       }
       if (player.busted) result.busted = true;
 
+      // Surface arrival side-effects for the newly drawn guest so UI layers can
+      // consistently show guest-trigger popups, even when no arrival choice is needed.
+      if (drawRes.arrivalResult) {
+        result.arrivalEffects = drawRes.arrivalResult.effects || [];
+        result.arrivalPings = drawRes.arrivalResult.pings || [];
+      }
+
       // If the NEXT drawn guest's arrival needs a choice, pass it through
       if (drawRes.arrivalResult?.needsStackChoice || drawRes.arrivalResult?.needsNameDropChoice) {
         result.needsStackChoice = drawRes.arrivalResult.needsStackChoice || false;
         result.needsNameDropChoice = drawRes.arrivalResult.needsNameDropChoice || false;
         result.revealedGuests = drawRes.arrivalResult.revealedGuests;
         result.deferredDraw = true;
-        result.arrivalEffects = drawRes.arrivalResult.effects;
-        result.arrivalPings = drawRes.arrivalResult.pings || [];
-      } else if (drawRes.arrivalResult?.pings?.length) {
-        result.arrivalPings = drawRes.arrivalResult.pings;
       }
     }
 

@@ -3734,7 +3734,17 @@
             return;
         }
 
-        showFeedback(`${result.ability.name}: ${result.effects.join(', ')}`, 'disruption', 2500, selfKey);
+        const departureEffects = result.effects.filter(e => e.includes(' departure: '));
+        const nonDepartureEffects = result.effects.filter(e => !e.includes(' departure: '));
+
+        if (nonDepartureEffects.length) {
+            showFeedback(`${result.ability.name}: ${nonDepartureEffects.join(', ')}`, 'disruption', 2500, selfKey);
+        } else {
+            showFeedback(`${result.ability.name} triggered`, 'disruption', 2500, selfKey);
+        }
+        if (departureEffects.length) {
+            showFeedback(departureEffects.join(', '), 'disruption', 2500, selfKey);
+        }
         if (result.revealedGuests) setRevealDoorIntel(selfKey, result.revealedGuests);
         // Abilities may remove guests from either queue; refresh reveal overlays.
         if (!result.revealedGuests && revealDoorIntel[selfKey]) renderRevealDoorIntel(selfKey);
@@ -3964,6 +3974,13 @@
             const result = Game.admitGuest(r, rVenue, gameState.player, Game.VENUES[gameState.player.venueId]);
             if (!result) return;
 
+            if (result.effects?.length) {
+                const departureEffects = result.effects.filter(e => e.includes(' departure: '));
+                if (departureEffects.length) {
+                    showFeedback(departureEffects.join(', '), 'disruption', 2500, 'rival');
+                }
+            }
+
             // AI auto-resolve deferred arrival choice (draw already happened,
             // just reorder the deck for next draw)
             if (result.deferredDraw) {
@@ -4017,6 +4034,17 @@
                     const pingTarget = getArrivalPingTarget('rival', r.arrivingGuest);
                     if (pingTarget) spawnAbilityPings(pingTarget, result.arrivalPings);
                 }, 320);
+            }
+
+            const rivalArrivalGuest = r.arrivingGuest ? Game.GUESTS[r.arrivingGuest] : null;
+            if (rivalArrivalGuest?.ability?.trigger === 'arrival') {
+                const displayEffects = (result.arrivalEffects || []).filter(e =>
+                    e !== 'plus one triggered' && !e.startsWith('magnet triggered')
+                );
+                const popupText = displayEffects.length
+                    ? `${rivalArrivalGuest.name}: ${displayEffects.join(', ')}`
+                    : `${rivalArrivalGuest.name}: ${rivalArrivalGuest.ability.name} triggered`;
+                setTimeout(() => showFeedback(popupText, 'disruption', 2500, 'rival'), 320);
             }
 
             presentationBus.emit(presentationEvents.GUEST_ADMITTED, { who: 'rival', guestId: result.admitted });
