@@ -1447,7 +1447,17 @@
     }
 
     function spawnAbilityPings(targetEl, pings) {
-        return triggerGuestSlotPopup(targetEl, pings);
+        return triggerGuestSlotPopup(targetEl, pings, { animateSlot: true });
+    }
+
+    function hasValuePings(pings) {
+        return Array.isArray(pings) && pings.some((ping) => ping?.type === 'money' || ping?.type === 'points');
+    }
+
+    function isValueEffectText(effectText) {
+        if (!effectText) return false;
+        return /\bscored\b.+\bpoints\b/i.test(effectText)
+            || /\bgained\b.+\bmoney\b/i.test(effectText);
     }
 
     function animateCloseDoorPayoutGuest(who, processedGuest, onCount = null) {
@@ -3588,11 +3598,13 @@
                 !e.startsWith('departure:') && e !== 'plus one triggered'
             );
             const departureEffects = result.effects.filter(e => e.includes(' departure: '));
-            if (admitEffects.length && guest) {
-                showFeedback(`${guest.name}: ${admitEffects.join(', ')}`, 'disruption', 2500, selfKey);
+            const nonValueAdmitEffects = admitEffects.filter((effect) => !isValueEffectText(effect));
+            const nonValueDepartureEffects = departureEffects.filter((effect) => !isValueEffectText(effect));
+            if (nonValueAdmitEffects.length && guest) {
+                showFeedback(`${guest.name}: ${nonValueAdmitEffects.join(', ')}`, 'disruption', 2500, selfKey);
             }
-            if (departureEffects.length) {
-                showFeedback(departureEffects.join(', '), 'disruption', 2500, selfKey);
+            if (nonValueDepartureEffects.length) {
+                showFeedback(nonValueDepartureEffects.join(', '), 'disruption', 2500, selfKey);
             }
         }
 
@@ -3626,7 +3638,7 @@
         const arrivingGuestId = self.arrivingGuest;
         const arrivingGuest = arrivingGuestId ? Game.GUESTS[arrivingGuestId] : null;
         const hasArrivalAbility = arrivingGuest?.ability?.trigger === 'arrival';
-        if (hasArrivalAbility) {
+        if (hasArrivalAbility && !hasValuePings(result.arrivalPings)) {
             const displayEffects = (result.arrivalEffects || []).filter(e =>
                 e !== 'plus one triggered' && !e.startsWith('magnet triggered')
             );
@@ -3733,14 +3745,16 @@
 
         const departureEffects = result.effects.filter(e => e.includes(' departure: '));
         const nonDepartureEffects = result.effects.filter(e => !e.includes(' departure: '));
+        const nonValueNonDepartureEffects = nonDepartureEffects.filter((effect) => !isValueEffectText(effect));
+        const nonValueDepartureEffects = departureEffects.filter((effect) => !isValueEffectText(effect));
 
-        if (nonDepartureEffects.length) {
-            showFeedback(`${result.ability.name}: ${nonDepartureEffects.join(', ')}`, 'disruption', 2500, selfKey);
-        } else {
+        if (nonValueNonDepartureEffects.length) {
+            showFeedback(`${result.ability.name}: ${nonValueNonDepartureEffects.join(', ')}`, 'disruption', 2500, selfKey);
+        } else if (!hasValuePings(result.pings)) {
             showFeedback(`${result.ability.name} triggered`, 'disruption', 2500, selfKey);
         }
-        if (departureEffects.length) {
-            showFeedback(departureEffects.join(', '), 'disruption', 2500, selfKey);
+        if (nonValueDepartureEffects.length) {
+            showFeedback(nonValueDepartureEffects.join(', '), 'disruption', 2500, selfKey);
         }
         if (result.revealedGuests) setRevealDoorIntel(selfKey, result.revealedGuests);
         // Abilities may remove guests from either queue; refresh reveal overlays.
