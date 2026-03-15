@@ -4085,18 +4085,16 @@
             // just reorder the deck for next draw)
             if (result.deferredDraw) {
                 if (result.needsStackChoice && result.revealedGuests?.length >= 2) {
-                    const a = Game.GUESTS[result.revealedGuests[0]];
-                    const b = Game.GUESTS[result.revealedGuests[1]];
-                    const aVal = (a?.money || 0) + (a?.points || 0);
-                    const bVal = (b?.money || 0) + (b?.points || 0);
+                    // Use AI evaluation that accounts for heat, abilities, and synergies
+                    const aVal = AI.evaluateGuestForChoice(result.revealedGuests[0], r, rVenue, p, pVenue);
+                    const bVal = AI.evaluateGuestForChoice(result.revealedGuests[1], r, rVenue, p, pVenue);
                     const firstId = aVal >= bVal ? result.revealedGuests[0] : result.revealedGuests[1];
                     Game.resolveStackChoice(r, firstId);
                 } else if (result.needsNameDropChoice && result.revealedGuests?.length) {
                     let bestId = result.revealedGuests[0];
                     let bestVal = -Infinity;
                     for (const id of result.revealedGuests) {
-                        const g = Game.GUESTS[id];
-                        const val = (g?.money || 0) + (g?.points || 0);
+                        const val = AI.evaluateGuestForChoice(id, r, rVenue, p, pVenue);
                         if (val > bestVal) { bestVal = val; bestId = id; }
                     }
                     Game.resolveNameDropChoice(r, rVenue, p, pVenue, bestId);
@@ -4239,24 +4237,30 @@
                 }
             }
 
-            // AI auto-resolve: if the ability needs a stack choice, pick the higher-value guest on top
+            // AI auto-resolve: if the ability needs a stack choice, use smart evaluation
             if (result.needsStackChoice && result.revealedGuests?.length >= 2) {
-                const a = Game.GUESTS[result.revealedGuests[0]];
-                const b = Game.GUESTS[result.revealedGuests[1]];
-                const aVal = (a?.money || 0) + (a?.points || 0);
-                const bVal = (b?.money || 0) + (b?.points || 0);
-                // Put higher-value guest on top (drawn next)
+                const aVal = AI.evaluateGuestForChoice(result.revealedGuests[0], r, rVenue, p, pVenue);
+                const bVal = AI.evaluateGuestForChoice(result.revealedGuests[1], r, rVenue, p, pVenue);
                 const firstId = aVal >= bVal ? result.revealedGuests[0] : result.revealedGuests[1];
                 Game.resolveStackChoice(r, firstId);
             }
 
-            // AI auto-resolve: if the ability needs a name-drop choice, pick the highest-value guest
+            // AI auto-resolve: opponentStackChoice puts the WORST guest on top for the player
+            if (result.needsOpponentStackChoice && result.revealedGuests?.length >= 2) {
+                // Evaluate from player's perspective - pick the worse guest for them
+                const aVal = AI.evaluateGuestForChoice(result.revealedGuests[0], p, pVenue, r, rVenue);
+                const bVal = AI.evaluateGuestForChoice(result.revealedGuests[1], p, pVenue, r, rVenue);
+                // Put the worse guest on top (will be drawn next by player)
+                const worstId = aVal <= bVal ? result.revealedGuests[0] : result.revealedGuests[1];
+                Game.resolveOpponentStackChoice(p, worstId);
+            }
+
+            // AI auto-resolve: if the ability needs a name-drop choice, use smart evaluation
             if (result.needsNameDropChoice && result.revealedGuests?.length) {
                 let bestId = result.revealedGuests[0];
                 let bestVal = -Infinity;
                 for (const id of result.revealedGuests) {
-                    const g = Game.GUESTS[id];
-                    const val = (g?.money || 0) + (g?.points || 0);
+                    const val = AI.evaluateGuestForChoice(id, r, rVenue, p, pVenue);
                     if (val > bestVal) { bestVal = val; bestId = id; }
                 }
                 Game.resolveNameDropChoice(r, rVenue, p, pVenue, bestId);
