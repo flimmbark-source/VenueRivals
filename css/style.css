@@ -1697,6 +1697,7 @@ body {
     display: flex;
     gap: 3px;
     flex-shrink: 0;
+    overflow: visible;
 }
 
 .slots-main-row {
