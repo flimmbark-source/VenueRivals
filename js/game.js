@@ -1486,64 +1486,99 @@ const GUESTS = {
   }
 
   // --- Scoring bonuses: evaluated at end of round ---
+  function getScoringBonusPingsForEntry(player, venue, index) {
+    const entry = player.house[index];
+    if (!entry) return [];
+    const guestId = getGuestId(entry);
+    const guest = GUESTS[guestId];
+    if (!guest?.ability || guest.ability.trigger !== "scoring") return [];
+
+    let points = 0;
+    let money = 0;
+
+    switch (guest.ability.type) {
+      case "wallflower": {
+        const capacity = getHouseCapacity(venue, player);
+        const emptySlots = Math.max(0, capacity - player.house.length);
+        points += emptySlots;
+        break;
+      }
+      case "clique": {
+        const myTags = guest.tags || [];
+        let bonus = 0;
+        if (index > 0) {
+          const neighbor = GUESTS[getGuestId(player.house[index - 1])];
+          if (neighbor && myTags.some((t) => (neighbor.tags || []).includes(t))) bonus++;
+        }
+        if (index < player.house.length - 1) {
+          const neighbor = GUESTS[getGuestId(player.house[index + 1])];
+          if (neighbor && myTags.some((t) => (neighbor.tags || []).includes(t))) bonus++;
+        }
+        points += bonus;
+        break;
+      }
+      case "centerOfAttention": {
+        if (index === 0) points += (guest.ability.value || 2);
+        break;
+      }
+      case "packedHouse": {
+        const capacity = getHouseCapacity(venue, player);
+        if (player.house.length >= capacity && capacity > 0) {
+          points += (guest.ability.value || 4);
+        }
+        break;
+      }
+      case "highRoller": {
+        const totalMoney = player.roundMoney + player.guestMoney + player.money;
+        points += Math.floor(totalMoney / 2);
+        break;
+      }
+      case "chaosChaser": {
+        points += player.heat;
+        break;
+      }
+      case "lastToLeave": {
+        if (index === player.house.length - 1) points += (guest.ability.value || 2);
+        break;
+      }
+    }
+
+    const pings = [];
+    if (points > 0) pings.push({ type: "points", value: points });
+    if (money > 0) pings.push({ type: "money", value: money });
+    return pings;
+  }
+
+  function getRoundScoringBonusEvents(player, venue) {
+    const events = [];
+    for (let i = 0; i < player.house.length; i++) {
+      const entry = player.house[i];
+      if (!entry) continue;
+      const pings = getScoringBonusPingsForEntry(player, venue, i);
+      if (!pings.length) continue;
+      events.push({
+        guestId: getGuestId(entry),
+        instanceId: entry && typeof entry === "object" ? entry.instanceId : null,
+        pings,
+      });
+    }
+    return events;
+  }
+
   function applyScoringBonuses(player, venue) {
     for (let i = 0; i < player.house.length; i++) {
       const entry = player.house[i];
       if (!entry) continue;
-      const guestId = getGuestId(entry);
-      const guest = GUESTS[guestId];
 
       // Add bonusPoints from socialClimber
       if (typeof entry !== "string" && entry.bonusPoints) {
         player.guestPoints += entry.bonusPoints;
       }
 
-      if (!guest?.ability || guest.ability.trigger !== "scoring") continue;
-      switch (guest.ability.type) {
-        case "wallflower": {
-          const capacity = getHouseCapacity(venue, player);
-          const emptySlots = Math.max(0, capacity - player.house.length);
-          player.roundPoints += emptySlots;
-          break;
-        }
-        case "clique": {
-          const myTags = guest.tags || [];
-          let bonus = 0;
-          if (i > 0) {
-            const neighbor = GUESTS[getGuestId(player.house[i - 1])];
-            if (neighbor && myTags.some(t => (neighbor.tags || []).includes(t))) bonus++;
-          }
-          if (i < player.house.length - 1) {
-            const neighbor = GUESTS[getGuestId(player.house[i + 1])];
-            if (neighbor && myTags.some(t => (neighbor.tags || []).includes(t))) bonus++;
-          }
-          player.roundPoints += bonus;
-          break;
-        }
-        case "centerOfAttention": {
-          if (i === 0) player.roundPoints += (guest.ability.value || 2);
-          break;
-        }
-        case "packedHouse": {
-          const capacity = getHouseCapacity(venue, player);
-          if (player.house.length >= capacity && capacity > 0) {
-            player.roundPoints += (guest.ability.value || 4);
-          }
-          break;
-        }
-        case "highRoller": {
-          const totalMoney = player.roundMoney + player.guestMoney + player.money;
-          player.roundPoints += Math.floor(totalMoney / 2);
-          break;
-        }
-        case "chaosChaser": {
-          player.roundPoints += player.heat;
-          break;
-        }
-        case "lastToLeave": {
-          if (i === player.house.length - 1) player.roundPoints += (guest.ability.value || 2);
-          break;
-        }
+      const pings = getScoringBonusPingsForEntry(player, venue, i);
+      for (const ping of pings) {
+        if (ping.type === "points") player.roundPoints += ping.value;
+        if (ping.type === "money") player.roundMoney += ping.value;
       }
     }
   }
@@ -1825,6 +1860,7 @@ const GUESTS = {
     closeDoor,
     bothDone,
     getRoundEarnings,
+    getRoundScoringBonusEvents,
     endGuestPhase,
     getMarket,
     buyGuest,
