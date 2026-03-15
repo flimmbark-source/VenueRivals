@@ -1386,18 +1386,24 @@
         });
     }
 
-    function spawnAbilityPings(targetEl, pings) {
-        if (!targetEl || !pings?.length) return;
+    function triggerGuestSlotPopup(targetEl, pings, options = {}) {
+        if (!targetEl || !pings?.length) return Promise.resolve();
+        const { animateSlot = false, onCount = null } = options;
         markAbilityOverflowActive(targetEl);
         targetEl.classList.remove('ability-ping-highlight');
         targetEl.classList.remove('ability-ping-pop');
         void targetEl.offsetWidth; // reflow to restart animation
         targetEl.classList.add('ability-ping-highlight');
         targetEl.classList.add('ability-ping-pop');
+        if (animateSlot) {
+            targetEl.classList.add('close-door-payout-slot', 'is-payout-animating');
+        }
         setTimeout(() => {
             targetEl.classList.remove('ability-ping-highlight');
             targetEl.classList.remove('ability-ping-pop');
         }, 500);
+
+        if (typeof onCount === 'function') onCount();
 
         pings.forEach((ping, i) => {
             const delay = i * 80;
@@ -1426,6 +1432,22 @@
                 }, delay);
             }
         });
+
+        if (!animateSlot) return Promise.resolve();
+
+        return new Promise((resolve) => {
+            const done = () => {
+                targetEl.removeEventListener('animationend', done);
+                targetEl.classList.remove('is-payout-animating', 'close-door-payout-slot');
+                resolve();
+            };
+            targetEl.addEventListener('animationend', done);
+            window.setTimeout(done, 520);
+        });
+    }
+
+    function spawnAbilityPings(targetEl, pings) {
+        return triggerGuestSlotPopup(targetEl, pings);
     }
 
     function animateCloseDoorPayoutGuest(who, processedGuest, onCount = null) {
@@ -1444,49 +1466,14 @@
         }
         if (!slot) return Promise.resolve();
 
-        return new Promise((resolve) => {
-            const emitPings = () => {
-                const randomMoneyDriftX = (Math.random() * 56) - 28;
-                const randomPointsDriftX = (Math.random() * 56) - 28;
-                const moneyValue = guest.money || 0;
-                const pointsValue = guest.points || 0;
-                if (typeof onCount === 'function') onCount();
-                if (moneyValue > 0) {
-                    spawnNumberPing(
-                        slot,
-                        `+$${moneyValue}`,
-                        '#2cb67d',
-                        'above',
-                        'arcade-burst',
-                        { driftX: randomMoneyDriftX, driftY: -62, startOffsetY: -10 },
-                    );
-                }
-                if (pointsValue > 0) {
-                    setTimeout(() => {
-                        spawnNumberPing(
-                            slot,
-                            `+${pointsValue}`,
-                            '#ffd166',
-                            'above',
-                            'arcade-burst',
-                            { driftX: randomPointsDriftX, driftY: -70, startOffsetY: 0 },
-                        );
-                    }, 80);
-                }
-            };
-
-            setTimeout(emitPings, -190);
-            slot.classList.add('close-door-payout-slot', 'is-payout-animating');
-
-            const done = () => {
-                slot.removeEventListener('animationend', done);
-                slot.classList.remove('is-payout-animating', 'close-door-payout-slot');
-                resolve();
-            };
-
-            slot.addEventListener('animationend', done);
-            window.setTimeout(done, 520);
-        });
+        const pings = [];
+        if ((guest.money || 0) > 0) pings.push({ type: 'money', value: guest.money || 0 });
+        if ((guest.points || 0) > 0) pings.push({ type: 'points', value: guest.points || 0 });
+        if (!pings.length) {
+            if (typeof onCount === 'function') onCount();
+            return Promise.resolve();
+        }
+        return triggerGuestSlotPopup(slot, pings, { animateSlot: true, onCount });
     }
 
     function registerCloseDoorGuestPayout(who, guestId) {
@@ -3771,7 +3758,13 @@
             const departurePings = result.pings.filter(p => p.phase === 'departure');
             departurePings.forEach((ping) => {
                 const slotsEl = document.getElementById(`${selfKey}-slots`);
-                const targetEl = slotsEl?.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
+                let targetEl = null;
+                if (ping.instanceId != null) {
+                    targetEl = slotsEl?.querySelector(`.occupied-slot[data-instance-id="${ping.instanceId}"]`);
+                }
+                if (!targetEl) {
+                    targetEl = slotsEl?.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
+                }
                 if (targetEl) spawnAbilityPings(targetEl, [ping]);
             });
         }
