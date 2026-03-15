@@ -54,6 +54,7 @@
     let actionLogPopupEl = null;
     let closeDoorPayoutSequenceActive = false;
     let closeDoorPayoutSequencePendingDoneCheck = false;
+    let roundScoringBonusSequenceActive = false;
     let suppressNextArrivingRemap = false;
     let shopInspectMode = false;
     const houseRenderCacheKeys = { player: '', rival: '' };
@@ -1538,6 +1539,53 @@
         }
         if (slotsEl) slotsEl.classList.remove('close-door-payout-active');
         if (sceneEl) sceneEl.classList.remove('close-door-payout-active');
+    }
+
+    function animateRoundScoringBonusGuest(who, scoringBonus) {
+        const slotsEl = document.getElementById(`${who}-slots`);
+        if (!slotsEl || !scoringBonus?.pings?.length) return Promise.resolve();
+
+        let slot = null;
+        if (scoringBonus.instanceId != null) {
+            slot = slotsEl.querySelector(`.occupied-slot[data-instance-id="${scoringBonus.instanceId}"]`);
+        }
+        if (!slot && scoringBonus.guestId) {
+            slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${scoringBonus.guestId}"]`);
+        }
+        if (!slot) return Promise.resolve();
+        return triggerGuestSlotPopup(slot, scoringBonus.pings, { animateSlot: true });
+    }
+
+    async function runRoundScoringBonusSequence() {
+        if (!gameState || gameState.phase !== 'guest') return;
+        const participants = [
+            { who: 'player', actor: gameState.player },
+            { who: 'rival', actor: gameState.rival },
+        ];
+
+        for (const participant of participants) {
+            const actor = participant.actor;
+            if (!actor || actor.busted) continue;
+            const venue = Game.VENUES[actor.venueId];
+            const events = Game.getRoundScoringBonusEvents(actor, venue);
+            for (const scoringBonus of events) {
+                // eslint-disable-next-line no-await-in-loop
+                await animateRoundScoringBonusGuest(participant.who, scoringBonus);
+            }
+        }
+    }
+
+    async function runRoundResultsTransition() {
+        if (roundScoringBonusSequenceActive) return;
+        roundScoringBonusSequenceActive = true;
+        try {
+            await new Promise((resolve) => setTimeout(resolve, 220));
+            await runRoundScoringBonusSequence();
+            await new Promise((resolve) => setTimeout(resolve, 240));
+            showRoundResults();
+        } finally {
+            roundScoringBonusSequenceActive = false;
+        }
     }
 
     function renderAbilityBadge(guest) {
@@ -4294,8 +4342,7 @@
         // Both players done - stop AI timer
         if (aiTimerId) { clearTimeout(aiTimerId); aiTimerId = null; }
 
-        // Small delay for last animation
-        setTimeout(showRoundResults, 600);
+        runRoundResultsTransition();
         publishState();
     }
 

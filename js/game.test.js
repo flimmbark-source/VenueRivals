@@ -1197,3 +1197,33 @@ describe("shop upgrades", () => {
     expect(player.shopItemPurchases.heatCapIncrease).toBe(2);
   });
 });
+
+describe("getRoundScoringBonusEvents", () => {
+  test("returns per-guest scoring bonus pings for end-of-round abilities", () => {
+    const highRoller = makeHouseEntry("highRoller");
+    const bigPlanner = makeHouseEntry("bigPlanner");
+    const filler = makeHouseEntry("familiarFace");
+
+    const player = makePlayer({
+      venueId: "nightMarket",
+      money: 6,
+      roundMoney: 0,
+      guestMoney: 0,
+      house: [highRoller, bigPlanner, filler],
+      slotIncrease: 0,
+    });
+
+    const events = Game.getRoundScoringBonusEvents(player, Game.VENUES.nightMarket);
+    expect(events).toHaveLength(2);
+    expect(events[0]).toEqual({
+      guestId: "highRoller",
+      instanceId: highRoller.instanceId,
+      pings: [{ type: "points", value: 3 }],
+    });
+    expect(events[1]).toEqual({
+      guestId: "bigPlanner",
+      instanceId: bigPlanner.instanceId,
+      pings: [{ type: "points", value: 4 }],
+    });
+  });
+});
