@@ -1389,11 +1389,19 @@
     function spawnAbilityPings(targetEl, pings) {
         if (!targetEl || !pings?.length) return;
         markAbilityOverflowActive(targetEl);
-        // Trigger pop-up animation on the target element
-        targetEl.classList.remove('ability-ping-pop');
+        // Trigger pop-up animation on the slot and the avatar inside it.
+        // The inner pulse avoids transform conflicts while the slot is FLIP-animating.
+        const innerPopTarget = targetEl.querySelector('.slot-sprite-btn, .slot-emoji') || targetEl;
+
+        targetEl.classList.remove('ability-ping-highlight');
+        innerPopTarget.classList.remove('ability-ping-pop');
         void targetEl.offsetWidth; // reflow to restart animation
-        targetEl.classList.add('ability-ping-pop');
-        setTimeout(() => targetEl.classList.remove('ability-ping-pop'), 500);
+        targetEl.classList.add('ability-ping-highlight');
+        innerPopTarget.classList.add('ability-ping-pop');
+        setTimeout(() => {
+            targetEl.classList.remove('ability-ping-highlight');
+            innerPopTarget.classList.remove('ability-ping-pop');
+        }, 500);
 
         pings.forEach((ping, i) => {
             const delay = i * 80;
