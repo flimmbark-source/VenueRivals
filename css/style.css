@@ -1935,7 +1935,23 @@ body {
 }
 
 .ability-ping-pop {
-    animation: closeDoorGuestPop 500ms cubic-bezier(0.22, 0.9, 0.24, 1) both;
+    transform-origin: 50% 100%;
+    animation: abilityPingCardPop 500ms cubic-bezier(0.22, 0.9, 0.24, 1) both;
+}
+
+@keyframes abilityPingCardPop {
+    0% {
+        scale: 1;
+        filter: brightness(1);
+    }
+    40% {
+        scale: 1.08;
+        filter: brightness(1.18);
+    }
+    100% {
+        scale: 1;
+        filter: brightness(1);
+    }
 }
 
 .arriving-guest-card {
