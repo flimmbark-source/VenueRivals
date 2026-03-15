@@ -1878,6 +1878,9 @@ body {
 .guest-slot.arriving-in-grid {
     border-color: var(--accent-gold);
     box-shadow: 0 0 10px rgba(255, 209, 102, 0.3);
+}
+
+.guest-slot.arriving-in-grid.arriving-enter {
     animation: guestArrive 0.3s ease;
 }
 
