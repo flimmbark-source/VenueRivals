@@ -2398,10 +2398,12 @@
         if (player.arrivingGuest) {
             const arrivingGuestId = player.arrivingGuest;
             const renderKey = `arriving:${arrivingGuestId}`;
-            const slot = existingSlotsByKey.get(renderKey) || createGuestSlot(arrivingGuestId, false, { interactive: false });
+            const existingArrivingSlot = existingSlotsByKey.get(renderKey);
+            const slot = existingArrivingSlot || createGuestSlot(arrivingGuestId, false, { interactive: false });
+            const shouldAnimateArrivingEnter = !existingArrivingSlot;
             existingSlotsByKey.delete(renderKey);
             patchGuestSlotContent(slot, arrivingGuestId);
-            slot.classList.remove('ability-used', 'valid-target', 'dimmed-target', 'selected');
+            slot.classList.remove('ability-used', 'valid-target', 'dimmed-target', 'selected', 'arriving-enter');
             slot.classList.add('arriving-in-grid');
             slot.dataset.renderKey = renderKey;
             slot.dataset.guestId = arrivingGuestId;
@@ -2421,6 +2423,17 @@
                 if (!targetingMode && selectedGridGuest?.source === 'arriving' && selectedGridGuest.guestId === arrivingGuestId) {
                     slot.classList.add('selected');
                 }
+            }
+            if (shouldAnimateArrivingEnter) {
+                slot.classList.add('arriving-enter');
+                const clearArrivingEnter = (event) => {
+                    if (!event || event.animationName === 'guestArrive') {
+                        slot.classList.remove('arriving-enter');
+                        slot.removeEventListener('animationend', clearArrivingEnter);
+                    }
+                };
+                slot.addEventListener('animationend', clearArrivingEnter);
+                window.setTimeout(clearArrivingEnter, 420);
             }
             arrivingSlot = slot;
         }
