@@ -82,6 +82,7 @@
     };
     let lastPresentationSyncKey = '';
     const heatBarClassSnapshot = { player: '', rival: '' };
+    const abilityOverflowTimers = new WeakMap();
 
     const presentationBus = window.Presentation?.createEventBus?.() || { on() {}, emit() {} };
     const presentationEvents = window.Presentation?.EVENTS || {};
@@ -1368,8 +1369,26 @@
         }, 1900);
     }
 
+    function markAbilityOverflowActive(targetEl) {
+        if (!targetEl) return;
+        const slotsEl = targetEl.closest('.guest-slots');
+        const sceneEl = targetEl.closest('.venue-scene');
+        [slotsEl, sceneEl].forEach((el) => {
+            if (!el) return;
+            el.classList.add('close-door-payout-active');
+            const priorTimer = abilityOverflowTimers.get(el);
+            if (priorTimer) clearTimeout(priorTimer);
+            const timerId = setTimeout(() => {
+                el.classList.remove('close-door-payout-active');
+                abilityOverflowTimers.delete(el);
+            }, 620);
+            abilityOverflowTimers.set(el, timerId);
+        });
+    }
+
     function spawnAbilityPings(targetEl, pings) {
         if (!targetEl || !pings?.length) return;
+        markAbilityOverflowActive(targetEl);
         // Trigger pop-up animation on the target element
         targetEl.classList.remove('ability-ping-pop');
         void targetEl.offsetWidth; // reflow to restart animation
@@ -2476,6 +2495,96 @@
         arrivingEl.dataset.renderKey = '';
     }
 
+    function getArrivalPingTarget(who, guestId = null) {
+        const slotsEl = document.getElementById(`${who}-slots`);
+        if (!slotsEl) return null;
+
+        if (guestId) {
+            const exactArriving = slotsEl.querySelector(`.occupied-slot.arriving-in-grid[data-guest-id="${guestId}"]`);
+            if (exactArriving) return exactArriving;
+        }
+
+        const genericArriving = slotsEl.querySelector('.occupied-slot.arriving-in-grid');
+        if (genericArriving) return genericArriving;
+
+        if (guestId) {
+            const houseMatches = [...slotsEl.querySelectorAll(`.occupied-slot[data-slot-source="house"][data-guest-id="${guestId}"]`)];
+            if (houseMatches.length) return houseMatches[houseMatches.length - 1];
+        }
+
+        const houseSlots = [...slotsEl.querySelectorAll('.occupied-slot[data-slot-source="house"]')];
+        return houseSlots.length ? houseSlots[houseSlots.length - 1] : null;
+    }
+
+    function getAbilityPingTarget(who, ping) {
+        const slotsEl = document.getElementById(`${who}-slots`);
+        if (!slotsEl || !ping) return null;
+
+        if (ping.target === 'arriving') {
+            return getArrivalPingTarget(who, ping.guestId || null);
+        }
+
+        if (ping.instanceId != null) {
+            const byInstance = slotsEl.querySelector(`.occupied-slot[data-instance-id="${ping.instanceId}"]`);
+            if (byInstance) return byInstance;
+        }
+
+        if (ping.guestId) {
+            const houseMatches = [...slotsEl.querySelectorAll(`.occupied-slot[data-slot-source="house"][data-guest-id="${ping.guestId}"]`)];
+            if (houseMatches.length) return houseMatches[houseMatches.length - 1];
+        }
+
+        return slotsEl.querySelector('.occupied-slot[data-slot-source="house"]');
+    }
+
+    function getHouseStructureKey(playerState) {
+        if (!playerState) return '';
+        const houseKey = (playerState.house || []).map((entry) => {
+            if (!entry) return '';
+            if (typeof entry === 'string') return entry;
+            const guestId = entry.guestId || '';
+            if (entry.instanceId == null) return `${guestId}`;
+            return `${guestId}:${entry.instanceId}`;
+        }).join('|');
+        return `${houseKey}::arriving:${playerState.arrivingGuest || ''}`;
+    }
+
+    function syncAbilitySourceUsedState(who, playerState, selectedForAbility) {
+        if (!playerState || !selectedForAbility) return;
+        const slotsEl = document.getElementById(`${who}-slots`);
+        if (!slotsEl) return;
+
+        if (selectedForAbility.source === 'arriving') {
+            const arrivingSlot = slotsEl.querySelector('.occupied-slot.arriving-in-grid');
+            if (!arrivingSlot) return;
+            const used = !!playerState.arrivingAbilityUsed;
+            arrivingSlot.dataset.abilityUsed = used ? '1' : '0';
+            arrivingSlot.classList.toggle('ability-used', used);
+            return;
+        }
+
+        if (selectedForAbility.source !== 'house') return;
+
+        let sourceEntry = null;
+        if (selectedForAbility.instanceId != null) {
+            sourceEntry = (playerState.house || []).find((entry) => typeof entry !== 'string' && entry.instanceId === selectedForAbility.instanceId) || null;
+        }
+        if (!sourceEntry && selectedForAbility.guestId) {
+            sourceEntry = (playerState.house || []).find((entry) => {
+                const id = typeof entry === 'string' ? entry : entry.guestId;
+                return id === selectedForAbility.guestId;
+            }) || null;
+        }
+        if (!sourceEntry || typeof sourceEntry === 'string') return;
+
+        const sourceSlot = slotsEl.querySelector(`.occupied-slot[data-instance-id="${sourceEntry.instanceId}"]`)
+            || slotsEl.querySelector(`.occupied-slot[data-slot-source="house"][data-guest-id="${sourceEntry.guestId}"]`);
+        if (!sourceSlot) return;
+        const used = !!sourceEntry.abilityUsed;
+        sourceSlot.dataset.abilityUsed = used ? '1' : '0';
+        sourceSlot.classList.toggle('ability-used', used);
+    }
+
     function updateVenueStatus(who) {
         const player = who === 'player' ? gameState.player : gameState.rival;
         const statusEl = getHudNode(who === 'player' ? 'playerStatus' : 'rivalStatus', `${who}-status`);
@@ -3495,12 +3604,12 @@
         renderHouseGrid(selfKey);
         renderArrivingGuest(selfKey);
 
-        // Spawn arrival pings on the door card after the new guest enters the slot
+        // Spawn arrival pings from the arriving guest card in the strip.
         if (result.arrivalPings?.length && self.arrivingGuest) {
-            const doorEl = document.getElementById(selfKey === 'player' ? 'player-door-card' : 'rival-door');
-            if (doorEl) {
-                setTimeout(() => spawnAbilityPings(doorEl, result.arrivalPings), 320);
-            }
+            setTimeout(() => {
+                const pingTarget = getArrivalPingTarget(selfKey, self.arrivingGuest);
+                if (pingTarget) spawnAbilityPings(pingTarget, result.arrivalPings);
+            }, 320);
         }
         // Re-render reveal overlay — admitted/drawn guests are no longer in
         // the deck so the ID-based filter will drop them automatically.
@@ -3573,6 +3682,8 @@
         const prevRivalHeat = gameState.rival.heat;
         const selfHouseBefore = getHouseRenderKey(self);
         const opponentHouseBefore = getHouseRenderKey(opponent);
+        const selfStructureBefore = getHouseStructureKey(self);
+        const opponentStructureBefore = getHouseStructureKey(opponent);
         // Snapshot player's visible state
         const playerSnapshot = createPlayerVisibleSnapshot();
         const selectedForAbility = selfKey === 'player'
@@ -3600,8 +3711,39 @@
             animateExitGuest(selfKey, result.pendingOut);
         }
 
-        if (getHouseRenderKey(self) !== selfHouseBefore) renderHouseGrid(selfKey);
-        if (getHouseRenderKey(opponent) !== opponentHouseBefore) renderHouseGrid(opponentKey);
+        // Spawn ability pings from targeted guests before grid re-renders.
+        if (result.pings?.length) {
+            const abilityPings = result.pings.filter(p => p.phase === 'ability');
+            abilityPings.forEach((ping) => {
+                const targetEl = getAbilityPingTarget(selfKey, ping);
+                if (targetEl) spawnAbilityPings(targetEl, [ping]);
+            });
+
+            const departurePings = result.pings.filter(p => p.phase === 'departure');
+            departurePings.forEach((ping) => {
+                const slotsEl = document.getElementById(`${selfKey}-slots`);
+                const targetEl = slotsEl?.querySelector(`.occupied-slot[data-guest-id="${ping.guestId}"]`);
+                if (targetEl) spawnAbilityPings(targetEl, [ping]);
+            });
+        }
+
+        const selfRenderChanged = getHouseRenderKey(self) !== selfHouseBefore;
+        const opponentRenderChanged = getHouseRenderKey(opponent) !== opponentHouseBefore;
+        const selfStructureChanged = getHouseStructureKey(self) !== selfStructureBefore;
+        const opponentStructureChanged = getHouseStructureKey(opponent) !== opponentStructureBefore;
+        const shouldSkipSelfRenderForScoreGuest = selfRenderChanged
+            && !selfStructureChanged
+            && result.ability?.type === 'scoreGuest'
+            && result.pings?.some(p => p.phase === 'ability');
+
+        if (selfRenderChanged && !shouldSkipSelfRenderForScoreGuest) {
+            renderHouseGrid(selfKey);
+        } else if (shouldSkipSelfRenderForScoreGuest) {
+            syncAbilitySourceUsedState(selfKey, self, selectedForAbility);
+        }
+
+        if (opponentRenderChanged) renderHouseGrid(opponentKey);
+        if (!opponentRenderChanged && opponentStructureChanged) renderHouseGrid(opponentKey);
         renderArrivingGuest(selfKey);
         // Only re-render the opponent's arriving area if the player's visible arriving state changed
         const playerVisibleStateChanged = hasPlayerVisibleStateChanged(playerSnapshot);
@@ -3833,12 +3975,12 @@
             // Re-render reveal overlay — drawn guest no longer in deck.
             if (revealDoorIntel.rival) renderRevealDoorIntel('rival');
 
-            // Spawn arrival pings for the next drawn guest
+            // Spawn arrival pings for the next drawn guest from its card.
             if (result.arrivalPings?.length && r.arrivingGuest) {
-                const doorEl = document.getElementById('rival-door');
-                if (doorEl) {
-                    setTimeout(() => spawnAbilityPings(doorEl, result.arrivalPings), 320);
-                }
+                setTimeout(() => {
+                    const pingTarget = getArrivalPingTarget('rival', r.arrivingGuest);
+                    if (pingTarget) spawnAbilityPings(pingTarget, result.arrivalPings);
+                }, 320);
             }
 
             presentationBus.emit(presentationEvents.GUEST_ADMITTED, { who: 'rival', guestId: result.admitted });
@@ -4355,8 +4497,10 @@
                 if (guest) showFeedback(`${guest.name}: ${pa.effects.join(', ')}`, 'disruption', 2500, 'player');
             }
             if (pa.pings?.length && gameState.player.arrivingGuest) {
-                const doorEl = document.getElementById('player-door-card');
-                if (doorEl) setTimeout(() => spawnAbilityPings(doorEl, pa.pings), 320);
+                setTimeout(() => {
+                    const pingTarget = getArrivalPingTarget('player', gameState.player.arrivingGuest);
+                    if (pingTarget) spawnAbilityPings(pingTarget, pa.pings);
+                }, 320);
             }
             if (pa.revealedGuests) setRevealDoorIntel('player', pa.revealedGuests);
             if (pa.needsStackChoice && pa.revealedGuests?.length >= 2) {
