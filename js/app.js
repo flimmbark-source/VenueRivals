@@ -1370,6 +1370,37 @@
         }, 1900);
     }
 
+    function spawnAbilityIconGhost(targetEl, iconText, motion = null) {
+        if (!targetEl || !iconText) return;
+        const rect = targetEl.getBoundingClientRect();
+        if (!rect || (rect.width === 0 && rect.height === 0)) return;
+
+        const ghost = document.createElement('div');
+        ghost.className = 'ability-icon-ghost';
+        if (motion) {
+            if (Number.isFinite(motion.driftX)) ghost.style.setProperty('--ping-drift-x', `${motion.driftX}px`);
+            if (Number.isFinite(motion.driftY)) ghost.style.setProperty('--ping-drift-y', `${motion.driftY}px`);
+        }
+        const startOffsetY = motion && Number.isFinite(motion.startOffsetY) ? motion.startOffsetY : -24;
+        ghost.style.left = `${rect.left + (rect.width / 2)}px`;
+        ghost.style.top = `${rect.top - 6 + startOffsetY}px`;
+
+        const iconEl = document.createElement('span');
+        iconEl.className = 'ability-icon-ghost-reel';
+        iconEl.textContent = iconText;
+        ghost.appendChild(iconEl);
+
+        document.body.appendChild(ghost);
+        requestAnimationFrame(() => ghost.classList.add('is-visible'));
+
+        setTimeout(() => {
+            ghost.classList.remove('is-visible');
+            setTimeout(() => {
+                if (ghost.isConnected) ghost.remove();
+            }, 650);
+        }, 1900);
+    }
+
     function markAbilityOverflowActive(targetEl) {
         if (!targetEl) return;
         const slotsEl = targetEl.closest('.guest-slots');
@@ -1389,7 +1420,7 @@
 
     function triggerGuestSlotPopup(targetEl, pings, options = {}) {
         if (!targetEl || !pings?.length) return Promise.resolve();
-        const { animateSlot = false, onCount = null } = options;
+        const { animateSlot = false, onCount = null, abilityIconGhost = null } = options;
         const usesSlotPopAnimation = !!animateSlot;
         markAbilityOverflowActive(targetEl);
         targetEl.classList.remove('ability-ping-highlight');
@@ -1410,6 +1441,11 @@
         }, 500);
 
         if (typeof onCount === 'function') onCount();
+
+        if (abilityIconGhost) {
+            const driftX = (Math.random() * 36) - 18;
+            spawnAbilityIconGhost(targetEl, abilityIconGhost, { driftX, driftY: -86, startOffsetY: -34 });
+        }
 
         pings.forEach((ping, i) => {
             const delay = i * 80;
@@ -1553,7 +1589,8 @@
             slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${scoringBonus.guestId}"]`);
         }
         if (!slot) return Promise.resolve();
-        return triggerGuestSlotPopup(slot, scoringBonus.pings, { animateSlot: true });
+        const abilityIconGhost = scoringBonus.guestId ? Game.GUESTS[scoringBonus.guestId]?.ability?.icon : null;
+        return triggerGuestSlotPopup(slot, scoringBonus.pings, { animateSlot: true, abilityIconGhost });
     }
 
     async function runRoundScoringBonusSequence() {
