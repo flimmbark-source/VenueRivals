@@ -1148,7 +1148,7 @@ const GUESTS = {
             const arrivingId = player.arrivingGuest;
             player.arrivingGuest = null;
             player.arrivingAbilityUsed = false;
-            player.heat = Math.max(0, player.heat - GUESTS[arrivingId].heat);
+            removeGuestHeat(player, arrivingId);
             result.effects.push(`booted ${GUESTS[arrivingId].name}`);
             result.pushedOut = arrivingId;
             handleDepartureEffects(player, opponent, { guestId: arrivingId, instanceId: null }, result);
@@ -1178,6 +1178,7 @@ const GUESTS = {
         }
         const exiting = player.house.splice(targetIdx, 1)[0];
         const exitGuestId = getGuestId(exiting);
+        removeGuestHeat(player, exitGuestId);
         result.effects.push(`booted ${GUESTS[exitGuestId].name}`);
         result.pushedOut = exitGuestId;
         handleDepartureEffects(player, opponent, exiting, result);
@@ -1193,7 +1194,7 @@ const GUESTS = {
             const arrivingId = player.arrivingGuest;
             player.arrivingGuest = null;
             player.arrivingAbilityUsed = false;
-            player.heat = Math.max(0, player.heat - GUESTS[arrivingId].heat);
+            removeGuestHeat(player, arrivingId);
             player.roundDeck.unshift(arrivingId);
             result.effects.push(`bounced ${GUESTS[arrivingId].name}`);
             break;
@@ -1221,6 +1222,7 @@ const GUESTS = {
           break;
         }
         const bounced = player.house.splice(targetIdx, 1)[0];
+        removeGuestHeat(player, getGuestId(bounced));
         player.roundDeck.unshift(getGuestId(bounced));
         result.effects.push(`bounced ${GUESTS[getGuestId(bounced)].name}`);
         break;
@@ -1258,6 +1260,7 @@ const GUESTS = {
         if (swapIdx >= player.house.length) {
           const exiting = player.house.splice(targetIdx, 1)[0];
           const exitingId = getGuestId(exiting);
+          removeGuestHeat(player, exitingId);
           result.pushedOut.push(exitingId);
           result.effects.push(`nudged ${GUESTS[exitingId].name} out`);
           handleDepartureEffects(player, opponent, exiting, result);
@@ -1279,6 +1282,7 @@ const GUESTS = {
         while (player.house.length > 0) {
           const removed = player.house.pop();
           const removedId = getGuestId(removed);
+          removeGuestHeat(player, removedId);
           cleared.push(removedId);
           handleDepartureEffects(player, opponent, removed, result);
         }
@@ -1393,6 +1397,7 @@ const GUESTS = {
             if (locked.has(idx)) continue;
             const exiting = player.house.splice(idx, 1)[0];
             const exitId = getGuestId(exiting);
+            removeGuestHeat(player, exitId);
             booted.push(exitId);
             handleDepartureEffects(player, opponent, exiting, result);
           }
@@ -1401,6 +1406,12 @@ const GUESTS = {
         break;
       }
     }
+  }
+
+  function removeGuestHeat(player, guestId) {
+    const guest = GUESTS[guestId];
+    if (!guest) return;
+    player.heat = Math.max(0, player.heat - guest.heat);
   }
 
   // --- Departure effects: triggered when a guest leaves the house ---
