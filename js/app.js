@@ -4059,7 +4059,7 @@
             aiTimerId = setTimeout(aiTick, baseDelay + Math.random() * variance);
         }
 
-        function aiTick() {
+        async function aiTick() {
             if (!gameState || gameState.phase !== 'guest') {
                 stopAITimer();
                 return;
@@ -4076,7 +4076,7 @@
             if (!action) {
                 // Defensive fallback: if rival still has an active turn, bank safely.
                 if (!r.phaseComplete && !r.doorClosed && !r.busted) {
-                    executeAIAction('close');
+                    await executeAIAction('close');
                     scheduleNext();
                     return;
                 }
@@ -4085,7 +4085,7 @@
                 return;
             }
 
-            executeAIAction(action);
+            await executeAIAction(action);
             if (gameState?.phase === 'guest' && !gameState?.rival?.phaseComplete) {
                 scheduleNext();
             } else {
@@ -4097,7 +4097,7 @@
         scheduleNext();
     }
 
-    function executeAIAction(action) {
+    async function executeAIAction(action) {
         const r = gameState.rival;
         const p = gameState.player;
         const rVenue = Game.VENUES[r.venueId];
@@ -4348,6 +4348,11 @@
             // Only re-render if house changed
             if (gameState.rival.house.length !== rivalHouseSnapshot) {
                 renderHouseGrid('rival');
+            }
+            if (result?.processedGuests?.length) {
+                closeDoorPayoutSequenceActive = true;
+                await runCloseDoorPayoutSequence('rival', result.processedGuests);
+                closeDoorPayoutSequenceActive = false;
             }
             showFeedback(`${r.name} closed their door`, 'money', 2000, 'rival');
         }
