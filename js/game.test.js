@@ -268,6 +268,18 @@ describe("boot ability (choice targeting)", () => {
     expect(result.pushedOut).toBe("familiarFace");
     expect(player.house).toHaveLength(1);
   });
+
+  test("removes heat of booted guest", () => {
+    const target = makeHouseEntry("loudFriend"); // heat 1
+    const activator = makeHouseEntry("fedUpRoommate");
+    const player = makePlayer({ house: [activator, target], heat: 3 });
+    const opponent = makeOpponent();
+    Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
+      source: "house", guestId: "fedUpRoommate", instanceId: activator.instanceId,
+      targetInstanceId: target.instanceId,
+    });
+    expect(player.heat).toBe(2);
+  });
 });
 
 // ── clearHouse (Reset Host: LAST CALL) ───────────────────────────
@@ -277,6 +289,7 @@ describe("clearHouse ability", () => {
     const activator = makeHouseEntry("resetHost");
     const player = makePlayer({
       house: [activator, makeHouseEntry("familiarFace"), makeHouseEntry("loudFriend")],
+      heat: 2,
     });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
@@ -284,6 +297,7 @@ describe("clearHouse ability", () => {
     });
     expect(result).not.toBeNull();
     expect(player.house).toHaveLength(0);
+    expect(player.heat).toBe(0);
     expect(result.effects[0]).toMatch(/cleared 3 guests/);
   });
 
@@ -312,7 +326,7 @@ describe("scoreGuest ability", () => {
   test("scores target guest's points and money", () => {
     const activator = makeHouseEntry("storyPoster");
     const target = makeHouseEntry("loudFriend"); // loudFriend has 1 point, 1 money
-    const player = makePlayer({ house: [activator, target], roundPoints: 0, roundMoney: 0 });
+    const player = makePlayer({ house: [activator, target], roundPoints: 0, roundMoney: 0, heat: 2 });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
       source: "house", guestId: "storyPoster", instanceId: activator.instanceId,
@@ -320,6 +334,8 @@ describe("scoreGuest ability", () => {
     });
     expect(player.roundPoints).toBe(1); // loudFriend's base points
     expect(player.roundMoney).toBe(1); // loudFriend's base money
+    expect(player.house).toHaveLength(2);
+    expect(player.heat).toBe(2);
     expect(result.effects[0]).toMatch(/scored 1 points and 1 money from Loud Friend/);
     expect(result.pings).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'points', value: 1, phase: 'ability', guestId: 'loudFriend', target: 'house', instanceId: target.instanceId }),
@@ -329,7 +345,7 @@ describe("scoreGuest ability", () => {
 
   test("can score arriving target and emits arriving pings", () => {
     const activator = makeHouseEntry("storyPoster");
-    const player = makePlayer({ house: [activator], arrivingGuest: 'loudFriend', roundPoints: 0, roundMoney: 0 });
+    const player = makePlayer({ house: [activator], arrivingGuest: 'loudFriend', roundPoints: 0, roundMoney: 0, heat: 1 });
     const opponent = makeOpponent();
     const result = Game.activateAbility(player, opponent, Game.VENUES.velvetRoom, Game.VENUES.velvetRoom, {
       source: "house", guestId: "storyPoster", instanceId: activator.instanceId,
@@ -338,6 +354,8 @@ describe("scoreGuest ability", () => {
 
     expect(player.roundPoints).toBe(1);
     expect(player.roundMoney).toBe(1);
+    expect(player.arrivingGuest).toBe('loudFriend');
+    expect(player.heat).toBe(1);
     expect(result.pings).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'points', value: 1, phase: 'ability', guestId: 'loudFriend', target: 'arriving' }),
       expect.objectContaining({ type: 'money', value: 1, phase: 'ability', guestId: 'loudFriend', target: 'arriving' }),
