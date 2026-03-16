@@ -2234,6 +2234,40 @@ body {
     animation: numberPingArcadeBurst 320ms cubic-bezier(0.18, 0.9, 0.25, 1.12) 1;
 }
 
+
+.ability-icon-ghost {
+    position: fixed;
+    z-index: 61;
+    pointer-events: none;
+    --ping-drift-x: 0px;
+    --ping-drift-y: -120px;
+    transform: translate(-50%, -50%) scale(0.78);
+    opacity: 0;
+    transition: opacity 180ms ease, transform 280ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.ability-icon-ghost.is-visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    animation: numberPingFloatUp 1900ms ease forwards;
+}
+
+.ability-icon-ghost-reel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
+    font-size: 1rem;
+    text-shadow:
+        -1px -1px 0 rgba(8, 8, 12, 0.92),
+        1px -1px 0 rgba(8, 8, 12, 0.92),
+        -1px 1px 0 rgba(8, 8, 12, 0.92),
+        1px 1px 0 rgba(8, 8, 12, 0.92),
+        0 0 10px rgba(255, 255, 255, 0.35);
+    animation: numberPingArcadeBurst 320ms cubic-bezier(0.18, 0.9, 0.25, 1.12) 1;
+}
+
 @keyframes numberPingArcadeBurst {
     0% { transform: scale(0.55) translateY(4px); opacity: 0.2; }
     45% { transform: scale(1.16) translateY(-2px); opacity: 1; }
