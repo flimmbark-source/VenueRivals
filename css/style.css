@@ -1811,7 +1811,7 @@ body {
 /* --- Timing Badge + Ability Icon Pair --- */
 .ability-badge-pair {
     position: absolute;
-    left: 2px;
+    left: 4px;
     bottom: 2px;
     display: flex;
     align-items: center;
