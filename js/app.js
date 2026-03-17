@@ -171,50 +171,69 @@
     //        'cape','vest','apron','holster','cane','crown','gloves','bandolier'
     const GUEST_SPRITES = {
         // === NEUTRAL / MAIN FLOOR ===
+        // No-ability: unchanged
         familiarFace:    { skin:'light',  hair:'short',    hairColor:'brown',  shirt:'#7788aa', pants:'#445566', shoes:'#333344', items:[] },
         bottleBringer:   { skin:'medium', hair:'short',    hairColor:'black',  shirt:'#2cb67d', pants:'#445544', shoes:'#333333', items:['bag'] },
         loudFriend:      { skin:'medium', hair:'spiky',    hairColor:'orange', shirt:'#ffaa33', pants:'#886622', shoes:'#664411', items:['headphones'] },
         bigSpender:      { skin:'dark',   hair:'afro',     hairColor:'blonde', shirt:'#dd44aa', pants:'#882266', shoes:'#553344', items:['shades','chain'] },
-        doorWatcher:     { skin:'tan',    hair:'slick',    hairColor:'black',  shirt:'#333344', pants:'#222233', shoes:'#111122', items:['shades','badge'] },
-        groupChatHost:   { skin:'dark',   hair:'afro',     hairColor:'black',  shirt:'#5577cc', pants:'#334466', shoes:'#223355', items:['clipboard','badge'] },
-        plusOnePrince:   { skin:'light',  hair:'slick',    hairColor:'blonde', shirt:'#ffd166', pants:'#aa8833', shoes:'#886622', items:['crown','bowtie'] },
-        nameDropper:     { skin:'tan',    hair:'long',     hairColor:'blonde', shirt:'#dd33aa', pants:'#882266', shoes:'#661155', items:['shades','scarf','earring'] },
-        porchBuddy:      { skin:'medium', hair:'cap',      hairColor:'brown',  shirt:'#66aa88', pants:'#447755', shoes:'#335544', items:[] },
-        fedUpRoommate:   { skin:'tan',    hair:'spiky',    hairColor:'red',    shirt:'#ee4422', pants:'#882211', shoes:'#661100', items:['earring'] },
+        // Action: prop-based, intentional stance
+        doorWatcher:     { skin:'tan',    hair:'slick',    hairColor:'black',  shirt:'#333344', pants:'#222233', shoes:'#111122', items:['shades','badge','clipboard'] },
+        // Arrival: top-heavy, dramatic hair, entrance energy
+        groupChatHost:   { skin:'dark',   hair:'afro',     hairColor:'black',  shirt:'#5577cc', pants:'#334466', shoes:'#223355', items:['clipboard','badge','crown'] },
+        plusOnePrince:   { skin:'light',  hair:'slick',    hairColor:'blonde', shirt:'#ffd166', pants:'#aa8833', shoes:'#886622', items:['crown','bowtie','cape'] },
+        nameDropper:     { skin:'tan',    hair:'long',     hairColor:'blonde', shirt:'#dd33aa', pants:'#882266', shoes:'#661155', items:['shades','scarf','earring','crown'] },
+        // Action: prop-based
+        porchBuddy:      { skin:'medium', hair:'cap',      hairColor:'brown',  shirt:'#66aa88', pants:'#447755', shoes:'#335544', items:['badge'] },
+        fedUpRoommate:   { skin:'tan',    hair:'spiky',    hairColor:'red',    shirt:'#ee4422', pants:'#882211', shoes:'#661100', items:['earring','gloves'] },
         resetHost:       { skin:'tan',    hair:'bald',     hairColor:'black',  shirt:'#bbaa77', pants:'#665544', shoes:'#443322', items:['clipboard','apron'] },
-        wingMan:         { skin:'brown',  hair:'short',    hairColor:'black',  shirt:'#448899', pants:'#335566', shoes:'#224444', items:['badge'] },
-        stagehand:       { skin:'tan',    hair:'cap',      hairColor:'black',  shirt:'#555566', pants:'#333344', shoes:'#222233', items:['gloves','vest'] },
-        dealer:          { skin:'dark',   hair:'slick',    hairColor:'silver', shirt:'#442266', pants:'#331155', shoes:'#220044', items:['shades','chain'] },
+        wingMan:         { skin:'brown',  hair:'short',    hairColor:'black',  shirt:'#448899', pants:'#335566', shoes:'#224444', items:['badge','shades'] },
+        stagehand:       { skin:'tan',    hair:'cap',      hairColor:'black',  shirt:'#555566', pants:'#333344', shoes:'#222233', items:['gloves','vest','headphones'] },
+        dealer:          { skin:'dark',   hair:'slick',    hairColor:'silver', shirt:'#442266', pants:'#331155', shoes:'#220044', items:['shades','chain','cane'] },
         // === VELVET ROOM ===
+        // Arrival: top-heavy, dramatic
         mainCharacter:   { skin:'tan',    hair:'long',     hairColor:'purple', shirt:'#cc44cc', pants:'#882288', shoes:'#661166', items:['cape','crown'] },
-        storyPoster:     { skin:'medium', hair:'beanie',   hairColor:'brown',  shirt:'#666688', pants:'#444466', shoes:'#333355', items:['camera'] },
-        danceCaptain:    { skin:'light',  hair:'ponytail', hairColor:'pink',   shirt:'#ff6699', pants:'#aa4466', shoes:'#882244', items:['earring','headphones'] },
-        afterpartyHost:  { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#111122', pants:'#0a0a18', shoes:'#050510', items:['bowtie','vest'] },
-        wallflower:      { skin:'light',  hair:'long',     hairColor:'brown',  shirt:'#99aa88', pants:'#667755', shoes:'#445533', items:['scarf'] },
-        linkUpFriend:    { skin:'medium', hair:'bandana',  hairColor:'black',  shirt:'#5577cc', pants:'#334477', shoes:'#223366', items:['chain','badge'] },
+        // Action: prop-based
+        storyPoster:     { skin:'medium', hair:'beanie',   hairColor:'brown',  shirt:'#666688', pants:'#444466', shoes:'#333355', items:['camera','badge'] },
+        danceCaptain:    { skin:'light',  hair:'ponytail', hairColor:'pink',   shirt:'#ff6699', pants:'#aa4466', shoes:'#882244', items:['earring','headphones','cane'] },
+        // Departure: trailing details, scarf
+        afterpartyHost:  { skin:'light',  hair:'slick',    hairColor:'black',  shirt:'#111122', pants:'#0a0a18', shoes:'#050510', items:['bowtie','vest','scarf'] },
+        // Scoring: flashy, elegant, cape/glam
+        wallflower:      { skin:'light',  hair:'long',     hairColor:'brown',  shirt:'#99aa88', pants:'#667755', shoes:'#445533', items:['scarf','earring'] },
+        linkUpFriend:    { skin:'medium', hair:'bandana',  hairColor:'black',  shirt:'#5577cc', pants:'#334477', shoes:'#223366', items:['chain','badge','bowtie'] },
         headliner:       { skin:'medium', hair:'ponytail', hairColor:'pink',   shirt:'#ffcc00', pants:'#aa8800', shoes:'#886600', items:['earring','cape','crown'] },
-        socialClimber:   { skin:'tan',    hair:'ponytail', hairColor:'black',  shirt:'#334466', pants:'#222244', shoes:'#111133', items:['glasses','tie'] },
+        // Arrival: top-heavy
+        socialClimber:   { skin:'tan',    hair:'ponytail', hairColor:'black',  shirt:'#334466', pants:'#222244', shoes:'#111133', items:['glasses','tie','crown'] },
+        // Action: prop-based
         hypeSquad:       { skin:'medium', hair:'afro',     hairColor:'blonde', shirt:'#ee6633', pants:'#aa4422', shoes:'#882211', items:['headphones','chain'] },
         partyPhotographer: { skin:'tan',  hair:'short',    hairColor:'black',  shirt:'#888899', pants:'#555566', shoes:'#333344', items:['camera','bag'] },
         // === NIGHT MARKET ===
-        windowWatcher:   { skin:'tan',    hair:'cap',      hairColor:'brown',  shirt:'#558844', pants:'#445533', shoes:'#334422', items:['backpack'] },
-        vipWrangler:     { skin:'light',  hair:'tophat',   hairColor:'white',  shirt:'#886644', pants:'#443322', shoes:'#221100', items:['monocle','cane'] },
-        tabRunner:       { skin:'medium', hair:'beanie',   hairColor:'black',  shirt:'#dd6633', pants:'#884422', shoes:'#553311', items:['apron'] },
-        coolOffSmoker:   { skin:'medium', hair:'cap',      hairColor:'black',  shirt:'#44aadd', pants:'#335577', shoes:'#224466', items:['scarf'] },
+        // Action: prop-based
+        windowWatcher:   { skin:'tan',    hair:'cap',      hairColor:'brown',  shirt:'#558844', pants:'#445533', shoes:'#334422', items:['backpack','shades'] },
+        vipWrangler:     { skin:'light',  hair:'tophat',   hairColor:'white',  shirt:'#886644', pants:'#443322', shoes:'#221100', items:['monocle','cane','clipboard'] },
+        // Departure: trailing, asymmetric
+        tabRunner:       { skin:'medium', hair:'beanie',   hairColor:'black',  shirt:'#dd6633', pants:'#884422', shoes:'#553311', items:['apron','scarf'] },
+        coolOffSmoker:   { skin:'medium', hair:'cap',      hairColor:'black',  shirt:'#44aadd', pants:'#335577', shoes:'#224466', items:['scarf','bag'] },
+        // No ability
         bottlePopper:    { skin:'light',  hair:'short',    hairColor:'blonde', shirt:'#eebb33', pants:'#997722', shoes:'#775511', items:['vest','bowtie'] },
-        bigPlanner:      { skin:'medium', hair:'slick',    hairColor:'blonde', shirt:'#557799', pants:'#334466', shoes:'#223355', items:['glasses','clipboard'] },
+        // Scoring: flashy, polished
+        bigPlanner:      { skin:'medium', hair:'slick',    hairColor:'blonde', shirt:'#557799', pants:'#334466', shoes:'#223355', items:['glasses','clipboard','tie'] },
         highRoller:      { skin:'tan',    hair:'slick',    hairColor:'silver', shirt:'#ddaa22', pants:'#997711', shoes:'#775500', items:['crown','chain','monocle'] },
-        socialButterfly: { skin:'light',  hair:'pigtails', hairColor:'pink',   shirt:'#cc44cc', pants:'#883388', shoes:'#662266', items:['scarf','earring'] },
-        magnetGuest:     { skin:'dark',   hair:'short',    hairColor:'black',  shirt:'#7755bb', pants:'#554488', shoes:'#332266', items:['chain','earring','cape'] },
+        // Arrival: dramatic, entrance energy
+        socialButterfly: { skin:'light',  hair:'pigtails', hairColor:'pink',   shirt:'#cc44cc', pants:'#883388', shoes:'#662266', items:['scarf','earring','cape'] },
+        magnetGuest:     { skin:'dark',   hair:'short',    hairColor:'black',  shirt:'#7755bb', pants:'#554488', shoes:'#332266', items:['chain','earring','cape','crown'] },
         // === BACK ALLEY ===
-        addressLeaker:   { skin:'tan',    hair:'hood',     hairColor:'black',  shirt:'#cc2222', pants:'#661111', shoes:'#440000', items:['scar','bandolier'] },
-        messyDrunk:      { skin:'medium', hair:'short',    hairColor:'red',    shirt:'#aa4422', pants:'#663311', shoes:'#442200', items:['scar'] },
-        dramaStarter:    { skin:'tan',    hair:'mohawk',   hairColor:'red',    shirt:'#881133', pants:'#440022', shoes:'#330011', items:['scar','chain','earring'] },
-        chaosChaser:     { skin:'medium', hair:'bandana',  hairColor:'brown',  shirt:'#55cc77', pants:'#336644', shoes:'#224422', items:['bandolier'] },
-        lateLegend:      { skin:'light',  hair:'hood',     hairColor:'silver', shirt:'#7755bb', pants:'#554488', shoes:'#332266', items:['mask','cape'] },
-        rumorQueen:      { skin:'light',  hair:'pigtails', hairColor:'blonde', shirt:'#aa5588', pants:'#773366', shoes:'#552244', items:['earring','bag'] },
-        counselor:       { skin:'dark',   hair:'bald',     hairColor:'black',  shirt:'#556677', pants:'#334455', shoes:'#223344', items:['glasses'] },
-        cupid:           { skin:'light',  hair:'long',     hairColor:'blonde', shirt:'#ff88aa', pants:'#cc6688', shoes:'#aa4466', items:['cape','earring','crown'] },
+        // Arrival
+        addressLeaker:   { skin:'tan',    hair:'hood',     hairColor:'black',  shirt:'#cc2222', pants:'#661111', shoes:'#440000', items:['scar','bandolier','crown'] },
+        // Departure: messy, trailing
+        messyDrunk:      { skin:'medium', hair:'short',    hairColor:'red',    shirt:'#aa4422', pants:'#663311', shoes:'#442200', items:['scar','scarf'] },
+        dramaStarter:    { skin:'tan',    hair:'mohawk',   hairColor:'red',    shirt:'#881133', pants:'#440022', shoes:'#330011', items:['scar','chain','earring','scarf'] },
+        // Scoring: flashy
+        chaosChaser:     { skin:'medium', hair:'bandana',  hairColor:'brown',  shirt:'#55cc77', pants:'#336644', shoes:'#224422', items:['bandolier','cape'] },
+        lateLegend:      { skin:'light',  hair:'hood',     hairColor:'silver', shirt:'#7755bb', pants:'#554488', shoes:'#332266', items:['mask','cape','crown'] },
+        // Action: prop-based
+        rumorQueen:      { skin:'light',  hair:'pigtails', hairColor:'blonde', shirt:'#aa5588', pants:'#773366', shoes:'#552244', items:['earring','bag','shades'] },
+        counselor:       { skin:'dark',   hair:'bald',     hairColor:'black',  shirt:'#556677', pants:'#334455', shoes:'#223344', items:['glasses','cane'] },
+        cupid:           { skin:'light',  hair:'long',     hairColor:'blonde', shirt:'#ff88aa', pants:'#cc6688', shoes:'#aa4466', items:['cape','earring','crown','cane'] },
         // === TROUBLE ===
         gatecrasher:     { skin:'dark',   hair:'spiky',    hairColor:'green',  shirt:'#aa1111', pants:'#551111', shoes:'#330000', items:['scar','bandolier'] },
     };
@@ -1589,8 +1608,24 @@
             slot = slotsEl.querySelector(`.occupied-slot[data-guest-id="${scoringBonus.guestId}"]`);
         }
         if (!slot) return Promise.resolve();
+        // Trigger scoring sparkle on floor actor
+        if (scoringBonus.guestId && getTimingCategory(scoringBonus.guestId) === 'scoring') {
+            triggerFloorScoringSparkle(who, scoringBonus.guestId);
+        }
         const abilityIconGhost = scoringBonus.guestId ? Game.GUESTS[scoringBonus.guestId]?.ability?.icon : null;
         return triggerGuestSlotPopup(slot, scoringBonus.pings, { animateSlot: true, abilityIconGhost });
+    }
+
+    function triggerFloorScoringSparkle(who, guestId) {
+        const actors = venueActors[who];
+        if (!actors) return;
+        for (const actor of actors.values()) {
+            if (actor.guestId === guestId && actor.el) {
+                actor.el.classList.add('scoring-active');
+                setTimeout(() => actor.el.classList.remove('scoring-active'), 700);
+                break;
+            }
+        }
     }
 
     async function runRoundScoringBonusSequence() {
@@ -1625,10 +1660,72 @@
         }
     }
 
-    function renderAbilityBadge(guest) {
+    // === Timing Badge SVG Icons (shape-first, readable at small size) ===
+    const TIMING_BADGE_SVG = {
+        arrival:   '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="3,1 10,6 3,11" fill="#44ddcc" stroke="#1a3a3a" stroke-width="1.2"/></svg>',
+        action:    '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="6,1 11,6 6,11 1,6" fill="#cc44ff" stroke="#2a1a3a" stroke-width="1.2"/></svg>',
+        departure: '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="9,1 2,6 9,11" fill="#ff6633" stroke="#3a1a1a" stroke-width="1.2"/></svg>',
+        scoring:   '<svg viewBox="0 0 12 12" width="12" height="12"><text x="6" y="10" text-anchor="middle" font-size="11">🎉</text></svg>',
+    };
+
+    // === Standardized Ability Family Icons (pixel-art style SVGs) ===
+    const ABILITY_FAMILY_SVG = {
+        peek:         '<svg viewBox="0 0 12 12" width="12" height="12"><circle cx="6" cy="6" r="4" fill="none" stroke="#cde" stroke-width="1.5"/><circle cx="6" cy="6" r="1.5" fill="#cde"/></svg>',
+        reorder:      '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M3,3 L9,3 M3,6 L9,6 M3,9 L9,9" stroke="#cde" stroke-width="1.4" stroke-linecap="round"/><path d="M8,1.5 L10,3 L8,4.5" fill="none" stroke="#8bf" stroke-width="1.2"/></svg>',
+        admit:        '<svg viewBox="0 0 12 12" width="12" height="12"><line x1="6" y1="2" x2="6" y2="10" stroke="#8f8" stroke-width="1.6" stroke-linecap="round"/><line x1="2" y1="6" x2="10" y2="6" stroke="#8f8" stroke-width="1.6" stroke-linecap="round"/></svg>',
+        revealAdmit:  '<svg viewBox="0 0 12 12" width="12" height="12"><circle cx="4" cy="5" r="2.5" fill="none" stroke="#cde" stroke-width="1.2"/><circle cx="4" cy="5" r="1" fill="#cde"/><line x1="8" y1="3" x2="8" y2="9" stroke="#8f8" stroke-width="1.4" stroke-linecap="round"/><line x1="6" y1="6" x2="10" y2="6" stroke="#8f8" stroke-width="1.4" stroke-linecap="round"/></svg>',
+        bounce:       '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M3,9 Q6,1 9,9" fill="none" stroke="#6cf" stroke-width="1.5" stroke-linecap="round"/><polygon points="9,7 11,10 7,10" fill="#6cf"/></svg>',
+        boot:         '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M2,3 L8,3 L10,6 L10,10 L2,10 Z" fill="#c66" stroke="#411" stroke-width="1"/></svg>',
+        clearHouse:   '<svg viewBox="0 0 12 12" width="12" height="12"><line x1="2" y1="2" x2="10" y2="10" stroke="#f88" stroke-width="1.6" stroke-linecap="round"/><line x1="10" y1="2" x2="2" y2="10" stroke="#f88" stroke-width="1.6" stroke-linecap="round"/></svg>',
+        nudge:        '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M2,6 L8,6" stroke="#fb4" stroke-width="1.6" stroke-linecap="round"/><polygon points="8,3.5 11,6 8,8.5" fill="#fb4"/></svg>',
+        scoreNow:     '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9.2 3,11 3.5,7.5 1,5 4.5,4.5" fill="#fd2" stroke="#a80" stroke-width="0.6"/></svg>',
+        scoreGuest:   '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="6,2 7.2,4.8 10,5.2 8,7.2 8.5,10 6,8.6 3.5,10 4,7.2 2,5.2 4.8,4.8" fill="none" stroke="#fd2" stroke-width="1.2"/><circle cx="6" cy="6" r="1" fill="#fd2"/></svg>',
+        refresh:      '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M9,3 A4,4 0 1,0 9,9" fill="none" stroke="#6f6" stroke-width="1.4" stroke-linecap="round"/><polygon points="9,1 11,3.5 7,3.5" fill="#6f6"/></svg>',
+        refreshAll:   '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M9,3 A4,4 0 1,0 9,9" fill="none" stroke="#6f6" stroke-width="1.4" stroke-linecap="round"/><polygon points="9,1 11,3.5 7,3.5" fill="#6f6"/><circle cx="6" cy="6" r="1.2" fill="#6f6"/></svg>',
+        gainMoney:    '<svg viewBox="0 0 12 12" width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="#da2" stroke="#840" stroke-width="0.8"/><text x="6" y="8.5" text-anchor="middle" font-size="7" font-weight="bold" fill="#840">$</text></svg>',
+        cool:         '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="6,0.5 7,4 11,4 8,6.5 9,10.5 6,8 3,10.5 4,6.5 1,4 5,4" fill="#6df" stroke="#248" stroke-width="0.6"/></svg>',
+        spike:        '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="6,1 7.5,5 12,6 7.5,7 6,11 4.5,7 0,6 4.5,5" fill="#f44" stroke="#600" stroke-width="0.6"/></svg>',
+        plant:        '<svg viewBox="0 0 12 12" width="12" height="12"><circle cx="6" cy="5" r="3" fill="#a33" stroke="#411" stroke-width="1"/><line x1="6" y1="8" x2="6" y2="11" stroke="#a33" stroke-width="1.4"/></svg>',
+        copy:         '<svg viewBox="0 0 12 12" width="12" height="12"><rect x="1" y="3" width="6" height="7" rx="1" fill="none" stroke="#caf" stroke-width="1.2"/><rect x="5" y="1" width="6" height="7" rx="1" fill="none" stroke="#caf" stroke-width="1.2"/></svg>',
+        // Unique scoring passives
+        wallflower:   '<svg viewBox="0 0 12 12" width="12" height="12"><circle cx="6" cy="5" r="3" fill="none" stroke="#fac" stroke-width="1.2"/><path d="M4,8 Q6,11 8,8" fill="none" stroke="#fac" stroke-width="1"/></svg>',
+        clique:       '<svg viewBox="0 0 12 12" width="12" height="12"><circle cx="4" cy="5" r="2" fill="none" stroke="#8cf" stroke-width="1.2"/><circle cx="8" cy="5" r="2" fill="none" stroke="#8cf" stroke-width="1.2"/><line x1="6" y1="5" x2="6" y2="5" stroke="#8cf" stroke-width="2"/></svg>',
+        spotlight:    '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9.2 3,11 3.5,7.5 1,5 4.5,4.5" fill="#fd2" stroke="#a80" stroke-width="0.6"/><circle cx="6" cy="6" r="1.5" fill="#fff" opacity="0.5"/></svg>',
+        climb:        '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M2,10 L6,2 L10,10" fill="none" stroke="#4cf" stroke-width="1.5" stroke-linecap="round"/><polygon points="6,0.5 8,3.5 4,3.5" fill="#4cf"/></svg>',
+        packedHouse:  '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M1,7 L6,2 L11,7 L11,11 L1,11 Z" fill="none" stroke="#fb4" stroke-width="1.2"/><rect x="4" y="8" width="4" height="3" fill="#fb4"/></svg>',
+        highRoller:   '<svg viewBox="0 0 12 12" width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="#fd2" stroke-width="1.2"/><text x="6" y="8.5" text-anchor="middle" font-size="7" font-weight="bold" fill="#fd2">$</text></svg>',
+        chaosChaser:  '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M3,2 Q6,6 3,10 M6,2 Q9,6 6,10 M9,2 Q12,6 9,10" fill="none" stroke="#f64" stroke-width="1.2"/></svg>',
+        lastToLeave:  '<svg viewBox="0 0 12 12" width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="#aaf" stroke-width="1.2"/><line x1="6" y1="3" x2="6" y2="6" stroke="#aaf" stroke-width="1.3"/><line x1="6" y1="6" x2="8.5" y2="7.5" stroke="#aaf" stroke-width="1.3"/></svg>',
+    };
+
+    function getTimingCategory(guestId) {
+        return Game.TIMING_CATEGORIES[guestId] || 'none';
+    }
+
+    function getAbilityIconKey(guest) {
+        if (!guest.ability) return null;
+        return Game.ABILITY_ICON_MAP[guest.ability.type] || null;
+    }
+
+    function renderTimingBadge(guestId) {
+        const cat = getTimingCategory(guestId);
+        if (cat === 'none') return '';
+        const svg = TIMING_BADGE_SVG[cat] || '';
+        return `<span class="timing-badge timing-${cat}" aria-label="${cat}" title="${cat}">${svg}</span>`;
+    }
+
+    function renderStandardAbilityIcon(guest) {
         if (!guest.ability) return '';
-        const icon = escapeHtml(guest.ability.icon || '');
-        return `<span class="ability-icon-badge" aria-label="${escapeHtml(guest.ability.name || 'Ability')}" title="${escapeHtml(guest.ability.name || 'Ability')}">${icon}</span>`;
+        const key = getAbilityIconKey(guest);
+        if (!key) return '';
+        const svg = ABILITY_FAMILY_SVG[key] || '';
+        if (!svg) return '';
+        return `<span class="ability-icon-std" aria-label="${escapeHtml(guest.ability.name || 'Ability')}" title="${escapeHtml(guest.ability.name || 'Ability')}">${svg}</span>`;
+    }
+
+    function renderAbilityBadge(guest, guestId) {
+        if (!guest.ability) return '';
+        return `<span class="ability-badge-pair">${renderTimingBadge(guestId)}${renderStandardAbilityIcon(guest)}</span>`;
     }
 
 
@@ -1857,7 +1954,9 @@
                 const target = pickBehaviorTarget(who, sceneBounds);
                 const spawn = entryDoor;
                 const el = document.createElement('div');
+                const timCat = getTimingCategory(guestId);
                 el.className = 'venue-actor entering';
+                if (timCat !== 'none') el.dataset.timingCat = timCat;
                 el.innerHTML = getActorHtml(guestId);
                 el.title = `${guest.name} • entering`;
                 layer.appendChild(el);
@@ -1916,7 +2015,9 @@
 
                 if (!actor) {
                     const el = document.createElement('div');
+                    const timCat = getTimingCategory(guestId);
                     el.className = 'venue-actor entering';
+                    if (timCat !== 'none') el.dataset.timingCat = timCat;
                     el.innerHTML = getActorHtml(guestId);
                     el.title = `${guest.name} • arriving`;
                     layer.appendChild(el);
@@ -2308,7 +2409,7 @@
             <span class="slot-stat slot-heat">${guest.heat}</span>
             ${guestVisualHtml}
             <span class="slot-stat slot-money">${guest.money}</span>
-            ${renderAbilityBadge(guest)}
+            ${renderAbilityBadge(guest, guestId)}
             <span class="slot-stat slot-points">${guest.points}</span>
         `;
         el.title = `${guest.name} - ${guest.desc}`;

@@ -331,6 +331,67 @@ const GUESTS = {
   },
 };
 
+  // === TIMING CATEGORIES ===
+  // Maps each guest to its timing category for badge display.
+  // Derived from ability.trigger where available; no-ability guests have 'none'.
+  const TIMING_CATEGORIES = {
+    // Arrival
+    groupChatHost: 'arrival', plusOnePrince: 'arrival', nameDropper: 'arrival',
+    mainCharacter: 'arrival', socialClimber: 'arrival', socialButterfly: 'arrival',
+    magnetGuest: 'arrival', addressLeaker: 'arrival',
+    // Action / Flash
+    doorWatcher: 'action', porchBuddy: 'action', fedUpRoommate: 'action',
+    resetHost: 'action', wingMan: 'action', stagehand: 'action',
+    dealer: 'action', storyPoster: 'action', danceCaptain: 'action',
+    hypeSquad: 'action', partyPhotographer: 'action', windowWatcher: 'action',
+    vipWrangler: 'action', rumorQueen: 'action', counselor: 'action', cupid: 'action',
+    // Departure
+    afterpartyHost: 'departure', tabRunner: 'departure', coolOffSmoker: 'departure',
+    messyDrunk: 'departure', dramaStarter: 'departure',
+    // Scoring
+    wallflower: 'scoring', linkUpFriend: 'scoring', headliner: 'scoring',
+    bigPlanner: 'scoring', highRoller: 'scoring', chaosChaser: 'scoring',
+    lateLegend: 'scoring',
+    // No ability
+    familiarFace: 'none', bottleBringer: 'none', loudFriend: 'none',
+    bigSpender: 'none', bottlePopper: 'none', gatecrasher: 'none',
+  };
+
+  // === ABILITY ICON FAMILIES ===
+  // Maps ability type -> standardized icon key so repeated mechanics share one icon.
+  const ABILITY_ICON_MAP = {
+    revealNext:         'peek',
+    stackChoice:        'reorder',
+    plusOne:             'admit',
+    nameDrop:           'revealAdmit',
+    magnet:             'admit',
+    bounce:             'bounce',
+    boot:               'boot',
+    bootAdjacent:       'boot',
+    clearHouse:         'clearHouse',
+    nudge:              'nudge',
+    scoreNow:           'scoreNow',
+    scoreGuest:         'scoreGuest',
+    refreshAction:      'refresh',
+    refreshAllActions:  'refreshAll',
+    gainMoney:          'gainMoney',
+    coolHeat:           'cool',
+    addOpponentHeat:    'spike',
+    queueGatecrasher:   'plant',
+    setHeatZero:        'cool',
+    impersonator:       'copy',
+    opponentStackChoice:'reorder',
+    // Unique scoring passives keep distinct keys
+    wallflower:         'wallflower',
+    clique:             'clique',
+    centerOfAttention:  'spotlight',
+    socialClimber:      'climb',
+    packedHouse:        'packedHouse',
+    highRoller:         'highRoller',
+    chaosChaser:        'chaosChaser',
+    lastToLeave:        'lastToLeave',
+  };
+
   const VENUES = {
     velvetRoom: {
       name: "Red Carpet Gala",
@@ -1858,6 +1919,8 @@ const GUESTS = {
     GUESTS,
     VENUES,
     GUEST_LISTS,
+    TIMING_CATEGORIES,
+    ABILITY_ICON_MAP,
     DECKS,
     TAGS,
     POINT_TARGET: DEFAULT_POINT_TARGET,
