@@ -1676,7 +1676,7 @@
         admit:        '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">➕</span>',
         bounce:       '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">📋</span>',
         boot:         '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🥾</span>',
-        nudge:        '<span >💥</span>',
+        nudge:        '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">💥</span>',
         scoreNow:     '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">⭐</span>',
         refresh:      '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🔄</span>',
         gainMoney:    '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">💸</span>',
