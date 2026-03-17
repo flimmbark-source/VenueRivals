@@ -45,8 +45,8 @@ const GUESTS = {
     name: "Door Watcher", emoji: "👀",
     heat: 0, money: 1, points: 1, cost: 3,
     venue: "Neutral", tags: ["Scout"], tier: "common",
-    ability: { name: "Check the Line", icon: "👀", desc: "Peek at the next guest.", trigger: "flash", type: "revealNext", value: 1 },
-    desc: "CHECK THE LINE — A: PEEK 1.",
+    ability: { name: "Curate", icon: "📋", desc: "Reveal the next 2 guests and choose their order.", trigger: "flash", type: "stackChoice", value: 2 },
+    desc: "CURATE — A: Reveal the next 2 guests and choose their order.",
   },
   groupChatHost: {
     name: "Group Chat Host", emoji: "💬",
@@ -66,8 +66,8 @@ const GUESTS = {
     name: "Name Dropper", emoji: "🗣️",
     heat: 1, money: 0, points: 2, cost: 7,
     venue: "Neutral", tags: ["VIP", "Broker"], tier: "rare",
-    ability: { name: "Name Drop", icon: "📇", desc: "On arrival, Reveal the next 3 guests, then Admit 1. Put the rest back in any order.", trigger: "arrival", type: "nameDrop", value: 3 },
-    desc: "NAME DROP — When this guest enters, reveal the next 3 guests. Admit 1 now. Put the rest back in any order.",
+    ability: { name: "Curate", icon: "📋", desc: "On arrival, Reveal the next 2 guests and choose their order.", trigger: "arrival", type: "stackChoice", value: 2 },
+    desc: "CURATE — When this guest enters, reveal the next 2 guests and choose their order.",
   },
   porchBuddy: {
     name: "Porch Buddy", emoji: "🪑",
@@ -87,8 +87,8 @@ const GUESTS = {
     name: "Reset Host", emoji: "🧹",
     heat: 1, money: 2, points: 0, cost: 6,
     venue: "Neutral", tags: ["Broker"], tier: "uncommon",
-    ability: { name: "Last Call", icon: "🧹", desc: "Clear your house.", trigger: "flash", type: "clearHouse" },
-    desc: "LAST CALL — A: Clear your house.",
+    ability: { name: "Boot", icon: "🥾", desc: "Remove a guest from your house.", trigger: "flash", type: "boot", targeting: "choice" },
+    desc: "BOOT — A: Remove a guest from your house.",
   },
     wingMan: {
     name: "Wingman", emoji: "🤛",
@@ -124,15 +124,15 @@ const GUESTS = {
     name: "Story Poster", emoji: "📱",
     heat: 1, money: 0, points: 1, cost: 7,
     venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
-    ability: { name: "Snapshot", icon: "📸", desc: "Score a guest now.", trigger: "flash", type: "scoreGuest" },
-    desc: "SNAPSHOT — A: Score a guest now.",
+    ability: { name: "Score 2", icon: "⭐", desc: "Gain 2 Points.", trigger: "flash", type: "scoreNow", value: 2 },
+    desc: "SCORE 2 — A: Gain 2 Points.",
   },
   danceCaptain: {
     name: "Dance Captain", emoji: "💃",
     heat: 1, money: 1, points: 2, cost: 9,
     venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
-    ability: { name: "Second Wind", icon: "🔄", desc: "Refresh another guest’s action.", trigger: "flash", type: "refreshAction" },
-    desc: "SECOND WIND — A: Refresh another guest’s action.",
+    ability: { name: "Refresh", icon: "🔄", desc: "Refresh another guest’s action.", trigger: "flash", type: "refreshAction" },
+    desc: "REFRESH — A: Refresh another guest’s action.",
   },
   afterpartyHost: {
     name: "Afterparty Host", emoji: "🌙",
@@ -145,22 +145,22 @@ const GUESTS = {
     name: "Wallflower", emoji: "🌸",
     heat: 1, money: 3, points: 0, cost: 10,
     venue: "Velvet Room", tags: ["VIP"], tier: "common",
-    ability: { name: "Wallflower", icon: "🌸", desc: "When scored, +1 Point for each empty slot.", trigger: "scoring", type: "wallflower" },
-    desc: "WALLFLOWER — At scoring, +1 Point for each empty slot.",
+    ability: { name: "Link Bonus", icon: "🔗", desc: "At scoring, +1 Point for each adjacent guest sharing a tag.", trigger: "scoring", type: "clique", family: "linkBonus" },
+    desc: "LINK BONUS — At scoring, +1 Point for each adjacent guest sharing a tag.",
   },
   linkUpFriend: {
     name: "Link-Up Friend", emoji: "🔗",
     heat: 1, money: 1, points: 1, cost: 5,
     venue: "Velvet Room", tags: ["VIP", "Broker"], tier: "uncommon",
-    ability: { name: "Clique", icon: "🔗", desc: "When scored, +1 Point for each adjacent guest sharing a tag.", trigger: "scoring", type: "clique" },
-    desc: "CLIQUE — At scoring, +1 Point for each adjacent guest sharing a tag with this guest.",
+    ability: { name: "Link Bonus", icon: "🔗", desc: "At scoring, +1 Point for each adjacent guest sharing a tag.", trigger: "scoring", type: "clique", family: "linkBonus" },
+    desc: "LINK BONUS — At scoring, +1 Point for each adjacent guest sharing a tag.",
   },
   headliner: {
     name: "Headliner", emoji: "🌟",
     heat: 2, money: 3, points: 2, cost: 7,
     venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "rare",
-    ability: { name: "Center of Attention", icon: "🔦", desc: "When scored, +2 Points if this guest is Newest.", trigger: "scoring", type: "centerOfAttention", value: 2 },
-    desc: "CENTER OF ATTENTION — At scoring, +2 Points if this guest is Newest.",
+    ability: { name: "Position Bonus", icon: "📍", desc: "At scoring, +2 Points if this guest is at an end.", trigger: "scoring", type: "positionBonus", value: 2, family: "positionBonus" },
+    desc: "POSITION BONUS — At scoring, +2 Points if at an end.",
   },
   socialClimber: {
     name: "Social Climber", emoji: "📈",
@@ -173,15 +173,15 @@ const GUESTS = {
     name: "Hype Squad", emoji: "🎉",
     heat: 1, money: 1, points: 2, cost: 8,
     venue: "Velvet Room", tags: ["Performer"], tier: "rare",
-    ability: { name: "Hype Crew", icon: "🎊", desc: "Refresh all other actions.", trigger: "flash", type: "refreshAllActions" },
-    desc: "HYPE CREW — A: Refresh all other actions.",
+    ability: { name: "Refresh", icon: "🔄", desc: "Refresh another guest's action.", trigger: "flash", type: "refreshAction" },
+    desc: "REFRESH — A: Refresh another guest's action.",
   },
   partyPhotographer: {
     name: "Party Photographer", emoji: "📸",
     heat: 1, money: 0, points: 1, cost: 6,
     venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
-    ability: { name: "Photographer", icon: "📷", desc: "Score a guest now.", trigger: "flash", type: "scoreGuest" },
-    desc: "PHOTOGRAPHER — A: Score a guest now.",
+    ability: { name: "Score 2", icon: "⭐", desc: "Gain 2 Points.", trigger: "flash", type: "scoreNow", value: 2 },
+    desc: "SCORE 2 — A: Gain 2 Points.",
   },
 
   // === NIGHT MARKET ===
@@ -196,8 +196,8 @@ const GUESTS = {
     name: "VIP Wrangler", emoji: "🎪",
     heat: 1, money: 1, points: 2, cost: 7,
     venue: "Night Market", tags: ["VIP", "Broker"], tier: "rare",
-    ability: { name: "VIP List", icon: "📇", desc: "Reveal the next 3 guests. Admit 1 now. Put the rest back in any order.", trigger: "flash", type: "nameDrop", value: 3 },
-    desc: "VIP LIST — A: Reveal the next 3 guests. Admit 1 now. Put the rest back in any order.",
+    ability: { name: "Curate", icon: "📋", desc: "Reveal the next 2 guests and choose their order.", trigger: "flash", type: "stackChoice", value: 2 },
+    desc: "CURATE — A: Reveal the next 2 guests and choose their order.",
   },
   tabRunner: {
     name: "Tab Runner", emoji: "💸",
@@ -223,15 +223,15 @@ const GUESTS = {
     name: "Big Planner", emoji: "📋",
     heat: 1, money: 1, points: 2, cost: 6,
     venue: "Night Market", tags: ["Scout", "Broker"], tier: "uncommon",
-    ability: { name: "Packed House", icon: "🏠", desc: "When scored, +4 Points if your house is full.", trigger: "scoring", type: "packedHouse", value: 4 },
-    desc: "PACKED HOUSE — At scoring, +4 Points if your house is full.",
+    ability: { name: "Resource Bonus", icon: "📊", desc: "At scoring, +4 Points if your house is full.", trigger: "scoring", type: "packedHouse", value: 4, family: "resourceBonus" },
+    desc: "RESOURCE BONUS — At scoring, +4 Points if your house is full.",
   },
   highRoller: {
     name: "High Roller", emoji: "🎰",
     heat: 0, money: 1, points: 2, cost: 5,
     venue: "Night Market", tags: ["Broker"], tier: "uncommon",
-    ability: { name: "High Roller", icon: "💰", desc: "When scored, +1 Point for each 2 Money you have.", trigger: "scoring", type: "highRoller" },
-    desc: "HIGH ROLLER — At scoring, +1 Point for each 2 Money you have.",
+    ability: { name: "Resource Bonus", icon: "📊", desc: "At scoring, +1 Point for each 2 Money you have.", trigger: "scoring", type: "highRoller", family: "resourceBonus" },
+    desc: "RESOURCE BONUS — At scoring, +1 Point for each 2 Money you have.",
   },
   socialButterfly: {
     name: "Social Butterfly", emoji: "🦋",
@@ -244,8 +244,8 @@ const GUESTS = {
     name: "Magnet Guest", emoji: "🧲",
     heat: 1, money: 2, points: 2, cost: 8,
     venue: "Night Market", tags: ["VIP"], tier: "rare",
-    ability: { name: "Magnet", icon: "🧲", desc: "On arrival, Admit the next guest immediately. If that guest has an arrival ability, trigger it too.", trigger: "arrival", type: "magnet" },
-    desc: "MAGNET — When this guest enters, admit the next guest immediately. If that guest has an arrival ability, trigger it too.",
+    ability: { name: "Plus One", icon: "➕", desc: "On arrival, Admit the next guest immediately.", trigger: "arrival", type: "plusOne" },
+    desc: "PLUS ONE — When this guest enters, admit the next guest immediately.",
   },
 
   // === BACK ALLEY ===
@@ -274,36 +274,36 @@ const GUESTS = {
     name: "Chaos Chaser", emoji: "🌀",
     heat: 2, money: 2, points: 0, cost: 6,
     venue: "Back Alley", tags: ["Performer", "Outlaw"], tier: "uncommon",
-    ability: { name: "Chaos Chaser", icon: "🔥", desc: "When scored, +1 Point for each Heat in your house.", trigger: "scoring", type: "chaosChaser" },
-    desc: "CHAOS CHASER — At scoring, +1 Point for each Heat in your house.",
+    ability: { name: "Resource Bonus", icon: "📊", desc: "At scoring, +1 Point for each Heat in your house.", trigger: "scoring", type: "chaosChaser", family: "resourceBonus" },
+    desc: "RESOURCE BONUS — At scoring, +1 Point for each Heat in your house.",
   },
   lateLegend: {
     name: "Late Legend", emoji: "🕐",
     heat: 1, money: 2, points: 0, cost: 6,
     venue: "Back Alley", tags: ["VIP", "Outlaw"], tier: "uncommon",
-    ability: { name: "Last to Leave", icon: "🕐", desc: "+2 Points if this guest is Oldest.", trigger: "scoring", type: "lastToLeave", value: 2 },
-    desc: "LAST TO LEAVE — At scoring, +2 Points if this guest is Oldest.",
+    ability: { name: "Position Bonus", icon: "📍", desc: "At scoring, +2 Points if this guest is at an end.", trigger: "scoring", type: "positionBonus", value: 2, family: "positionBonus" },
+    desc: "POSITION BONUS — At scoring, +2 Points if at an end.",
   },
   rumorQueen: {
     name: "Rumor Queen", emoji: "👄",
     heat: 1, money: 1, points: 1, cost: 7,
     venue: "Back Alley", tags: ["Outlaw", "Broker"], tier: "rare",
-    ability: { name: "Rumor Mill", icon: "👄", desc: "Reveal the next 2 guests in your opponent’s queue and choose their order.", trigger: "flash", type: "opponentStackChoice", value: 2 },
-    desc: "RUMOR MILL — A: Reveal the next 2 guests in your opponent’s queue and choose their order.",
+    ability: { name: "Curate", icon: "📋", desc: "Reveal the next 2 guests and choose their order.", trigger: "flash", type: "stackChoice", value: 2 },
+    desc: "CURATE — A: Reveal the next 2 guests and choose their order.",
   },
   counselor: {
     name: "Counselor", emoji: "🧘",
     heat: 0, money: 0, points: 2, cost: 7,
     venue: "Back Alley", tags: ["Scout"], tier: "rare",
-    ability: { name: "Counselor", icon: "🧘", desc: "Set your Heat to 0.", trigger: "flash", type: "setHeatZero" },
-    desc: "COUNSELOR — A: Set your Heat to 0.",
+    ability: { name: "Cool 1", icon: "❄️", desc: "Cool 1.", trigger: "flash", type: "coolHeat", value: 1 },
+    desc: "COOL 1 — A: Cool 1.",
   },
   cupid: {
     name: "Cupid", emoji: "💘",
     heat: 1, money: 0, points: 2, cost: 8,
     venue: "Back Alley", tags: ["Performer"], tier: "rare",
-    ability: { name: "Cupid", icon: "💘", desc: "Boot 2 adjacent guests.", trigger: "flash", type: "bootAdjacent", value: 2 },
-    desc: "CUPID — A: Boot 2 adjacent guests.",
+    ability: { name: "Boot", icon: "🥾", desc: "Remove a guest from your house.", trigger: "flash", type: "boot", targeting: "choice" },
+    desc: "BOOT — A: Remove a guest from your house.",
   },
 
   // === TROUBLE ===
@@ -359,37 +359,28 @@ const GUESTS = {
 
   // === ABILITY ICON FAMILIES ===
   // Maps ability type -> standardized icon key so repeated mechanics share one icon.
+  // Second-pass consolidation: fewer active templates, 3 passive families.
   const ABILITY_ICON_MAP = {
-    revealNext:         'peek',
-    stackChoice:        'reorder',
+    // --- Hard-standardized active templates ---
+    stackChoice:        'curate',
     plusOne:             'admit',
-    nameDrop:           'revealAdmit',
-    magnet:             'admit',
     bounce:             'bounce',
     boot:               'boot',
-    bootAdjacent:       'boot',
-    clearHouse:         'clearHouse',
     nudge:              'nudge',
     scoreNow:           'scoreNow',
-    scoreGuest:         'scoreGuest',
     refreshAction:      'refresh',
-    refreshAllActions:  'refreshAll',
     gainMoney:          'gainMoney',
     coolHeat:           'cool',
     addOpponentHeat:    'spike',
     queueGatecrasher:   'plant',
-    setHeatZero:        'cool',
     impersonator:       'copy',
-    opponentStackChoice:'reorder',
-    // Unique scoring passives keep distinct keys
-    wallflower:         'wallflower',
-    clique:             'clique',
-    centerOfAttention:  'spotlight',
     socialClimber:      'climb',
-    packedHouse:        'packedHouse',
-    highRoller:         'highRoller',
-    chaosChaser:        'chaosChaser',
-    lastToLeave:        'lastToLeave',
+    // --- Passive scoring families ---
+    clique:             'linkBonus',
+    positionBonus:      'positionBonus',
+    packedHouse:        'resourceBonus',
+    highRoller:         'resourceBonus',
+    chaosChaser:        'resourceBonus',
   };
 
   const VENUES = {
@@ -764,12 +755,6 @@ const GUESTS = {
           result.effects.push(`${prefix}queued gatecrasher for opponent`);
         }
         return true;
-      case "setHeatZero": {
-        const oldHeat = player.heat;
-        player.heat = 0;
-        result.effects.push(`${prefix}cooled ${oldHeat} heat`);
-        return true;
-      }
       default:
         return false;
     }
@@ -1177,26 +1162,8 @@ const GUESTS = {
     if (applySimpleEffect(player, opponent, ability.type, ability.value, result, "")) return;
 
     switch (ability.type) {
-      case "revealNext": {
-        const count = Math.min(ability.value, player.roundDeck.length);
-        const revealed = [];
-        for (let i = player.roundDeck.length - 1; i >= player.roundDeck.length - count; i--) {
-          const revealId = player.roundDeck[i];
-          revealed.push({ id: revealId, name: GUESTS[revealId].name });
-        }
-        result.revealedGuests = revealed.map((entry) => entry.id);
-        result.effects.push(
-          revealed.length
-            ? `next up: ${revealed.map((entry) => entry.name).join(", ")}`
-            : "queue empty",
-        );
-        break;
-      }
       case "stackChoice":
         applyPeekEffect(player.roundDeck, result, "");
-        break;
-      case "nameDrop":
-        applyNameDropEffect(player.roundDeck, ability.value || 3, result, "");
         break;
       case "boot": {
         const targeting = ability.targeting || "oldest";
@@ -1338,58 +1305,6 @@ const GUESTS = {
         result.effects.push(`nudged ${GUESTS[getGuestId(entry)].name} left`);
         break;
       }
-      case "clearHouse": {
-        const cleared = [];
-        while (player.house.length > 0) {
-          const removed = player.house.pop();
-          const removedId = getGuestId(removed);
-          removeGuestHeat(player, removedId);
-          cleared.push(removedId);
-          handleDepartureEffects(player, opponent, removed, result);
-        }
-        result.effects.push(cleared.length ? `cleared ${cleared.length} guests` : "house already empty");
-        break;
-      }
-      case "scoreGuest": {
-        if (!result.pings) result.pings = [];
-        const scoreCanTargetArriving = sourceIndex >= 0 && !!player.arrivingGuest;
-        const targetIdx = resolveChoiceTarget(player, selectedGuest);
-        if (targetIdx === -2 && scoreCanTargetArriving) {
-          const arrivingGuestId = player.arrivingGuest;
-          const arrivingGuest = GUESTS[arrivingGuestId];
-          if (arrivingGuest) {
-            player.roundPoints += arrivingGuest.points;
-            player.roundMoney += arrivingGuest.money;
-            result.effects.push(`scored ${arrivingGuest.points} points and ${arrivingGuest.money} money from ${arrivingGuest.name}`);
-            result.pings.push({ type: 'points', value: arrivingGuest.points, phase: 'ability', guestId: arrivingGuestId, target: 'arriving' });
-            result.pings.push({ type: 'money', value: arrivingGuest.money, phase: 'ability', guestId: arrivingGuestId, target: 'arriving' });
-          }
-          break;
-        }
-        if (targetIdx < 0 || targetIdx === -2) {
-          if (player.house.length === 0 && !scoreCanTargetArriving) {
-            result.effects.push("no valid target");
-          } else {
-            result.needsTargetChoice = true;
-            result.validTargets = player.house.map((e, i) => ({ index: i, guestId: getGuestId(e) }));
-            result.canTargetArriving = scoreCanTargetArriving;
-          }
-          break;
-        }
-        const targetEntry = player.house[targetIdx];
-        const targetGuestId = getGuestId(targetEntry);
-        const targetGuest = GUESTS[targetGuestId];
-        if (targetGuest) {
-          const bonus = targetGuest.points + ((typeof targetEntry !== "string" && targetEntry.bonusPoints) || 0);
-          player.roundPoints += bonus;
-          player.roundMoney += targetGuest.money;
-          result.effects.push(`scored ${bonus} points and ${targetGuest.money} money from ${targetGuest.name}`);
-          const targetInstanceId = typeof targetEntry === "string" ? null : targetEntry.instanceId;
-          result.pings.push({ type: 'points', value: bonus, phase: 'ability', guestId: targetGuestId, target: 'house', instanceId: targetInstanceId });
-          result.pings.push({ type: 'money', value: targetGuest.money, phase: 'ability', guestId: targetGuestId, target: 'house', instanceId: targetInstanceId });
-        }
-        break;
-      }
       case "refreshAction": {
         const targetIdx = resolveChoiceTarget(player, selectedGuest);
         if (targetIdx < 0) {
@@ -1411,59 +1326,6 @@ const GUESTS = {
           targetEntry.abilityUsed = false;
           result.effects.push(`refreshed ${GUESTS[getGuestId(targetEntry)].name}`);
         }
-        break;
-      }
-      case "refreshAllActions": {
-        let refreshed = 0;
-        for (let i = 0; i < player.house.length; i++) {
-          const entry = player.house[i];
-          if (!entry || typeof entry === "string") continue;
-          // Don't refresh self
-          if (i === sourceIndex) continue;
-          if (entry.abilityUsed) {
-            entry.abilityUsed = false;
-            refreshed++;
-          }
-        }
-        result.effects.push(refreshed ? `refreshed ${refreshed} actions` : "no actions to refresh");
-        break;
-      }
-      case "opponentStackChoice": {
-        const deck = opponent.roundDeck;
-        if (deck.length >= 2) {
-          const topIdx = deck.length - 1;
-          const secondIdx = deck.length - 2;
-          result.revealedGuests = [deck[topIdx], deck[secondIdx]];
-          result.needsOpponentStackChoice = true;
-          result.effects.push(`opponent's queue: ${GUESTS[deck[topIdx]].name}, ${GUESTS[deck[secondIdx]].name} — choose order`);
-        } else if (deck.length === 1) {
-          result.revealedGuests = [deck[0]];
-          result.effects.push(`opponent's queue: ${GUESTS[deck[0]].name}`);
-        } else {
-          result.effects.push("opponent's queue is empty");
-        }
-        break;
-      }
-      case "bootAdjacent": {
-        const booted = [];
-        if (sourceIndex >= 0) {
-          const locked = getLockedIndexes(player);
-          // Boot right neighbor first (lower index), then left (higher index)
-          const neighbors = [];
-          if (sourceIndex > 0) neighbors.push(sourceIndex - 1);
-          if (sourceIndex < player.house.length - 1) neighbors.push(sourceIndex + 1);
-          // Sort descending so splice doesn't shift indexes
-          neighbors.sort((a, b) => b - a);
-          for (const idx of neighbors) {
-            if (locked.has(idx)) continue;
-            const exiting = player.house.splice(idx, 1)[0];
-            const exitId = getGuestId(exiting);
-            removeGuestHeat(player, exitId);
-            booted.push(exitId);
-            handleDepartureEffects(player, opponent, exiting, result);
-          }
-        }
-        result.effects.push(booted.length ? `booted ${booted.length} adjacent guests` : "no adjacent guests");
         break;
       }
     }
@@ -1520,15 +1382,8 @@ const GUESTS = {
         player.pendingPlusOne = true;
         result.effects.push("plus one triggered");
         break;
-      case "magnet":
-        player.pendingMagnet = true;
-        result.effects.push("magnet triggered — plus one with arrival");
-        break;
       case "stackChoice":
         applyPeekEffect(player.roundDeck, result, "");
-        break;
-      case "nameDrop":
-        applyNameDropEffect(player.roundDeck, guest.ability.value || 3, result, "");
         break;
       case "socialClimber": {
         // Guest is at the door, not in house yet. Store pending bonus
@@ -1569,13 +1424,8 @@ const GUESTS = {
     let money = 0;
 
     switch (guest.ability.type) {
-      case "wallflower": {
-        const capacity = getHouseCapacity(venue, player);
-        const emptySlots = Math.max(0, capacity - player.house.length);
-        points += emptySlots;
-        break;
-      }
       case "clique": {
+        // Link Bonus: +1 per adjacent guest sharing a tag
         const myTags = guest.tags || [];
         let bonus = 0;
         if (index > 0) {
@@ -1589,11 +1439,15 @@ const GUESTS = {
         points += bonus;
         break;
       }
-      case "centerOfAttention": {
-        if (index === 0) points += (guest.ability.value || 2);
+      case "positionBonus": {
+        // Position Bonus: +N if at either end of the house
+        if (index === 0 || index === player.house.length - 1) {
+          points += (guest.ability.value || 2);
+        }
         break;
       }
       case "packedHouse": {
+        // Resource Bonus: +N if house is full
         const capacity = getHouseCapacity(venue, player);
         if (player.house.length >= capacity && capacity > 0) {
           points += (guest.ability.value || 4);
@@ -1601,16 +1455,14 @@ const GUESTS = {
         break;
       }
       case "highRoller": {
+        // Resource Bonus: +1 per 2 Money
         const totalMoney = player.roundMoney + player.guestMoney + player.money;
         points += Math.floor(totalMoney / 2);
         break;
       }
       case "chaosChaser": {
+        // Resource Bonus: +1 per Heat
         points += player.heat;
-        break;
-      }
-      case "lastToLeave": {
-        if (index === player.house.length - 1) points += (guest.ability.value || 2);
         break;
       }
     }
