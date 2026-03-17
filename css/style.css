@@ -1811,7 +1811,7 @@ body {
 /* --- Ability Icon --- */
 .ability-icon-std {
     position: absolute;
-    left: 4px;
+    left: 6px;
     bottom: 2px;
     display: inline-flex;
     align-items: center;
