@@ -317,14 +317,14 @@ const GUESTS = {
   // === SHOP ITEMS ===
   slotIncrease: {
     name: "+1 Slot", emoji: "📦",
-    cost: 3,
+    money: 0, heat: 0, points: 0, cost: 3,
     venue: "Shop", tags: [],
     desc: "Increase your house capacity by 1.",
     tier: "shop", isShopItem: true,
   },
   heatCapIncrease: {
     name: "+1 Heat Cap", emoji: "🔥",
-    cost: 4,
+    money: 0, heat: 0, points: 0, cost: 4,
     venue: "Shop", tags: [],
     desc: "Increase your heat capacity by 1.",
     tier: "shop", isShopItem: true,
