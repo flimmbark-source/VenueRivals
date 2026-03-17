@@ -3033,14 +3033,16 @@
             ))
             : null;
         const activatableAbility = houseEntry ? getEntryActivatableAbility(houseEntry) : null;
-        const displayAbility = activatableAbility || guest.ability;
+        const baseAbility = Game.getGuestAbility(guest);
+        const displayAbility = activatableAbility || baseAbility;
         const isAbilityUsed = !!options.abilityUsed;
         const canTriggerAbility = !!tooltipAbilityTarget && !isAbilityUsed;
 
         let abilityHTML = '';
         if (displayAbility) {
             const abilityStyle = isAbilityUsed ? ' style="opacity:0.5"' : '';
-            abilityHTML = `<div class="tt-ability"${abilityStyle}>${displayAbility.icon} ${displayAbility.desc}</div>`;
+            const abilityIcon = ABILITY_PACKAGE_SVG[displayAbility.iconKey] || '';
+            abilityHTML = `<div class="tt-ability"${abilityStyle}>${abilityIcon} ${escapeHtml(displayAbility.rulesText || '')}</div>`;
         }
 
         // Only show ability button if the guest has an activatable (flash) ability
@@ -5317,9 +5319,10 @@
         guestAbilityPopupEl = document.createElement('div');
         guestAbilityPopupEl.className = 'guest-ability-popup';
 
-        const abilityHtml = guest.ability
-            ? `<div class="guest-ability-popup-title">${ABILITY_PACKAGE_SVG[guest.ability.package] || ''}</div>
-               <div class="guest-ability-popup-desc">${guest.ability.desc}</div>`
+        const ability = Game.getGuestAbility(guest);
+        const abilityHtml = ability
+            ? `<div class="guest-ability-popup-title">${ABILITY_PACKAGE_SVG[ability.iconKey] || ''}</div>
+               <div class="guest-ability-popup-desc">${escapeHtml(ability.rulesText)}</div>`
             : '<div class="guest-ability-popup-desc">No special ability.</div>';
 
         guestAbilityPopupEl.innerHTML = `
@@ -5466,8 +5469,8 @@
                     const g = guests[gid];
                     if (!g.ability || g.isShopItem) return;
                     rows += `<div class="glossary-ability-row">
-                        <span class="glossary-ability-icon">${ABILITY_PACKAGE_SVG[g.ability.package] || ''}</span>
-                        <span class="glossary-ability-desc">${escapeHtml(g.name)} — ${escapeHtml(g.ability.desc)}</span>
+                        <span class="glossary-ability-icon">${ABILITY_PACKAGE_SVG[Game.getGuestAbility(g)?.iconKey] || ''}</span>
+                        <span class="glossary-ability-desc">${escapeHtml(g.name)} — ${escapeHtml(Game.getGuestAbility(g)?.rulesText || '')}</span>
                     </div>`;
                 });
                 el.innerHTML = `<h4>All Guest Abilities</h4>${rows}`;
