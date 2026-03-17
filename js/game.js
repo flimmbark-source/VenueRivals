@@ -159,8 +159,8 @@ const GUESTS = {
     name: "Headliner", emoji: "🌟",
     heat: 2, money: 3, points: 2, cost: 7,
     venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "rare",
-    ability: { name: "Position Bonus", icon: "📍", desc: "At scoring, +2 Points if this guest is at an end.", trigger: "scoring", type: "positionBonus", value: 2, family: "positionBonus" },
-    desc: "POSITION BONUS — At scoring, +2 Points if at an end.",
+    ability: { name: "Position Bonus", icon: "📍", desc: "At scoring, +2 Points if at an edge.", trigger: "scoring", type: "positionBonus", value: 2, family: "positionBonus" },
+    desc: "POSITION BONUS — At scoring, +2 Points if at an edge.",
   },
   socialClimber: {
     name: "Social Climber", emoji: "📈",
@@ -281,8 +281,8 @@ const GUESTS = {
     name: "Late Legend", emoji: "🕐",
     heat: 1, money: 2, points: 0, cost: 6,
     venue: "Back Alley", tags: ["VIP", "Outlaw"], tier: "uncommon",
-    ability: { name: "Position Bonus", icon: "📍", desc: "At scoring, +2 Points if this guest is at an end.", trigger: "scoring", type: "positionBonus", value: 2, family: "positionBonus" },
-    desc: "POSITION BONUS — At scoring, +2 Points if at an end.",
+    ability: { name: "Position Bonus", icon: "📍", desc: "At scoring, +2 Points if at an edge.", trigger: "scoring", type: "positionBonus", value: 2, family: "positionBonus" },
+    desc: "POSITION BONUS — At scoring, +2 Points if at an edge.",
   },
   rumorQueen: {
     name: "Rumor Queen", emoji: "👄",
