@@ -1671,24 +1671,24 @@
     // === Standardized Ability Family Icons (pixel-art style SVGs) ===
     // Second-pass: 13 active templates + 3 passive families.
     const ABILITY_FAMILY_SVG = {
-        // --- Active templates ---
-        curate:       '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M3,3 L9,3 M3,6 L9,6 M3,9 L9,9" stroke="#cde" stroke-width="1.4" stroke-linecap="round"/><path d="M8,1.5 L10,3 L8,4.5" fill="none" stroke="#8bf" stroke-width="1.2"/></svg>',
-        admit:        '<svg viewBox="0 0 12 12" width="12" height="12"><line x1="6" y1="2" x2="6" y2="10" stroke="#8f8" stroke-width="1.6" stroke-linecap="round"/><line x1="2" y1="6" x2="10" y2="6" stroke="#8f8" stroke-width="1.6" stroke-linecap="round"/></svg>',
-        bounce:       '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M3,9 Q6,1 9,9" fill="none" stroke="#6cf" stroke-width="1.5" stroke-linecap="round"/><polygon points="9,7 11,10 7,10" fill="#6cf"/></svg>',
-        boot:         '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M2,3 L8,3 L10,6 L10,10 L2,10 Z" fill="#c66" stroke="#411" stroke-width="1"/></svg>',
-        nudge:        '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M2,6 L8,6" stroke="#fb4" stroke-width="1.6" stroke-linecap="round"/><polygon points="8,3.5 11,6 8,8.5" fill="#fb4"/></svg>',
-        scoreNow:     '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9.2 3,11 3.5,7.5 1,5 4.5,4.5" fill="#fd2" stroke="#a80" stroke-width="0.6"/></svg>',
-        refresh:      '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M9,3 A4,4 0 1,0 9,9" fill="none" stroke="#6f6" stroke-width="1.4" stroke-linecap="round"/><polygon points="9,1 11,3.5 7,3.5" fill="#6f6"/></svg>',
-        gainMoney:    '<svg viewBox="0 0 12 12" width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="#da2" stroke="#840" stroke-width="0.8"/><text x="6" y="8.5" text-anchor="middle" font-size="7" font-weight="bold" fill="#840">$</text></svg>',
-        cool:         '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="6,0.5 7,4 11,4 8,6.5 9,10.5 6,8 3,10.5 4,6.5 1,4 5,4" fill="#6df" stroke="#248" stroke-width="0.6"/></svg>',
-        spike:        '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="6,1 7.5,5 12,6 7.5,7 6,11 4.5,7 0,6 4.5,5" fill="#f44" stroke="#600" stroke-width="0.6"/></svg>',
-        plant:        '<svg viewBox="0 0 12 12" width="12" height="12"><circle cx="6" cy="5" r="3" fill="#a33" stroke="#411" stroke-width="1"/><line x1="6" y1="8" x2="6" y2="11" stroke="#a33" stroke-width="1.4"/></svg>',
-        copy:         '<svg viewBox="0 0 12 12" width="12" height="12"><rect x="1" y="3" width="6" height="7" rx="1" fill="none" stroke="#caf" stroke-width="1.2"/><rect x="5" y="1" width="6" height="7" rx="1" fill="none" stroke="#caf" stroke-width="1.2"/></svg>',
-        climb:        '<svg viewBox="0 0 12 12" width="12" height="12"><path d="M2,10 L6,2 L10,10" fill="none" stroke="#4cf" stroke-width="1.5" stroke-linecap="round"/><polygon points="6,0.5 8,3.5 4,3.5" fill="#4cf"/></svg>',
+        // --- Active templates --style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;"-
+        curate:       '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🧭</span>',
+        admit:        '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">➕</span>',
+        bounce:       '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">📋</span>',
+        boot:         '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🥾</span>',
+        nudge:        '<span >💥</span>',
+        scoreNow:     '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">⭐</span>',
+        refresh:      '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🔄</span>',
+        gainMoney:    '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">💸</span>',
+        cool:         '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">❄️</span>',
+        spike:        '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🔥</span>',
+        plant:        '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">💣</span>',
+        copy:         '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🎭</span>',
+        climb:        '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">📈</span>',
         // --- Passive scoring families ---
-        linkBonus:    '<svg viewBox="0 0 12 12" width="12" height="12"><circle cx="4" cy="6" r="2.5" fill="none" stroke="#8cf" stroke-width="1.2"/><circle cx="8" cy="6" r="2.5" fill="none" stroke="#8cf" stroke-width="1.2"/><line x1="5.5" y1="6" x2="6.5" y2="6" stroke="#8cf" stroke-width="1.8"/></svg>',
-        positionBonus:'<svg viewBox="0 0 12 12" width="12" height="12"><rect x="1" y="4" width="10" height="5" rx="1" fill="none" stroke="#aaf" stroke-width="1.1"/><circle cx="2.5" cy="6.5" r="1.5" fill="#aaf"/><circle cx="9.5" cy="6.5" r="1.5" fill="#aaf"/></svg>',
-        resourceBonus:'<svg viewBox="0 0 12 12" width="12" height="12"><path d="M2,10 L6,2 L10,10 Z" fill="none" stroke="#fb4" stroke-width="1.2"/><line x1="4" y1="7" x2="8" y2="7" stroke="#fb4" stroke-width="1.1"/></svg>',
+        linkBonus:    '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🔗</span>',
+        positionBonus:'<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">📍</span>',
+        resourceBonus:'<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">📊</span>',
     };
 
     function getTimingCategory(guestId) {
