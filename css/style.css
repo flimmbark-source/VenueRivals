@@ -1808,6 +1808,58 @@ body {
 }
 
 
+/* --- Timing Badge + Ability Icon Pair --- */
+.ability-badge-pair {
+    position: absolute;
+    left: 4px;
+    bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    pointer-events: none;
+    line-height: 1;
+    z-index: 1;
+}
+
+.timing-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.7));
+}
+
+.timing-badge svg {
+    display: block;
+    width: 12px;
+    height: 12px;
+}
+
+.ability-icon-std {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+}
+
+.ability-icon-std svg {
+    display: block;
+    width: 12px;
+    height: 12px;
+}
+
+/* Dim pair when ability used */
+.ability-used .ability-badge-pair {
+    opacity: 0.3;
+    filter: grayscale(1);
+}
+
+/* Legacy fallback for any remaining ability-icon-badge references */
 .ability-icon-badge {
     position: absolute;
     left: 8px;
@@ -1823,6 +1875,82 @@ body {
 .ability-used .ability-icon-badge {
     opacity: 0.3;
     filter: grayscale(1);
+}
+
+/* --- On-Floor Timing Feedback (subtle, event-based) --- */
+
+/* Arrival: brief cyan glint on enter */
+.venue-actor[data-timing-cat="arrival"].entering::before {
+    content: '';
+    position: absolute;
+    top: -2px; left: 50%; width: 8px; height: 8px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(68,221,204,0.7) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: arrivalGlint 0.4s ease-out forwards;
+    pointer-events: none;
+    z-index: 3;
+}
+@keyframes arrivalGlint {
+    0%   { opacity: 1; transform: translateX(-50%) scale(0.5); }
+    100% { opacity: 0; transform: translateX(-50%) scale(1.8); }
+}
+
+/* Action: small magenta pulse when active (not entering/exiting) */
+.venue-actor[data-timing-cat="action"]:not(.entering):not(.exiting)::before {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 50%; width: 6px; height: 6px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(204,68,255,0.4) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: actionPulse 2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+@keyframes actionPulse {
+    0%, 100% { opacity: 0; transform: translateX(-50%) scale(0.6); }
+    50%      { opacity: 0.6; transform: translateX(-50%) scale(1.2); }
+}
+
+/* Departure: brief orange flicker/trail on exit */
+.venue-actor[data-timing-cat="departure"].exiting::before {
+    content: '';
+    position: absolute;
+    top: 50%; right: 100%; width: 10px; height: 3px;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg, transparent, rgba(255,102,51,0.6));
+    border-radius: 1px;
+    animation: departTrail 0.5s ease-out forwards;
+    pointer-events: none;
+    z-index: 2;
+}
+@keyframes departTrail {
+    0%   { opacity: 0.8; width: 10px; }
+    100% { opacity: 0; width: 20px; }
+}
+
+/* Scoring: sparkle (applied via JS class toggle during scoring) */
+.venue-actor[data-timing-cat="scoring"].scoring-active::before {
+    content: '';
+    position: absolute;
+    top: -4px; left: 50%; width: 10px; height: 10px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(255,221,34,0.8) 0%, transparent 60%);
+    border-radius: 50%;
+    animation: scoringSparkle 0.6s ease-out forwards;
+    pointer-events: none;
+    z-index: 3;
+}
+@keyframes scoringSparkle {
+    0%   { opacity: 1; transform: translateX(-50%) scale(0.3); }
+    50%  { opacity: 0.9; transform: translateX(-50%) scale(1.5); }
+    100% { opacity: 0; transform: translateX(-50%) scale(0.5); }
+}
+
+/* In heavy mode, disable floor feedback to save perf */
+.venue-scene.actor-heavy-mode .venue-actor::before {
+    display: none;
 }
 
 .guest-slot .slot-emoji {
@@ -2692,7 +2820,8 @@ body {
 /* Heat is now inside the card by default */
 
 .shop-upgrades .slot-stat,
-.shop-upgrades .ability-icon-badge {
+.shop-upgrades .ability-icon-badge,
+.shop-upgrades .ability-badge-pair {
     display: none;
 }
 
