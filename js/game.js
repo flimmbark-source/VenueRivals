@@ -38,180 +38,180 @@ const GUESTS = {
     cost: 4,
     venue: "Neutral",
     tags: ["VIP"],
-    desc: "No special move.",
+    desc: "No ability.",
     tier: "uncommon",
   },
   doorWatcher: {
     name: "Door Watcher", emoji: "👀",
-    heat: 0, money: 1, points: 1, cost: 3,
+    heat: 0, money: 0, points: 1, cost: 2,
     venue: "Neutral", tags: ["Scout"], tier: "common",
-    ability: { name: "Curate", icon: "📋", desc: "Reveal the next 2 guests and choose their order.", trigger: "flash", type: "stackChoice", value: 2 },
-    desc: "CURATE — A: Reveal the next 2 guests and choose their order.",
+    ability: { package: "curate" },
+    desc: "CURATE — Reveal the next 2 guests and choose their order.",
   },
   groupChatHost: {
     name: "Group Chat Host", emoji: "💬",
-    heat: 1, money: 0, points: 2, cost: 5,
+    heat: 2, money: 0, points: 2, cost: 6,
     venue: "Neutral", tags: ["Broker"], tier: "uncommon",
-    ability: { name: "Guest List", icon: "📋", desc: "On arrival, Reveal the next 2 guests and choose their order.", trigger: "arrival", type: "stackChoice", value: 2 },
-    desc: "GUEST LIST — When this guest enters, reveal the next 2 guests and choose their order.",
+    ability: { package: "curate" },
+    desc: "CURATE — Reveal the next 2 guests and choose their order.",
   },
   plusOnePrince: {
     name: "Plus-One Prince", emoji: "👑",
     heat: 1, money: 1, points: 1, cost: 3,
     venue: "Neutral", tags: ["VIP"], tier: "uncommon",
-    ability: { name: "Plus One", icon: "➕", desc: "On arrival, Admit the next guest immediately.", trigger: "arrival", type: "plusOne" },
-    desc: "PLUS ONE — When this guest enters, admit the next guest immediately.",
+    ability: { package: "plusOne" },
+    desc: "PLUS ONE — On arrival, admit the next guest immediately.",
   },
   nameDropper: {
     name: "Name Dropper", emoji: "🗣️",
-    heat: 1, money: 0, points: 2, cost: 7,
+    heat: 3, money: 1, points: 1, cost: 8,
     venue: "Neutral", tags: ["VIP", "Broker"], tier: "rare",
-    ability: { name: "Curate", icon: "📋", desc: "On arrival, Reveal the next 2 guests and choose their order.", trigger: "arrival", type: "stackChoice", value: 2 },
-    desc: "CURATE — When this guest enters, reveal the next 2 guests and choose their order.",
+    ability: { package: "curate" },
+    desc: "CURATE — Reveal the next 2 guests and choose their order.",
   },
   porchBuddy: {
     name: "Porch Buddy", emoji: "🪑",
     heat: 0, money: 0, points: 2, cost: 4,
     venue: "Neutral", tags: ["VIP"], tier: "common",
-    ability: { name: "Bounce", icon: "🔄", desc: "Return a guest in your house to the top of your queue.", trigger: "flash", type: "bounce", targeting: "choice" },
-    desc: "BOUNCE — A: Return a guest in your house to the top of your queue.",
+    ability: { package: "bounce" },
+    desc: "BOUNCE — Return a guest in your house to the top of your queue.",
   },
   fedUpRoommate: {
     name: "Fed-Up Roommate", emoji: "😤",
-    heat: 1, money: 2, points: 1, cost: 6,
+    heat: 2, money: 2, points: 1, cost: 7,
     venue: "Neutral", tags: ["Outlaw"], tier: "uncommon",
-    ability: { name: "Boot", icon: "🥾", desc: "Remove a guest from your house.", trigger: "flash", type: "boot", targeting: "choice" },
-    desc: "BOOT — A: Remove a guest from your house.",
+    ability: { package: "boot" },
+    desc: "BOOT — Remove a guest from your house.",
   },
   resetHost: {
     name: "Reset Host", emoji: "🧹",
-    heat: 1, money: 2, points: 0, cost: 6,
+    heat: 0, money: 3, points: 0, cost: 4,
     venue: "Neutral", tags: ["Broker"], tier: "uncommon",
-    ability: { name: "Boot", icon: "🥾", desc: "Remove a guest from your house.", trigger: "flash", type: "boot", targeting: "choice" },
-    desc: "BOOT — A: Remove a guest from your house.",
+    ability: { package: "boot" },
+    desc: "BOOT — Remove a guest from your house.",
   },
     wingMan: {
     name: "Wingman", emoji: "🤛",
-    heat: 0, money: 1, points: 1, cost: 4,
+    heat: 0, money: 1, points: 1, cost: 3,
     venue: "Neutral", tags: ["VIP"], tier: "common",
-    ability: { name: "Distract", icon: "🔄", desc: "Nudge the guest on the Left.", trigger: "flash", type: "nudge", targeting: "leftOfSelf" },
-    desc: "DISTRACT — A: Nudge the guest on the Left.",
+    ability: { package: "nudge" },
+    desc: "NUDGE — Nudge a guest.",
   },
     stagehand: {
     name: "Stagehand", emoji: "👏",
-    heat: 0, money: 2, points: 2, cost: 6,
+    heat: 1, money: 3, points: 1, cost: 6,
     venue: "Neutral", tags: ["Performer"], tier: "uncommon",
-    ability: { name: "Bump Into", icon: "🔄", desc: "Nudge a guest.", trigger: "flash", type: "nudge", targeting: "choice" },
-    desc: "BUMP INTO — A: Nudge a guest.",
+    ability: { package: "nudge" },
+    desc: "NUDGE — Nudge a guest.",
   },
     dealer: {
     name: "Dealer", emoji: "🤛",
-    heat: 0, money: 3, points: 0, cost: 8,
+    heat: 0, money: 4, points: 0, cost: 10,
     venue: "Neutral", tags: ["Outlaw"], tier: "Rare",
-    ability: { name: "Annoy", icon: "🔄", desc: "Nudge the newest guest.", trigger: "flash", type: "nudge", targeting: "newest" },
-    desc: "ANNOY — A: Nudge the newest guest.",
+    ability: { package: "nudge" },
+    desc: "NUDGE — Nudge a guest.",
   },
 
   // === VELVET ROOM ===
   mainCharacter: {
     name: "Main Character", emoji: "⭐",
-    heat: 2, money: 3, points: 3, cost: 8,
+    heat: 3, money: 4, points: 3, cost: 10,
     venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "uncommon",
-    ability: { name: "Make an Entrance", icon: "✨", desc: "On arrival, Score 2.", trigger: "arrival", type: "scoreNow", value: 2 },
-    desc: "MAKE AN ENTRANCE — On arrival, score 2.",
+    ability: { package: "bounce" },
+    desc: "BOUNCE — Return a guest in your house to the top of your queue.",
   },
   storyPoster: {
     name: "Story Poster", emoji: "📱",
-    heat: 1, money: 0, points: 1, cost: 7,
+    heat: 2, money: 0, points: 2, cost: 8,
     venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
-    ability: { name: "Score 2", icon: "⭐", desc: "Gain 2 Points.", trigger: "flash", type: "scoreNow", value: 2 },
-    desc: "SCORE 2 — A: Gain 2 Points.",
+    ability: { package: "score2" },
+    desc: "SCORE 2 — On exit, gain 2 Points.",
   },
   danceCaptain: {
     name: "Dance Captain", emoji: "💃",
-    heat: 1, money: 1, points: 2, cost: 9,
+    heat: 1, money: 1, points: 2, cost: 11,
     venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
-    ability: { name: "Refresh", icon: "🔄", desc: "Refresh another guest’s action.", trigger: "flash", type: "refreshAction" },
-    desc: "REFRESH — A: Refresh another guest’s action.",
+    ability: { package: "refresh" },
+    desc: "REFRESH — Refresh another guest's action.",
   },
   afterpartyHost: {
     name: "Afterparty Host", emoji: "🌙",
-    heat: 1, money: 0, points: 3, cost: 8,
+    heat: 2, money: 0, points: 4, cost: 7,
     venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
-    ability: { name: "Afterglow", icon: "🌅", desc: "Upon leaving, Score 2.", trigger: "departure", type: "scoreNow", value: 2 },
-    desc: "AFTERGLOW — When this guest leaves, score 2.",
+    ability: { package: "bounce" },
+    desc: "BOUNCE — Return a guest in your house to the top of your queue.",
   },
   wallflower: {
     name: "Wallflower", emoji: "🌸",
-    heat: 1, money: 3, points: 0, cost: 10,
+    heat: 2, money: 4, points: 0, cost: 11,
     venue: "Velvet Room", tags: ["VIP"], tier: "common",
-    ability: { name: "Link Bonus", icon: "🔗", desc: "At scoring, +1 Point for each adjacent guest sharing a tag.", trigger: "scoring", type: "clique", family: "linkBonus" },
-    desc: "LINK BONUS — At scoring, +1 Point for each adjacent guest sharing a tag.",
+    ability: { package: "cool1" },
+    desc: "COOL 1 — On arrival, Cool 1.",
   },
   linkUpFriend: {
     name: "Link-Up Friend", emoji: "🔗",
-    heat: 1, money: 1, points: 1, cost: 5,
+    heat: 0, money: 3, points: 0, cost: 6,
     venue: "Velvet Room", tags: ["VIP", "Broker"], tier: "uncommon",
-    ability: { name: "Link Bonus", icon: "🔗", desc: "At scoring, +1 Point for each adjacent guest sharing a tag.", trigger: "scoring", type: "clique", family: "linkBonus" },
-    desc: "LINK BONUS — At scoring, +1 Point for each adjacent guest sharing a tag.",
+    ability: { package: "plusOne" },
+    desc: "PLUS ONE — On arrival, admit the next guest immediately.",
   },
   headliner: {
     name: "Headliner", emoji: "🌟",
-    heat: 2, money: 3, points: 2, cost: 7,
+    heat: 3, money: 3, points: 2, cost: 7,
     venue: "Velvet Room", tags: ["VIP", "Performer"], tier: "rare",
-    ability: { name: "Position Bonus", icon: "📍", desc: "At scoring, +2 Points if at an edge.", trigger: "scoring", type: "positionBonus", value: 2, family: "positionBonus" },
-    desc: "POSITION BONUS — At scoring, +2 Points if at an edge.",
+    ability: { package: "refresh" },
+    desc: "REFRESH — Refresh another guest's action.",
   },
   socialClimber: {
     name: "Social Climber", emoji: "📈",
     heat: 1, money: 0, points: 2, cost: 7,
     venue: "Velvet Room", tags: ["VIP"], tier: "rare",
-    ability: { name: "Social Climber", icon: "📈", desc: "On arrival, Permanently gains +1 Point each time it enters, up to +9.", trigger: "arrival", type: "socialClimber", maxBonus: 9 },
-    desc: "SOCIAL CLIMBER — Each time this guest enters for the first time in a round, it permanently gains +1 Point, up to +9.",
+    ability: { package: "socialClimber" },
+    desc: "SOCIAL CLIMBER — On arrival, permanently gain +1 Point, up to +9.",
   },
   hypeSquad: {
     name: "Hype Squad", emoji: "🎉",
-    heat: 1, money: 1, points: 2, cost: 8,
+    heat: 0, money: 3, points: 3, cost: 9,
     venue: "Velvet Room", tags: ["Performer"], tier: "rare",
-    ability: { name: "Refresh", icon: "🔄", desc: "Refresh another guest's action.", trigger: "flash", type: "refreshAction" },
-    desc: "REFRESH — A: Refresh another guest's action.",
+    ability: { package: "refresh" },
+    desc: "REFRESH — Refresh another guest's action.",
   },
   partyPhotographer: {
     name: "Party Photographer", emoji: "📸",
-    heat: 1, money: 0, points: 1, cost: 6,
+    heat: 0, money: 2, points: 0, cost: 5,
     venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
-    ability: { name: "Score 2", icon: "⭐", desc: "Gain 2 Points.", trigger: "flash", type: "scoreNow", value: 2 },
-    desc: "SCORE 2 — A: Gain 2 Points.",
+    ability: { package: "score2" },
+    desc: "SCORE 2 — On exit, gain 2 Points.",
   },
 
   // === NIGHT MARKET ===
   windowWatcher: {
     name: "Window Watcher", emoji: "🔭",
-    heat: 0, money: 1, points: 1, cost: 4,
+    heat: 0, money: 3, points: 0, cost: 4,
     venue: "Night Market", tags: ["Scout"], tier: "common",
-    ability: { name: "Curate", icon: "🧭", desc: "Reveal the next 2 guests and choose their order.", trigger: "flash", type: "stackChoice", value: 2 },
-    desc: "CURATE — A: Reveal the next 2 guests and choose their order.",
+    ability: { package: "curate" },
+    desc: "CURATE — Reveal the next 2 guests and choose their order.",
   },
   vipWrangler: {
     name: "VIP Wrangler", emoji: "🎪",
-    heat: 1, money: 1, points: 2, cost: 7,
+    heat: 0, money: 3, points: 3, cost: 11,
     venue: "Night Market", tags: ["VIP", "Broker"], tier: "rare",
-    ability: { name: "Curate", icon: "📋", desc: "Reveal the next 2 guests and choose their order.", trigger: "flash", type: "stackChoice", value: 2 },
-    desc: "CURATE — A: Reveal the next 2 guests and choose their order.",
+    ability: { package: "curate" },
+    desc: "CURATE — Reveal the next 2 guests and choose their order.",
   },
   tabRunner: {
     name: "Tab Runner", emoji: "💸",
-    heat: 1, money: 0, points: 1, cost: 4,
+    heat: 2, money: 0, points: 0, cost: 4,
     venue: "Night Market", tags: ["Broker"], tier: "common",
-    ability: { name: "Parting Gift", icon: "💸", desc: "Upon leaving, Gain 2 Money.", trigger: "departure", type: "gainMoney", value: 2 },
-    desc: "PARTING GIFT — When this guest leaves, gain 2 Money.",
+    ability: { package: "gain2Money" },
+    desc: "GAIN 2 MONEY — On exit, gain 2 Money.",
   },
   coolOffSmoker: {
     name: "Cool-Off Smoker", emoji: "🚬",
-    heat: 0, money: 1, points: 1, cost: 4,
+    heat: 0, money: 2, points: 0, cost: 4,
     venue: "Night Market", tags: ["VIP"], tier: "common",
-    ability: { name: "Cools Off", icon: "❄️", desc: "Upon leaving, Cool 1.", trigger: "departure", type: "coolHeat", value: 1 },
-    desc: "COOLS OFF — When this guest leaves, cool 1.",
+    ability: { package: "cool1" },
+    desc: "COOL 1 — On arrival, Cool 1.",
   },
   bottlePopper: {
     name: "Bottle Popper", emoji: "🥂",
@@ -221,89 +221,89 @@ const GUESTS = {
   },
   bigPlanner: {
     name: "Big Planner", emoji: "📋",
-    heat: 1, money: 1, points: 2, cost: 6,
+    heat: 1, money: 2, points: 2, cost: 7,
     venue: "Night Market", tags: ["Scout", "Broker"], tier: "uncommon",
-    ability: { name: "Resource Bonus", icon: "📊", desc: "At scoring, +4 Points if your house is full.", trigger: "scoring", type: "packedHouse", value: 4, family: "resourceBonus" },
-    desc: "RESOURCE BONUS — At scoring, +4 Points if your house is full.",
+    ability: { package: "curate" },
+    desc: "CURATE — Reveal the next 2 guests and choose their order.",
   },
   highRoller: {
     name: "High Roller", emoji: "🎰",
-    heat: 0, money: 1, points: 2, cost: 5,
+    heat: 0, money: 1, points: 3, cost: 7,
     venue: "Night Market", tags: ["Broker"], tier: "uncommon",
-    ability: { name: "Resource Bonus", icon: "📊", desc: "At scoring, +1 Point for each 2 Money you have.", trigger: "scoring", type: "highRoller", family: "resourceBonus" },
-    desc: "RESOURCE BONUS — At scoring, +1 Point for each 2 Money you have.",
+    ability: { package: "gain2Money" },
+    desc: "GAIN 2 MONEY — On exit, gain 2 Money.",
   },
   socialButterfly: {
     name: "Social Butterfly", emoji: "🦋",
     heat: 1, money: 1, points: 2, cost: 6,
     venue: "Night Market", tags: ["Performer"], tier: "uncommon",
-    ability: { name: "Impersonator", icon: "🎭", desc: "On arrival, Copy the action ability of the guest to the left.", trigger: "arrival", type: "impersonator" },
-    desc: "IMPERSONATOR — When this guest enters, copy the action ability of the guest to the left this round.",
+    ability: { package: "impersonator" },
+    desc: "IMPERSONATOR — On arrival, copy the action ability of the guest to the left this round.",
   },
   magnetGuest: {
     name: "Magnet Guest", emoji: "🧲",
-    heat: 1, money: 2, points: 2, cost: 8,
+    heat: 2, money: 2, points: 3, cost: 10,
     venue: "Night Market", tags: ["VIP"], tier: "rare",
-    ability: { name: "Plus One", icon: "➕", desc: "On arrival, Admit the next guest immediately.", trigger: "arrival", type: "plusOne" },
-    desc: "PLUS ONE — When this guest enters, admit the next guest immediately.",
+    ability: { package: "plusOne" },
+    desc: "PLUS ONE — On arrival, admit the next guest immediately.",
   },
 
   // === BACK ALLEY ===
   addressLeaker: {
     name: "Address Leaker", emoji: "📍",
-    heat: 1, money: 0, points: 2, cost: 5,
+    heat: 1, money: 0, points: 3, cost: 5,
     venue: "Back Alley", tags: ["Outlaw"], tier: "common",
-    ability: { name: "Crash the Party", icon: "💣", desc: "On arrival, Plant a Gatecrasher in your opponent’s queue.", trigger: "arrival", type: "queueGatecrasher" },
-    desc: "CRASH THE PARTY — When this guest enters, plant a Gatecrasher in your opponent’s queue.",
+    ability: { package: "crashTheParty" },
+    desc: "CRASH THE PARTY — Plant a Gatecrasher in your opponent's queue.",
   },
   messyDrunk: {
     name: "Messy Drunk", emoji: "🍺",
-    heat: 2, money: 1, points: 2, cost: 6,
+    heat: 3, money: 2, points: 1, cost: 8,
     venue: "Back Alley", tags: ["Outlaw"], tier: "common",
-    ability: { name: "Leaves a Mess", icon: "💥", desc: "Upon leaving, Plant a Gatecrasher in your opponent’s queue.", trigger: "departure", type: "queueGatecrasher" },
-    desc: "LEAVES A MESS — When this guest leaves, plant a Gatecrasher in your opponent’s queue.",
+    ability: { package: "crashTheParty" },
+    desc: "CRASH THE PARTY — Plant a Gatecrasher in your opponent's queue.",
   },
   dramaStarter: {
     name: "Drama Starter", emoji: "🎭",
-    heat: 2, money: 0, points: 3, cost: 5,
+    heat: 3, money: 0, points: 3, cost: 5,
     venue: "Back Alley", tags: ["Outlaw"], tier: "common",
-    ability: { name: "Drama Exit", icon: "🔥", desc: "Upon leaving, Spike 1.", trigger: "departure", type: "addOpponentHeat", value: 1 },
-    desc: "DRAMA EXIT — When this guest leaves, spike 1.",
+    ability: { package: "spike1" },
+    desc: "SPIKE 1 — On exit, Spike 1.",
   },
   chaosChaser: {
     name: "Chaos Chaser", emoji: "🌀",
-    heat: 2, money: 2, points: 0, cost: 6,
+    heat: 2, money: 3, points: 0, cost: 8,
     venue: "Back Alley", tags: ["Performer", "Outlaw"], tier: "uncommon",
-    ability: { name: "Resource Bonus", icon: "📊", desc: "At scoring, +1 Point for each Heat in your house.", trigger: "scoring", type: "chaosChaser", family: "resourceBonus" },
-    desc: "RESOURCE BONUS — At scoring, +1 Point for each Heat in your house.",
+    ability: { package: "spike1" },
+    desc: "SPIKE 1 — On exit, Spike 1.",
   },
   lateLegend: {
     name: "Late Legend", emoji: "🕐",
-    heat: 1, money: 2, points: 0, cost: 6,
+    heat: 3, money: 1, points: 1, cost: 8,
     venue: "Back Alley", tags: ["VIP", "Outlaw"], tier: "uncommon",
-    ability: { name: "Position Bonus", icon: "📍", desc: "At scoring, +2 Points if at an edge.", trigger: "scoring", type: "positionBonus", value: 2, family: "positionBonus" },
-    desc: "POSITION BONUS — At scoring, +2 Points if at an edge.",
+    ability: { package: "nudge" },
+    desc: "NUDGE — Nudge a guest.",
   },
   rumorQueen: {
     name: "Rumor Queen", emoji: "👄",
-    heat: 1, money: 1, points: 1, cost: 7,
+    heat: 2, money: 0, points: 2, cost: 9,
     venue: "Back Alley", tags: ["Outlaw", "Broker"], tier: "rare",
-    ability: { name: "Curate", icon: "📋", desc: "Reveal the next 2 guests and choose their order.", trigger: "flash", type: "stackChoice", value: 2 },
-    desc: "CURATE — A: Reveal the next 2 guests and choose their order.",
+    ability: { package: "curate" },
+    desc: "CURATE — Reveal the next 2 guests and choose their order.",
   },
   counselor: {
     name: "Counselor", emoji: "🧘",
-    heat: 0, money: 0, points: 2, cost: 7,
+    heat: 0, money: 0, points: 3, cost: 8,
     venue: "Back Alley", tags: ["Scout"], tier: "rare",
-    ability: { name: "Cool 1", icon: "❄️", desc: "Cool 1.", trigger: "flash", type: "coolHeat", value: 1 },
-    desc: "COOL 1 — A: Cool 1.",
+    ability: { package: "cool1" },
+    desc: "COOL 1 — On arrival, Cool 1.",
   },
   cupid: {
     name: "Cupid", emoji: "💘",
-    heat: 1, money: 0, points: 2, cost: 8,
+    heat: 1, money: 0, points: 3, cost: 9,
     venue: "Back Alley", tags: ["Performer"], tier: "rare",
-    ability: { name: "Boot", icon: "🥾", desc: "Remove a guest from your house.", trigger: "flash", type: "boot", targeting: "choice" },
-    desc: "BOOT — A: Remove a guest from your house.",
+    ability: { package: "boot" },
+    desc: "BOOT — Remove a guest from your house.",
   },
 
   // === TROUBLE ===
@@ -330,58 +330,26 @@ const GUESTS = {
     tier: "shop", isShopItem: true,
   },
 };
-
-  // === TIMING CATEGORIES ===
-  // Maps each guest to its timing category for badge display.
-  // Derived from ability.trigger where available; no-ability guests have 'none'.
-  const TIMING_CATEGORIES = {
-    // Arrival
-    groupChatHost: 'arrival', plusOnePrince: 'arrival', nameDropper: 'arrival',
-    mainCharacter: 'arrival', socialClimber: 'arrival', socialButterfly: 'arrival',
-    magnetGuest: 'arrival', addressLeaker: 'arrival',
-    // Action / Flash
-    doorWatcher: 'action', porchBuddy: 'action', fedUpRoommate: 'action',
-    resetHost: 'action', wingMan: 'action', stagehand: 'action',
-    dealer: 'action', storyPoster: 'action', danceCaptain: 'action',
-    hypeSquad: 'action', partyPhotographer: 'action', windowWatcher: 'action',
-    vipWrangler: 'action', rumorQueen: 'action', counselor: 'action', cupid: 'action',
-    // Departure
-    afterpartyHost: 'departure', tabRunner: 'departure', coolOffSmoker: 'departure',
-    messyDrunk: 'departure', dramaStarter: 'departure',
-    // Scoring
-    wallflower: 'scoring', linkUpFriend: 'scoring', headliner: 'scoring',
-    bigPlanner: 'scoring', highRoller: 'scoring', chaosChaser: 'scoring',
-    lateLegend: 'scoring',
-    // No ability
-    familiarFace: 'none', bottleBringer: 'none', loudFriend: 'none',
-    bigSpender: 'none', bottlePopper: 'none', gatecrasher: 'none',
+  const ABILITY_PACKAGES = {
+    curate: { name: "CURATE", iconKey: "curate", trigger: "flash", isActive: true, rulesText: "Reveal the next 2 guests and choose their order.", effectType: "stackChoice", value: 2 },
+    bounce: { name: "BOUNCE", iconKey: "bounce", trigger: "flash", isActive: true, rulesText: "Return a guest in your house to the top of your queue.", effectType: "bounce", targeting: "choice" },
+    boot: { name: "BOOT", iconKey: "boot", trigger: "flash", isActive: true, rulesText: "Remove a guest from your house.", effectType: "boot", targeting: "choice" },
+    nudge: { name: "NUDGE", iconKey: "nudge", trigger: "flash", isActive: true, rulesText: "Nudge a guest.", effectType: "nudge", targeting: "choice" },
+    refresh: { name: "REFRESH", iconKey: "refresh", trigger: "flash", isActive: true, rulesText: "Refresh another guest's action.", effectType: "refreshAction" },
+    crashTheParty: { name: "CRASH THE PARTY", iconKey: "crashTheParty", trigger: "flash", isActive: true, rulesText: "Plant a Gatecrasher in your opponent’s queue.", effectType: "queueGatecrasher" },
+    plusOne: { name: "PLUS ONE", iconKey: "plusOne", trigger: "arrival", isActive: false, rulesText: "On arrival, admit the next guest immediately.", effectType: "plusOne" },
+    cool1: { name: "COOL 1", iconKey: "cool1", trigger: "arrival", isActive: false, rulesText: "On arrival, Cool 1.", effectType: "coolHeat", value: 1 },
+    impersonator: { name: "IMPERSONATOR", iconKey: "impersonator", trigger: "arrival", isActive: false, rulesText: "On arrival, copy the action ability of the guest to the left this round.", effectType: "impersonator" },
+    socialClimber: { name: "SOCIAL CLIMBER", iconKey: "socialClimber", trigger: "arrival", isActive: false, rulesText: "On arrival, permanently gain +1 Point, up to +9.", effectType: "socialClimber", maxBonus: 9 },
+    score2: { name: "SCORE 2", iconKey: "score2", trigger: "departure", isActive: false, rulesText: "On exit, gain 2 Points.", effectType: "scoreNow", value: 2 },
+    gain2Money: { name: "GAIN 2 MONEY", iconKey: "gain2Money", trigger: "departure", isActive: false, rulesText: "On exit, gain 2 Money.", effectType: "gainMoney", value: 2 },
+    spike1: { name: "SPIKE 1", iconKey: "spike1", trigger: "departure", isActive: false, rulesText: "On exit, Spike 1.", effectType: "addOpponentHeat", value: 1 },
   };
 
-  // === ABILITY ICON FAMILIES ===
-  // Maps ability type -> standardized icon key so repeated mechanics share one icon.
-  // Second-pass consolidation: fewer active templates, 3 passive families.
-  const ABILITY_ICON_MAP = {
-    // --- Hard-standardized active templates ---
-    stackChoice:        'curate',
-    plusOne:             'admit',
-    bounce:             'bounce',
-    boot:               'boot',
-    nudge:              'nudge',
-    scoreNow:           'scoreNow',
-    refreshAction:      'refresh',
-    gainMoney:          'gainMoney',
-    coolHeat:           'cool',
-    addOpponentHeat:    'spike',
-    queueGatecrasher:   'plant',
-    impersonator:       'copy',
-    socialClimber:      'climb',
-    // --- Passive scoring families ---
-    clique:             'linkBonus',
-    positionBonus:      'positionBonus',
-    packedHouse:        'resourceBonus',
-    highRoller:         'resourceBonus',
-    chaosChaser:        'resourceBonus',
-  };
+  function getGuestAbility(guest) {
+    if (!guest?.ability?.package) return null;
+    return ABILITY_PACKAGES[guest.ability.package] || null;
+  }
 
   const VENUES = {
     velvetRoom: {
@@ -1151,17 +1119,19 @@ const GUESTS = {
   }
 
   function applyAbilityEffects(player, opponent, guest, result, sourceIndex, selectedGuest) {
+    const baseAbility = getGuestAbility(guest);
+    if (!baseAbility) return;
     const abilityDef = (typeof sourceIndex === "number" && sourceIndex >= 0 &&
       player.house[sourceIndex] && typeof player.house[sourceIndex] !== "string" &&
       player.house[sourceIndex].copiedAbility)
-      ? { ...guest, ability: player.house[sourceIndex].copiedAbility }
-      : guest;
-    const ability = abilityDef.ability;
+      ? { ...baseAbility, ...player.house[sourceIndex].copiedAbility }
+      : baseAbility;
+    const ability = abilityDef;
 
     // Delegate simple shared effects first
-    if (applySimpleEffect(player, opponent, ability.type, ability.value, result, "")) return;
+    if (applySimpleEffect(player, opponent, ability.effectType, ability.value, result, "")) return;
 
-    switch (ability.type) {
+    switch (ability.effectType) {
       case "stackChoice":
         applyPeekEffect(player.roundDeck, result, "");
         break;
@@ -1306,26 +1276,41 @@ const GUESTS = {
         break;
       }
       case "refreshAction": {
+        const isRefreshableTarget = (entry, index) => {
+          if (index === sourceIndex || !entry || typeof entry === "string" || !entry.abilityUsed) return false;
+          if (entry.copiedAbility?.isActive) return true;
+          const targetGuest = GUESTS[getGuestId(entry)];
+          return !!getGuestAbility(targetGuest)?.isActive;
+        };
+
+        const refreshableTargets = player.house
+          .map((entry, index) => ({ entry, index }))
+          .filter(({ entry, index }) => isRefreshableTarget(entry, index));
+
         const targetIdx = resolveChoiceTarget(player, selectedGuest);
         if (targetIdx < 0) {
-          const refreshable = player.house.filter((e, i) => {
-            if (typeof e === "string" || !e.abilityUsed) return false;
-            const g = GUESTS[getGuestId(e)];
-            return g?.ability?.trigger === "flash";
-          });
-          if (refreshable.length === 0) {
+          if (refreshableTargets.length === 0) {
             result.effects.push("no guest to refresh");
           } else {
             result.needsTargetChoice = true;
-            result.validTargets = player.house.map((e, i) => ({ index: i, guestId: getGuestId(e) }));
+            result.validTargets = refreshableTargets.map(({ entry, index }) => ({ index, guestId: getGuestId(entry) }));
           }
           break;
         }
-        const targetEntry = player.house[targetIdx];
-        if (targetEntry && typeof targetEntry !== "string") {
-          targetEntry.abilityUsed = false;
-          result.effects.push(`refreshed ${GUESTS[getGuestId(targetEntry)].name}`);
+
+        if (targetIdx === sourceIndex) {
+          result.effects.push("cannot refresh self");
+          break;
         }
+
+        const targetEntry = player.house[targetIdx];
+        if (!isRefreshableTarget(targetEntry, targetIdx)) {
+          result.effects.push("target cannot be refreshed");
+          break;
+        }
+
+        targetEntry.abilityUsed = false;
+        result.effects.push(`refreshed ${GUESTS[getGuestId(targetEntry)].name}`);
         break;
       }
     }
@@ -1343,10 +1328,11 @@ const GUESTS = {
     const departingInstanceId =
       departingGuest && typeof departingGuest === "object" ? departingGuest.instanceId : null;
     const guest = GUESTS[departingGuestId];
-    if (!guest?.ability || guest.ability.trigger !== "departure") return;
+    const ability = getGuestAbility(guest);
+    if (!ability || ability.trigger !== "departure") return;
     const prefix = `${guest.name} departure: `;
     const pingsBefore = result.pings ? result.pings.length : 0;
-    applySimpleEffect(player, opponent, guest.ability.type, guest.ability.value, result, prefix);
+    applySimpleEffect(player, opponent, ability.effectType, ability.value, result, prefix);
     // Tag any new pings with the departing guest ID
     if (result.pings) {
       for (let i = pingsBefore; i < result.pings.length; i++) {
@@ -1363,14 +1349,16 @@ const GUESTS = {
   // --- Arrival effects: triggered at draw time (when guest appears at the door) ---
   function handleArrivalEffects(player, opponent, guestId, venue, result) {
     const guest = GUESTS[guestId];
-    if (!guest?.ability || guest.ability.trigger !== "arrival") return;
+    const ability = getGuestAbility(guest);
+    if (!ability || ability.trigger !== "arrival") return;
 
     if (!result.pings) result.pings = [];
-    switch (guest.ability.type) {
+    if (applySimpleEffect(player, opponent, ability.effectType, ability.value, result, '')) return;
+    switch (ability.effectType) {
       case "scoreNow":
-        player.roundPoints += guest.ability.value;
-        result.effects.push(`scored ${guest.ability.value} points on arrival`);
-        result.pings.push({ type: 'points', value: guest.ability.value });
+        player.roundPoints += ability.value;
+        result.effects.push(`scored ${ability.value} points on arrival`);
+        result.pings.push({ type: 'points', value: ability.value });
         return;
       case "queueGatecrasher":
         if (opponent) {
@@ -1389,7 +1377,7 @@ const GUESTS = {
         // Guest is at the door, not in house yet. Store pending bonus
         // to be applied when the guest is admitted.
         player.arrivingBonusPoints = (player.arrivingBonusPoints || 0) + 1;
-        const max = guest.ability.maxBonus || 9;
+        const max = ability.maxBonus || 9;
         if (player.arrivingBonusPoints > max) player.arrivingBonusPoints = max;
         result.effects.push(`social climber: +${player.arrivingBonusPoints} permanent points`);
         break;
@@ -1398,9 +1386,10 @@ const GUESTS = {
         // Guest is at the door. Left neighbor will be house[0] (current newest).
         if (player.house.length > 0) {
           const leftGuest = GUESTS[getGuestId(player.house[0])];
-          if (leftGuest?.ability && leftGuest.ability.trigger === "flash") {
-            player.arrivingCopiedAbility = { ...leftGuest.ability };
-            result.effects.push(`copied ${leftGuest.ability.name} from ${leftGuest.name}`);
+          const copiedAbility = getGuestAbility(leftGuest);
+          if (copiedAbility?.isActive) {
+            player.arrivingCopiedAbility = { ...copiedAbility };
+            result.effects.push(`copied ${copiedAbility.name} from ${leftGuest.name}`);
           } else {
             result.effects.push("no action ability to copy");
           }
@@ -1414,63 +1403,7 @@ const GUESTS = {
 
   // --- Scoring bonuses: evaluated at end of round ---
   function getScoringBonusPingsForEntry(player, venue, index) {
-    const entry = player.house[index];
-    if (!entry) return [];
-    const guestId = getGuestId(entry);
-    const guest = GUESTS[guestId];
-    if (!guest?.ability || guest.ability.trigger !== "scoring") return [];
-
-    let points = 0;
-    let money = 0;
-
-    switch (guest.ability.type) {
-      case "clique": {
-        // Link Bonus: +1 per adjacent guest sharing a tag
-        const myTags = guest.tags || [];
-        let bonus = 0;
-        if (index > 0) {
-          const neighbor = GUESTS[getGuestId(player.house[index - 1])];
-          if (neighbor && myTags.some((t) => (neighbor.tags || []).includes(t))) bonus++;
-        }
-        if (index < player.house.length - 1) {
-          const neighbor = GUESTS[getGuestId(player.house[index + 1])];
-          if (neighbor && myTags.some((t) => (neighbor.tags || []).includes(t))) bonus++;
-        }
-        points += bonus;
-        break;
-      }
-      case "positionBonus": {
-        // Position Bonus: +N if at either end of the house
-        if (index === 0 || index === player.house.length - 1) {
-          points += (guest.ability.value || 2);
-        }
-        break;
-      }
-      case "packedHouse": {
-        // Resource Bonus: +N if house is full
-        const capacity = getHouseCapacity(venue, player);
-        if (player.house.length >= capacity && capacity > 0) {
-          points += (guest.ability.value || 4);
-        }
-        break;
-      }
-      case "highRoller": {
-        // Resource Bonus: +1 per 2 Money
-        const totalMoney = player.roundMoney + player.guestMoney + player.money;
-        points += Math.floor(totalMoney / 2);
-        break;
-      }
-      case "chaosChaser": {
-        // Resource Bonus: +1 per Heat
-        points += player.heat;
-        break;
-      }
-    }
-
-    const pings = [];
-    if (points > 0) pings.push({ type: "points", value: points });
-    if (money > 0) pings.push({ type: "money", value: money });
-    return pings;
+    return [];
   }
 
   function getRoundScoringBonusEvents(player, venue) {
@@ -1532,7 +1465,7 @@ const GUESTS = {
       const guest = GUESTS[guestId];
       // Allow flash trigger OR copiedAbility
       const hasCopied = entry.copiedAbility;
-      if (!hasCopied && (!guest?.ability || guest.ability.trigger !== "flash")) {
+      if (!hasCopied && !getGuestAbility(guest)?.isActive) {
         return null;
       }
       if (entry.abilityUsed) {
@@ -1541,7 +1474,7 @@ const GUESTS = {
 
       const result = {
         activated: guest.name,
-        ability: hasCopied || guest.ability,
+        ability: hasCopied || getGuestAbility(guest),
         effects: [],
         pushedOut: [],
         pendingOut: null,
@@ -1568,13 +1501,14 @@ const GUESTS = {
 
     if (!player.arrivingGuest) return null;
     const guest = GUESTS[player.arrivingGuest];
-    if (!guest.ability || guest.ability.trigger !== "flash") return null;
+    const arrivingAbility = getGuestAbility(guest);
+    if (!arrivingAbility?.isActive) return null;
 
     if (player.arrivingAbilityUsed) return null;
 
     const result = {
       activated: guest.name,
-      ability: guest.ability,
+      ability: arrivingAbility,
       effects: [],
       pushedOut: [],
       pendingOut: null,
@@ -1771,8 +1705,8 @@ const GUESTS = {
     GUESTS,
     VENUES,
     GUEST_LISTS,
-    TIMING_CATEGORIES,
-    ABILITY_ICON_MAP,
+    ABILITY_PACKAGES,
+    getGuestAbility,
     DECKS,
     TAGS,
     POINT_TARGET: DEFAULT_POINT_TARGET,
