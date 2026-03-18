@@ -118,3 +118,31 @@ describe('no scoring families remain', () => {
     expect(events).toEqual([]);
   });
 });
+
+
+describe('ability package roster differentiation', () => {
+  test('guests sharing a package have distinct stat+cost profiles', () => {
+    const grouped = {};
+
+    Object.entries(Game.GUESTS).forEach(([guestId, guest]) => {
+      const pkg = guest?.ability?.package;
+      if (!pkg) return;
+      grouped[pkg] = grouped[pkg] || [];
+      grouped[pkg].push({
+        guestId,
+        cost: guest.cost,
+        profile: `${guest.heat}/${guest.money}/${guest.points}/${guest.cost}`,
+      });
+    });
+
+    Object.values(grouped)
+      .filter((entries) => entries.length > 1)
+      .forEach((entries) => {
+        const costs = new Set(entries.map((entry) => entry.cost));
+        const profiles = new Set(entries.map((entry) => entry.profile));
+
+        expect(costs.size).toBe(entries.length);
+        expect(profiles.size).toBe(entries.length);
+      });
+  });
+});

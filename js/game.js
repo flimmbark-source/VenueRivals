@@ -64,7 +64,7 @@ const GUESTS = {
   },
   nameDropper: {
     name: "Name Dropper", emoji: "🗣️",
-    heat: 1, money: 0, points: 2, cost: 7,
+    heat: 2, money: 1, points: 1, cost: 7,
     venue: "Neutral", tags: ["VIP", "Broker"], tier: "rare",
     ability: { package: "curate" },
     desc: "CURATE — Reveal the next 2 guests and choose their order.",
@@ -85,7 +85,7 @@ const GUESTS = {
   },
   resetHost: {
     name: "Reset Host", emoji: "🧹",
-    heat: 1, money: 2, points: 0, cost: 6,
+    heat: 1, money: 2, points: 0, cost: 5,
     venue: "Neutral", tags: ["Broker"], tier: "uncommon",
     ability: { package: "boot" },
     desc: "BOOT — Remove a guest from your house.",
@@ -136,7 +136,7 @@ const GUESTS = {
   },
   afterpartyHost: {
     name: "Afterparty Host", emoji: "🌙",
-    heat: 1, money: 0, points: 3, cost: 8,
+    heat: 1, money: 0, points: 3, cost: 7,
     venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
     ability: { package: "bounce" },
     desc: "BOUNCE — Return a guest in your house to the top of your queue.",
@@ -150,7 +150,7 @@ const GUESTS = {
   },
   linkUpFriend: {
     name: "Link-Up Friend", emoji: "🔗",
-    heat: 1, money: 1, points: 1, cost: 5,
+    heat: 0, money: 2, points: 1, cost: 5,
     venue: "Velvet Room", tags: ["VIP", "Broker"], tier: "uncommon",
     ability: { package: "plusOne" },
     desc: "PLUS ONE — On arrival, admit the next guest immediately.",
@@ -171,14 +171,14 @@ const GUESTS = {
   },
   hypeSquad: {
     name: "Hype Squad", emoji: "🎉",
-    heat: 1, money: 1, points: 2, cost: 8,
+    heat: 0, money: 2, points: 2, cost: 8,
     venue: "Velvet Room", tags: ["Performer"], tier: "rare",
     ability: { package: "refresh" },
     desc: "REFRESH — Refresh another guest's action.",
   },
   partyPhotographer: {
     name: "Party Photographer", emoji: "📸",
-    heat: 1, money: 0, points: 1, cost: 6,
+    heat: 0, money: 1, points: 1, cost: 6,
     venue: "Velvet Room", tags: ["Performer"], tier: "uncommon",
     ability: { package: "score2" },
     desc: "SCORE 2 — On exit, gain 2 Points.",
@@ -187,14 +187,14 @@ const GUESTS = {
   // === NIGHT MARKET ===
   windowWatcher: {
     name: "Window Watcher", emoji: "🔭",
-    heat: 0, money: 1, points: 1, cost: 4,
+    heat: 0, money: 2, points: 0, cost: 4,
     venue: "Night Market", tags: ["Scout"], tier: "common",
     ability: { package: "curate" },
     desc: "CURATE — Reveal the next 2 guests and choose their order.",
   },
   vipWrangler: {
     name: "VIP Wrangler", emoji: "🎪",
-    heat: 1, money: 1, points: 2, cost: 7,
+    heat: 0, money: 2, points: 2, cost: 9,
     venue: "Night Market", tags: ["VIP", "Broker"], tier: "rare",
     ability: { package: "curate" },
     desc: "CURATE — Reveal the next 2 guests and choose their order.",
@@ -279,14 +279,14 @@ const GUESTS = {
   },
   lateLegend: {
     name: "Late Legend", emoji: "🕐",
-    heat: 1, money: 2, points: 0, cost: 6,
+    heat: 2, money: 1, points: 1, cost: 7,
     venue: "Back Alley", tags: ["VIP", "Outlaw"], tier: "uncommon",
     ability: { package: "nudge" },
     desc: "NUDGE — Nudge a guest.",
   },
   rumorQueen: {
     name: "Rumor Queen", emoji: "👄",
-    heat: 1, money: 1, points: 1, cost: 7,
+    heat: 1, money: 1, points: 1, cost: 8,
     venue: "Back Alley", tags: ["Outlaw", "Broker"], tier: "rare",
     ability: { package: "curate" },
     desc: "CURATE — Reveal the next 2 guests and choose their order.",
