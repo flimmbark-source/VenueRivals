@@ -1609,7 +1609,7 @@
         }
         if (!slot) return Promise.resolve();
         // Trigger scoring sparkle on floor actor
-        if (scoringBonus.guestId && getTimingCategory(scoringBonus.guestId) === 'scoring') {
+        if (scoringBonus.guestId) {
             triggerFloorScoringSparkle(who, scoringBonus.guestId);
         }
         const abilityIconGhost = scoringBonus.guestId ? Game.GUESTS[scoringBonus.guestId]?.ability?.icon : null;
@@ -1660,65 +1660,28 @@
         }
     }
 
-    // === Timing Badge SVG Icons (shape-first, readable at small size) ===
-    const TIMING_BADGE_SVG = {
-        arrival:   '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="3,1 10,6 3,11" fill="#44ddcc" stroke="#1a3a3a" stroke-width="1.2"/></svg>',
-        action:    '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="6,1 11,6 6,11 1,6" fill="#cc44ff" stroke="#2a1a3a" stroke-width="1.2"/></svg>',
-        departure: '<svg viewBox="0 0 12 12" width="12" height="12"><polygon points="9,1 2,6 9,11" fill="#ff6633" stroke="#3a1a1a" stroke-width="1.2"/></svg>',
-        scoring:   '<svg viewBox="0 0 12 12" width="12" height="12"><text x="6" y="10" text-anchor="middle" font-size="11">🎉</text></svg>',
+    const ABILITY_PACKAGE_SVG = {
+        curate: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🧭</span>',
+        plusOne: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">➕</span>',
+        bounce: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">📋</span>',
+        boot: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🥾</span>',
+        nudge: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">💥</span>',
+        refresh: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🔄</span>',
+        crashTheParty: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">💣</span>',
+        cool1: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">❄️</span>',
+        impersonator: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🎭</span>',
+        socialClimber: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">📈</span>',
+        score2: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">⭐</span>',
+        gain2Money: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">💸</span>',
+        spike1: '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🔥</span>',
     };
 
-    // === Standardized Ability Family Icons (pixel-art style SVGs) ===
-    // Second-pass: 13 active templates + 3 passive families.
-    const ABILITY_FAMILY_SVG = {
-        // --- Active templates --style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;"-
-        curate:       '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🧭</span>',
-        admit:        '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">➕</span>',
-        bounce:       '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">📋</span>',
-        boot:         '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🥾</span>',
-        nudge:        '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">💥</span>',
-        scoreNow:     '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">⭐</span>',
-        refresh:      '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🔄</span>',
-        gainMoney:    '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">💸</span>',
-        cool:         '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">❄️</span>',
-        spike:        '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🔥</span>',
-        plant:        '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">💣</span>',
-        copy:         '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🎭</span>',
-        climb:        '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">📈</span>',
-        // --- Passive scoring families ---
-        linkBonus:    '<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">🔗</span>',
-        positionBonus:'<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">📍</span>',
-        resourceBonus:'<span style="font-size:10px; line-height:1; display:inline-block; width:12px; text-align:center;">📊</span>',
-    };
-
-    function getTimingCategory(guestId) {
-        return Game.TIMING_CATEGORIES[guestId] || 'none';
-    }
-
-    function getAbilityIconKey(guest) {
-        if (!guest.ability) return null;
-        return Game.ABILITY_ICON_MAP[guest.ability.type] || null;
-    }
-
-    function renderTimingBadge(guestId) {
-        const cat = getTimingCategory(guestId);
-        if (cat === 'none') return '';
-        const svg = TIMING_BADGE_SVG[cat] || '';
-        return `<span class="timing-badge timing-${cat}" aria-label="${cat}" title="${cat}">${svg}</span>`;
-    }
-
-    function renderStandardAbilityIcon(guest) {
-        if (!guest.ability) return '';
-        const key = getAbilityIconKey(guest);
-        if (!key) return '';
-        const svg = ABILITY_FAMILY_SVG[key] || '';
+    function renderAbilityBadge(guest) {
+        const ability = Game.getGuestAbility(guest);
+        if (!ability) return '';
+        const svg = ABILITY_PACKAGE_SVG[guest.ability.package] || '';
         if (!svg) return '';
-        return `<span class="ability-icon-std" aria-label="${escapeHtml(guest.ability.name || 'Ability')}" title="${escapeHtml(guest.ability.name || 'Ability')}">${svg}</span>`;
-    }
-
-    function renderAbilityBadge(guest, guestId) {
-        if (!guest.ability) return '';
-        return `<span class="ability-badge-pair">${renderTimingBadge(guestId)}${renderStandardAbilityIcon(guest)}</span>`;
+        return `<span class="ability-icon-std" aria-label="${escapeHtml(ability.name)}" title="${escapeHtml(ability.name)}">${svg}</span>`;
     }
 
 
@@ -1947,9 +1910,7 @@
                 const target = pickBehaviorTarget(who, sceneBounds);
                 const spawn = entryDoor;
                 const el = document.createElement('div');
-                const timCat = getTimingCategory(guestId);
                 el.className = 'venue-actor entering';
-                if (timCat !== 'none') el.dataset.timingCat = timCat;
                 el.innerHTML = getActorHtml(guestId);
                 el.title = `${guest.name} • entering`;
                 layer.appendChild(el);
@@ -2008,9 +1969,7 @@
 
                 if (!actor) {
                     const el = document.createElement('div');
-                    const timCat = getTimingCategory(guestId);
                     el.className = 'venue-actor entering';
-                    if (timCat !== 'none') el.dataset.timingCat = timCat;
                     el.innerHTML = getActorHtml(guestId);
                     el.title = `${guest.name} • arriving`;
                     layer.appendChild(el);
@@ -2397,12 +2356,12 @@
         if (animate) el.classList.add('entering');
         const guestVisualHtml = guest.isShopItem
             ? `<span class="slot-emoji" aria-label="${escapeHtml(guest.name)}">${guest.emoji}</span>`
-            : `<button type="button" class="slot-emoji slot-sprite-btn${guest.ability ? ' has-ability' : ''}" aria-label="${escapeHtml(guest.name)} sprite" tabindex="-1">${getGuestCardSpriteHtml(guestId)}</button>`;
+            : `<button type="button" class="slot-emoji slot-sprite-btn${Game.getGuestAbility(guest)?.isActive ? ' has-ability' : ''}" aria-label="${escapeHtml(guest.name)} sprite" tabindex="-1">${getGuestCardSpriteHtml(guestId)}</button>`;
         el.innerHTML = `
             <span class="slot-stat slot-heat">${guest.heat}</span>
             ${guestVisualHtml}
             <span class="slot-stat slot-money">${guest.money}</span>
-            ${renderAbilityBadge(guest, guestId)}
+            ${renderAbilityBadge(guest)}
             <span class="slot-stat slot-points">${guest.points}</span>
         `;
         el.title = `${guest.name} - ${guest.desc}`;
@@ -2872,8 +2831,9 @@
         if (!entry || typeof entry === 'string') return null;
         if (entry.copiedAbility) return entry.copiedAbility;
         const guest = Game.GUESTS[entry.guestId];
-        if (!guest?.ability || guest.ability.trigger !== 'flash') return null;
-        return guest.ability;
+        const ability = Game.getGuestAbility(guest);
+        if (!ability?.isActive) return null;
+        return ability;
     }
 
     function isPlayerFlashAvailable() {
@@ -2887,7 +2847,7 @@
         const { player } = gameState;
         if (!player.arrivingGuest || player.doorClosed || player.busted) return false;
         const guest = Game.GUESTS[player.arrivingGuest];
-        return !!(guest?.ability && guest.ability.trigger === 'flash' && !player.arrivingAbilityUsed);
+        return !!(Game.getGuestAbility(guest)?.isActive && !player.arrivingAbilityUsed);
     }
 
     function getSelectedPlayerHouseEntry() {
@@ -3073,20 +3033,22 @@
             ))
             : null;
         const activatableAbility = houseEntry ? getEntryActivatableAbility(houseEntry) : null;
-        const displayAbility = activatableAbility || guest.ability;
+        const baseAbility = Game.getGuestAbility(guest);
+        const displayAbility = activatableAbility || baseAbility;
         const isAbilityUsed = !!options.abilityUsed;
         const canTriggerAbility = !!tooltipAbilityTarget && !isAbilityUsed;
 
         let abilityHTML = '';
         if (displayAbility) {
             const abilityStyle = isAbilityUsed ? ' style="opacity:0.5"' : '';
-            abilityHTML = `<div class="tt-ability"${abilityStyle}>${displayAbility.icon} ${displayAbility.desc}</div>`;
+            const abilityIcon = ABILITY_PACKAGE_SVG[displayAbility.iconKey] || '';
+            abilityHTML = `<div class="tt-ability"${abilityStyle}>${abilityIcon} ${escapeHtml(displayAbility.rulesText || '')}</div>`;
         }
 
         // Only show ability button if the guest has an activatable (flash) ability
         const hasActivatableAbility = houseEntry
             ? !!activatableAbility
-            : (options.source === 'arriving' && !!guest.ability && guest.ability.trigger === 'flash');
+            : (options.source === 'arriving' && !!Game.getGuestAbility(guest)?.isActive);
         let abilityBtnHTML = '';
         if (tooltipWho === 'player' && hasActivatableAbility) {
             if (isAbilityUsed) {
@@ -3723,7 +3685,7 @@
 
         const arrivingGuestId = player.arrivingGuest;
         const arrivalGuest = arrivingGuestId ? Game.GUESTS[arrivingGuestId] : null;
-        const hasArrivalAbility = arrivalGuest?.ability?.trigger === 'arrival';
+        const hasArrivalAbility = !!Game.getGuestAbility(arrivalGuest) && Game.getGuestAbility(arrivalGuest).trigger === 'arrival';
 
         if (hasArrivalAbility) {
             const displayEffects = (drawRes.arrivalResult?.effects || []).filter(e =>
@@ -3731,7 +3693,7 @@
             );
             const popupText = displayEffects.length
                 ? `${arrivalGuest.name}: ${displayEffects.join(', ')}`
-                : `${arrivalGuest.name}: ${arrivalGuest.ability.name} triggered`;
+                : `${arrivalGuest.name}: ${Game.getGuestAbility(arrivalGuest)?.name || 'Ability'} triggered`;
             // Show after the arriving card has rendered in its slot.
             setTimeout(() => showFeedback(popupText, 'disruption', 2500, who), 320);
         }
@@ -3852,14 +3814,14 @@
 
         const arrivingGuestId = self.arrivingGuest;
         const arrivingGuest = arrivingGuestId ? Game.GUESTS[arrivingGuestId] : null;
-        const hasArrivalAbility = arrivingGuest?.ability?.trigger === 'arrival';
+        const hasArrivalAbility = !!Game.getGuestAbility(arrivingGuest) && Game.getGuestAbility(arrivingGuest).trigger === 'arrival';
         if (hasArrivalAbility && !hasValuePings(result.arrivalPings)) {
             const displayEffects = (result.arrivalEffects || []).filter(e =>
                 e !== 'plus one triggered' && !e.startsWith('magnet triggered')
             );
             const popupText = displayEffects.length
                 ? `${arrivingGuest.name}: ${displayEffects.join(', ')}`
-                : `${arrivingGuest.name}: ${arrivingGuest.ability.name} triggered`;
+                : `${arrivingGuest.name}: ${Game.getGuestAbility(arrivingGuest)?.name || 'Ability'} triggered`;
             // Arrival pop-up should happen after the guest appears in the arriving slot.
             setTimeout(() => showFeedback(popupText, 'disruption', 2500, selfKey), 320);
         }
@@ -4269,13 +4231,13 @@
             }
 
             const rivalArrivalGuest = r.arrivingGuest ? Game.GUESTS[r.arrivingGuest] : null;
-            if (rivalArrivalGuest?.ability?.trigger === 'arrival') {
+            if (Game.getGuestAbility(rivalArrivalGuest)?.trigger === 'arrival') {
                 const displayEffects = (result.arrivalEffects || []).filter(e =>
                     e !== 'plus one triggered' && !e.startsWith('magnet triggered')
                 );
                 const popupText = displayEffects.length
                     ? `${rivalArrivalGuest.name}: ${displayEffects.join(', ')}`
-                    : `${rivalArrivalGuest.name}: ${rivalArrivalGuest.ability.name} triggered`;
+                    : `${rivalArrivalGuest.name}: ${Game.getGuestAbility(rivalArrivalGuest)?.name || 'Ability'} triggered`;
                 setTimeout(() => showFeedback(popupText, 'disruption', 2500, 'rival'), 320);
             }
 
@@ -5202,7 +5164,7 @@
         }
 
         const nameEl = document.createElement('div');
-        nameEl.className = 'deck-card-name' + (guest.ability ? ' has-ability' : '');
+        nameEl.className = 'deck-card-name' + (Game.getGuestAbility(guest)?.isActive ? ' has-ability' : '');
         nameEl.textContent = guest.name;
         wrapper.appendChild(nameEl);
 
@@ -5357,9 +5319,10 @@
         guestAbilityPopupEl = document.createElement('div');
         guestAbilityPopupEl.className = 'guest-ability-popup';
 
-        const abilityHtml = guest.ability
-            ? `<div class="guest-ability-popup-title">${guest.ability.icon}</div>
-               <div class="guest-ability-popup-desc">${guest.ability.desc}</div>`
+        const ability = Game.getGuestAbility(guest);
+        const abilityHtml = ability
+            ? `<div class="guest-ability-popup-title">${ABILITY_PACKAGE_SVG[ability.iconKey] || ''}</div>
+               <div class="guest-ability-popup-desc">${escapeHtml(ability.rulesText)}</div>`
             : '<div class="guest-ability-popup-desc">No special ability.</div>';
 
         guestAbilityPopupEl.innerHTML = `
@@ -5506,8 +5469,8 @@
                     const g = guests[gid];
                     if (!g.ability || g.isShopItem) return;
                     rows += `<div class="glossary-ability-row">
-                        <span class="glossary-ability-icon">${escapeHtml(g.ability.icon)}</span>
-                        <span class="glossary-ability-desc">${escapeHtml(g.name)} — ${escapeHtml(g.ability.desc)}</span>
+                        <span class="glossary-ability-icon">${ABILITY_PACKAGE_SVG[Game.getGuestAbility(g)?.iconKey] || ''}</span>
+                        <span class="glossary-ability-desc">${escapeHtml(g.name)} — ${escapeHtml(Game.getGuestAbility(g)?.rulesText || '')}</span>
                     </div>`;
                 });
                 el.innerHTML = `<h4>All Guest Abilities</h4>${rows}`;
