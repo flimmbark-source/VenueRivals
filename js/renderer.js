@@ -69,6 +69,7 @@ const Renderer = (() => {
         grad.addColorStop(1, COLORS.skyGradBot);
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
+
     }
 
     function drawStars(ctx, w, h, count) {
@@ -262,6 +263,7 @@ const Renderer = (() => {
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
 
+
         for (let i = 0; i < 50; i++) {
             const cx = (42 * (i + 1) * 7) % w;
             const cy = (42 * (i + 1) * 3) % h;
@@ -378,6 +380,8 @@ const Renderer = (() => {
         const heatBand = presentationState.heatBand || 'calm';
         const venueMood = presentationState.venueMood || 'neutral';
         const pressure = presentationState.pressure || 'none';
+        const momentType = presentationState.momentType || 'idle';
+        const rivalThreat = presentationState.rivalThreat || 'low';
         const venueId = gameState?.player?.venueId;
         const venue = (typeof Game !== 'undefined' && Game?.VENUES) ? Game.VENUES[venueId] : null;
         const heatCap = (typeof Game !== 'undefined' && Game?.getHeatCapacity && gameState?.player)
@@ -391,6 +395,7 @@ const Renderer = (() => {
         grad.addColorStop(1, bottom);
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
+
 
         const t = animFrame * 0.01;
         // slow parallax silhouettes
@@ -440,6 +445,11 @@ const Renderer = (() => {
         }
 
         if (pressure !== 'none') {
+            if (rivalThreat === 'high') {
+                const rivalPulse = 0.08 + 0.08 * Math.sin(animFrame * 0.22);
+                ctx.fillStyle = `rgba(255,88,88,${rivalPulse})`;
+                ctx.fillRect(w * 0.72, 0, w * 0.28, h);
+            }
             const sideAlpha = pressure === 'urgent' ? 0.22 : 0.12;
             const left = ctx.createLinearGradient(0, 0, w * 0.2, 0);
             left.addColorStop(0, `rgba(76,201,240,${sideAlpha})`);
@@ -455,6 +465,10 @@ const Renderer = (() => {
         }
 
         if (heatBand === 'critical' || heatBand === 'bust') {
+            const strobe = 0.07 + 0.08 * (Math.sin(animFrame * 0.5) * 0.5 + 0.5);
+            ctx.fillStyle = `rgba(255,170,60,${strobe})`;
+            ctx.fillRect(0, 0, w, h * 0.08);
+            ctx.fillRect(0, h * 0.92, w, h * 0.08);
             drawNoise(ctx, w, h, 1 + heatRatio * 2, 'rgba(255,255,255,0.5)');
             gameFxState.collapse = Math.min(1, gameFxState.collapse + 0.02);
         } else {
@@ -484,6 +498,14 @@ const Renderer = (() => {
         }
         if (gameFxState.collapse > 0.01) {
             ctx.fillStyle = `rgba(10,0,0,${gameFxState.collapse * 0.35})`;
+            ctx.fillRect(0, 0, w, h);
+        }
+
+        if (momentType === 'rare_admit') {
+            const vipCone = ctx.createRadialGradient(w * 0.52, h * 0.44, 4, w * 0.52, h * 0.44, h * 0.34);
+            vipCone.addColorStop(0, 'rgba(255,245,200,0.32)');
+            vipCone.addColorStop(1, 'rgba(255,245,200,0)');
+            ctx.fillStyle = vipCone;
             ctx.fillRect(0, 0, w, h);
         }
 
